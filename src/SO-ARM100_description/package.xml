@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>so_arm100_description</name>
+  <version>0.0.1</version>
+  <description>
+    URDF and Xacro description for the SO-ARM100 robot.
+  </description>
+
+  <maintainer email="hugo.charrier2009@gmail.com">Your Name</maintainer>
+  <license>MIT</license>
+
+  <!-- Dependencies -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Needed to use xacro and display robot -->
+  <depend>xacro</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>joint_state_publisher_gui</depend>
+  <depend>rviz2</depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

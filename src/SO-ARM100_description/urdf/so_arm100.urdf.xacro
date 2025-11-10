@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="so_arm100">
+
+  <!-- Arguments -->
+  <xacro:arg name="use_sim" default="True"/>
+  <xacro:arg name="gripper_type" default="jaw"/> <!-- jaw | none -->
+  <xacro:property name="use_sim_bool" value="$(arg use_sim)"/>
+
+  <!-- Includes -->
+  <xacro:include filename="$(find so_arm100_description)/urdf/materials.xacro" />
+  <xacro:include filename="$(find so_arm100_description)/urdf/transmissions.xacro" />
+  <xacro:include filename="$(find so_arm100_description)/urdf/utils.xacro" />
+  <xacro:include filename="$(find so_arm100_description)/urdf/grippers/gripper_$(arg gripper_type).xacro" />
+
+  <!-- Base -->
+  <link name="base">
+    <xacro:default_inertial mass="1.0"/>
+    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Base.stl"/></geometry><material name="3d_printed"/></visual>
+    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Base_Motor.stl"/></geometry><material name="sts3215"/></visual>
+    <collision><geometry><mesh filename="package://so_arm100_description/meshes/Base.stl"/></geometry></collision>
+  </link>
+
+  <!-- Shoulder -->
+  <xacro:robot_link name="shoulder" mesh="Rotation_Pitch" mass="0.119226"/>
+  <!-- Upper arm -->
+  <xacro:robot_link name="upper_arm" mesh="Upper_Arm" mass="0.162409"/>
+  <!-- Lower arm -->
+  <xacro:robot_link name="lower_arm" mesh="Lower_Arm" mass="0.147968"/>
+  <!-- Wrist -->
+  <xacro:robot_link name="wrist" mesh="Wrist_Pitch_Roll" mass="0.0661321"/>
+
+  <!-- Insert the chosen gripper -->
+  <xacro:insert_gripper/>
+
+  <!-- Joints -->
+  <xacro:simple_joint name="shoulder_pan" parent="base" child="shoulder" axis="0 1 0" origin="0 -0.0452 0.0165 1.57079 0 0"/>
+  <xacro:simple_joint name="shoulder_lift" parent="shoulder" child="upper_arm" axis="1 0 0" origin="0 0.1025 0.0306 -1.8 0 0"/>
+  <xacro:simple_joint name="elbow_flex" parent="upper_arm" child="lower_arm" axis="1 0 0" origin="0 0.11257 0.028 1.57079 0 0"/>
+  <xacro:simple_joint name="wrist_flex" parent="lower_arm" child="wrist" axis="1 0 0" origin="0 0.0052 0.1349 -1 0 0"/>
+  <xacro:simple_joint name="wrist_roll" parent="wrist" child="gripper" axis="0 1 0" origin="0 -0.0601 0 0 1.57079 0"/>
+
+  <!-- Transmissions (optional if use_sim == true) -->
+  <xacro:if value="${not use_sim_bool}">
+    <xacro:default_transmission motor="1"/>
+    <xacro:default_transmission motor="2"/>
+    <xacro:default_transmission motor="3"/>
+    <xacro:default_transmission motor="4"/>
+    <xacro:default_transmission motor="5"/>
+    <xacro:default_transmission motor="6"/>
+  </xacro:if>
+
+</robot>
