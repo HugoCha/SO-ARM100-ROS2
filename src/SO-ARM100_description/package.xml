@@ -11,6 +11,7 @@
 
   <!-- Dependencies -->
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>xacro</buildtool_depend>
 
   <!-- Needed to use xacro and display robot -->
   <depend>xacro</depend>
