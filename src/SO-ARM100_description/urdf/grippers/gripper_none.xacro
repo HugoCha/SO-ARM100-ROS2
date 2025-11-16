@@ -2,5 +2,5 @@
   <link name="gripper">
     <xacro:default_inertial mass="0.01"/>
   </link>
-  <xacro:macro name="insert_gripper"/>
+  <xacro:macro name="insert_gripper" params="use_sim_bool"/>
 </robot>

@@ -1,30 +1,36 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <xacro:macro name="default_inertial" params="mass">
+  <xacro:macro name="robot_inertial" params="mass origin inertia">
     <inertial>
       <mass value="${mass}"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      <origin xyz="${origin.split()[0]} ${origin.split()[1]} ${origin.split()[2]}"
+              rpy="${origin.split()[3]} ${origin.split()[4]} ${origin.split()[5]}"/>
+      <inertia  ixx="${inertia.split()[0]}" 
+                ixy="0"
+                ixz="0"
+                iyy="${inertia.split()[1]}" 
+                iyz="0"
+                izz="${inertia.split()[2]}"/>
     </inertial>
   </xacro:macro>
 
-  <xacro:macro name="robot_link" params="name mesh mass">
+  <xacro:macro name="robot_link" params="name mesh mass origin inertia">
     <link name="${name}">
-      <xacro:default_inertial mass="${mass}"/>
+      <xacro:robot_inertial mass="${mass}" origin="${origin}" inertia="${inertia}"/>
       <visual><geometry><mesh filename="package://so_arm100_description/meshes/${mesh}.stl"/></geometry><material name="3d_printed"/></visual>
       <visual><geometry><mesh filename="package://so_arm100_description/meshes/${mesh}_Motor.stl"/></geometry><material name="sts3215"/></visual>
       <collision><geometry><mesh filename="package://so_arm100_description/meshes/${mesh}.stl"/></geometry></collision>
     </link>
   </xacro:macro>
 
-  <xacro:macro name="simple_joint" params="name parent child axis origin">
+  <xacro:macro name="simple_joint" params="name parent child axis origin joint_limit">
     <joint name="${name}" type="revolute">
       <parent link="${parent}"/>
       <child link="${child}"/>
       <origin xyz="${origin.split()[0]} ${origin.split()[1]} ${origin.split()[2]}"
               rpy="${origin.split()[3]} ${origin.split()[4]} ${origin.split()[5]}"/>
       <axis xyz="${axis}"/>
-      <limit lower="-3.14" upper="3.14" effort="35" velocity="1"/>
+      <limit lower="${joint_limit.split()[0]}" upper="${joint_limit.split()[1]}"  effort="35" velocity="1"/>
     </joint>
   </xacro:macro>
 

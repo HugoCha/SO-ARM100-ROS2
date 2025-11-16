@@ -76,12 +76,12 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaw:
+        lower_arm:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        lower_arm:
+        moving_jaw:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -96,6 +96,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         wrist:
           Alpha: 1
           Show Axes: false
@@ -170,10 +174,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.27039819955825806
+      Pitch: 0.5353979468345642
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.513582706451416
+      Yaw: 5.518582820892334
     Saved: ~
 Window Geometry:
   Displays:
@@ -191,5 +195,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 66
-  Y: 60
+  X: 638
+  Y: 382

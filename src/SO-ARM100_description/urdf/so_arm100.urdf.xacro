@@ -12,32 +12,42 @@
   <xacro:include filename="$(find so_arm100_description)/urdf/utils.xacro" />
   <xacro:include filename="$(find so_arm100_description)/urdf/grippers/gripper_$(arg gripper_type).xacro" />
 
+  <!-- World Link dummy link -->
+  <link name="world"/>
   <!-- Base -->
-  <link name="base">
-    <xacro:default_inertial mass="1.0"/>
-    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Base.stl"/></geometry><material name="3d_printed"/></visual>
-    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Base_Motor.stl"/></geometry><material name="sts3215"/></visual>
-    <collision><geometry><mesh filename="package://so_arm100_description/meshes/Base.stl"/></geometry></collision>
-  </link>
-
+  <xacro:robot_link name="base" mesh="Base" mass="1.0" origin="0 0 0 0 0 0" inertia="0.01 0.01 0.01"/>
   <!-- Shoulder -->
-  <xacro:robot_link name="shoulder" mesh="Rotation_Pitch" mass="0.119226"/>
+  <xacro:robot_link name="shoulder" mesh="Rotation_Pitch" mass="0.119226" origin="-9.07886e-05 0.0590972 0.031089 0 0 0" inertia="5.94278e-05 5.89975e-05 3.13712e-05"/>
   <!-- Upper arm -->
-  <xacro:robot_link name="upper_arm" mesh="Upper_Arm" mass="0.162409"/>
+  <xacro:robot_link name="upper_arm" mesh="Upper_Arm" mass="0.162409" origin="-1.72052e-05 0.0701802 0.00310545 0 0 0" inertia="0.000213312 0.000167164 7.01522e-05"/>
   <!-- Lower arm -->
-  <xacro:robot_link name="lower_arm" mesh="Lower_Arm" mass="0.147968"/>
+  <xacro:robot_link name="lower_arm" mesh="Lower_Arm" mass="0.147968" origin="-0.00339604 0.00137796 0.0768007 0 0 0" inertia="0.000138803 0.000107748 4.84242e-05"/>
   <!-- Wrist -->
-  <xacro:robot_link name="wrist" mesh="Wrist_Pitch_Roll" mass="0.0661321"/>
+  <xacro:robot_link name="wrist" mesh="Wrist_Pitch_Roll" mass="0.0661321" origin="-0.00852653 -0.0352279 -2.34622e-05 0 0 0" inertia="3.45403e-05 2.39041e-05 1.94704e-05"/>
+  <!-- Tool0 dummy link -->>
+  <link name="tool0"/>
 
   <!-- Insert the chosen gripper -->
-  <xacro:insert_gripper/>
+  <xacro:insert_gripper use_sim_bool="${use_sim_bool}"/>
 
   <!-- Joints -->
-  <xacro:simple_joint name="shoulder_pan" parent="base" child="shoulder" axis="0 1 0" origin="0 -0.0452 0.0165 1.57079 0 0"/>
-  <xacro:simple_joint name="shoulder_lift" parent="shoulder" child="upper_arm" axis="1 0 0" origin="0 0.1025 0.0306 -1.8 0 0"/>
-  <xacro:simple_joint name="elbow_flex" parent="upper_arm" child="lower_arm" axis="1 0 0" origin="0 0.11257 0.028 1.57079 0 0"/>
-  <xacro:simple_joint name="wrist_flex" parent="lower_arm" child="wrist" axis="1 0 0" origin="0 0.0052 0.1349 -1 0 0"/>
-  <xacro:simple_joint name="wrist_roll" parent="wrist" child="gripper" axis="0 1 0" origin="0 -0.0601 0 0 1.57079 0"/>
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:simple_joint name="shoulder_pan" parent="base" child="shoulder" axis="0 1 0" origin="0 -0.0452 0.0165 1.57079 0 0" joint_limit="-2.0 2.0"/>
+  <xacro:simple_joint name="shoulder_lift" parent="shoulder" child="upper_arm" axis="1 0 0" origin="0 0.1025 0.0306 -1.8 0 0" joint_limit="0 3.5"/>
+  <xacro:simple_joint name="elbow_flex" parent="upper_arm" child="lower_arm" axis="1 0 0" origin="0 0.11257 0.028 1.57079 0 0" joint_limit="-3.14158 0"/>
+  <xacro:simple_joint name="wrist_flex" parent="lower_arm" child="wrist" axis="1 0 0" origin="0 0.0052 0.1349 -1 0 0" joint_limit="-2.5 1.2"/>
+  <xacro:simple_joint name="wrist_roll" parent="wrist" child="tool0" axis="0 1 0" origin="0 -0.0601 0 0 1.57079 0" joint_limit="-3.14158 3.14158"/>
+
+  <joint name="tool0_to_gripper" type="fixed">
+    <parent link="tool0"/>
+    <child link="gripper"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
 
   <!-- Transmissions (optional if use_sim == true) -->
   <xacro:if value="${not use_sim_bool}">
@@ -46,7 +56,6 @@
     <xacro:default_transmission motor="3"/>
     <xacro:default_transmission motor="4"/>
     <xacro:default_transmission motor="5"/>
-    <xacro:default_transmission motor="6"/>
   </xacro:if>
 
 </robot>

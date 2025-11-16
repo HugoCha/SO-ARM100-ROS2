@@ -1,21 +1,36 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <link name="gripper">
-    <xacro:default_inertial mass="0.09"/>
-    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Fixed_Jaw.stl"/></geometry><material name="3d_printed"/></visual>
+
+  <!-- Links -->
+  <xacro:robot_link name="gripper" mesh="Fixed_Jaw" mass="0.0929859" origin="0.00552377 -0.0280167 0.000483583 0 0 0" inertia="5.03136e-05 4.64098e-05 2.72961e-05"/>
+  
+  <link name="moving_jaw">
+    <inertial>
+      <mass value="0.0202444"/>
+      <origin xyz="-0.00161745 -0.0303473 0.000449646" rpy="0 0 0"/>
+      <inertia ixx="1.11265e-05" ixy="0" ixz="0" iyy="8.99651e-06" iyz="0" izz="2.99548e-06"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="package://so_arm100_description/meshes/Moving_Jaw.stl"/></geometry>
+      <material name="3d_printed"/>
+    </visual>
+    <collision><geometry><mesh filename="package://so_arm100_description/meshes/Moving_Jaw.stl"/></geometry></collision>
   </link>
 
-  <link name="jaw">
-    <xacro:default_inertial mass="0.02"/>
-    <visual><geometry><mesh filename="package://so_arm100_description/meshes/Moving_Jaw.stl"/></geometry><material name="3d_printed"/></visual>
-  </link>
+  <link name="tcp_link"/>
 
-  <joint name="gripper" type="revolute">
-    <parent link="gripper"/>
-    <child link="jaw"/>
-    <origin xyz="-0.0202 -0.0244 0" rpy="0 3.14158 0"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="-0.2" upper="2.0" effort="35" velocity="1"/>
+  <!-- Joints -->
+  <xacro:simple_joint name="gripper" parent="gripper" child="moving_jaw" axis="0 0 1" origin="-0.0202 -0.0244 0 0 3.14158 0" joint_limit="-0.2 2.0"/>
+  
+  <joint name="tool0_to_tcp_link" type="fixed">
+    <parent link="tool0"/>
+    <child link="tcp_link"/>
+    <origin xyz="0 -0.1 0" rpy="0 0 0"/>
   </joint>
 
-  <xacro:macro name="insert_gripper"/>
+  <!-- Transmissions -->
+  <xacro:if value="${not use_sim_bool}">
+    <xacro:default_transmission motor="jaw"/>
+  </xacro:if>
+
+  <xacro:macro name="insert_gripper" params="use_sim_bool"/>
 </robot>
