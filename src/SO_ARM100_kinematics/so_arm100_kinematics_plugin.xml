@@ -1,0 +1,7 @@
+<library path="libso_arm100_kinematics">
+  <class name="SOArm100AnalyticKinematicsPlugin"
+         type="SOArm100::Kinematics::SOArm100AnalyticKinematicsPlugin"
+         base_class_type="kinematics::KinematicsBase">
+    <description>Custom kinematics for SO-ARM100</description>
+  </class>
+</library>

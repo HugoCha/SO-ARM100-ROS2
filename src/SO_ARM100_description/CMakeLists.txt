@@ -10,8 +10,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+
 find_package(ament_cmake REQUIRED)
 find_package(xacro REQUIRED)
+
+# Install files so they are found via $(find so_arm100_description)
+install(DIRECTORY urdf meshes launch rviz
+DESTINATION share/${PROJECT_NAME}
+)
 
 # ---------------------------------------------------------------------------
 # XACRO processing (optional — for validation or auto-generation)
@@ -21,11 +27,6 @@ xacro_add_files(
   urdf/so_arm100.urdf.xacro
   TARGET xacro_urdf
   INSTALL DESTINATION urdf
-)
-
-# Install files so they are found via $(find so_arm100_description)
-install(DIRECTORY urdf meshes launch rviz
-DESTINATION share/${PROJECT_NAME}
 )
 
 ament_package()
