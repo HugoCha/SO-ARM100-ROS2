@@ -1,0 +1,16 @@
+#pragma once
+
+#include <Eigen/Core>
+
+namespace SOArm100::Kinematics
+{
+using Vec3d = Eigen::Vector3d;
+using Vec4d = Eigen::Vector4d;
+using Vec6d = Eigen::Matrix< double, 6, 1 >;
+using VecXd = Eigen::VectorXd;
+
+using Mat3d = Eigen::Matrix3d;
+using Mat4d = Eigen::Matrix4d;
+using Mat6d = Eigen::Matrix< double, 6, 6 >;
+using MatXd = Eigen::MatrixXd;
+}

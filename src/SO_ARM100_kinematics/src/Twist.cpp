@@ -1,28 +1,33 @@
 #include "Twist.hpp"
 
+#include "KinematicsUtils.hpp"
+#include "Types.hpp"
+
+#include <Eigen/Dense>
+
 namespace SOArm100::Kinematics
 {
 // ------------------------------------------------------------
 
-Twist::Twist(Eigen::Vector3d axis, Eigen::Vector3d point_on_axis)
-: axis_(axis.normalized() )
+Twist::Twist( Vec3d axis, Vec3d point_on_axis )
+	: axis_( axis.normalized())
 {
-  linear_ = -axis_.cross(point_on_axis);
+	linear_ = -axis_.cross( point_on_axis );
 }
 
 // ------------------------------------------------------------
 
-Twist::Twist(Eigen::Vector3d axis, Eigen::Matrix4d transform)
-: axis_(axis.normalized() )
+Twist::Twist( Vec3d axis, Mat4d transform )
+	: axis_( axis.normalized())
 {
-  Eigen::Vector3d point_on_axis = transform.block<3, 1>(0, 3);
-  linear_ = -axis_.cross(point_on_axis);
+	Vec3d point_on_axis = Translation( transform );
+	linear_ = -axis_.cross( point_on_axis );
 }
 
 // ------------------------------------------------------------
 
-Twist::Twist(const Twist & other)
-: axis_(other.axis_), linear_(other.linear_)
+Twist::Twist( const Twist& other )
+	: axis_( other.axis_ ), linear_( other.linear_ )
 {
 }
 
@@ -34,16 +39,25 @@ Twist::~Twist()
 
 // ------------------------------------------------------------
 
-Eigen::Vector3d Twist::GetAxis() const
+Twist::operator Vec6d () const
 {
-  return axis_;
+	Vec6d twist;
+	twist << axis_, linear_;
+	return twist;
 }
 
 // ------------------------------------------------------------
 
-Eigen::Vector3d Twist::GetLinear() const
+Vec3d Twist::GetAxis() const
 {
-  return linear_;
+	return axis_;
+}
+
+// ------------------------------------------------------------
+
+Vec3d Twist::GetLinear() const
+{
+	return linear_;
 }
 
 // ------------------------------------------------------------

@@ -1,22 +1,24 @@
 #pragma once
 
-#include <Eigen/Dense>
+#include "Types.hpp"
 
 namespace SOArm100::Kinematics
 {
 class Twist
 {
 public:
-  Twist(Eigen::Vector3d axis, Eigen::Vector3d point_on_axis);
-  Twist(Eigen::Vector3d axis, Eigen::Matrix4d transform);
-  Twist(const Twist & other);
-  ~Twist();
+Twist( Vec3d axis, Vec3d point_on_axis );
+Twist( Vec3d axis, Mat4d transform );
+Twist( const Twist& other );
+~Twist();
 
-  Eigen::Vector3d GetAxis() const;
-  Eigen::Vector3d GetLinear() const;
+operator Vec6d () const;
+
+Vec3d GetAxis() const;
+Vec3d GetLinear() const;
 
 private:
-  Eigen::Vector3d axis_;
-  Eigen::Vector3d linear_;
+Vec3d axis_;
+Vec3d linear_;
 };
 }

@@ -3,6 +3,6 @@
 #include "so_arm100_kinematics.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-    SOArm100::Kinematics::SOArm100AnalyticKinematicsPlugin,
-    kinematics::KinematicsBase
-)
+	SOArm100::Kinematics::SOArm100AnalyticKinematicsPlugin,
+	kinematics::KinematicsBase
+	)
