@@ -25,7 +25,7 @@ TEST_F( KinematicsUtilsTest, SkewMatrixTest )
 
 	Eigen::Matrix3d result = SOArm100::Kinematics::SkewMatrix( vec );
 
-	ASSERT_TRUE( result.isApprox( expected ));
+	ASSERT_TRUE( result.isApprox( expected ) );
 }
 
 }

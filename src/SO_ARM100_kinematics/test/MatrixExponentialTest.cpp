@@ -32,7 +32,7 @@ TEST_F( MatrixExponentialTest, ComputeTest )
 	expected( 1, 0 ) = 1.0;
 	expected( 1, 1 ) = 0.0;
 
-	ASSERT_TRUE( result.isApprox( expected ));
+	ASSERT_TRUE( result.isApprox( expected ) );
 }
 
 TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
@@ -53,7 +53,7 @@ TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
 	expected( 1, 0 ) = 0.0;
 	expected( 1, 1 ) = -1.0;
 
-	ASSERT_TRUE( result.isApprox( expected ));
+	ASSERT_TRUE( result.isApprox( expected ) );
 }
 
 TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
@@ -73,6 +73,6 @@ TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
 	expected( 1, 0 ) = 1.0;
 	expected( 1, 1 ) = 0.0;
 
-	ASSERT_TRUE( result.isApprox( expected ));
+	ASSERT_TRUE( result.isApprox( expected ) );
 }
 } // namespace SOArm100::Kinematics::Test

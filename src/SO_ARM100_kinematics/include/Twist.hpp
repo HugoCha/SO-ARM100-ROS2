@@ -7,15 +7,15 @@ namespace SOArm100::Kinematics
 class Twist
 {
 public:
-Twist( Vec3d axis, Vec3d point_on_axis );
-Twist( Vec3d axis, Mat4d transform );
-Twist( const Twist& other );
-~Twist();
+Twist( const Vec3d& axis, const Vec3d& point_on_axis );
+Twist( const Vec3d& axis, const Mat4d& transform );
+Twist( const Twist& other ) = default;
+~Twist() = default;
 
 operator Vec6d () const;
 
-Vec3d GetAxis() const;
-Vec3d GetLinear() const;
+[[nodiscard]] Vec3d GetAxis() const;
+[[nodiscard]] Vec3d GetLinear() const;
 
 private:
 Vec3d axis_;

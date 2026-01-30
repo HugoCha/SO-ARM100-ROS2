@@ -4,7 +4,6 @@
 #include "KinematicsUtils.hpp"
 #include "Types.hpp"
 
-#include <algorithm>
 #include <Eigen/Dense>
 #include <Eigen/src/SVD/JacobiSVD.h>
 #include <vector>
@@ -14,14 +13,62 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::DLSKinematicsSolver()
+DLSKinematicsSolver::DLSKinematicsSolver() :
+	SOArm100::Kinematics::DLSKinematicsSolver( SolverParameters{} )
 {
 }
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::~DLSKinematicsSolver()
+DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
+	: parameters_( parameters ), buffers_( twists_.size() )
 {
+	if ( !parameters_.IsValid() )
+	{
+		throw std::invalid_argument( "Invalid DLS configuration" );
+	}
+}
+
+// ------------------------------------------------------------
+
+DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
+	const geometry_msgs::msg::Pose& target_pose )
+{
+	const Mat4d target = ToMat4d( target_pose );
+
+	auto state = InitializeState( target );
+	if ( !state )
+	{
+		state = InitializeState( target );
+		if ( !state )
+		{
+			return { SolverState::Failed, VecXd{}, 0.0, 0 };
+		}
+	}
+
+	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
+	{
+		auto solver_state = EvaluateConvergence( *state, iter );
+		if ( solver_state == SolverState::Converged )
+		{
+			return { SolverState::Converged, state->joints, state->error, iter };
+		}
+
+		if ( IsStalled( *state ) )
+		{
+			state = InitializeState( target );
+			if ( !state )
+			{
+				return { SolverState::Stalled, VecXd{}, 0.0, iter };
+			}
+			continue;
+		}
+
+		PerformIteration( target, *state, buffers_ );
+	}
+
+	return { SolverState::MaxIterations, state->joints, state->error,
+	         parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------
@@ -30,157 +77,110 @@ bool DLSKinematicsSolver::InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	std::vector< double >& joint_angles )
 {
-	Mat4d target = ToMat4d( target_pose );
+	auto result = SolveIK( target_pose );
 
-	double last_error, current_error;
-	VecXd last_pose_error, current_pose_error;
-	VecXd joints = InitializeJointAngles();
-	Mat4d fk;
-	int fk_iterations = 0;
-	VecXd dq;
-	MatXd jac, damped;
-	double min_sv_value, damping_factor, step;
-
-	if ( !Initialize( target, joints, fk, jac, last_pose_error, last_error,
-	                  damping_factor, step, damped, dq ) )
+	if ( result.Success() )
 	{
-		joints = RandomValidJointAngles();
-		Initialize( target, joints, fk, jac, last_pose_error, last_error,
-		            damping_factor, step, damped, dq );
-	}
-
-	if ( last_error <= error_tolerance_ )
-	{
-		joint_angles = ToStdVector( joints );
+		joint_angles = ToStdVector( result.joint_angles );
 		return true;
 	}
 
-	joints = joints + step * dq;
-
-	for ( int i = 0; i < max_iterations_; i++ )
-	{
-		if ( !ForwardKinematic( joints, fk ) )
-		{
-			if ( IsSolverStale( fk_iterations, step, damping_factor ) )
-			{
-				Initialize( target, RandomValidJointAngles(), fk, jac, last_pose_error,
-				            last_error, damping_factor, step, damped, dq );
-				fk_iterations = 0;
-			}
-			else
-			{
-				step = BacktrackStep( step );
-				damping_factor = BacktrackDampingFactor( damping_factor );
-				fk_iterations++;
-			}
-			continue;
-		}
-		else
-		{
-			current_pose_error = PoseError( target, fk );
-			current_error = current_pose_error.squaredNorm();
-
-			if ( current_error <= error_tolerance_ )
-			{
-				joint_angles = ToStdVector( joints );
-				return true;
-			}
-
-			if ( current_error < last_error )
-			{
-				last_error = current_error;
-				last_pose_error = current_pose_error;
-				jac = SpaceJacobian( twists_, joints );
-				min_sv_value = MinSingularValue( jac );
-				damping_factor = AdaptativeDampingFactor( min_sv_value );
-				step = AdaptativeStep( min_sv_value );
-			}
-			else
-			{
-				step = BacktrackStep( step );
-				damping_factor = BacktrackDampingFactor( damping_factor );
-			}
-		}
-
-		damped = Damped( jac, damping_factor );
-		dq = damped.ldlt().solve( jac.transpose() * last_pose_error );
-		joints = joints + step * dq;
-	}
 	return false;
 }
 
 // ------------------------------------------------------------
 
-bool DLSKinematicsSolver::Initialize(
+void DLSKinematicsSolver::PerformIteration(
 	const Mat4d& target,
-	const VecXd& initial_joints, Mat4d& fk,
-	MatXd& jacobian, VecXd& pose_error,
-	double& error, double& damping_factor,
-	double& step, MatXd& damped, VecXd& dq )
+	IterationState& state,
+	SolverBuffers& buffers )
 {
-	if ( !ForwardKinematic( initial_joints, fk ) )
+	// Forward Kinematics
+	if ( !ForwardKinematic( state.joints, buffers.fk ) )
 	{
-		return false;
+		state.step = BacktrackStep( state.step );
+		state.damping = BacktrackDamping( state.damping );
+		state.fk_failures++;
+		return;
 	}
 
-	jacobian = SpaceJacobian( twists_, initial_joints );
-	damping_factor = min_damping_factor_;
-	step = 1.0;
-	pose_error = PoseError( target, fk );
-	error = pose_error.squaredNorm();
-	damped = Damped( jacobian, damping_factor );
-	dq = damped.ldlt().solve( jacobian.transpose() * pose_error );
-	return true;
+	// Calculer l'erreur
+	buffers.error = PoseError( target, buffers.fk );
+	const double current_error = buffers.error.squaredNorm();
+
+	// Vérifier amélioration
+	if ( current_error < state.error )
+	{
+		// Amélioration → adapter les paramètres
+		state.error = current_error;
+
+		ComputeJacobianAndDamping( state.joints, state.damping, buffers );
+		const double min_sv = GetMinSingularValue( buffers.jacobian );
+
+		state.damping = ComputeAdaptiveDamping( min_sv );
+		state.step = ComputeAdaptiveStep( min_sv );
+		state.fk_failures = 0;
+	}
+	else
+	{
+		// Pas d'amélioration → backtrack
+		state.step = BacktrackStep( state.step );
+		state.damping = BacktrackDamping( state.damping );
+	}
+
+	// Calculer nouveau dq
+	ComputeJacobianAndDamping( state.joints, state.damping, buffers );
+	UpdateDeltaQ( buffers.jacobian, buffers.error, buffers.damped, buffers.dq );
+
+	// Mise à jour
+	state.joints.noalias() += state.step * buffers.dq;
 }
 
 // ------------------------------------------------------------
 
-bool DLSKinematicsSolver::IsSolverStale(
-	int fk_iteration, double step,
-	double damping_factor )
+void DLSKinematicsSolver::ComputeJacobianAndDamping(
+	const VecXd& joints,
+	double damping_factor,
+	SolverBuffers& buffers ) const
 {
-	return ( step <= min_step_ && damping_factor >= max_damping_factor_ ) ||
-	       ( fk_iteration >= 5 );
+	SpaceJacobian( twists_, joints, buffers.jacobian );
+
+	const int n = buffers.jacobian.cols();
+	buffers.damped.noalias() = buffers.jacobian.transpose() * buffers.jacobian;
+	buffers.damped.diagonal().array() += damping_factor * damping_factor;
 }
 
 // ------------------------------------------------------------
 
-double DLSKinematicsSolver::MinSingularValue( const MatXd& jacobian )
+void DLSKinematicsSolver::UpdateDeltaQ(
+	const MatXd& jacobian,
+	const VecXd& error,
+	const MatXd& damped,
+	VecXd& dq_out ) const
 {
-	Eigen::JacobiSVD< MatXd > svd( jacobian );
-	return std::max( svd.singularValues().minCoeff(), 1e-6 );
+	buffers_.jac_transpose.noalias() = jacobian.transpose();
+	buffers_.ldlt_solver.compute( damped );
+	dq_out = buffers_.ldlt_solver.solve( buffers_.jac_transpose * error );
 }
 
 // ------------------------------------------------------------
 
-double DLSKinematicsSolver::AdaptativeStep( double min_sigma )
+DLSKinematicsSolver::SolverState
+DLSKinematicsSolver::EvaluateConvergence(
+	const IterationState& state,
+	int iteration ) const noexcept
 {
-	double step = min_sigma / ( min_sigma + epsilon_step_ );
-	return std::clamp( step, min_step_, 1.0 );
-}
+	if ( state.error <= parameters_.error_tolerance )
+	{
+		return SolverState::Converged;
+	}
 
-// ------------------------------------------------------------
+	if ( iteration >= parameters_.max_iterations )
+	{
+		return SolverState::MaxIterations;
+	}
 
-double DLSKinematicsSolver::AdaptativeDampingFactor( double min_sigma )
-{
-	// min_sigma -> 0 = near singularity
-	// exp(-alpha*sigma**2) increase when sigma decrease
-	return min_damping_factor_ + ( max_damping_factor_ - min_damping_factor_ ) *
-	       exp( -min_sv_factor_ * min_sigma * min_sigma );
-}
-
-// ------------------------------------------------------------
-
-double DLSKinematicsSolver::BacktrackStep( double step )
-{
-	return std::max( step / 2.0, min_step_ );
-}
-
-// ------------------------------------------------------------
-
-double DLSKinematicsSolver::BacktrackDampingFactor( double damping )
-{
-	return std::min( damping * 2.0, max_damping_factor_ );
+	return SolverState::Improving;
 }
 
 // ------------------------------------------------------------

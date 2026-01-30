@@ -82,8 +82,8 @@ std::vector< double > HybridKinematicsSolver::ComputeWristJoints(
 	const Mat4d& target_pose )
 {
 	Mat4d tcp_in_wrist = wrist_in_base * target_pose;
-	double q_wrist1 = atan2( tcp_in_wrist( 1, 0 ), tcp_in_wrist( 0, 0 ));
-	double q_wrist2 = atan2( tcp_in_wrist( 2, 1 ), tcp_in_wrist( 2, 2 ));
+	double q_wrist1 = atan2( tcp_in_wrist( 1, 0 ), tcp_in_wrist( 0, 0 ) );
+	double q_wrist2 = atan2( tcp_in_wrist( 2, 1 ), tcp_in_wrist( 2, 2 ) );
 	return { q_wrist1, q_wrist2 };
 }
 

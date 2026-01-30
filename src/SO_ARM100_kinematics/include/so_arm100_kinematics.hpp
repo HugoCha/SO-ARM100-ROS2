@@ -17,7 +17,7 @@ bool getPositionIK(
 	const std::vector< double >& ik_seed_state,
 	std::vector< double >& solution,
 	moveit_msgs::msg::MoveItErrorCodes& error_code,
-	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions()) const
+	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
 bool searchPositionIK(
@@ -25,7 +25,7 @@ bool searchPositionIK(
 	const std::vector< double >& ik_seed_state,
 	double timeout,
 	std::vector< double >& solution, moveit_msgs::msg::MoveItErrorCodes& error_code,
-	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions()) const
+	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
 bool searchPositionIK(
@@ -35,7 +35,7 @@ bool searchPositionIK(
 	const std::vector< double >& consistency_limits,
 	std::vector< double >& solution,
 	moveit_msgs::msg::MoveItErrorCodes& error_code,
-	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions()) const
+	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
 bool searchPositionIK(
@@ -45,7 +45,7 @@ bool searchPositionIK(
 	std::vector< double >& solution,
 	const IKCallbackFn& solution_callback,
 	moveit_msgs::msg::MoveItErrorCodes& error_code,
-	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions()) const
+	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
 bool searchPositionIK(
@@ -56,7 +56,7 @@ bool searchPositionIK(
 	std::vector< double >& solution,
 	const IKCallbackFn& solution_callback,
 	moveit_msgs::msg::MoveItErrorCodes& error_code,
-	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions()) const
+	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
 virtual const std::vector< std::string >& getJointNames() const override;

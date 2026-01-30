@@ -9,32 +9,19 @@ namespace SOArm100::Kinematics
 {
 // ------------------------------------------------------------
 
-Twist::Twist( Vec3d axis, Vec3d point_on_axis )
-	: axis_( axis.normalized())
+Twist::Twist( const Vec3d& axis, const Vec3d& point_on_axis )
+	: axis_( axis.normalized() )
 {
 	linear_ = -axis_.cross( point_on_axis );
 }
 
 // ------------------------------------------------------------
 
-Twist::Twist( Vec3d axis, Mat4d transform )
-	: axis_( axis.normalized())
+Twist::Twist( const Vec3d& axis, const Mat4d& transform )
+	: axis_( axis.normalized() )
 {
 	Vec3d point_on_axis = Translation( transform );
 	linear_ = -axis_.cross( point_on_axis );
-}
-
-// ------------------------------------------------------------
-
-Twist::Twist( const Twist& other )
-	: axis_( other.axis_ ), linear_( other.linear_ )
-{
-}
-
-// ------------------------------------------------------------
-
-Twist::~Twist()
-{
 }
 
 // ------------------------------------------------------------

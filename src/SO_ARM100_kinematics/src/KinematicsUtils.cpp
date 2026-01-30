@@ -21,86 +21,74 @@ Mat3d SkewMatrix( const Eigen::Vector3d& vec )
 
 // ------------------------------------------------------------
 
-Mat3d Rotation( const Mat4d& matrix )
+Mat3d Rotation( const Mat4d& matrix ) noexcept
 {
 	return matrix.block< 3, 3 >( 0, 0 );
 }
 
 // ------------------------------------------------------------
 
-Vec3d Translation( const Mat4d& matrix )
+Vec3d Translation( const Mat4d& matrix ) noexcept
 {
 	return matrix.block< 3, 1 >( 0, 3 );
 }
 
 // ------------------------------------------------------------
 
-Mat6d Adjoint( const Mat4d& transform )
+void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept
 {
-	Mat6d Adj = Mat6d::Zero();
+	const auto R = Rotation( transform );
+	const auto t = transform.block< 3, 1 >( 0, 3 );
 
-	Mat3d R = Rotation( transform );
-	Vec3d t = Translation( transform );
-
-	Mat3d skew = SkewMatrix( t );
-
-	Adj.block< 3, 3 >( 0, 0 ) = R;
-	Adj.block< 3, 3 >( 0, 3 ) = skew * R;
-	Adj.block< 3, 3 >( 3, 0 ) = Mat3d::Zero();
-	Adj.block< 3, 3 >( 3, 3 ) = R;
-
-	return Adj;
+	adjoint.setZero();
+	adjoint.block< 3, 3 >( 0, 0 ) = R;
+	adjoint.block< 3, 3 >( 3, 3 ) = R;
+	adjoint.block< 3, 3 >( 0, 3 ) = SkewMatrix( t ) * R;
 }
 
 // ------------------------------------------------------------
 
-MatXd SpaceJacobian( const std::vector< Twist >& space_twists, const VecXd& joint_angles )
+void SpaceJacobian(
+	std::span< const Twist > space_twists,
+	const VecXd& joint_angles,
+	MatXd& jacobian )
 {
-	int n = space_twists.size();
-	if ( n != joint_angles.size() )
-	{
-		throw std::invalid_argument(
-				  "Size mismatch: expected " + std::to_string( n ) +
-				  " elements, got " + std::to_string( joint_angles.size()));
-	}
-
-	MatXd space_jac( 6, n );
+	const size_t n = space_twists.size();
+	if ( static_cast< size_t >( jacobian.cols() ) != n )
+		jacobian.resize( 6, n );
 
 	Mat4d T_cumul = Mat4d::Identity();
-	Mat4d T_inter;
-	Mat6d adjoint;
+	Mat6d adj_buf;
 
-	space_jac.col( 0 ) = ( Vec6d )space_twists[0];
-	for ( int i = 1; i < n; i++ )
+	jacobian.col( 0 ) = static_cast< Vec6d >( space_twists[0] );
+
+	for ( size_t i = 1; i < n; ++i )
 	{
-		T_inter = MatrixExponential( space_twists[i - 1], joint_angles[i - 1] );
-		T_cumul *= T_inter;
-		adjoint = Adjoint( T_cumul );
-		space_jac.col( i ) = adjoint * ( Vec6d )space_twists[i];
+		T_cumul *= static_cast< Mat4d >( MatrixExponential( space_twists[i - 1], joint_angles[i - 1] ) );
+		Adjoint( T_cumul, adj_buf );
+		jacobian.col( i ) = adj_buf * static_cast< Vec6d >( space_twists[i] );
 	}
-
-	return space_jac;
 }
 
 // ------------------------------------------------------------
 
-MatXd PseudoInverse( const MatXd& jacobian )
+void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept
 {
-	return jacobian.completeOrthogonalDecomposition().pseudoInverse();
+	psi.noalias() = jacobian.completeOrthogonalDecomposition().pseudoInverse();
 }
 
 // ------------------------------------------------------------
 
-MatXd Damped( const MatXd& jacobian, double damping_factor )
+void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexcept
 {
-	MatXd Identity = MatXd::Identity( jacobian.cols(), jacobian.cols());
-	return jacobian.transpose() *
-	       ( jacobian.transpose() * jacobian + damping_factor * Identity );
+	MatXd Identity = MatXd::Identity( jacobian.cols(), jacobian.cols() );
+	damped.noalias() = jacobian.transpose() *
+	                   ( jacobian.transpose() * jacobian + damping_factor * Identity );
 }
 
 // ------------------------------------------------------------
 
-Vec6d PoseError( const Mat4d& target, const Mat4d& current )
+Vec6d PoseError( const Mat4d& target, const Mat4d& current ) noexcept
 {
 	Vec6d error;
 

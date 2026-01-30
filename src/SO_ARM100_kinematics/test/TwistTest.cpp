@@ -24,8 +24,8 @@ TEST_F( TwistTest, ConstructorWithPointOnAxis )
 	Twist twist( axis, point_on_axis );
 
 	Eigen::Vector3d expected_linear( 0.5, -0.5, 0.0 );
-	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized()));
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ));
+	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized() ) );
+	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) );
 }
 
 TEST_F( TwistTest, ConstructorWithTransform )
@@ -39,8 +39,8 @@ TEST_F( TwistTest, ConstructorWithTransform )
 	Twist twist( axis, transform );
 
 	Eigen::Vector3d expected_linear( 0.5, -0.5, 0.0 );
-	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized()));
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ));
+	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized() ) );
+	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) );
 }
 
 } // namespace SOArm100::Kinematics::Test

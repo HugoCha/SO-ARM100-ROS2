@@ -8,7 +8,6 @@
 #include <moveit/robot_model/robot_model.hpp>
 #include <moveit/robot_state/robot_state.hpp>
 #include <rclcpp/logger.hpp>
-#include <vector>
 
 namespace SOArm100::Kinematics
 {
@@ -41,32 +40,35 @@ void KinematicsSolver::Initialize(
 	double search_discretization )
 {
 	RCLCPP_INFO( get_logger(), "Initializing KinematicsSolver for group: %s",
-	             group_name.c_str());
+	             group_name.c_str() );
 	robot_model_ = robot_model;
 
 	moveit::core::RobotState state( robot_model_ );
 	state.setToDefaultValues();
 
-	auto joint_group = robot_model_->getJointModelGroup( group_name );
+	const auto* joint_group = robot_model_->getJointModelGroup( group_name );
 	if ( !joint_group )
 	{
 		RCLCPP_ERROR( get_logger(), "Joint model group %s not found in robot model.",
-		              group_name.c_str());
+		              group_name.c_str() );
 		return;
 	}
 
 	const auto& joint_models = joint_group->getActiveJointModels();
 
 	home_configuration_ = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
+
 	twists_.clear();
-	for ( const auto& joint_model : joint_models )
+	twists_.reserve( joint_models.size() );
+
+	for ( const auto* joint_model : joint_models )
 	{
 		if ( joint_model->getType() != moveit::core::JointModel::REVOLUTE &&
 		     joint_model->getType() != moveit::core::JointModel::FIXED )
 		{
 			RCLCPP_WARN( get_logger(),
 			             "Joint %s is not fixed, revolute or prismatic. Skipping.",
-			             joint_model->getName().c_str());
+			             joint_model->getName().c_str() );
 			continue;
 		}
 
@@ -82,21 +84,21 @@ void KinematicsSolver::Initialize(
 				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
 			axis = revolute_joint_model->getAxis();
 		}
-		auto joint_transform =
-			state.getGlobalLinkTransform( joint_model->getParentLinkModel());
-		Eigen::Matrix3d R = joint_transform.rotation();
-		Eigen::Vector3d point_on_axis_world = joint_transform.translation();
-		Eigen::Vector3d axis_world = R * axis;
 
-		auto twist = Twist( axis_world, point_on_axis_world );
-		twists_.push_back( twist );
+		const auto& joint_transform =
+			state.getGlobalLinkTransform( joint_model->getParentLinkModel() );
+
+		const Eigen::Vector3d axis_world = joint_transform.rotation() * axis;
+		const Eigen::Vector3d point_on_axis_world = joint_transform.translation();
+
+		twists_.emplace_back( axis_world, point_on_axis_world );
 	}
 }
 
 // ------------------------------------------------------------
 
 bool KinematicsSolver::ForwardKinematic(
-	const std::vector< double >& joint_angles,
+	const std::span< const double >& joint_angles,
 	geometry_msgs::msg::Pose& pose )
 {
 	Mat4d T_end;
@@ -126,24 +128,23 @@ bool KinematicsSolver::ForwardKinematic(
 		RCLCPP_ERROR(
 			get_logger(),
 			"Joint angles size (%zu) does not match number of twists (%zu).",
-			joint_angles.size(), twists_.size());
+			joint_angles.size(), twists_.size() );
 		return false;
 	}
 
-	Eigen::Matrix4d T_end = Eigen::Matrix4d::Identity();
+	pose.setIdentity();
 	for ( size_t i = 0; i < twists_.size(); ++i )
 	{
-		Eigen::Matrix4d exp_twist = MatrixExponential( twists_[i], joint_angles[i] );
-		T_end = T_end * exp_twist;
+		pose *= static_cast< Mat4d >( MatrixExponential( twists_[i], joint_angles[i] ) );
 	}
-	pose = T_end * home_configuration_;
+	pose *= home_configuration_;
 
 	return true;
 }
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::CheckLimits( const std::vector< double >& joint_angles )
+bool KinematicsSolver::CheckLimits( const std::span< const double >& joint_angles )
 {
 	if ( !robot_model_ )
 	{

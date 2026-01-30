@@ -43,12 +43,12 @@ void SetUp() override
 	}
 
 	// Create URDF string for a simple robot with revolute joints only
-	urdf_model_ = urdf::parseURDF( createRevoluteOnlyRobotURDF());
+	urdf_model_ = urdf::parseURDF( createRevoluteOnlyRobotURDF() );
 	ASSERT_TRUE( urdf_model_ != nullptr ) << "Failed to parse URDF";
 
 	// Create SRDF model with arm group
 	srdf_model_ = std::make_shared< srdf::Model >();
-	srdf_model_->initString( *urdf_model_, createSRDFString());
+	srdf_model_->initString( *urdf_model_, createSRDFString() );
 
 	// Create RobotModel from URDF and SRDF
 	robot_model_ = std::make_shared< moveit::core::RobotModel >(

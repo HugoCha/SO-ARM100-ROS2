@@ -55,7 +55,7 @@ Eigen::Matrix3d MatrixExponential::ComputeRotation( double theta ) const
 
 	Eigen::Matrix3d R = Eigen::Matrix3d::Identity() +
 	                    sin( theta ) * w_hat +
-	                    ( 1 - cos( theta )) * ( w_hat * w_hat );
+	                    ( 1 - cos( theta ) ) * ( w_hat * w_hat );
 	return R;
 }
 
@@ -67,11 +67,12 @@ Eigen::Vector3d MatrixExponential::ComputeTranslation( double theta ) const
 	Eigen::Vector3d v = twist_.GetLinear();
 	Eigen::Matrix3d w_hat = SkewMatrix( w );
 
-	Eigen::Vector3d t = ( Eigen::Matrix3d::Identity() - ComputeRotation( theta )) *
+	Eigen::Vector3d t = ( Eigen::Matrix3d::Identity() - ComputeRotation( theta ) ) *
 	                    ( w_hat * v ) +
 	                    w * w.transpose() * v * theta;
 	return t;
 }
 
 // ------------------------------------------------------------
+
 }

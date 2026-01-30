@@ -5,7 +5,7 @@
 
 #include <geometry_msgs/msg/pose.hpp>
 #include <moveit/macros/class_forward.hpp>
-#include <vector>
+#include <span>
 
 namespace moveit::core
 {
@@ -28,7 +28,7 @@ void Initialize(
 	double search_discretization );
 
 bool ForwardKinematic(
-	const std::vector< double >& joint_angles,
+	const std::span< const double >& joint_angles,
 	geometry_msgs::msg::Pose& pose );
 
 virtual bool InverseKinematic(
@@ -41,6 +41,6 @@ std::vector< Twist > twists_;
 Mat4d home_configuration_;
 
 bool ForwardKinematic( const VecXd& joint_angles, Mat4d& pose );
-bool CheckLimits( const std::vector< double >& joint_angles );
+bool CheckLimits( const std::span< const double >& joint_angles );
 };
 }
