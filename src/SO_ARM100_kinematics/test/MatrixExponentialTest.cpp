@@ -21,7 +21,7 @@ TEST_F( MatrixExponentialTest, ComputeTest )
 	Eigen::Vector3d axis( 0.0, 0.0, 1.0 );
 	Eigen::Vector3d point_on_axis( 0.0, 0.0, 0.0 );
 	Twist twist( axis, point_on_axis );
-	double theta = M_PI / 2;     // 90 degrees
+	double theta = M_PI / 2;         // 90 degrees
 
 	MatrixExponential matrix_exponential( twist, theta );
 	Eigen::Matrix4d result = matrix_exponential.Compute();
@@ -40,8 +40,8 @@ TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
 	Eigen::Vector3d axis( 0.0, 0.0, 1.0 );
 	Eigen::Vector3d point_on_axis( 0.0, 0.0, 0.0 );
 	Twist twist( axis, point_on_axis );
-	double theta1 = M_PI / 2;     // 90 degrees
-	double theta2 = M_PI / 2;     // 90 degrees
+	double theta1 = M_PI / 2;         // 90 degrees
+	double theta2 = M_PI / 2;         // 90 degrees
 
 	MatrixExponential matrix_exponential1( twist, theta1 );
 	MatrixExponential matrix_exponential2( twist, theta2 );
@@ -61,7 +61,7 @@ TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
 	Eigen::Vector3d axis( 0.0, 0.0, 1.0 );
 	Eigen::Vector3d point_on_axis( 0.0, 0.0, 0.0 );
 	Twist twist( axis, point_on_axis );
-	double theta = M_PI / 2;     // 90 degrees
+	double theta = M_PI / 2;         // 90 degrees
 
 	MatrixExponential matrix_exponential( twist, theta );
 	Eigen::Matrix4d input_matrix = Eigen::Matrix4d::Identity();

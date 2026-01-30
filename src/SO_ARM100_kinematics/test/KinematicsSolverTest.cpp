@@ -35,7 +35,7 @@ protected:
 void SetUp() override
 {
 	// Initialize ROS context for logger support
-	if ( !rclcpp::ok())
+	if ( !rclcpp::ok() )
 	{
 		int argc = 0;
 		char** argv = nullptr;
@@ -184,7 +184,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsHomePosition )
 TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
 {
 	// Rotate joint_1 (z-axis) by 90 degrees (pi/2 radians)
-	std::vector< double > joint_angles = { 1.5708, 0.0, 0.0 }; // pi/2 ≈ 1.5708
+	std::vector< double > joint_angles = { 1.5708, 0.0, 0.0 };     // pi/2 ≈ 1.5708
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );
@@ -205,7 +205,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ
 TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
 {
 	// Rotate joint_2 (y-axis) by 90 degrees (pi/2 radians)
-	std::vector< double > joint_angles = { 0.0, 1.5708, 0.0 }; // pi/2 ≈ 1.5708
+	std::vector< double > joint_angles = { 0.0, 1.5708, 0.0 };     // pi/2 ≈ 1.5708
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );
@@ -227,7 +227,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY
 TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithCombinedMovements )
 {
 	// joint_1: 45 degrees, joint_2: 30 degrees, joint_3: 0
-	std::vector< double > joint_angles = { 0.7854, 0.5236, 0.0 }; // pi/4 ≈ 0.7854, pi/6 ≈ 0.5236
+	std::vector< double > joint_angles = { 0.7854, 0.5236, 0.0 };     // pi/4 ≈ 0.7854, pi/6 ≈ 0.5236
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );
@@ -249,7 +249,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithCombinedMovements
 TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 {
 	// All joints moving: rev_z, rev_y, rev_z
-	std::vector< double > joint_angles = { 1.5708, 0.7854, 0.3927 }; // Various angles
+	std::vector< double > joint_angles = { 1.5708, 0.7854, 0.3927 };     // Various angles
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );

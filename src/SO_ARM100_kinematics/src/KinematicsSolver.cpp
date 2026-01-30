@@ -101,7 +101,7 @@ bool KinematicsSolver::ForwardKinematic(
 {
 	Mat4d T_end;
 	VecXd joints = ToVecXd( joint_angles );
-	if ( ForwardKinematic( joints, T_end ))
+	if ( ForwardKinematic( joints, T_end ) )
 	{
 		pose = ToPoseMsg( T_end );
 		return true;
@@ -121,7 +121,7 @@ bool KinematicsSolver::ForwardKinematic(
 		return false;
 	}
 
-	if ( joint_angles.size() != twists_.size())
+	if ( joint_angles.size() != twists_.size() )
 	{
 		RCLCPP_ERROR(
 			get_logger(),
@@ -153,7 +153,7 @@ bool KinematicsSolver::CheckLimits( const std::vector< double >& joint_angles )
 	const auto& active_joints = robot_model_->getActiveJointModels();
 	int joint_index = 0;
 	int active_joint_count = active_joints.size();
-	if ( active_joint_count != joint_angles.size())
+	if ( active_joint_count != joint_angles.size() )
 	{
 		return false;
 	}
@@ -168,7 +168,7 @@ bool KinematicsSolver::CheckLimits( const std::vector< double >& joint_angles )
 		}
 
 		const auto& joint_bound = joint_model->getVariableBounds();
-		if ( !joint_bound.empty())
+		if ( !joint_bound.empty() )
 		{
 			auto joint_angle = joint_angles[joint_index];
 			if ( joint_angle > joint_bound[0].max_position_ ||

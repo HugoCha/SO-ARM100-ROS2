@@ -57,7 +57,7 @@ Mat6d Adjoint( const Mat4d& transform )
 MatXd SpaceJacobian( const std::vector< Twist >& space_twists, const VecXd& joint_angles )
 {
 	int n = space_twists.size();
-	if ( n != joint_angles.size())
+	if ( n != joint_angles.size() )
 	{
 		throw std::invalid_argument(
 				  "Size mismatch: expected " + std::to_string( n ) +

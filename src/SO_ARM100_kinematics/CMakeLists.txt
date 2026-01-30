@@ -36,12 +36,8 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+endif()
 
-  ament_uncrustify(
-    CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/uncrustify.cfg
-  )
-  endif()
-  
 include_directories(include)
 ament_export_include_directories(include)
 
@@ -59,6 +55,10 @@ ament_target_dependencies(${PROJECT_NAME}
 pluginlib_export_plugin_description_file( kinematics_base so_arm100_kinematics_plugin.xml )
 
 ament_export_libraries(so_arm100_kinematics_plugin)
+
+install(
+  FILES uncrustify.cfg
+  DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION share/${PROJECT_NAME}/lib)
