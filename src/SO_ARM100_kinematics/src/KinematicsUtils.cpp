@@ -88,22 +88,15 @@ void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexc
 
 // ------------------------------------------------------------
 
-Vec6d PoseError( const Mat4d& target, const Mat4d& current ) noexcept
+void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept
 {
-	Vec6d error;
+	// Translation
+	pose_error.head( 3 ).noalias() = Translation( target ) - Translation( current );
 
-	Vec3d t_target = Translation( target );
-	Vec3d t_current = Translation( current );
-	error.head( 3 ) = t_target - t_current;
-
-	Mat3d R_target = Rotation( target );
-	Mat3d R_current = Rotation( current );
-	Mat3d R_error = R_current.transpose() * R_target;
-
+	// Rotation
+	Mat3d R_error = Rotation( current ).transpose() * Rotation( target );
 	Eigen::AngleAxisd aa_error( R_error );
-	error.tail( 3 ) = aa_error.angle() * aa_error.axis();
-
-	return error;
+	pose_error.tail( 3 ).noalias() = aa_error.angle() * aa_error.axis();
 }
 
 // ------------------------------------------------------------

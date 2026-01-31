@@ -21,5 +21,5 @@ void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept;
 void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept;
 void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexcept;
 
-[[nodiscard]] Vec6d PoseError( const Mat4d& target, const Mat4d& current ) noexcept;
+void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept;
 }

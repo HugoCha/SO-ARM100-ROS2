@@ -13,7 +13,8 @@ HybridKinematicsSolver();
 
 virtual bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
-	std::vector< double >& joint_angles ) override;
+	const std::span< const double >& seed_joints,
+	std::vector< double >& joints ) const override;
 
 private:
 Mat4d ComputeWristCenterPose( const geometry_msgs::msg::Pose& target_pose );

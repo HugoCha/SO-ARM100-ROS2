@@ -4,6 +4,7 @@
 #include "Types.hpp"
 
 #include <Eigen/Geometry>
+#include <rclcpp/exceptions/exceptions.hpp>
 
 namespace SOArm100::Kinematics
 {
@@ -61,7 +62,9 @@ DLSKinematicsSolver& operator = ( const DLSKinematicsSolver& ) = delete;
 DLSKinematicsSolver( DLSKinematicsSolver&& ) noexcept = default;
 DLSKinematicsSolver& operator = ( DLSKinematicsSolver&& ) noexcept = default;
 
-[[nodiscard]] IKResult SolveIK( const geometry_msgs::msg::Pose& target_pose );
+[[nodiscard]] IKResult SolveIK(
+	const geometry_msgs::msg::Pose& target_pose,
+	const std::span< const double >& seed_joints ) const;
 
 void SetConfig( const SolverParameters& parameters ) noexcept {
 	parameters_ = parameters;
@@ -73,7 +76,8 @@ void SetConfig( const SolverParameters& parameters ) noexcept {
 
 virtual bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
-	std::vector< double >& joint_angles ) override;
+	const std::span< const double >& seed_joints,
+	std::vector< double >& joint_angles ) const override;
 
 private:
 struct SolverBuffers {
@@ -81,9 +85,13 @@ struct SolverBuffers {
 	MatXd damped;
 	MatXd jac_transpose;
 	VecXd dq;
-	VecXd error;
+	Vec6d error;
 	Mat4d fk;
 	Eigen::LDLT< MatXd > ldlt_solver;
+
+	[[nodiscard]] inline size_t GetSize() const noexcept {
+		return dq.size();
+	}
 
 	explicit SolverBuffers( size_t n_joints )
 	{
@@ -91,7 +99,6 @@ struct SolverBuffers {
 		damped.resize( n_joints, n_joints );
 		jac_transpose.resize( n_joints, 6 );
 		dq.resize( n_joints );
-		error.resize( 6 );
 	}
 };
 
@@ -107,12 +114,14 @@ SolverParameters parameters_;
 mutable SolverBuffers buffers_{ 6 };  // Taille par défaut
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
-	const Mat4d& target ) const;
+	const Mat4d& target, const VecXd& initial_joints ) const;
+
+[[nodiscard]] const VecXd RandomValidJoints() const noexcept;
 
 void PerformIteration(
 	const Mat4d& target,
 	IterationState& state,
-	SolverBuffers& buffers );
+	SolverBuffers& buffers ) const;
 
 [[nodiscard]] SolverState EvaluateConvergence(
 	const IterationState& state,
@@ -128,20 +137,6 @@ void UpdateDeltaQ(
 	const VecXd& error,
 	const MatXd& damped,
 	VecXd& dq_out ) const;
-
-VecXd InitializeJointAngles();
-VecXd RandomValidJointAngles();
-bool Initialize(
-	const Mat4d& target,
-	const VecXd& initial_joints,
-	Mat4d& fk,
-	MatXd& jacobian,
-	VecXd& pose_error,
-	double& error,
-	double& damping_factor,
-	double& step,
-	MatXd& damped,
-	VecXd& dq );
 
 [[nodiscard]] constexpr double BacktrackStep( double step ) const noexcept {
 	return std::max( step * 0.5, parameters_.min_step );

@@ -3,14 +3,18 @@
 #include "Converter.hpp"
 #include "MatrixExponential.hpp"
 
+#include <cassert>
 #include <moveit/robot_model/joint_model.hpp>
 #include <moveit/robot_model/link_model.hpp>
+#include <moveit/robot_model/prismatic_joint_model.hpp>
 #include <moveit/robot_model/robot_model.hpp>
 #include <moveit/robot_state/robot_state.hpp>
 #include <rclcpp/logger.hpp>
 
 namespace SOArm100::Kinematics
 {
+
+// ------------------------------------------------------------
 
 static rclcpp::Logger get_logger()
 {
@@ -41,21 +45,16 @@ void KinematicsSolver::Initialize(
 {
 	RCLCPP_INFO( get_logger(), "Initializing KinematicsSolver for group: %s",
 	             group_name.c_str() );
-	robot_model_ = robot_model;
 
-	moveit::core::RobotState state( robot_model_ );
-	state.setToDefaultValues();
-
-	const auto* joint_group = robot_model_->getJointModelGroup( group_name );
-	if ( !joint_group )
+	if ( !AreValidInitializeParameters( robot_model, group_name, base_frame, tip_frames, search_discretization ) )
 	{
-		RCLCPP_ERROR( get_logger(), "Joint model group %s not found in robot model.",
-		              group_name.c_str() );
 		return;
 	}
 
-	const auto& joint_models = joint_group->getActiveJointModels();
-
+	moveit::core::RobotState state( robot_model );
+	state.setToDefaultValues();
+	joint_model_ = robot_model->getJointModelGroup( group_name );
+	const auto& joint_models = joint_model_->getActiveJointModels();
 	home_configuration_ = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
 
 	twists_.clear();
@@ -63,15 +62,6 @@ void KinematicsSolver::Initialize(
 
 	for ( const auto* joint_model : joint_models )
 	{
-		if ( joint_model->getType() != moveit::core::JointModel::REVOLUTE &&
-		     joint_model->getType() != moveit::core::JointModel::FIXED )
-		{
-			RCLCPP_WARN( get_logger(),
-			             "Joint %s is not fixed, revolute or prismatic. Skipping.",
-			             joint_model->getName().c_str() );
-			continue;
-		}
-
 		Eigen::Vector3d axis;
 		if ( joint_model->getType() == moveit::core::JointModel::FIXED )
 		{
@@ -82,6 +72,13 @@ void KinematicsSolver::Initialize(
 		{
 			const auto* revolute_joint_model =
 				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
+			axis = revolute_joint_model->getAxis();
+		}
+		else
+		if ( joint_model->getType() == moveit::core::JointModel::PRISMATIC )
+		{
+			const auto* revolute_joint_model =
+				static_cast< const moveit::core::PrismaticJointModel* >( joint_model );
 			axis = revolute_joint_model->getAxis();
 		}
 
@@ -99,7 +96,7 @@ void KinematicsSolver::Initialize(
 
 bool KinematicsSolver::ForwardKinematic(
 	const std::span< const double >& joint_angles,
-	geometry_msgs::msg::Pose& pose )
+	geometry_msgs::msg::Pose& pose ) const
 {
 	Mat4d T_end;
 	VecXd joints = ToVecXd( joint_angles );
@@ -115,11 +112,11 @@ bool KinematicsSolver::ForwardKinematic(
 
 bool KinematicsSolver::ForwardKinematic(
 	const VecXd& joint_angles,
-	Mat4d& pose )
+	Mat4d& pose ) const
 {
-	if ( !robot_model_ )
+	if ( !joint_model_ )
 	{
-		RCLCPP_ERROR( get_logger(), "Robot model not initialized." );
+		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
 
@@ -144,43 +141,46 @@ bool KinematicsSolver::ForwardKinematic(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::CheckLimits( const std::span< const double >& joint_angles )
+bool KinematicsSolver::AreValidInitializeParameters(
+	const moveit::core::RobotModelConstPtr& robot_model,
+	const std::string& group_name,
+	const std::string& base_frame,
+	const std::vector< std::string >& tip_frames,
+	double search_discretization ) const noexcept
 {
-	if ( !robot_model_ )
+	if ( !robot_model )
 	{
+		RCLCPP_ERROR( get_logger(), "Robot Model is null." );
 		return false;
 	}
 
-	const auto& active_joints = robot_model_->getActiveJointModels();
-	int joint_index = 0;
-	int active_joint_count = active_joints.size();
-	if ( active_joint_count != joint_angles.size() )
+	const auto* joint_model = robot_model->getJointModelGroup( group_name );
+	if ( !joint_model )
 	{
+		RCLCPP_ERROR( get_logger(), "Joint model group %s not found in robot model.",
+		              group_name.c_str() );
+		return false;
+	}
+	if ( !joint_model->isChain() )
+	{
+		RCLCPP_ERROR( get_logger(), "Joint model group %s is not a chain.", group_name.c_str() );
+		return false;
+	}
+	if ( !joint_model->isSingleDOFJoints() )
+	{
+		RCLCPP_ERROR( get_logger(), "Joint model group %s is not composed of single joints.", group_name.c_str() );
 		return false;
 	}
 
-	while ( joint_index < active_joint_count )
-	{
-		const auto& joint_model = active_joints[joint_index];
-		if ( joint_model->getType() !=
-		     moveit::core::JointModel::JointType::REVOLUTE )
-		{
-			return false;
-		}
-
-		const auto& joint_bound = joint_model->getVariableBounds();
-		if ( !joint_bound.empty() )
-		{
-			auto joint_angle = joint_angles[joint_index];
-			if ( joint_angle > joint_bound[0].max_position_ ||
-			     joint_angle < joint_bound[0].min_position_ )
-			{
-				return false;
-			}
-		}
-		joint_index++;
-	}
 	return true;
+}
+
+// ------------------------------------------------------------
+
+bool KinematicsSolver::CheckLimits( const std::span< const double >& joint_angles ) const
+{
+	assert( joint_model_ != nullptr );
+	return joint_model_->satisfiesPositionBounds( & joint_angles[0] );
 }
 
 // ------------------------------------------------------------

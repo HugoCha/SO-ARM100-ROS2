@@ -24,9 +24,10 @@ HybridKinematicsSolver::~HybridKinematicsSolver()
 
 bool HybridKinematicsSolver::InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
-	std::vector< double >& joint_angles )
+	const std::span< const double >& seed_joints,
+	std::vector< double >& joints ) const
 {
-	joint_angles.clear();
+	joints.clear();
 
 	return false;
 }

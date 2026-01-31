@@ -6,10 +6,24 @@
 
 #include <Eigen/Dense>
 #include <Eigen/src/SVD/JacobiSVD.h>
+#include <moveit/robot_model/joint_model.hpp>
+#include <moveit/robot_model/link_model.hpp>
+#include <moveit/robot_model/robot_model.hpp>
+#include <optional>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <vector>
 
 namespace SOArm100::Kinematics
 {
+
+// ------------------------------------------------------------
+
+static rclcpp::Logger get_logger()
+{
+	static rclcpp::Logger logger = rclcpp::get_logger( "DLSKinematicsSolver" );
+	return logger;
+}
 
 // ------------------------------------------------------------
 
@@ -32,14 +46,20 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 // ------------------------------------------------------------
 
 DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
-	const geometry_msgs::msg::Pose& target_pose )
+	const geometry_msgs::msg::Pose& target_pose,
+	const std::span< const double >& seed_joints ) const
 {
 	const Mat4d target = ToMat4d( target_pose );
 
-	auto state = InitializeState( target );
+	if ( buffers_.GetSize() != static_cast< int >( twists_.size() ) )
+	{
+		buffers_ = SolverBuffers{ twists_.size() };
+	}
+
+	auto state = InitializeState( target, ToVecXd( seed_joints ) );
 	if ( !state )
 	{
-		state = InitializeState( target );
+		state = InitializeState( target, RandomValidJoints() );
 		if ( !state )
 		{
 			return { SolverState::Failed, VecXd{}, 0.0, 0 };
@@ -56,7 +76,7 @@ DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 
 		if ( IsStalled( *state ) )
 		{
-			state = InitializeState( target );
+			state = InitializeState( target, RandomValidJoints() );
 			if ( !state )
 			{
 				return { SolverState::Stalled, VecXd{}, 0.0, iter };
@@ -75,9 +95,10 @@ DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 
 bool DLSKinematicsSolver::InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
-	std::vector< double >& joint_angles )
+	const std::span< const double >& seed_joints,
+	std::vector< double >& joint_angles ) const
 {
-	auto result = SolveIK( target_pose );
+	auto result = SolveIK( target_pose, seed_joints );
 
 	if ( result.Success() )
 	{
@@ -90,12 +111,52 @@ bool DLSKinematicsSolver::InverseKinematic(
 
 // ------------------------------------------------------------
 
+std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::InitializeState(
+	const Mat4d& target,
+	const VecXd& initial_joints ) const
+{
+	if ( initial_joints.size() != static_cast< int >( twists_.size() ) )
+	{
+		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
+		return std::nullopt;
+	}
+
+	IterationState state;
+	state.joints = initial_joints;
+
+	if ( !ForwardKinematic( state.joints, buffers_.fk ) )
+	{
+		RCLCPP_ERROR( get_logger(), "InitializeState: Forward Kinematics failed." );
+		return std::nullopt;
+	}
+
+	PoseError( target, buffers_.fk, buffers_.error );
+
+	state.step = parameters_.max_step;
+	state.damping = parameters_.min_damping;
+	state.fk_failures = 0;
+
+	return state;
+}
+
+// ------------------------------------------------------------
+
+const VecXd DLSKinematicsSolver::RandomValidJoints() const noexcept
+{
+	assert( joint_model_ != nullptr );
+	VecXd random( twists_.size() );
+	random_numbers::RandomNumberGenerator rng;
+	joint_model_->getVariableRandomPositions( rng, random.data() );
+	return random;
+}
+
+// ------------------------------------------------------------
+
 void DLSKinematicsSolver::PerformIteration(
 	const Mat4d& target,
 	IterationState& state,
-	SolverBuffers& buffers )
+	SolverBuffers& buffers ) const
 {
-	// Forward Kinematics
 	if ( !ForwardKinematic( state.joints, buffers.fk ) )
 	{
 		state.step = BacktrackStep( state.step );
@@ -104,14 +165,11 @@ void DLSKinematicsSolver::PerformIteration(
 		return;
 	}
 
-	// Calculer l'erreur
-	buffers.error = PoseError( target, buffers.fk );
+	PoseError( target, buffers.fk, buffers.error );
 	const double current_error = buffers.error.squaredNorm();
 
-	// Vérifier amélioration
 	if ( current_error < state.error )
 	{
-		// Amélioration → adapter les paramètres
 		state.error = current_error;
 
 		ComputeJacobianAndDamping( state.joints, state.damping, buffers );
@@ -123,16 +181,13 @@ void DLSKinematicsSolver::PerformIteration(
 	}
 	else
 	{
-		// Pas d'amélioration → backtrack
 		state.step = BacktrackStep( state.step );
 		state.damping = BacktrackDamping( state.damping );
 	}
 
-	// Calculer nouveau dq
 	ComputeJacobianAndDamping( state.joints, state.damping, buffers );
 	UpdateDeltaQ( buffers.jacobian, buffers.error, buffers.damped, buffers.dq );
 
-	// Mise à jour
 	state.joints.noalias() += state.step * buffers.dq;
 }
 

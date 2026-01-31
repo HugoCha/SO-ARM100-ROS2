@@ -1,11 +1,12 @@
 #include "KinematicsSolver.hpp"
 
+#include "RobotModelTestData.hpp"
+
 #include <cmath>
 #include <gtest/gtest.h>
 #include <moveit/robot_model/robot_model.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <srdfdom/model.h>
-#include <urdf_parser/urdf_parser.h>
+#include <span>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -14,7 +15,8 @@ class DummyKinematicsSolver : public KinematicsSolver
 public:
 bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
-	std::vector< double >& joint_angles ) override
+	const std::span< const double >& initial_joints,
+	std::vector< double >& joint_angles ) const override
 {
 	return false;
 }
@@ -42,22 +44,9 @@ void SetUp() override
 		rclcpp::init( argc, argv );
 	}
 
-	// Create URDF string for a simple robot with revolute joints only
-	urdf_model_ = urdf::parseURDF( createRevoluteOnlyRobotURDF() );
-	ASSERT_TRUE( urdf_model_ != nullptr ) << "Failed to parse URDF";
-
-	// Create SRDF model with arm group
-	srdf_model_ = std::make_shared< srdf::Model >();
-	srdf_model_->initString( *urdf_model_, createSRDFString() );
-
-	// Create RobotModel from URDF and SRDF
-	robot_model_ = std::make_shared< moveit::core::RobotModel >(
-		urdf_model_, srdf_model_ );
-	ASSERT_TRUE( robot_model_ != nullptr ) << "Failed to create RobotModel";
-
 	// Initialize solver with the robot model
 	solver_.Initialize(
-		robot_model_,
+		Data::GetRevoluteOnlyRobot(),
 		"arm",
 		"base_link",
 		{ "end_effector" },
@@ -68,90 +57,7 @@ void TearDown() override
 {
 }
 
-std::string createSRDFString() const
-{
-	return
-	    R"(
-                <?xml version="1.0"?>
-                <robot name="revolute_only_robot">
-                    <group name="arm">
-                        <joint name="joint_1_revolute_z"/>
-                        <joint name="joint_2_revolute_y"/>
-                        <joint name="joint_3_revolute_z"/>
-                    </group>
-                </robot>
-            )";
-}
-
-std::string createRevoluteOnlyRobotURDF() const
-{
-	return
-	    R"(
-        <?xml version="1.0"?>
-        <robot name="revolute_only_robot">
-            <!-- Base link -->
-            <link name="base_link">
-                <inertial>
-                    <mass value="1.0"/>
-                    <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-                </inertial>
-            </link>
-
-            <!-- Joint 1: Revolute (rotation around z-axis) -->
-            <joint name="joint_1_revolute_z" type="revolute">
-                <parent link="base_link"/>
-                <child link="link_1"/>
-                <origin xyz="0 0 0" rpy="0 0 0"/>
-                <axis xyz="0 0 1"/>
-                <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
-            </joint>
-
-            <link name="link_1">
-                <inertial>
-                    <mass value="1.0"/>
-                    <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-                </inertial>
-            </link>
-
-            <!-- Joint 2: Revolute (rotation around y-axis) -->
-            <joint name="joint_2_revolute_y" type="revolute">
-                <parent link="link_1"/>
-                <child link="link_2"/>
-                <origin xyz="0.5 0 0" rpy="0 0 0"/>
-                <axis xyz="0 1 0"/>
-                <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
-            </joint>
-
-            <link name="link_2">
-                <inertial>
-                    <mass value="1.0"/>
-                    <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-                </inertial>
-            </link>
-
-            <!-- Joint 3: Revolute (rotation around z-axis) -->
-            <joint name="joint_3_revolute_z" type="revolute">
-                <parent link="link_2"/>
-                <child link="end_effector"/>
-                <origin xyz="0.5 0 0" rpy="0 0 0"/>
-                <axis xyz="0 0 1"/>
-                <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
-            </joint>
-
-            <link name="end_effector">
-                <inertial>
-                    <mass value="0.5"/>
-                    <inertia ixx="0.005" ixy="0.0" ixz="0.0" iyy="0.005" iyz="0.0" izz="0.005"/>
-                </inertial>
-            </link>
-        </robot>
-    )";
-}
-
 protected:
-urdf::ModelInterfaceSharedPtr urdf_model_;
-std::shared_ptr< srdf::Model > srdf_model_;
-moveit::core::RobotModelPtr robot_model_;
 DummyKinematicsSolver solver_;
 };
 
