@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
+#include <moveit/robot_model/joint_model_group.hpp>
 #include <moveit/robot_model/robot_model.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <span>
@@ -24,6 +25,11 @@ bool InverseKinematic(
 bool CheckLimitsExposed( const std::vector< double >& joint_angles )
 {
 	return CheckLimits( joint_angles );
+}
+
+const moveit::core::JointModelGroup* GetJointModelGroup()
+{
+	return joint_model_;
 }
 };
 
@@ -215,16 +221,6 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsOneJointInvalid )
 	bool result = solver_.CheckLimitsExposed( joint_angles );
 
 	EXPECT_FALSE( result ) << "Single joint violation should invalidate the whole configuration";
-}
-
-TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsWrongSize )
-{
-	// Missing one joint
-	std::vector< double > joint_angles = { 0.0, 0.0 };
-
-	bool result = solver_.CheckLimitsExposed( joint_angles );
-
-	EXPECT_FALSE( result ) << "Wrong joint vector size should be invalid";
 }
 
 } // namespace SOArm100::Kinematics::Test

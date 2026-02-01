@@ -29,8 +29,8 @@ Mat4d ToMat4d( const geometry_msgs::msg::Pose& pose_msg )
 	    pose_msg.position.y,
 	    pose_msg.position.z;
 
-	Eigen::Quaterniond quaternion( pose_msg.orientation.x, pose_msg.orientation.y,
-	                               pose_msg.orientation.z, pose_msg.orientation.w );
+	Eigen::Quaterniond quaternion( pose_msg.orientation.w, pose_msg.orientation.x,
+	                               pose_msg.orientation.y, pose_msg.orientation.z );
 
 	pose.block< 3, 3 >( 0, 0 ) = quaternion.normalized().toRotationMatrix();
 

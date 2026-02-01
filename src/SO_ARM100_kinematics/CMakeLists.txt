@@ -27,9 +27,21 @@ file(GLOB SOURCE_FILES src/*.cpp)
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-  find_package(ament_cmake_uncrustify REQUIRED)
+find_package(ament_cmake_gtest REQUIRED)
+find_package(ament_cmake_cppcheck REQUIRED)
+find_package(ament_cmake_uncrustify REQUIRED)
+find_package(code_style REQUIRED)
 
+  file(GLOB INCLUDE_FILES include/*.hpp)
+  file(GLOB TEST_FILES test/*Test.cpp)
+  file(GLOB TEST_INCLUDE_FILES test/include/*.hpp)
+
+  set(ALL_LINT_FILES
+    ${INCLUDE_FILES}
+    ${SOURCE_FILES}
+    ${TEST_FILES}
+    ${TEST_INCLUDE_FILES}
+  )
   # ------------------------------------------------------------
   # Test utility library (shared test code)
   # ------------------------------------------------------------
@@ -52,7 +64,6 @@ if(BUILD_TESTING)
   # ------------------------------------------------------------
 
   # Add all unit test files from test folder
-  file(GLOB TEST_FILES test/*Test.cpp)
   foreach(TEST_FILE ${TEST_FILES})
 
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
@@ -66,29 +77,28 @@ if(BUILD_TESTING)
   endforeach()
 
   # ------------------------------------------------------------
-  # Lint
+  # cpp_check
   # ------------------------------------------------------------
 
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-  set(UNCRUSTIFY_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/uncrustify.cfg")
+  ament_cppcheck( ${ALL_LINT_FILES} )
+
+  # ------------------------------------------------------------
+  # Uncrustify
+  # ------------------------------------------------------------
+
+  set(UNCRUSTIFY_CONFIG_FILE "${code_style_DIR}/../uncrustify.cfg")
 
   # Add an ament_uncrustify test explicitly
   ament_uncrustify(
     TARGET so_arm100_kinematics_uncrustify
     CONFIG_FILE "${UNCRUSTIFY_CONFIG_FILE}"
-    FILES
-      ${SOURCE_FILES}
-      ${TEST_FILES}
-      ${TEST_INCLUDE_FILES}
+    FILES ${ALL_LINT_FILES}
   )
 
 endif()
 
 include_directories(include)
 ament_export_include_directories(include)
-
-
 
 ament_target_dependencies(${PROJECT_NAME}
                           pluginlib
