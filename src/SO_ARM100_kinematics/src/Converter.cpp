@@ -1,6 +1,7 @@
 #include "Converter.hpp"
 
 #include <Eigen/Geometry>
+#include <sstream>
 
 namespace SOArm100::Kinematics
 {
@@ -55,6 +56,28 @@ geometry_msgs::msg::Pose ToPoseMsg( const Mat4d& matrix )
 	pose_msg.orientation.w = quaternion.w();
 
 	return pose_msg;
+}
+
+// ------------------------------------------------------------
+
+std::string ToString( const geometry_msgs::msg::Pose& pose )
+{
+	std::ostringstream oss;
+
+	// Format the position (x, y, z)
+	oss << "Position: ("
+	    << pose.position.x << ", "
+	    << pose.position.y << ", "
+	    << pose.position.z << ") ";
+
+	// Format the orientation (x, y, z, w)
+	oss << "Orientation: ("
+	    << pose.orientation.x << ", "
+	    << pose.orientation.y << ", "
+	    << pose.orientation.z << ", "
+	    << pose.orientation.w << ")";
+
+	return oss.str();
 }
 
 // ------------------------------------------------------------

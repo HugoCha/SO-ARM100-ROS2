@@ -66,7 +66,7 @@ DLSKinematicsSolver& operator = ( DLSKinematicsSolver&& ) noexcept = default;
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints ) const;
 
-void SetConfig( const SolverParameters& parameters ) noexcept {
+void SetParameters( const SolverParameters& parameters ) noexcept {
 	parameters_ = parameters;
 }
 

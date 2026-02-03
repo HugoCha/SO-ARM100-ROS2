@@ -8,6 +8,7 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
+// ------------------------------------------------------------
 
 class ConvertTest : public ::testing::Test
 {
@@ -18,6 +19,7 @@ void TearDown() override {
 }
 };
 
+// ------------------------------------------------------------
 // ------------------------------------------------------------
 
 TEST_F( ConvertTest, ToVecXdTest )
@@ -73,9 +75,9 @@ TEST_F( ConvertTest, ToMat4dTest )
 	Eigen::Matrix3d R_expected = q.normalized().toRotationMatrix();
 	Eigen::Matrix3d R_actual = mat.block< 3, 3 >( 0, 0 );
 
-	EXPECT_TRUE( R_expected.isApprox( R_actual, 1e-12 ) ) 
-		<< "Expected = " << std::endl << R_expected << std::endl 
-		<< "Actual = " 	 << std::endl << R_actual << std::endl;
+	EXPECT_TRUE( R_expected.isApprox( R_actual, 1e-12 ) )
+	    << "Expected = " << std::endl << R_expected << std::endl
+	    << "Actual = "   << std::endl << R_actual << std::endl;
 }
 
 // ------------------------------------------------------------

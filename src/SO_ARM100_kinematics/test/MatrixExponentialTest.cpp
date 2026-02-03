@@ -4,6 +4,10 @@
 
 namespace SOArm100::Kinematics::Test
 {
+
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+
 class MatrixExponentialTest : public ::testing::Test
 {
 protected:
@@ -15,6 +19,9 @@ void TearDown() override
 {
 }
 };
+
+// ------------------------------------------------------------
+// ------------------------------------------------------------
 
 TEST_F( MatrixExponentialTest, ComputeTest )
 {
@@ -34,6 +41,8 @@ TEST_F( MatrixExponentialTest, ComputeTest )
 
 	ASSERT_TRUE( result.isApprox( expected ) );
 }
+
+// ------------------------------------------------------------
 
 TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
 {
@@ -56,6 +65,8 @@ TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
 	ASSERT_TRUE( result.isApprox( expected ) );
 }
 
+// ------------------------------------------------------------
+
 TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
 {
 	Eigen::Vector3d axis( 0.0, 0.0, 1.0 );
@@ -75,4 +86,7 @@ TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
 
 	ASSERT_TRUE( result.isApprox( expected ) );
 }
+
+// ------------------------------------------------------------
+
 } // namespace SOArm100::Kinematics::Test

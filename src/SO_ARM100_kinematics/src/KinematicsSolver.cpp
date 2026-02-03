@@ -67,23 +67,21 @@ void KinematicsSolver::Initialize(
 		{
 			axis = Eigen::Vector3d::Zero();
 		}
-		else
-		if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
+		else if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
 		{
 			const auto* revolute_joint_model =
 				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
 			axis = revolute_joint_model->getAxis();
 		}
-		else
-		if ( joint_model->getType() == moveit::core::JointModel::PRISMATIC )
+		else if ( joint_model->getType() == moveit::core::JointModel::PRISMATIC )
 		{
-			const auto* revolute_joint_model =
+			const auto* prismatic_joint_model =
 				static_cast< const moveit::core::PrismaticJointModel* >( joint_model );
-			axis = revolute_joint_model->getAxis();
+			axis = prismatic_joint_model->getAxis();
 		}
 
 		const auto& joint_transform =
-			state.getGlobalLinkTransform( joint_model->getParentLinkModel() );
+			state.getGlobalLinkTransform( joint_model->getChildLinkModel() );
 
 		const Eigen::Vector3d axis_world = joint_transform.rotation() * axis;
 		const Eigen::Vector3d point_on_axis_world = joint_transform.translation();

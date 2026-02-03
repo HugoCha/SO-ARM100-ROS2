@@ -8,30 +8,6 @@
 
 namespace SOArm100::Kinematics
 {
-// ------------------------------------------------------------
-
-Mat3d SkewMatrix( const Eigen::Vector3d& vec )
-{
-	Mat3d skew;
-	skew << 0, -vec.z(), vec.y(),
-	    vec.z(), 0, -vec.x(),
-	    -vec.y(), vec.x(), 0;
-	return skew;
-}
-
-// ------------------------------------------------------------
-
-Mat3d Rotation( const Mat4d& matrix ) noexcept
-{
-	return matrix.block< 3, 3 >( 0, 0 );
-}
-
-// ------------------------------------------------------------
-
-Vec3d Translation( const Mat4d& matrix ) noexcept
-{
-	return matrix.block< 3, 1 >( 0, 3 );
-}
 
 // ------------------------------------------------------------
 
@@ -43,15 +19,15 @@ void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept
 	adjoint.setZero();
 	adjoint.block< 3, 3 >( 0, 0 ) = R;
 	adjoint.block< 3, 3 >( 3, 3 ) = R;
-	adjoint.block< 3, 3 >( 0, 3 ) = SkewMatrix( t ) * R;
+	adjoint.block< 3, 3 >( 3, 0 ) = SkewMatrix( t ) * R;
 }
 
 // ------------------------------------------------------------
 
 void SpaceJacobian(
-	std::span< const Twist > space_twists,
+	const std::span< const Twist >& space_twists,
 	const VecXd& joint_angles,
-	MatXd& jacobian )
+	MatXd& jacobian ) noexcept
 {
 	const size_t n = space_twists.size();
 	if ( static_cast< size_t >( jacobian.cols() ) != n )

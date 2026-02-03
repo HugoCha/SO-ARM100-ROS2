@@ -4,6 +4,10 @@
 
 namespace SOArm100::Kinematics::Test
 {
+
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+
 class TwistTest : public ::testing::Test
 {
 protected:
@@ -16,6 +20,9 @@ void TearDown() override
 }
 };
 
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+
 TEST_F( TwistTest, ConstructorWithPointOnAxis )
 {
 	Eigen::Vector3d axis( 0.0, 0.0, 1.0 );
@@ -27,6 +34,8 @@ TEST_F( TwistTest, ConstructorWithPointOnAxis )
 	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized() ) );
 	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) );
 }
+
+// ------------------------------------------------------------
 
 TEST_F( TwistTest, ConstructorWithTransform )
 {
@@ -42,5 +51,7 @@ TEST_F( TwistTest, ConstructorWithTransform )
 	ASSERT_TRUE( twist.GetAxis().isApprox( axis.normalized() ) );
 	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) );
 }
+
+// ------------------------------------------------------------
 
 } // namespace SOArm100::Kinematics::Test

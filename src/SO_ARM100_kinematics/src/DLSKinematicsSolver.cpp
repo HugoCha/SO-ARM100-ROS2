@@ -132,6 +132,7 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 
 	PoseError( target, buffers_.fk, buffers_.error );
 
+	state.error = buffers_.error.squaredNorm();
 	state.step = parameters_.max_step;
 	state.damping = parameters_.min_damping;
 	state.fk_failures = 0;
@@ -165,6 +166,7 @@ void DLSKinematicsSolver::PerformIteration(
 		return;
 	}
 
+
 	PoseError( target, buffers.fk, buffers.error );
 	const double current_error = buffers.error.squaredNorm();
 
@@ -188,7 +190,17 @@ void DLSKinematicsSolver::PerformIteration(
 	ComputeJacobianAndDamping( state.joints, state.damping, buffers );
 	UpdateDeltaQ( buffers.jacobian, buffers.error, buffers.damped, buffers.dq );
 
-	state.joints.noalias() += state.step * buffers.dq;
+	// std::cerr << "Joints = " << std::endl << state.joints << std::endl;
+	// std::cerr << "dq = " << std::endl << buffers.dq << std::endl;
+	// std::cerr << "Error = " << std::endl << buffers.error << std::endl;
+
+	// state.joints.noalias() += state.step * buffers.dq;
+	for ( int i = 0; i < state.joints.size(); i++ )
+	{
+		auto joint = state.joints[i];
+		auto dq = buffers.dq[i];
+		state.joints[i] = joint + dq;
+	}
 }
 
 // ------------------------------------------------------------
@@ -203,6 +215,8 @@ void DLSKinematicsSolver::ComputeJacobianAndDamping(
 	const int n = buffers.jacobian.cols();
 	buffers.damped.noalias() = buffers.jacobian.transpose() * buffers.jacobian;
 	buffers.damped.diagonal().array() += damping_factor * damping_factor;
+	// std::cerr << "Jac = " << std::endl << buffers.jacobian << std::endl;
+	// std::cerr << "Damped = " << std::endl << buffers.damped << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -216,6 +230,11 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 	buffers_.jac_transpose.noalias() = jacobian.transpose();
 	buffers_.ldlt_solver.compute( damped );
 	dq_out = buffers_.ldlt_solver.solve( buffers_.jac_transpose * error );
+
+	// std::cerr << "jac_transpose = " << std::endl << buffers_.jac_transpose << std::endl;
+	// std::cerr << "ldlt_solver = " << std::endl << buffers_.ldlt_solver.vectorD() << std::endl;
+	// std::cerr << "jac_transpose * error = " << std::endl << buffers_.jac_transpose * error << std::endl;
+	// std::cerr << "dq_out = " << std::endl << dq_out << std::endl;
 }
 
 // ------------------------------------------------------------

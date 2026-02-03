@@ -7,15 +7,26 @@
 
 namespace SOArm100::Kinematics
 {
-[[nodiscard]] Mat3d Rotation( const Mat4d& matrix ) noexcept;
-[[nodiscard]] Vec3d Translation( const Mat4d& matrix ) noexcept;
+[[nodiscard]] inline Mat3d Rotation( const Mat4d& matrix ) noexcept {
+	return matrix.block< 3, 3 >( 0, 0 );
+}
 
-[[nodiscard]] Mat3d SkewMatrix( const Vec3d& vec );
+[[nodiscard]] inline Vec3d Translation( const Mat4d& matrix ) noexcept {
+	return matrix.block< 3, 1 >( 0, 3 );
+}
+
+[[nodiscard]] constexpr Mat3d SkewMatrix( const Vec3d& vec ) noexcept {
+	Mat3d skew;
+	skew << 0, -vec.z(), vec.y(),
+	    vec.z(), 0, -vec.x(),
+	    -vec.y(), vec.x(), 0;
+	return skew;
+}
 
 void SpaceJacobian(
 	const std::span< const Twist >& space_twists,
 	const VecXd& joint_angles,
-	MatXd& jacobian );
+	MatXd& jacobian ) noexcept;
 
 void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept;
 void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept;
