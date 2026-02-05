@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
+#include <cmath>
 
 namespace SOArm100::Kinematics
 {
@@ -14,7 +15,7 @@ namespace SOArm100::Kinematics
 void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept
 {
 	const auto R = Rotation( transform );
-	const auto t = transform.block< 3, 1 >( 0, 3 );
+	const auto t = Translation( transform );
 
 	adjoint.setZero();
 	adjoint.block< 3, 3 >( 0, 0 ) = R;
@@ -37,7 +38,6 @@ void SpaceJacobian(
 	Mat6d adj_buf;
 
 	jacobian.col( 0 ) = static_cast< Vec6d >( space_twists[0] );
-
 	for ( size_t i = 1; i < n; ++i )
 	{
 		T_cumul *= static_cast< Mat4d >( MatrixExponential( space_twists[i - 1], joint_angles[i - 1] ) );
@@ -66,13 +66,23 @@ void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexc
 
 void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept
 {
-	// Translation
-	pose_error.head( 3 ).noalias() = Translation( target ) - Translation( current );
+	return WeightedPoseError( target, current, 1.0, 1.0, pose_error );
+}
 
-	// Rotation
-	Mat3d R_error = Rotation( current ).transpose() * Rotation( target );
-	Eigen::AngleAxisd aa_error( R_error );
-	pose_error.tail( 3 ).noalias() = aa_error.angle() * aa_error.axis();
+// ------------------------------------------------------------
+
+void WeightedPoseError(
+	const Mat4d& target,
+	const Mat4d& current,
+	double rotation_weight,
+	double translation_weight,
+	Vec6d& pose_error ) noexcept
+{
+	Mat4d T_diff;
+	T_diff.noalias() = target * current.inverse();
+	Eigen::AngleAxisd aa( Rotation( T_diff ) );
+	pose_error.head( 3 ).noalias() = rotation_weight * aa.axis() * aa.angle();
+	pose_error.tail( 3 ).noalias() = translation_weight * Translation( T_diff );
 }
 
 // ------------------------------------------------------------

@@ -3,12 +3,12 @@
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
+#include "Types.hpp"
 
 #include <cmath>
 #include <gtest/gtest.h>
 #include <moveit/robot_model/joint_model_group.hpp>
 #include <moveit/robot_model/robot_model.hpp>
-#include <ostream>
 #include <rclcpp/rclcpp.hpp>
 #include <span>
 
@@ -22,9 +22,9 @@ class DummyKinematicsSolver : public KinematicsSolver
 {
 public:
 bool InverseKinematic(
-	const geometry_msgs::msg::Pose& target_pose,
+	const Mat4d& target_pose,
 	const std::span< const double >& initial_joints,
-	std::vector< double >& joint_angles ) const override
+	VecXd& joint_angles ) const override
 {
 	return false;
 }
@@ -43,7 +43,7 @@ const moveit::core::JointModelGroup* GetJointModelGroup()
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class RevoluteOnlyKinematicsSolverTest : public ::testing::Test
+class KinematicsSolverTest : public ::testing::Test
 {
 protected:
 void SetUp() override
@@ -76,7 +76,7 @@ DummyKinematicsSolver solver_;
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsHomePosition )
+TEST_F( KinematicsSolverTest, ForwardKinematicsHomePosition )
 {
 	std::vector< double > joint_angles = { 0.0, 0.0, 0.0 };
 	geometry_msgs::msg::Pose end_effector_pose;
@@ -101,20 +101,19 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsHomePosition )
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
+TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
 {
 	// Rotate joint_1 (z-axis) by 90 degrees (pi/2 radians)
-	//std::vector< double > joint_angles = { 1.5708, 0.0, 0.0 };     // pi/2 ≈ 1.5708
-	std::vector< double > joint_angles = { 0, 0.0, 0.0 };     // pi/2 ≈ 1.5708
+	std::vector< double > joint_angles = { 1.5708 / 2, 0.0, 0.0 };     // pi/2 ≈ 1.5708
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with z-axis rotation";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform(joint_angles[0], joint_angles[1], joint_angles[2]);
-	auto translation = Translation(transform);
-	Eigen::Quaterniond quaternion( Rotation(transform) );
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto translation = Translation( transform );
+	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -129,7 +128,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
+TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
 {
 	// Rotate joint_2 (y-axis) by 90 degrees (pi/2 radians)
 	std::vector< double > joint_angles = { 0.0, 1.5708, 0.0 };     // pi/2 ≈ 1.5708
@@ -139,9 +138,9 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with y-axis rotation";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform(joint_angles[0], joint_angles[1], joint_angles[2]);
-	auto translation = Translation(transform);
-	Eigen::Quaterniond quaternion( Rotation(transform) );
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto translation = Translation( transform );
+	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -156,7 +155,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithCombinedMovements )
+TEST_F( KinematicsSolverTest, ForwardKinematicsWithCombinedMovements )
 {
 	// joint_1: 45 degrees, joint_2: 30 degrees, joint_3: 0
 	std::vector< double > joint_angles = { 0.7854, 0.5236, 0.0 };     // pi/4 ≈ 0.7854, pi/6 ≈ 0.5236
@@ -166,9 +165,9 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithCombinedMovements
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with combined movements";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform(joint_angles[0], joint_angles[1], joint_angles[2]);
-	auto translation = Translation(transform);
-	Eigen::Quaterniond quaternion( Rotation(transform) );
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto translation = Translation( transform );
+	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -183,7 +182,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsWithCombinedMovements
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
+TEST_F( KinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 {
 	// All joints moving: rev_z, rev_y, rev_z
 	std::vector< double > joint_angles = { 1.5708, 0.7854, 0.3927 };     // Various angles
@@ -193,10 +192,11 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with all joints in motion";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform(joint_angles[0], joint_angles[1], joint_angles[2]);
-	auto translation = Translation(transform);
-	Eigen::Quaterniond quaternion( Rotation(transform) );
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto translation = Translation( transform );
+	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
+	std::cout << "Expected = \n" << transform << std::endl;
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
 	EXPECT_NEAR( end_effector_pose.position.y, translation.y(), 1e-3 );
@@ -210,7 +210,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsValid )
+TEST_F( KinematicsSolverTest, CheckLimitsValid )
 {
 	// All joints within [-pi, pi]
 	std::vector< double > joint_angles = { 0.0, 0.5, -1.0 };
@@ -222,7 +222,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsValid )
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsBelowLowerLimit )
+TEST_F( KinematicsSolverTest, CheckLimitsBelowLowerLimit )
 {
 	// joint_1 lower limit is approx -pi
 	std::vector< double > joint_angles = { -4.0, 0.0, 0.0 };
@@ -234,7 +234,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsBelowLowerLimit )
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsAboveUpperLimit )
+TEST_F( KinematicsSolverTest, CheckLimitsAboveUpperLimit )
 {
 	// joint_2 upper limit is approx +pi
 	std::vector< double > joint_angles = { 0.0, 4.0, 0.0 };
@@ -246,7 +246,7 @@ TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsAboveUpperLimit )
 
 // ------------------------------------------------------------
 
-TEST_F( RevoluteOnlyKinematicsSolverTest, CheckLimitsOneJointInvalid )
+TEST_F( KinematicsSolverTest, CheckLimitsOneJointInvalid )
 {
 	std::vector< double > joint_angles = { 0.0, 0.0, 10.0 };
 

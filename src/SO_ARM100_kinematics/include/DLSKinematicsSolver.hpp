@@ -13,21 +13,24 @@ class DLSKinematicsSolver : public KinematicsSolver
 public:
 struct SolverParameters
 {
-	int max_iterations{ 100 };
+	int max_iterations{ 200 };
 	double error_tolerance{ 1e-4 };
-	double min_step{ 0.01 };
+	double min_step{ 0.1 };
 	double max_step{ 1.0 };
-	double min_damping{ 0.001 };
-	double max_damping{ 1.0 };
-	double epsilon_step{ 0.1 };
+	double min_damping{ 0.01 };
+	double max_damping{ 0.1 };
+	double epsilon_step{ 0.01 };
 	double min_sv_factor{ 10.0 };
-	int max_stale_iterations{ 5 };
+	int max_stalle_iterations{ 5 };
+	double translation_weight{ 10.0 };
+	double rotation_weight{ 1.0 };
 
 	[[nodiscard]] constexpr bool IsValid() const noexcept {
 		return max_iterations > 0 &&
 		       error_tolerance > 0 &&
 		       min_step > 0 && min_step <= max_step &&
-		       min_damping > 0 && min_damping <= max_damping;
+		       min_damping > 0 && min_damping <= max_damping &&
+		       translation_weight > 0 && rotation_weight > 0;
 	}
 };
 
@@ -50,6 +53,22 @@ struct IKResult
 	[[nodiscard]] bool Success() const noexcept {
 		return state == SolverState::Converged;
 	}
+
+private:
+	static constexpr const std::string SolverStateToString( const SolverState& solver_state )
+	{
+		switch ( solver_state )
+		{
+		case SolverState::Converged: return "Converged";
+		case SolverState::Improving: return "Improving";
+		case SolverState::Stalled: return "Stalled";
+		case SolverState::MaxIterations: return "MaxIterations";
+		case SolverState::Failed: return "Failed";
+		default: return "";
+		}
+	}
+
+	friend std::ostream& operator << ( std::ostream& os, const IKResult& obj );
 };
 
 explicit DLSKinematicsSolver();
@@ -58,13 +77,6 @@ explicit DLSKinematicsSolver( SolverParameters parameters );
 
 DLSKinematicsSolver( const DLSKinematicsSolver& ) = delete;
 DLSKinematicsSolver& operator = ( const DLSKinematicsSolver& ) = delete;
-
-DLSKinematicsSolver( DLSKinematicsSolver&& ) noexcept = default;
-DLSKinematicsSolver& operator = ( DLSKinematicsSolver&& ) noexcept = default;
-
-[[nodiscard]] IKResult SolveIK(
-	const geometry_msgs::msg::Pose& target_pose,
-	const std::span< const double >& seed_joints ) const;
 
 void SetParameters( const SolverParameters& parameters ) noexcept {
 	parameters_ = parameters;
@@ -75,9 +87,13 @@ void SetParameters( const SolverParameters& parameters ) noexcept {
 }
 
 virtual bool InverseKinematic(
-	const geometry_msgs::msg::Pose& target_pose,
+	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
-	std::vector< double >& joint_angles ) const override;
+	VecXd& joint_angles ) const override;
+
+[[nodiscard]] IKResult SolveIK(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints ) const;
 
 private:
 struct SolverBuffers {
@@ -87,6 +103,7 @@ struct SolverBuffers {
 	VecXd dq;
 	Vec6d error;
 	Mat4d fk;
+	VecXd joints;
 	Eigen::LDLT< MatXd > ldlt_solver;
 
 	[[nodiscard]] inline size_t GetSize() const noexcept {
@@ -108,18 +125,21 @@ struct IterationState {
 	double step;
 	double damping;
 	int fk_failures;
+	int stalled_error_iter;
 };
 
 SolverParameters parameters_;
-mutable SolverBuffers buffers_{ 6 };  // Taille par défaut
+mutable SolverBuffers buffers_{ 6 };      // Taille par défaut
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
+[[nodiscard]] const Mat6d InitializeWeightMatrix() const;
 
 [[nodiscard]] const VecXd RandomValidJoints() const noexcept;
 
 void PerformIteration(
 	const Mat4d& target,
+	const Mat6d& weights,
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
@@ -127,8 +147,9 @@ void PerformIteration(
 	const IterationState& state,
 	int iteration ) const noexcept;
 
-void ComputeJacobianAndDamping(
+void ComputeWeightedJacobianAndDamping(
 	const VecXd& joints,
+	const Mat6d& weights,
 	double damping_factor,
 	SolverBuffers& buffers ) const;
 
@@ -137,6 +158,11 @@ void UpdateDeltaQ(
 	const VecXd& error,
 	const MatXd& damped,
 	VecXd& dq_out ) const;
+
+void UpdateErrorConvergence(
+	double last_error, 
+	double current_error, 
+	IterationState& state ) const;
 
 [[nodiscard]] constexpr double BacktrackStep( double step ) const noexcept {
 	return std::max( step * 0.5, parameters_.min_step );
@@ -165,7 +191,8 @@ void UpdateDeltaQ(
 [[nodiscard]] bool IsStalled( const IterationState& state ) const noexcept {
 	return ( state.step <= parameters_.min_step &&
 	         state.damping >= parameters_.max_damping ) ||
-	       ( state.fk_failures >= parameters_.max_stale_iterations );
+		   ( state.stalled_error_iter >= parameters_.max_stalle_iterations ) ||
+	       ( state.fk_failures >= parameters_.max_stalle_iterations );
 }
 };
 }

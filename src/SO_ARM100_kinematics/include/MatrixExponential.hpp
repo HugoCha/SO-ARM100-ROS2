@@ -13,6 +13,7 @@ MatrixExponential( const Twist& twist, double theta );
 
 [[nodiscard]] Mat4d Compute() const;
 operator Mat4d () const;
+// operator Mat4d () const;
 Mat4d operator * ( const MatrixExponential& other ) const;
 Mat4d operator * ( const Mat4d& matrix ) const;
 

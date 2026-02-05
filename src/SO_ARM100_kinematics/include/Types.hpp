@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 namespace SOArm100::Kinematics
 {
@@ -13,4 +14,6 @@ using Mat3d = Eigen::Matrix3d;
 using Mat4d = Eigen::Matrix4d;
 using Mat6d = Eigen::Matrix< double, 6, 6 >;
 using MatXd = Eigen::MatrixXd;
+
+using Iso3d = Eigen::Isometry3d;
 }

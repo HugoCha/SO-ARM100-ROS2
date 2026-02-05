@@ -70,6 +70,10 @@ find_package(code_style REQUIRED)
 
     ament_add_gtest(${TEST_NAME} ${TEST_FILE})
 
+    set_target_properties(${TEST_NAME} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test
+    )
+
     target_link_libraries(${TEST_NAME}
       ${PROJECT_NAME}_test_utils 
       Eigen3::Eigen)

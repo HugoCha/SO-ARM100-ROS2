@@ -1,6 +1,7 @@
 #include "Converter.hpp"
+#include "Types.hpp"
 
-#include <Eigen/Geometry>
+#include <Eigen/Dense>
 #include <sstream>
 
 namespace SOArm100::Kinematics
@@ -60,7 +61,7 @@ geometry_msgs::msg::Pose ToPoseMsg( const Mat4d& matrix )
 
 // ------------------------------------------------------------
 
-std::string ToString( const geometry_msgs::msg::Pose& pose )
+const std::string ToString( const geometry_msgs::msg::Pose& pose )
 {
 	std::ostringstream oss;
 

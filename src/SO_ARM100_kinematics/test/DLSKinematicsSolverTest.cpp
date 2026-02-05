@@ -1,8 +1,12 @@
 #include "DLSKinematicsSolver.hpp"
 
 #include "Converter.hpp"
+#include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
+#include "Types.hpp"
 
+#include <Eigen/src/Geometry/AngleAxis.h>
+#include <Eigen/src/Geometry/Quaternion.h>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <moveit/robot_model/joint_model_group.hpp>
@@ -10,6 +14,7 @@
 #include <ostream>
 #include <rclcpp/rclcpp.hpp>
 #include <span>
+#include <vector>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -48,43 +53,55 @@ void TearDown() override
 }
 
 // Helper: Create a pose at a given position with identity orientation
-geometry_msgs::msg::Pose CreatePose( double x, double y, double z ) const
+const Mat4d CreatePose( double x, double y, double z ) const
 {
-	geometry_msgs::msg::Pose pose;
-	pose.position.x = x;
-	pose.position.y = y;
-	pose.position.z = z;
-	pose.orientation.w = 1.0;
-	pose.orientation.x = 0.0;
-	pose.orientation.y = 0.0;
-	pose.orientation.z = 0.0;
+	return CreatePose( x, y, z, Mat3d::Identity() );
+}
+
+const Mat4d CreatePose( double x, double y, double z, Mat3d orientation ) const
+{
+	Mat4d pose = Mat4d::Identity();
+
+	pose.block< 3, 3 >( 0, 0 ) = orientation;
+	pose.block< 3, 1 >( 0, 3 ) = Vec3d { x, y, z };
+
 	return pose;
 }
 
+const VecXd RandomValidJoints()
+{
+	const auto& robot_model = Data::GetRevoluteOnlyRobot();
+	const auto* joint_model = robot_model->getJointModelGroup( "arm" );
+	VecXd random( joint_model->getActiveJointModels().size() );
+	random_numbers::RandomNumberGenerator rng;
+	joint_model->getVariableRandomPositions( rng, random.data() );
+	return random;
+}
+
 // Helper: Check if two poses are approximately equal
-bool PosesEqual( const geometry_msgs::msg::Pose& p1,
-                 const geometry_msgs::msg::Pose& p2,
+bool PosesEqual( const Mat4d& p1,
+                 const Mat4d& p2,
                  double pos_tol = 0.01,
                  double rot_tol = 0.01 ) const
 {
-	bool pos_match = std::abs( p1.position.x - p2.position.x ) < pos_tol &&
-	                 std::abs( p1.position.y - p2.position.y ) < pos_tol &&
-	                 std::abs( p1.position.z - p2.position.z ) < pos_tol;
+	bool pos_match =
+		Translation( p1 ).isApprox( Translation( p2 ), pos_tol );
 
-	bool rot_match = std::abs( p1.orientation.w - p2.orientation.w ) < rot_tol &&
-	                 std::abs( p1.orientation.x - p2.orientation.x ) < rot_tol &&
-	                 std::abs( p1.orientation.y - p2.orientation.y ) < rot_tol &&
-	                 std::abs( p1.orientation.z - p2.orientation.z ) < rot_tol;
+	bool rot_match =
+		Rotation( p1 ).isApprox( Rotation( p2 ), rot_tol );
 
 	return pos_match && rot_match;
 }
 
 // Helper: Compute FK for given joint angles
-geometry_msgs::msg::Pose ComputeFK( const std::vector< double >& joints ) const
+const Mat4d ComputeFK( const std::vector< double >& joints ) const
 {
-	geometry_msgs::msg::Pose pose;
-	solver_->ForwardKinematic( joints, pose );
-	return pose;
+	Mat4d pose;
+	if ( solver_->ForwardKinematic( ToVecXd( joints ), pose ) )
+	{
+		return pose;
+	}
+	return Mat4d::Identity();
 }
 
 protected:
@@ -176,8 +193,17 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 {
 	// Target: end effector at (0.7, 0.0, 0.0)
-	auto target_pose = CreatePose( 0.7, 0.0, 0.0 );
+	double angleZ = 45.0 * M_PI / 180.0;
+	auto target_orientation = Eigen::AngleAxisd( angleZ, Vec3d::UnitZ() ).toRotationMatrix();
+	auto target_pose = CreatePose( cos( angleZ ), sin( angleZ ), 0.0, target_orientation );
+	target_pose << 0.76365280318792295,   -0.24468875983024496,     -0.597462808044119,  -0.099141262824949394,
+	    -0.32115939702921958,   -0.94675175743187068,  -0.022754153455847276, -0.0037757588886751514,
+	    -0.56008127792585183,    0.20925706824955959,   -0.80157372805284965,  -0.29894797143293017,
+	    0,                      0,                      0,                    1;
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
+	auto lParams = solver_->GetParameters();
+	lParams.max_iterations = 2000;
+	solver_->SetParameters( lParams );
 
 	auto result = solver_->SolveIK( target_pose, seed_joints );
 
@@ -186,10 +212,10 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 
 	// Verify solution
 	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
-	EXPECT_NEAR( achieved_pose.position.x, target_pose.position.x, 0.01 )
-	    << "Joints = " << result.joint_angles << std::endl;
-	EXPECT_NEAR( achieved_pose.position.y, target_pose.position.y, 0.01 );
-	EXPECT_NEAR( achieved_pose.position.z, target_pose.position.z, 0.01 );
+	EXPECT_TRUE( PosesEqual( achieved_pose, target_pose, 0.01, 0.01 ) )
+	    << "Target = " << std::endl << target_pose.matrix() << std::endl
+	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
+	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -208,9 +234,9 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 
 	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
 	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) )
-	    << "Target = " << std::endl << ToString( target_pose ) << std::endl
-	    << "Result = " << std::endl << ToString( achieved_pose ) << std::endl
-	    << "Joints = " << std::endl << result.joint_angles << std::endl;
+	    << "Target = " << std::endl << target_pose.matrix() << std::endl
+	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
+	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -230,7 +256,10 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 
 	// Verify it reaches the target (may be different joint config)
 	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
-	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) );
+	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.01, 0.01 ) )
+	    << "Target = " << std::endl << target_pose.matrix() << std::endl
+	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
+	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -318,18 +347,18 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
 
 TEST_F( DLSKinematicsSolverTest, InverseKinematic_Success )
 {
-	auto target_pose = CreatePose( 0.8, 0.0, 0.0 );
+	auto reachable_position = ComputeFK( { 0.1, 0.5, 0.7 } );
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	std::vector< double > solution_joints;
+	VecXd solution_joints;
 
-	bool success = solver_->InverseKinematic( target_pose, seed_joints, solution_joints );
+	bool success = solver_->InverseKinematic( reachable_position, seed_joints, solution_joints );
 
 	EXPECT_TRUE( success );
 	EXPECT_EQ( solution_joints.size(), 3 );
 
 	// Verify solution
-	auto achieved_pose = ComputeFK( solution_joints );
-	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) );
+	auto achieved_pose = ComputeFK( ToStdVector( solution_joints ) );
+	EXPECT_TRUE( PosesEqual( reachable_position, achieved_pose, 0.02 ) );
 }
 
 // ------------------------------------------------------------
@@ -338,7 +367,7 @@ TEST_F( DLSKinematicsSolverTest, InverseKinematic_Failure )
 {
 	auto target_pose = CreatePose( 100.0, 100.0, 100.0 );  // Unreachable
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	std::vector< double > solution_joints;
+	VecXd solution_joints;
 
 	bool success = solver_->InverseKinematic( target_pose, seed_joints, solution_joints );
 
@@ -356,7 +385,7 @@ TEST_F( DLSKinematicsSolverTest, AdaptiveDamping_NearSingularity )
 	auto target_pose = ComputeFK( near_singular );
 
 	// Perturb slightly to force solver to work near singularity
-	target_pose.position.x += 0.001;
+	target_pose( 0, 3 ) += 0.001;
 
 	auto result = solver_->SolveIK( target_pose, near_singular );
 
@@ -525,16 +554,12 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 	const int NUM_TESTS = 10;
 	int total_iterations = 0;
 	int successes = 0;
-
+	std::vector< double > seed { 0.0, 0.0, 0.0 };
 	for ( int i = 0; i < NUM_TESTS; ++i )
 	{
-		// Random target within workspace
-		double x = 0.3 + ( i * 0.05 );
-		double y = 0.0;
-		double z = 0.0;
-		auto target_pose = CreatePose( x, y, z );
+		Mat4d target_pose;
+		bool fk_success = solver_->ForwardKinematic( RandomValidJoints(), target_pose );
 
-		std::vector< double > seed = { 0.0, 0.0, 0.0 };
 		auto result = solver_->SolveIK( target_pose, seed );
 
 		if ( result.Success() )
@@ -560,13 +585,18 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 TEST_F( DLSKinematicsSolverTest, Robustness_RepeatedCalls )
 {
 	// Solver should work correctly even after multiple calls
-	auto target_pose = CreatePose( 0.7, 0.0, 0.0 );
+	Mat4d target_pose;
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
 
 	for ( int i = 0; i < 5; ++i )
 	{
+		while ( !solver_->ForwardKinematic( RandomValidJoints(), target_pose ) );
+
 		auto result = solver_->SolveIK( target_pose, seed );
-		EXPECT_TRUE( result.Success() ) << "Iteration " << i;
+		EXPECT_TRUE( result.Success() )
+		    << "Iteration " << i << std::endl
+		    << "Target = " << target_pose << std::endl
+		    << "Result = " << result << std::endl;
 	}
 }
 

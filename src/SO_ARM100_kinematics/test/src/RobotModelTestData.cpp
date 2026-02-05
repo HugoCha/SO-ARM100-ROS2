@@ -12,6 +12,7 @@
 #include <string>
 #include <srdfdom/model.h>
 #include <urdf_parser/urdf_parser.h>
+#include <vector>
 
 namespace SOArm100::Kinematics::Test::Data
 {
@@ -187,10 +188,6 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 	Mat4d T01 = GetRevoluteOnlyRobotT01( theta1 );
 	Mat4d T12 = GetRevoluteOnlyRobotT12( theta2 );
 	Mat4d T23 = GetRevoluteOnlyRobotT23( theta3 );
-
-    std::cout << T01 <<std::endl;
-    std::cout << T12 <<std::endl;
-    std::cout << T23 <<std::endl;
 	return T01 * T12 * T23;
 }
 
@@ -198,27 +195,27 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 
 std::vector< Twist > GetRevoluteOnlyRobotTwists()
 {
-    std::vector< Twist > twists;
+	std::vector< Twist > twists;
 
-    // // Configuration HOME (tous les angles à 0)
-    // Joint 1: Axe Z à l'origine
-    Vec3d axis1( 0, 0, 1 );           // Axe Z
-    Vec3d point1( 0, 0, 0 );          // Origine
-    twists.emplace_back( axis1, point1 );
-    
-    // Joint 2: Axe Y après translation de 0.5m en X
-    // À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
-    Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
-    Vec3d point2( 0.5, 0, 0 );        // Position à home
-    twists.emplace_back( axis2, point2 );
-    
-    // Joint 3: Axe Z après translation totale de 1.0m en X
-    // À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
-    Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
-    Vec3d point3( 1.0, 0, 0 );        // Position à home
-    twists.emplace_back( axis3, point3 );
+	// // Configuration HOME (tous les angles à 0)
+	// Joint 1: Axe Z à l'origine
+	Vec3d axis1( 0, 0, 1 );           // Axe Z
+	Vec3d point1( 0, 0, 0 );          // Origine
+	twists.emplace_back( axis1, point1 );
 
-    return twists;
+	// Joint 2: Axe Y après translation de 0.5m en X
+	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
+	Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
+	Vec3d point2( 0.5, 0, 0 );        // Position à home
+	twists.emplace_back( axis2, point2 );
+
+	// Joint 3: Axe Z après translation totale de 1.0m en X
+	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
+	Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
+	Vec3d point3( 1.0, 0, 0 );        // Position à home
+	twists.emplace_back( axis3, point3 );
+
+	return twists;
 }
 
 // ------------------------------------------------------------
@@ -230,30 +227,29 @@ MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 
 	const Mat4d& T01 = GetRevoluteOnlyRobotT01( theta1 );
 	const Mat4d& T12 = GetRevoluteOnlyRobotT12( theta2 );
 	const Mat4d& T23 = GetRevoluteOnlyRobotT23( theta3 );
-
 	const Mat4d& T02 = T01 * T12;
 	const Mat4d& T03 = T02 * T23;
 
+	const Mat3d R01 = Rotation( T01 );
+	const Mat3d R02 = Rotation( T02 );
+
 	Vec3d z0( 0, 0, 1 );
-	Vec3d p0 = Vec3d::Zero();
-
-	Mat3d R01 = Rotation( T01 );
-	Mat3d R02 = Rotation( T02 );
-
-	Vec3d p1 = Translation( T01 );
-	Vec3d p2 = Translation( T02 );
-	Vec3d pe = Translation( T03 );
-
-	Vec3d y1 = R01 * Vec3d(0, 1, 0);
+	Vec3d y1 = R01 * Vec3d( 0, 1, 0 );
 	Vec3d z2 = R02 * z0;
 
-	J.block< 3, 1 >( 0, 0 ) = z0.cross( pe - p0 );
-	J.block< 3, 1 >( 0, 1 ) = y1.cross( pe - p1 );
-	J.block< 3, 1 >( 0, 2 ) = z2.cross( pe - p2 );
+	Vec3d p0 = Translation( T01 );
+	Vec3d p1 = Translation( T02 );
+	Vec3d p2 = Translation( T03 );
 
-	J.block< 3, 1 >( 3, 0 ) = z0;
-	J.block< 3, 1 >( 3, 1 ) = y1;
-	J.block< 3, 1 >( 3, 2 ) = z2;
+	Vec3d pe = Translation( T03 );
+
+	J.block< 3, 1 >( 0, 0 ) = z0;
+	J.block< 3, 1 >( 0, 1 ) = y1;
+	J.block< 3, 1 >( 0, 2 ) = z2;
+
+	J.block< 3, 1 >( 3, 0 ) = z0.cross( pe - p0 );
+	J.block< 3, 1 >( 3, 1 ) = y1.cross( pe - p1 );
+	J.block< 3, 1 >( 3, 2 ) = z2.cross( pe - p2 );
 
 	return J;
 }

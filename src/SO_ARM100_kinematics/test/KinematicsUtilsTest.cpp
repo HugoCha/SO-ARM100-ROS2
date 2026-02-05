@@ -3,6 +3,7 @@
 #include "Types.hpp"
 
 #include <gtest/gtest.h>
+#include <ostream>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -116,30 +117,26 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianRevoluteOnlyRobotTwist )
 	std::vector< Twist > twists = Data::GetRevoluteOnlyRobotTwists();
 	std::span< const Twist > space_twists( twists );
 	VecXd joint_angles( 3 );
-	joint_angles << 0.0, 0.0, 0.0;
+	joint_angles << 1.5708, 0.7854, 0.3927;
 
 	MatXd geom_jacobian = Data::GetRevoluteOnlyRobotJacobian(
-		joint_angles[0], 
-		joint_angles[1], 
-		joint_angles[2]);
+		joint_angles[0],
+		joint_angles[1],
+		joint_angles[2] );
+	Mat4d T0e = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	Mat6d adjoint_T0e;
+	Mat4d Tee = Mat4d::Identity();
+	Tee.block< 3, 1 >( 0, 3 ) = Translation( T0e );
+	Adjoint( Tee, adjoint_T0e );
+
+	MatXd expected_space_jacobian = adjoint_T0e * geom_jacobian;
 
 	MatXd space_jacobian( 6, 3 );
 	SpaceJacobian( twists, joint_angles, space_jacobian );
-	
-	Eigen::MatrixXd P(6, 6);
-	P.setZero();
-	P.block<3,3>(0,3) = Eigen::Matrix3d::Identity();
-	P.block<3,3>(3,0) = Eigen::Matrix3d::Identity();
 
-	std::cout << "Geometric Jacobian = \n" << geom_jacobian << std::endl;
-	std::cout << "Space Jacobian = \n" << space_jacobian << std::endl;
-	std::cout << "P * J_geom = \n" << P * geom_jacobian << std::endl; 
-	// Expected Jacobian for two twists (pure rotations around z and y axes)
-	// Vec6d expected_jacobian_col1, expected_jacobian_col2;
-	// expected_jacobian_col1 << 0, 0, 1, 0, 0, 0;
-	// expected_jacobian_col2 << 0, 1, 0, 0, 0, 0;
-	// EXPECT_TRUE( space_jacobian.col( 0 ).isApprox( expected_jacobian_col1, 1e-6 ) ) << "First column of Jacobian should match expected values";
-	// EXPECT_TRUE( space_jacobian.col( 1 ).isApprox( expected_jacobian_col2, 1e-6 ) ) << "Second column of Jacobian should match expected values";
+	EXPECT_TRUE( expected_space_jacobian.isApprox( space_jacobian ) )
+	    << "Expected = \n" << expected_space_jacobian << std::endl
+	    << "Actual = \n" << space_jacobian << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -214,7 +211,7 @@ TEST_F( KinematicsUtilsTest, PoseErrorNonIdentityPose )
 
 	// Expected pose error: translation error in x, zero rotation error
 	Vec6d expected_error;
-	expected_error << 1.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+	expected_error << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0;
 	EXPECT_TRUE( pose_error.isApprox( expected_error, 1e-6 ) ) << "Pose error should match expected values";
 }
 

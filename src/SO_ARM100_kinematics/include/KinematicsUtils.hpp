@@ -33,4 +33,10 @@ void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept;
 void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexcept;
 
 void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept;
+void WeightedPoseError(
+	const Mat4d& target,
+	const Mat4d& current,
+	double rotation_weight,
+	double translation_weight,
+	Vec6d& pose_error ) noexcept;
 }

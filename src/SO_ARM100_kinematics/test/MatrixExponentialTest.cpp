@@ -31,9 +31,9 @@ TEST_F( MatrixExponentialTest, ComputeTest )
 	double theta = M_PI / 2;         // 90 degrees
 
 	MatrixExponential matrix_exponential( twist, theta );
-	Eigen::Matrix4d result = matrix_exponential.Compute();
+	Mat4d result = matrix_exponential.Compute();
 
-	Eigen::Matrix4d expected = Eigen::Matrix4d::Identity();
+	Mat4d expected = Mat4d::Identity();
 	expected( 0, 0 ) = 0.0;
 	expected( 0, 1 ) = -1.0;
 	expected( 1, 0 ) = 1.0;
@@ -54,9 +54,9 @@ TEST_F( MatrixExponentialTest, OperatorMultiplyTest )
 
 	MatrixExponential matrix_exponential1( twist, theta1 );
 	MatrixExponential matrix_exponential2( twist, theta2 );
-	Eigen::Matrix4d result = matrix_exponential1 * matrix_exponential2;
+	auto result = matrix_exponential1 * matrix_exponential2;
 
-	Eigen::Matrix4d expected = Eigen::Matrix4d::Identity();
+	Mat4d expected = Mat4d::Identity();
 	expected( 0, 0 ) = -1.0;
 	expected( 0, 1 ) = 0.0;
 	expected( 1, 0 ) = 0.0;
@@ -75,10 +75,10 @@ TEST_F( MatrixExponentialTest, OperatorMatrixMultiplyTest )
 	double theta = M_PI / 2;         // 90 degrees
 
 	MatrixExponential matrix_exponential( twist, theta );
-	Eigen::Matrix4d input_matrix = Eigen::Matrix4d::Identity();
-	Eigen::Matrix4d result = matrix_exponential * input_matrix;
+	Mat4d input_matrix = Mat4d::Identity();
+	Mat4d result = matrix_exponential * input_matrix;
 
-	Eigen::Matrix4d expected = Eigen::Matrix4d::Identity();
+	Mat4d expected = Mat4d::Identity();
 	expected( 0, 0 ) = 0.0;
 	expected( 0, 1 ) = -1.0;
 	expected( 1, 0 ) = 1.0;
