@@ -46,17 +46,6 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const DLSKinematicsSolver::IKResult& result )
-{
-	os << "{ State :" << DLSKinematicsSolver::IKResult::SolverStateToString( result.state ) << ", "
-	   << "Error :" << result.final_error << ", "
-	   << "Iteration :" << result.iterations_used << ", "
-	   << "Joints :" << result.joint_angles.transpose() << " }";
-	return os;
-}
-
-// ------------------------------------------------------------
-
 DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints ) const
@@ -158,7 +147,7 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 		parameters_.rotation_weight,
 		parameters_.translation_weight,
 		buffers_.error );
-	
+
 	state.stalled_error_iter = 0;
 	state.error = buffers_.error.squaredNorm();
 	state.step = parameters_.max_step;
@@ -229,9 +218,9 @@ void DLSKinematicsSolver::PerformIteration(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateErrorConvergence( 
-	double last_error, 
-	double current_error, 
+void DLSKinematicsSolver::UpdateErrorConvergence(
+	double last_error,
+	double current_error,
 	IterationState& state ) const
 {
 	if ( abs( last_error - current_error ) <= parameters_.error_tolerance )

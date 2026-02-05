@@ -34,25 +34,25 @@ void Initialize(
 	const std::span< const double >& joint_angles,
 	geometry_msgs::msg::Pose& pose ) const;
 
-[[nodiscard]] bool ForwardKinematic(
-	const VecXd& joint_angles,
-	Mat4d& pose ) const;
-
 [[nodiscard]] bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints,
 	std::vector< double >& joints ) const;
-
-[[nodiscard]] virtual bool InverseKinematic(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints,
-	VecXd& joints ) const = 0;
 
 protected:
 const moveit::core::JointModelGroup* joint_model_;
 std::unique_ptr< std::vector< Twist >> p_twists_;
 std::unique_ptr< const Mat4d > p_home_configuration_;
 std::unique_ptr< WorkspaceFilter > p_workspace_filter;
+
+[[nodiscard]] bool ForwardKinematic(
+	const VecXd& joint_angles,
+	Mat4d& pose ) const;
+
+[[nodiscard]] virtual bool InverseKinematic(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints,
+	VecXd& joints ) const = 0;
 
 [[nodiscard]] bool AreValidInitializeParameters(
 	const moveit::core::RobotModelConstPtr& robot_model,

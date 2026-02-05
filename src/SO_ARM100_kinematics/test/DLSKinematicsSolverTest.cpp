@@ -1,5 +1,3 @@
-#include "DLSKinematicsSolver.hpp"
-
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
@@ -15,6 +13,17 @@
 #include <rclcpp/rclcpp.hpp>
 #include <span>
 #include <vector>
+
+// Leave include here
+// Expose private/protected method to the test class
+#pragma push_macro("private")
+#pragma push_macro("protected")
+#define private public
+#define protected public
+#include "DLSKinematicsSolver.hpp"
+#include "KinematicsSolver.hpp"
+#pragma pop_macro("protected")
+#pragma pop_macro("private")
 
 namespace SOArm100::Kinematics::Test
 {
@@ -590,7 +599,8 @@ TEST_F( DLSKinematicsSolverTest, Robustness_RepeatedCalls )
 
 	for ( int i = 0; i < 5; ++i )
 	{
-		while ( !solver_->ForwardKinematic( RandomValidJoints(), target_pose ) );
+		while ( !solver_->ForwardKinematic( RandomValidJoints(), target_pose ) )
+			;
 
 		auto result = solver_->SolveIK( target_pose, seed );
 		EXPECT_TRUE( result.Success() )

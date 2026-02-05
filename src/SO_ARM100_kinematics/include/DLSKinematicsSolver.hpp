@@ -68,9 +68,16 @@ private:
 		}
 	}
 
-	friend std::ostream& operator << ( std::ostream& os, const IKResult& obj );
+	friend std::ostream& operator << ( std::ostream& os, const IKResult& obj ) {
+		os << "{ State :" << DLSKinematicsSolver::IKResult::SolverStateToString( obj.state ) << ", "
+		   << "Error :" << obj.final_error << ", "
+		   << "Iteration :" << obj.iterations_used << ", "
+		   << "Joints :" << obj.joint_angles.transpose() << " }";
+		return os;
+	}
 };
 
+public:
 explicit DLSKinematicsSolver();
 explicit DLSKinematicsSolver( SolverParameters parameters );
 ~DLSKinematicsSolver() = default;
@@ -86,14 +93,11 @@ void SetParameters( const SolverParameters& parameters ) noexcept {
 	return parameters_;
 }
 
+protected:
 virtual bool InverseKinematic(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
 	VecXd& joint_angles ) const override;
-
-[[nodiscard]] IKResult SolveIK(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints ) const;
 
 private:
 struct SolverBuffers {
@@ -131,6 +135,10 @@ struct IterationState {
 SolverParameters parameters_;
 mutable SolverBuffers buffers_{ 6 };      // Taille par défaut
 
+[[nodiscard]] IKResult SolveIK(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints ) const;
+
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
 [[nodiscard]] const Mat6d InitializeWeightMatrix() const;
@@ -160,8 +168,8 @@ void UpdateDeltaQ(
 	VecXd& dq_out ) const;
 
 void UpdateErrorConvergence(
-	double last_error, 
-	double current_error, 
+	double last_error,
+	double current_error,
 	IterationState& state ) const;
 
 [[nodiscard]] constexpr double BacktrackStep( double step ) const noexcept {
@@ -191,7 +199,7 @@ void UpdateErrorConvergence(
 [[nodiscard]] bool IsStalled( const IterationState& state ) const noexcept {
 	return ( state.step <= parameters_.min_step &&
 	         state.damping >= parameters_.max_damping ) ||
-		   ( state.stalled_error_iter >= parameters_.max_stalle_iterations ) ||
+	       ( state.stalled_error_iter >= parameters_.max_stalle_iterations ) ||
 	       ( state.fk_failures >= parameters_.max_stalle_iterations );
 }
 };
