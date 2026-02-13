@@ -1,8 +1,11 @@
+#include "Global.hpp"
+
 #include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
-#include "Types.hpp"
+#include "Twist.hpp"
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <ostream>
 
 namespace SOArm100::Kinematics::Test
@@ -73,13 +76,15 @@ TEST_F( KinematicsUtilsTest, AdjointNonIdentityTransform )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
-	std::vector< Twist > twists = { Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ) }; // Pure rotation around z-axis
-	std::span< const Twist > space_twists( twists );
+	std::vector< TwistConstPtr > twists = {
+		std::make_shared< const Twist >( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI ) 
+	}; // Pure rotation around z-axis
+
 	VecXd joint_angles( 1 );
 	joint_angles << 0.0;
 
 	MatXd jacobian( 6, 1 );
-	SpaceJacobian( space_twists, joint_angles, jacobian );
+	SpaceJacobian( twists, joint_angles, jacobian );
 
 	// Expected Jacobian for a single twist (pure rotation around z-axis)
 	Vec6d expected_jacobian;
@@ -91,16 +96,15 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
-	std::vector< Twist > twists = {
-		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ), // Pure rotation around z-axis
-		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) )  // Pure rotation around y-axis
+	std::vector< TwistConstPtr > twists = {
+		std::make_shared< const Twist >( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI  ), // Pure rotation around z-axis
+		std::make_shared< const Twist >( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI  )  // Pure rotation around y-axis
 	};
-	std::span< const Twist > space_twists( twists );
 	VecXd joint_angles( 2 );
 	joint_angles << 0.0, 0.0;
 
 	MatXd jacobian( 6, 2 );
-	SpaceJacobian( space_twists, joint_angles, jacobian );
+	SpaceJacobian( twists, joint_angles, jacobian );
 
 	// Expected Jacobian for two twists (pure rotations around z and y axes)
 	Vec6d expected_jacobian_col1, expected_jacobian_col2;
@@ -114,8 +118,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianRevoluteOnlyRobotTwist )
 {
-	std::vector< Twist > twists = Data::GetRevoluteOnlyRobotTwists();
-	std::span< const Twist > space_twists( twists );
+	std::vector< TwistConstPtr > twists = Data::GetRevoluteOnlyRobotTwists();
 	VecXd joint_angles( 3 );
 	joint_angles << 1.5708, 0.7854, 0.3927;
 

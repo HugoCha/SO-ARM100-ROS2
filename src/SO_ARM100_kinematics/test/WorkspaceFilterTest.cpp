@@ -3,6 +3,8 @@
 #include "RobotModelTestData.hpp"
 
 #include <gtest/gtest.h>
+#include <memory>
+#include <moveit/robot_model/joint_model.hpp>
 #include <moveit/robot_model/robot_model.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -26,8 +28,9 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
-	robot_model_ = Data::GetRevoluteOnlyRobot();     // Replace with your robot model creation logic
-	workspace_filter_.reset( new WorkspaceFilter( robot_model_, "arm", "base_link" ) );
+	const auto& robot_model = Data::GetRevoluteOnlyRobot();     // Replace with your robot model creation logic
+	const auto& joint_model_group = robot_model->getJointModelGroup( "arm" );
+    workspace_filter_.reset( new WorkspaceFilter( joint_model_group, "base_link" ) );
 }
 
 void TearDown() override
@@ -36,7 +39,6 @@ void TearDown() override
 }
 
 protected:
-moveit::core::RobotModelConstPtr robot_model_;
 std::unique_ptr< WorkspaceFilter > workspace_filter_;
 };
 

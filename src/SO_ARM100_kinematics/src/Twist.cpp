@@ -1,7 +1,6 @@
 #include "Twist.hpp"
 
 #include "KinematicsUtils.hpp"
-#include "Types.hpp"
 
 #include <Eigen/Dense>
 
@@ -9,43 +8,59 @@ namespace SOArm100::Kinematics
 {
 // ------------------------------------------------------------
 
-Twist::Twist( const Vec3d& axis, const Vec3d& point_on_axis )
-	: axis_( axis.normalized() )
+Twist::Twist( const Vec3d& axis, const Vec3d& point_on_axis, double min, double max ) :
+	twist_( ComputeTwist( axis, point_on_axis ) ),
+	cache_( ComputeCache( twist_ ) ),
+	limits_( min, max )
 {
-	linear_ = -axis_.cross( point_on_axis );
 }
 
 // ------------------------------------------------------------
 
-Twist::Twist( const Vec3d& axis, const Mat4d& transform )
-	: axis_( axis.normalized() )
-{
-	Vec3d point_on_axis = Translation( transform );
-	linear_ = -axis_.cross( point_on_axis );
-}
-
-// ------------------------------------------------------------
-
-Twist::operator Vec6d () const
+Vec6d Twist::ComputeTwist( const Vec3d& axis, const Vec3d& point_on_axis )
 {
 	Vec6d twist;
-	twist << axis_, linear_;
+	const auto& axis_normalized = axis.normalized();
+	const auto& linear = -axis_normalized.cross( point_on_axis );
+
+	twist << axis_normalized, linear;
+
 	return twist;
 }
 
 // ------------------------------------------------------------
 
-Vec3d Twist::GetAxis() const
+Twist::Cache Twist::ComputeCache( const Vec6d& twist )
 {
-	return axis_;
+	Cache cache;
+	const Vec3d omega = twist.block< 3, 1 >( 0, 0 );
+	const Vec3d v = twist.block< 3, 1 >( 3, 0 );
+
+	cache.omega_hat = SkewMatrix( omega );
+	cache.omega_hat_squared = cache.omega_hat * cache.omega_hat;
+	cache.omega_cross_v = cache.omega_hat * v;
+	cache.omega_omegaT_v = omega * omega.transpose() * v;
+
+	return cache;
 }
 
 // ------------------------------------------------------------
 
-Vec3d Twist::GetLinear() const
+const Mat4d Twist::ExponentialMatrix( double thetha ) const
 {
-	return linear_;
+	Mat4d exponential = Mat4d::Identity();
+	Mat3d R;
+	Vec3d t;
+
+	R.noalias() = cache_.omega_hat * sin( thetha ) + cache_.omega_hat_squared * ( 1 - cos( thetha ) );
+	t.noalias() = ( -R ) * ( cache_.omega_cross_v ) + cache_.omega_omegaT_v * thetha;
+
+	exponential.block< 3, 3 >( 0, 0 ).noalias() += R;
+	exponential.block< 3, 1 >( 0, 1 ).noalias() = t;
+
+	return exponential;
 }
 
 // ------------------------------------------------------------
+
 }

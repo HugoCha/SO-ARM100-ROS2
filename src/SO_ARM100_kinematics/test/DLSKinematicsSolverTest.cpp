@@ -1,7 +1,8 @@
+#include "Global.hpp"
+
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
-#include "Types.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <Eigen/src/Geometry/Quaternion.h>
@@ -187,7 +188,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 
 	auto result = solver_->SolveIK( target_pose, seed_joints );
 
-	EXPECT_EQ( result.state, DLSKinematicsSolver::SolverState::Converged );
+	EXPECT_EQ( result.state, NumericSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
 	EXPECT_LT( result.final_error, DEFAULT_TOLERANCE );
 	EXPECT_EQ( result.joint_angles.size(), 3 );
@@ -216,7 +217,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 
 	auto result = solver_->SolveIK( target_pose, seed_joints );
 
-	EXPECT_EQ( result.state, DLSKinematicsSolver::SolverState::Converged );
+	EXPECT_EQ( result.state, NumericSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
 
 	// Verify solution
@@ -239,7 +240,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 
 	auto result = solver_->SolveIK( target_pose, seed_joints );
 
-	EXPECT_EQ( result.state, DLSKinematicsSolver::SolverState::Converged );
+	EXPECT_EQ( result.state, NumericSolverState::Converged );
 
 	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
 	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) )
@@ -307,7 +308,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
 
 	auto result = solver_->SolveIK( target_pose, seed_joints );
 
-	EXPECT_NE( result.state, DLSKinematicsSolver::SolverState::Converged );
+	EXPECT_NE( result.state, NumericSolverState::Converged );
 	EXPECT_FALSE( result.Success() );
 }
 
@@ -333,7 +334,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MaxIterationsReached )
 
 	auto result = solver.SolveIK( target_pose, seed_joints );
 
-	EXPECT_EQ( result.state, DLSKinematicsSolver::SolverState::MaxIterations );
+	EXPECT_EQ( result.state, NumericSolverState::MaxIterations );
 	EXPECT_EQ( result.iterations_used, params.max_iterations );
 }
 
@@ -346,7 +347,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
 
 	auto result = solver_->SolveIK( target_pose, invalid_seed );
 
-	EXPECT_EQ( result.state, DLSKinematicsSolver::SolverState::Failed );
+	EXPECT_EQ( result.state, NumericSolverState::Failed );
 	EXPECT_FALSE( result.Success() );
 }
 

@@ -1,7 +1,10 @@
 #pragma once
 
+#include "Global.hpp"
+
 #include "KinematicsSolver.hpp"
-#include "Types.hpp"
+#include "NumericSolverResult.hpp"
+#include "NumericSolverState.hpp"
 
 #include <Eigen/Geometry>
 #include <rclcpp/exceptions/exceptions.hpp>
@@ -34,48 +37,7 @@ struct SolverParameters
 	}
 };
 
-enum class SolverState
-{
-	Converged,
-	Improving,
-	Stalled,
-	MaxIterations,
-	Failed
-};
 
-struct IKResult
-{
-	SolverState state;
-	VecXd joint_angles;
-	double final_error;
-	int iterations_used;
-
-	[[nodiscard]] bool Success() const noexcept {
-		return state == SolverState::Converged;
-	}
-
-private:
-	static constexpr const std::string SolverStateToString( const SolverState& solver_state )
-	{
-		switch ( solver_state )
-		{
-		case SolverState::Converged: return "Converged";
-		case SolverState::Improving: return "Improving";
-		case SolverState::Stalled: return "Stalled";
-		case SolverState::MaxIterations: return "MaxIterations";
-		case SolverState::Failed: return "Failed";
-		default: return "";
-		}
-	}
-
-	friend std::ostream& operator << ( std::ostream& os, const IKResult& obj ) {
-		os << "{ State :" << DLSKinematicsSolver::IKResult::SolverStateToString( obj.state ) << ", "
-		   << "Error :" << obj.final_error << ", "
-		   << "Iteration :" << obj.iterations_used << ", "
-		   << "Joints :" << obj.joint_angles.transpose() << " }";
-		return os;
-	}
-};
 
 public:
 explicit DLSKinematicsSolver();
@@ -93,7 +55,6 @@ void SetParameters( const SolverParameters& parameters ) noexcept {
 	return parameters_;
 }
 
-protected:
 virtual bool InverseKinematic(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
@@ -133,9 +94,9 @@ struct IterationState {
 };
 
 SolverParameters parameters_;
-mutable SolverBuffers buffers_{ 6 };      // Taille par défaut
+mutable SolverBuffers buffers_{ 6 };
 
-[[nodiscard]] IKResult SolveIK(
+[[nodiscard]] NumericSolverResult SolveIK(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints ) const;
 
@@ -151,7 +112,7 @@ void PerformIteration(
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
-[[nodiscard]] SolverState EvaluateConvergence(
+[[nodiscard]] NumericSolverState EvaluateConvergence(
 	const IterationState& state,
 	int iteration ) const noexcept;
 

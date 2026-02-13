@@ -2,10 +2,10 @@
 
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
-#include "Types.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/SVD/JacobiSVD.h>
+#include <cstddef>
 #include <moveit/robot_model/joint_model.hpp>
 #include <moveit/robot_model/link_model.hpp>
 #include <moveit/robot_model/robot_model.hpp>
@@ -13,7 +13,6 @@
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <string>
-#include <vector>
 
 namespace SOArm100::Kinematics
 {
@@ -36,7 +35,7 @@ DLSKinematicsSolver::DLSKinematicsSolver() :
 // ------------------------------------------------------------
 
 DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
-	: parameters_( parameters ), buffers_( p_twists_->size() )
+	: parameters_( parameters ), buffers_( twists_.size() )
 {
 	if ( !parameters_.IsValid() )
 	{
@@ -46,19 +45,19 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
+NumericSolverResult DLSKinematicsSolver::SolveIK(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints ) const
 {
-	if ( seed_joints.size() != static_cast< int >( p_twists_->size() ) )
+	if ( seed_joints.size() != static_cast< int >( twists_.size() ) )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
-		return { SolverState::Failed, {}, -1, 0 };;
+		return { NumericSolverState::Failed, {}, -1, 0 };;
 	}
 
-	if ( buffers_.GetSize() != static_cast< int >( p_twists_->size() ) )
+	if ( buffers_.GetSize() != static_cast< int >( twists_.size() ) )
 	{
-		buffers_ = SolverBuffers{ p_twists_->size() };
+		buffers_ = SolverBuffers{ twists_.size() };
 	}
 
 	const auto& weights = InitializeWeightMatrix();
@@ -68,16 +67,16 @@ DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 		state = InitializeState( target, RandomValidJoints() );
 		if ( !state )
 		{
-			return { SolverState::Failed, VecXd{}, 0.0, 0 };
+			return { NumericSolverState::Failed, VecXd{}, 0.0, 0 };
 		}
 	}
 
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
 	{
 		auto solver_state = EvaluateConvergence( *state, iter );
-		if ( solver_state == SolverState::Converged )
+		if ( solver_state == NumericSolverState::Converged )
 		{
-			return { SolverState::Converged, state->joints, state->error, iter };
+			return { NumericSolverState::Converged, state->joints, state->error, iter };
 		}
 
 		if ( IsStalled( *state ) )
@@ -85,7 +84,7 @@ DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 			state = InitializeState( target, RandomValidJoints() );
 			if ( !state )
 			{
-				return { SolverState::Stalled, VecXd{}, 0.0, iter };
+				return { NumericSolverState::Stalled, VecXd{}, 0.0, iter };
 			}
 			continue;
 		}
@@ -93,7 +92,7 @@ DLSKinematicsSolver::IKResult DLSKinematicsSolver::SolveIK(
 		PerformIteration( target, weights, *state, buffers_ );
 	}
 
-	return { SolverState::MaxIterations, state->joints, state->error,
+	return { NumericSolverState::MaxIterations, state->joints, state->error,
 	         parameters_.max_iterations };
 }
 
@@ -161,10 +160,11 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 
 const VecXd DLSKinematicsSolver::RandomValidJoints() const noexcept
 {
-	assert( joint_model_ != nullptr );
-	VecXd random( p_twists_->size() );
+	assert( p_joint_model_group_ );
+	VecXd random( joint_models_.size() );
 	random_numbers::RandomNumberGenerator rng;
-	joint_model_->getVariableRandomPositions( rng, random.data() );
+	for ( size_t i = 0; i < joint_models_.size(); i++ )
+		joint_models_[i]->getVariableRandomPositions( rng, &random.data()[i] );
 	return random;
 }
 
@@ -241,7 +241,7 @@ void DLSKinematicsSolver::ComputeWeightedJacobianAndDamping(
 	double damping_factor,
 	SolverBuffers& buffers ) const
 {
-	SpaceJacobian( *p_twists_, joints, buffers.jacobian );
+	SpaceJacobian( twists_, joints, buffers.jacobian );
 	buffers.jacobian.noalias() = weights * buffers.jacobian;
 
 	const int n = buffers.jacobian.cols();
@@ -264,21 +264,21 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SolverState DLSKinematicsSolver::EvaluateConvergence(
+NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 	const IterationState& state,
 	int iteration ) const noexcept
 {
 	if ( state.error <= parameters_.error_tolerance )
 	{
-		return SolverState::Converged;
+		return NumericSolverState::Converged;
 	}
 
 	if ( iteration >= parameters_.max_iterations )
 	{
-		return SolverState::MaxIterations;
+		return NumericSolverState::MaxIterations;
 	}
 
-	return SolverState::Improving;
+	return NumericSolverState::Improving;
 }
 
 // ------------------------------------------------------------

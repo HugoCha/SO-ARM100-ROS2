@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Types.hpp"
+#include "Global.hpp"
 
 #include <geometry_msgs/geometry_msgs/msg/pose.hpp>
 #include <span>

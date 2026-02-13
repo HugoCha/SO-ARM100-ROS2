@@ -1,9 +1,10 @@
 #include "RobotModelTestData.hpp"
 
 #include "KinematicsUtils.hpp"
-#include "Types.hpp"
+#include "Twist.hpp"
 #include <cmath>
 #include <Eigen/Dense>
+#include <memory>
 #include <moveit/robot_model/joint_model.hpp>
 #include <moveit/robot_model/link_model.hpp>
 #include <moveit/robot_model/prismatic_joint_model.hpp>
@@ -193,27 +194,27 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 
 // ------------------------------------------------------------
 
-std::vector< Twist > GetRevoluteOnlyRobotTwists()
+std::vector< TwistConstPtr > GetRevoluteOnlyRobotTwists()
 {
-	std::vector< Twist > twists;
+	std::vector< TwistConstPtr > twists;
 
 	// // Configuration HOME (tous les angles à 0)
 	// Joint 1: Axe Z à l'origine
 	Vec3d axis1( 0, 0, 1 );           // Axe Z
 	Vec3d point1( 0, 0, 0 );          // Origine
-	twists.emplace_back( axis1, point1 );
+	twists.emplace_back( std::make_shared< const Twist >( axis1, point1, -M_PI, M_PI  ) );
 
 	// Joint 2: Axe Y après translation de 0.5m en X
 	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
 	Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
 	Vec3d point2( 0.5, 0, 0 );        // Position à home
-	twists.emplace_back( axis2, point2 );
+	twists.emplace_back(std::make_shared< const Twist >( axis2, point2, -M_PI, M_PI  ) );
 
 	// Joint 3: Axe Z après translation totale de 1.0m en X
 	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
 	Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
 	Vec3d point3( 1.0, 0, 0 );        // Position à home
-	twists.emplace_back( axis3, point3 );
+	twists.emplace_back(std::make_shared< const Twist >( axis3, point3, -M_PI, M_PI  ) );
 
 	return twists;
 }

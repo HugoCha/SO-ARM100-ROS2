@@ -1,4 +1,7 @@
 #pragma once
+
+#include "Global.hpp"
+
 #include "Twist.hpp"
 
 #include <moveit/robot_model/robot_model.hpp>
@@ -7,7 +10,7 @@
 namespace SOArm100::Kinematics::Test::Data
 {
 moveit::core::RobotModelConstPtr GetRevoluteOnlyRobot();
-Eigen::Matrix4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3 );
-std::vector< Twist > GetRevoluteOnlyRobotTwists();
-Eigen::MatrixXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 );
+Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3 );
+std::vector< TwistConstPtr > GetRevoluteOnlyRobotTwists();
+MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 );
 }

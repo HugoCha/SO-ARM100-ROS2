@@ -1,9 +1,7 @@
 #include "KinematicsSolver.hpp"
 
-#include "Converter.hpp"
 #include "KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
-#include "Types.hpp"
 
 #include <cmath>
 #include <gtest/gtest.h>
@@ -32,11 +30,6 @@ bool InverseKinematic(
 bool CheckLimitsExposed( const std::vector< double >& joint_angles )
 {
 	return CheckLimits( joint_angles );
-}
-
-const moveit::core::JointModelGroup* GetJointModelGroup()
-{
-	return joint_model_;
 }
 };
 

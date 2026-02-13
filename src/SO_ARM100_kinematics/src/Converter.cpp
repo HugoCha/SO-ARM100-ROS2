@@ -1,5 +1,4 @@
 #include "Converter.hpp"
-#include "Types.hpp"
 
 #include <Eigen/Dense>
 #include <sstream>

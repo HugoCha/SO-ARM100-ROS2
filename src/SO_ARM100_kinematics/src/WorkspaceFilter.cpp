@@ -2,13 +2,11 @@
 
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
-#include "Types.hpp"
 
 #include <Eigen/src/Geometry/Transform.h>
-#include <moveit/robot_model/fixed_joint_model.hpp>
+#include <cassert>
 #include <moveit/robot_model/fixed_joint_model.hpp>
 #include <moveit/robot_model/joint_model.hpp>
-#include <moveit/robot_model/joint_model_group.hpp>
 #include <moveit/robot_model/link_model.hpp>
 #include <moveit/robot_model/prismatic_joint_model.hpp>
 #include <moveit/robot_model/revolute_joint_model.hpp>
@@ -19,71 +17,52 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-WorkspaceFilter::WorkspaceFilter(
-	const moveit::core::RobotModelConstPtr& robot_model,
-	const std::string& group_name,
-	const std::string& base_frame_name ) :
-	base_frame_name_( base_frame_name )
+WorkspaceFilter::WorkspaceFilter( 
+    const std::span< const moveit::core::JointModel* const >& joint_models ) :
+    joint_models_( joint_models )
 {
-	if ( !robot_model )
-		return;
-
-	joints_ = robot_model->getJointModelGroup( group_name );
-	ComputeWorkspace( joints_, base_frame_name );
-}
-
-// ------------------------------------------------------------
-
-bool WorkspaceFilter::IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const
-{
-	const auto& base_frame = GetBaseFrame();
-	const auto& target_frame = ToMat4d( target_pose );
-	double distance = ( Translation( target_frame ) - Translation( base_frame ) ).norm();
-	return distance < min_reach_ || distance > max_reach_;
 }
 
 // ------------------------------------------------------------
 
 const Mat4d WorkspaceFilter::GetBaseFrame() const
 {
-	const auto* base_link = joints_->getLinkModel( base_frame_name_ );
-
-	if ( !base_link )
-	{
-		return Mat4d::Identity();
-	}
-
-	return base_link->getJointOriginTransform().matrix();
+	assert(!joint_models_.empty());
+    const auto* base_link = joint_models_[0]->getParentLinkModel();
+    return base_link->getJointOriginTransform().matrix();
 }
 
 // ------------------------------------------------------------
 
-void WorkspaceFilter::ComputeWorkspace(
-	const moveit::core::JointModelGroup* joint_model,
-	const std::string& base_frame_name )
+bool WorkspaceFilter::IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const
 {
-	min_reach_ = ComputeMinReach( joints_, base_frame_name );
-	max_reach_ = ComputeMaxReach( joints_, base_frame_name );
+	const auto& target_frame = ToMat4d( target_pose );
+	double distance = ( Translation( target_frame ) - Translation( GetBaseFrame() ) ).norm();
+	return distance < min_reach_ || distance > max_reach_;
 }
 
 // ------------------------------------------------------------
 
-double WorkspaceFilter::ComputeMinReach(
-	const moveit::core::JointModelGroup* joints,
-	const std::string& base_frame_name ) const
+void WorkspaceFilter::ComputeWorkspace(const std::span< const moveit::core::JointModel* const >& joint_models)
+{
+	min_reach_ = ComputeMinReach( joint_models );
+	max_reach_ = ComputeMaxReach( joint_models );
+}
+
+// ------------------------------------------------------------
+
+double WorkspaceFilter::ComputeMinReach(const std::span< const moveit::core::JointModel* const >&joint_models) const
 {
 	return 0.0;
 }
 
 // ------------------------------------------------------------
 
-double WorkspaceFilter::ComputeMaxReach(
-	const moveit::core::JointModelGroup* joints,
-	const std::string& base_frame_name ) const
+double WorkspaceFilter::ComputeMaxReach(const std::span< const moveit::core::JointModel* const >& joint_models) const
 {
 	double max_reach = 0.0;
 
-	for ( const auto* joint : joints->getJointModels() )
+	for ( const auto* joint : joint_models )
 	{
 		switch ( joint->getType() )
 		{

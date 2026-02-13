@@ -1,13 +1,14 @@
 #include "KinematicsSolver.hpp"
 
 #include "Converter.hpp"
-#include "MatrixExponential.hpp"
-#include "Types.hpp"
+#include "KinematicsUtils.hpp"
+#include "Twist.hpp"
 #include "WorkspaceFilter.hpp"
 
 #include <cassert>
 #include <memory>
 #include <moveit/robot_model/joint_model.hpp>
+#include <moveit/robot_model/joint_model_group.hpp>
 #include <moveit/robot_model/link_model.hpp>
 #include <moveit/robot_model/prismatic_joint_model.hpp>
 #include <moveit/robot_model/robot_model.hpp>
@@ -29,7 +30,7 @@ static rclcpp::Logger get_logger()
 // ------------------------------------------------------------
 
 KinematicsSolver::KinematicsSolver() :
-	p_twists_( std::make_unique< std::vector< Twist >>() ),
+	twists_(),
 	p_home_configuration_( std::make_unique< const Mat4d >( Mat4d::Identity() ) )
 {
 }
@@ -53,25 +54,22 @@ void KinematicsSolver::Initialize(
 
 	moveit::core::RobotState state( robot_model );
 	state.setToDefaultValues();
-	joint_model_ = robot_model->getJointModelGroup( group_name );
-	const auto& joint_models = joint_model_->getActiveJointModels();
-
-	p_workspace_filter = std::make_unique< WorkspaceFilter >( robot_model, group_name, base_frame );
+	const auto* joint_model_group = robot_model->getJointModelGroup( group_name );
+	
+	const auto& active_joint_models = joint_model_group->getActiveJointModels();
+	joint_models_ = std::span< const moveit::core::JointModel* const >( active_joint_models );
+	
+	p_workspace_filter_ = std::make_unique< WorkspaceFilter >( joint_models_ );
 
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
 	p_home_configuration_ = std::make_unique< const Mat4d >( home_configuration );
 
-	p_twists_->clear();
-	p_twists_->reserve( joint_models.size() );
+	auto twists = std::vector< TwistConstPtr >( joint_models_.size() );
 
-	for ( const auto* joint_model : joint_models )
+	for ( const auto* joint_model : joint_models_ )
 	{
 		Vec3d axis;
-		if ( joint_model->getType() == moveit::core::JointModel::FIXED )
-		{
-			axis = Vec3d::Zero();
-		}
-		else if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
+		if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
 		{
 			const auto* revolute_joint_model =
 				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
@@ -89,9 +87,30 @@ void KinematicsSolver::Initialize(
 
 		const Vec3d axis_world = joint_transform.rotation() * axis;
 		const Vec3d point_on_axis_world = joint_transform.translation();
+		const auto& bound = joint_model->getVariableBounds()[0];
 
-		p_twists_->emplace_back( axis_world, point_on_axis_world );
+		auto twist = std::make_shared< const Twist >( 
+			axis_world, 
+			point_on_axis_world,
+			bound.min_position_, 
+			bound.max_position_ );
+
+		twists.emplace_back( twist );
 	}
+}
+
+// ------------------------------------------------------------
+
+void KinematicsSolver::Initialize(
+	const std::span< const moveit::core::JointModel* const >& joint_models,
+	const std::span< TwistConstPtr >& twists,
+	const Mat4d& home_configuration,
+	double search_discretization )
+{
+	joint_models_ = joint_models;
+	p_workspace_filter_ = std::make_unique< WorkspaceFilter >( joint_models );
+	p_home_configuration_ = std::make_unique< const Mat4d >( home_configuration );
+	twists_ = twists;
 }
 
 // ------------------------------------------------------------
@@ -116,28 +135,22 @@ bool KinematicsSolver::ForwardKinematic(
 	const VecXd& joint_angles,
 	Mat4d& pose ) const
 {
-	if ( !joint_model_ )
+	if ( !joint_models_.empty() )
 	{
 		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
 
-	if ( joint_angles.size() != p_twists_->size() )
+	if ( joint_angles.size() != twists_.size() )
 	{
 		RCLCPP_ERROR(
 			get_logger(),
 			"Joint angles size (%zu) does not match number of twists (%zu).",
-			joint_angles.size(), p_twists_->size() );
+			joint_angles.size(), twists_.size() );
 		return false;
 	}
 
-	pose.setIdentity();
-	for ( size_t i = 0; i < p_twists_->size(); ++i )
-	{
-		// pose = pose * MatrixExponential( (*p_twists_)[i], joint_angles[i] );
-		pose *= static_cast< Mat4d >( MatrixExponential( ( *p_twists_ )[i], joint_angles[i] ) );
-	}
-	pose *= *p_home_configuration_;
+	POE( twists_, *p_home_configuration_, joint_angles, pose );
 
 	return true;
 }
@@ -151,7 +164,7 @@ bool KinematicsSolver::InverseKinematic(
 {
 	joints.clear();
 
-	if ( p_workspace_filter->IsUnreachable( target_pose ) )
+	if ( p_workspace_filter_->IsUnreachable( target_pose ) )
 	{
 		return false;
 	}
@@ -208,8 +221,11 @@ bool KinematicsSolver::AreValidInitializeParameters(
 
 bool KinematicsSolver::CheckLimits( const std::span< const double >& joint_angles ) const
 {
-	assert( joint_model_ != nullptr );
-	return joint_model_->satisfiesPositionBounds( & joint_angles[0] );
+	assert( twists_.size() == joint_angles.size() );
+	for ( auto i = 0; i < twists_.size(); i++ )
+		if ( !twists_[i]->Limits().SatisfyLimits( joint_angles[i] ) )
+			return false;
+	return true;
 }
 
 // ------------------------------------------------------------

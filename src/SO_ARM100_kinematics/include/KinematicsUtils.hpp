@@ -1,7 +1,8 @@
 #pragma once
 
+#include "Global.hpp"
+
 #include "Twist.hpp"
-#include "Types.hpp"
 
 #include <span>
 
@@ -23,8 +24,10 @@ namespace SOArm100::Kinematics
 	return skew;
 }
 
+[[nodiscard]] const Mat4d Inverse( const Mat4d& transform ) noexcept;
+
 void SpaceJacobian(
-	const std::span< const Twist >& space_twists,
+	const std::span< const TwistConstPtr >& space_twists,
 	const VecXd& joint_angles,
 	MatXd& jacobian ) noexcept;
 
@@ -39,4 +42,15 @@ void WeightedPoseError(
 	double rotation_weight,
 	double translation_weight,
 	Vec6d& pose_error ) noexcept;
+
+void POE( 	
+	const std::span< const TwistConstPtr >& twists, 
+	const std::span< const double >& thetas, 
+	const Mat4d& M,
+	 Mat4d& poe );
+void POE( 	
+	const std::span< const TwistConstPtr >& twists, 
+	const VecXd& thetas, 
+	const Mat4d& M,
+	Mat4d& poe );
 }
