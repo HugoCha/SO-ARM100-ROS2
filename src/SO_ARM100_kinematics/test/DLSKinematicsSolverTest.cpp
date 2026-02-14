@@ -2,6 +2,8 @@
 
 #include "Converter.hpp"
 #include "KinematicsUtils.hpp"
+#include "NumericSolverResult.hpp"
+#include "NumericSolverState.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>

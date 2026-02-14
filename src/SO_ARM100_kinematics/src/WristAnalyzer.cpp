@@ -1,9 +1,12 @@
 #include "WristAnalyzer.hpp"
 
+#include "Global.hpp"
+
+#include "JointChain.hpp"
 #include "KinematicsUtils.hpp"
 #include "Twist.hpp"
+#include "WristModel.hpp"
 
-#include <moveit/robot_model/joint_model.hpp>
 #include <optional>
 
 namespace SOArm100::Kinematics
@@ -11,29 +14,29 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-std::optional< const Vec3d > ComputeIntersection( const std::span< TwistConstPtr >& twists );
-bool AxesIndependent( const std::span< TwistConstPtr >& twists );
+std::optional< const Vec3d > ComputeIntersection( const std::span< const JointConstPtr >& active_joints );
+bool AxesIndependent( const std::span< const JointConstPtr >& active_joints );
 const Mat4d ComputeTCPinWrist( const Vec3d& wrist_center, const Mat4d& home_configuration );
 
 // ------------------------------------------------------------
 
 std::optional< WristModel > WristAnalyzer::Analyze(
-	const std::span< const moveit::core::JointModel* const >& joint_models,
-	const std::span< TwistConstPtr >& twists,
+	const JointChain& joint_chain,
 	const Mat4d& home_configuration )
 {
 	WristModel wrist;
 
-	for ( int k = 1; k <= 3 && k <= twists.size(); ++k )
+	const auto& active_joints = joint_chain.GetActiveJoints();
+	for ( int k = 1; k <= 3 && k <= active_joints.size(); ++k )
 	{
-		auto maybe_center = ComputeIntersection( twists.last( k ) );
+		auto maybe_center = ComputeIntersection( active_joints.last( k ) );
 		if ( !maybe_center )
 			break;
 
-		if ( !AxesIndependent( twists.last( k ) ) )
+		if ( !AxesIndependent( active_joints.last( k ) ) )
 			break;
 
-		wrist.start_index = twists.size() - k - 1;
+		wrist.start_index = active_joints.size() - k - 1;
 		wrist.count = k;
 		wrist.center_at_home = *maybe_center;
 	}
@@ -41,9 +44,7 @@ std::optional< WristModel > WristAnalyzer::Analyze(
 	if ( wrist.count == 0 )
 		return std::nullopt;
 
-	wrist.wrist_joints = joint_models.last( wrist.count );
-	wrist.twists = twists.last( wrist.count );
-    wrist.tcp_in_wrist_at_home = ComputeTCPinWrist( wrist.center_at_home, home_configuration );
+	wrist.tcp_in_wrist_at_home = ComputeTCPinWrist( wrist.center_at_home, home_configuration );
 	wrist.tcp_in_wrist_at_home_inv = Inverse( wrist.tcp_in_wrist_at_home );
 	wrist.type = static_cast< WristType >( wrist.count );
 	return wrist;
@@ -51,9 +52,9 @@ std::optional< WristModel > WristAnalyzer::Analyze(
 
 // ------------------------------------------------------------
 
-std::optional< const Vec3d > ComputeIntersection( const std::span< const Twist >& twists )
+std::optional< const Vec3d > ComputeIntersection( const std::span< const JointConstPtr >& active_joints )
 {
-	int n = twists.size();
+	int n = active_joints.size();
 	assert( n >= 1 && n <= 3 );
 
 	Vec3d wrist_center;
@@ -62,8 +63,9 @@ std::optional< const Vec3d > ComputeIntersection( const std::span< const Twist >
 
 	for ( int i = 0; i < n; ++i )
 	{
-		omega_x.block< 3, 3 >( 3 * i, 0 ) = SkewMatrix( twists[i].GetAxis() );
-		opp_v.segment< 3 >( 3 * i ) = -twists[i].GetLinear();
+		const auto& twist = active_joints[i]->GetTwist();
+		omega_x.block< 3, 3 >( 3 * i, 0 ) = SkewMatrix( twist.GetAxis() );
+		opp_v.segment< 3 >( 3 * i ) = -twist.GetLinear();
 	}
 
 	// Wrist center is the point Pwc such as omega_i x Pwc = -v_i
@@ -79,7 +81,7 @@ std::optional< const Vec3d > ComputeIntersection( const std::span< const Twist >
 	double max_residual = 0.0;
 	for ( int i = 0; i < n; ++i )
 	{
-		const Vec3d& omega_i_x = omega_x.block< 3, 3 >( 3 * i, 0 );
+		const Mat3d& omega_i_x = omega_x.block< 3, 3 >( 3 * i, 0 );
 		const Vec3d& opp_v_i = opp_v.segment< 3 >( 3 * i );
 		const Vec3d& residual = omega_i_x * wrist_center - opp_v_i;
 		max_residual = std::max( max_residual, residual.norm() );
@@ -93,25 +95,25 @@ std::optional< const Vec3d > ComputeIntersection( const std::span< const Twist >
 
 // ------------------------------------------------------------
 
-bool AxesIndependent( std::span< const Twist > twists )
+bool AxesIndependent( const std::span< const JointConstPtr >& active_joints )
 {
-	const int k = static_cast< int >( twists.size() );
+	const int k = static_cast< int >( active_joints.size() );
 	assert( k >= 1 && k <= 3 );
 
 	if ( k == 1 )
-		return twists[0].GetAxis().norm() > epsilon;
+		return active_joints[0]->GetTwist().GetAxis().norm() > epsilon;
 
 	if ( k == 2 )
 	{
-		const Vec3d& w1 = twists[0].GetAxis();
-		const Vec3d& w2 = twists[1].GetAxis();
+		const Vec3d& w1 = active_joints[0]->GetTwist().GetAxis();
+		const Vec3d& w2 = active_joints[1]->GetTwist().GetAxis();
 
 		return w1.cross( w2 ).norm() > epsilon;
 	}
 
 	Mat3d W;
 	for ( int i = 0; i < 3; ++i )
-		W.col( i ) = twists[i].GetAxis();
+		W.col( i ) = active_joints[i]->GetTwist().GetAxis();
 
 	return std::abs( W.determinant() ) > epsilon;
 }
@@ -120,16 +122,16 @@ bool AxesIndependent( std::span< const Twist > twists )
 
 const Mat4d ComputeTCPinWrist( const Vec3d& wrist_center, const Mat4d& home_configuration )
 {
-    Mat4d tcp_in_wrist = home_configuration;
+	Mat4d tcp_in_wrist = home_configuration;
 
 	const auto& home_trans = Translation( home_configuration );
 	const auto& home_rot = Rotation( home_configuration );
 	const auto& home_rot_inv = home_rot.transpose();
 
-	tcp_in_wrist.block< 3, 1 >( 0, 3 ) = 
-        home_rot_inv * ( home_trans - wrist_center );
-    
-    return tcp_in_wrist;
+	tcp_in_wrist.block< 3, 1 >( 0, 3 ) =
+		home_rot_inv * ( home_trans - wrist_center );
+
+	return tcp_in_wrist;
 }
 
 // ------------------------------------------------------------

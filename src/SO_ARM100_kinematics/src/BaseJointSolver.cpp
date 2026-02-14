@@ -1,6 +1,9 @@
 #include "Global.hpp"
 
 #include "BaseJointSolver.hpp"
+
+#include "KinematicsUtils.hpp"
+
 #include <cmath>
 
 namespace SOArm100::Kinematics
@@ -8,21 +11,41 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-void BaseJointSolver::FK( const VecXd& base_joint, Mat4d& fk ) const
+void BaseJointSolver::Initialize(
+	const JointChain& joint_chain,
+	const BaseJointModel& base_joint_model )
 {
-	fk.noalias() = p_base_joint_model_->twist->ExponentialMatrix(base_joint[0]);
+	base_joint = joint_chain.GetActiveJoint( 0 ).get();
+	base_joint_model_ = std::make_unique< const BaseJointModel >( base_joint_model );
+}
+
+// ------------------------------------------------------------
+
+void BaseJointSolver::FK(
+	const VecXd& joints,
+	Mat4d& fk ) const
+{
+	assert( base_joint );
+
+	const auto& base_twist = base_joint->GetTwist();
+	fk.noalias() = base_twist.ExponentialMatrix( joints[0] );
 }
 
 // ------------------------------------------------------------
 
 BaseJointSolverResult BaseJointSolver::IK(
-	const Vec3d& wrist_center,
-	const std::span< const double >& seed_joints  ) const
+	const Mat4d& wrist_center,
+	const std::span< const double >& seed_joints ) const
 {
+	assert( base_joint );
+
 	BaseJointSolverResult result;
 
-	const Vec3d& omega = p_base_joint_model_->twist->GetAxis();
-	const Vec3d& r = wrist_center - p_base_joint_model_->twist->GetLinear();
+	const auto& base_twist = base_joint->GetTwist();
+
+	const Vec3d& omega = base_twist.GetAxis();
+	const Vec3d& t_wrist_center = Translation( wrist_center );
+	const Vec3d& r = t_wrist_center - base_twist.GetLinear();
 
 	// project into plane orthogonal to axis
 	const Vec3d& r_proj = r - r.dot( omega ) * omega;
@@ -34,14 +57,14 @@ BaseJointSolverResult BaseJointSolver::IK(
 	}
 	else
 	{
-		const auto& r0 = p_base_joint_model_->reference_direction;
+		const auto& r0 = base_joint_model_->reference_direction;
 		double s_theta = omega.dot( r0.cross( r_proj ) );
 		double c_theta = r0.dot( r_proj );
 
 		result.base_joint[0] = atan2( s_theta, c_theta );
-		result.state = std::isnan( result.base_joint[0] ) ? 
-			BaseJointSolverState::Unreachable : 
-			BaseJointSolverState::Success;
+		result.state = std::isnan( result.base_joint[0] ) ?
+		               BaseJointSolverState::Unreachable :
+		               BaseJointSolverState::Success;
 	}
 
 	return result;

@@ -1,14 +1,14 @@
 #include "DLSKinematicsSolver.hpp"
 
 #include "Converter.hpp"
+#include "JointChain.hpp"
 #include "KinematicsUtils.hpp"
+#include "NumericSolverResult.hpp"
+#include "NumericSolverState.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/SVD/JacobiSVD.h>
 #include <cstddef>
-#include <moveit/robot_model/joint_model.hpp>
-#include <moveit/robot_model/link_model.hpp>
-#include <moveit/robot_model/robot_model.hpp>
 #include <optional>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
@@ -35,7 +35,7 @@ DLSKinematicsSolver::DLSKinematicsSolver() :
 // ------------------------------------------------------------
 
 DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
-	: parameters_( parameters ), buffers_( twists_.size() )
+	: parameters_( parameters ), buffers_( joint_chain_->GetActiveJointCount() )
 {
 	if ( !parameters_.IsValid() )
 	{
@@ -49,15 +49,15 @@ NumericSolverResult DLSKinematicsSolver::SolveIK(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints ) const
 {
-	if ( seed_joints.size() != static_cast< int >( twists_.size() ) )
+	if ( seed_joints.size() != static_cast< int >( joint_chain_->GetActiveJointCount() ) )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
 		return { NumericSolverState::Failed, {}, -1, 0 };;
 	}
 
-	if ( buffers_.GetSize() != static_cast< int >( twists_.size() ) )
+	if ( buffers_.GetSize() != static_cast< int >( joint_chain_->GetActiveJointCount() ) )
 	{
-		buffers_ = SolverBuffers{ twists_.size() };
+		buffers_ = SolverBuffers{ joint_chain_->GetActiveJointCount() };
 	}
 
 	const auto& weights = InitializeWeightMatrix();
@@ -160,11 +160,11 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 
 const VecXd DLSKinematicsSolver::RandomValidJoints() const noexcept
 {
-	assert( p_joint_model_group_ );
-	VecXd random( joint_models_.size() );
+	assert( joint_chain_ );
+	VecXd random( joint_chain_->GetActiveJointCount() );
 	random_numbers::RandomNumberGenerator rng;
-	for ( size_t i = 0; i < joint_models_.size(); i++ )
-		joint_models_[i]->getVariableRandomPositions( rng, &random.data()[i] );
+	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
+		joint_chain_->GetActiveJointLimits( i ).Random( rng, & random.data()[i] );
 	return random;
 }
 
@@ -241,7 +241,7 @@ void DLSKinematicsSolver::ComputeWeightedJacobianAndDamping(
 	double damping_factor,
 	SolverBuffers& buffers ) const
 {
-	SpaceJacobian( twists_, joints, buffers.jacobian );
+	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
 	buffers.jacobian.noalias() = weights * buffers.jacobian;
 
 	const int n = buffers.jacobian.cols();

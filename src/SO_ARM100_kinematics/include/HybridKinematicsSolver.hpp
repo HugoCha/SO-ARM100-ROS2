@@ -8,38 +8,34 @@
 #include "NumericJointsModel.hpp"
 #include "NumericJointsSolver.hpp"
 #include "NumericSolverResult.hpp"
-#include "Twist.hpp"
 #include "WristSolver.hpp"
 #include "WristModel.hpp"
 
-#include <moveit/robot_model/joint_model.hpp>
-#include <moveit/robot_model/joint_model_group.hpp>
-#include <moveit/robot_model/robot_model.hpp>
-#include <cstdint> 
+#include <cstdint>
 
 namespace SOArm100::Kinematics
 {
 enum class HybridSolverFlags : u_int8_t
 {
-	None 	= 0,
-	Base 	= 1 << 0,
-	Wrist 	= 1 << 1,
+	None    = 0,
+	Base    = 1 << 0,
+	Wrist   = 1 << 1,
 	Numeric = 1 << 2,
 };
 
-constexpr HybridSolverFlags operator|(HybridSolverFlags a, HybridSolverFlags b) {
-	return static_cast<HybridSolverFlags>(
-		static_cast<uint8_t>(a) | static_cast<uint8_t>(b)
-	);
+constexpr HybridSolverFlags operator | ( HybridSolverFlags a, HybridSolverFlags b ){
+	return static_cast< HybridSolverFlags >(
+		static_cast< uint8_t >( a ) | static_cast< uint8_t >( b )
+		);
 }
 
-inline HybridSolverFlags& operator|=(HybridSolverFlags& a, HybridSolverFlags b) {
+inline HybridSolverFlags& operator |= ( HybridSolverFlags& a, HybridSolverFlags b ){
 	a = a | b;
 	return a;
 }
 
-inline bool IsFlagSet(HybridSolverFlags flags, HybridSolverFlags flagToCheck) {
-    return (static_cast<uint8_t>(flags) & static_cast<uint8_t>(flagToCheck)) != 0;
+inline bool IsFlagSet( HybridSolverFlags flags, HybridSolverFlags flagToCheck ){
+	return ( static_cast< uint8_t >( flags ) & static_cast< uint8_t >( flagToCheck ) ) != 0;
 }
 
 class HybridKinematicsSolver : public KinematicsSolver
@@ -60,10 +56,8 @@ virtual bool InverseKinematic(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
 	VecXd& joints ) const override;
-	
+
 private:
-
-
 struct SolverBuffer
 {
 	Mat4d wrist_center{};
@@ -75,15 +69,15 @@ struct SolverBuffer
 
 	BaseJointSolverResult base_result{};
 	NumericSolverResult num_result{};
-	WristSolverResult wrist_result{0};
+	WristSolverResult wrist_result{ 0 };
 };
 
 struct SolverConfiguration
 {
-	std::optional< BaseJointModel > base_joint_model{std::nullopt};
-	std::optional< NumericJointsModel > numeric_joints_model{std::nullopt};
-	std::optional< WristModel > wrist_model{std::nullopt};
-	HybridSolverFlags solver_flags{HybridSolverFlags::None};
+	std::optional< BaseJointModel > base_joint_model{ std::nullopt };
+	std::optional< NumericJointsModel > numeric_joints_model{ std::nullopt };
+	std::optional< WristModel > wrist_model{ std::nullopt };
+	HybridSolverFlags solver_flags{ HybridSolverFlags::None };
 };
 
 mutable SolverBuffer buffer_;
@@ -93,20 +87,19 @@ std::unique_ptr< BaseJointSolver > base_joint_solver_;
 std::unique_ptr< NumericJointsSolver > numeric_solver_;
 std::unique_ptr< WristSolver > wrist_solver_;
 
-[[nodiscard]] const SolverConfiguration AnalyzeConfiguration(	
-	const std::span< const moveit::core::JointModel* const > joint_models,
-	const std::span< TwistConstPtr >& twists, 
+[[nodiscard]] const SolverConfiguration AnalyzeConfiguration(
+	const JointChain& joint_chain,
 	const Mat4d& home_configuration ) const;
 
-void InitializeBaseJointKinematicSolver(	
+void InitializeBaseJointKinematicSolver(
 	const std::optional< BaseJointModel >& base_joint_model,
 	double search_discretization );
 
-void InitializeNumericKinematicsSolver(	
+void InitializeNumericKinematicsSolver(
 	const std::optional< NumericJointsModel >& model,
 	double search_discretization );
 
-void InitializeWristKinematicsSolver(	
+void InitializeWristKinematicsSolver(
 	const std::optional< WristModel >& wrist_model,
 	const std::string& base_frame,
 	double search_discretization );

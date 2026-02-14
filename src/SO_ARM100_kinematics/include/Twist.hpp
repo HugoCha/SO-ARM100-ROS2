@@ -6,42 +6,37 @@
 
 namespace SOArm100::Kinematics
 {
-struct Limits
-{
-    double min;
-    double max;
-
-    inline bool SatisfyLimits( double theta ) const {
-        return theta >= min && theta <= max;
-    }
-};
-
 class Twist
 {
 public:
-Twist( const Vec3d& axis, const Vec3d& point_on_axis, double min, double max );
+Twist();
+Twist( const Vec3d& linear );
+Twist( const Vec3d& axis, const Vec3d& point_on_axis );
 Twist( const Twist& other ) = default;
-Twist() = delete;
 ~Twist() = default;
 
+Twist operator = ( const Twist& other ){
+	return Twist( other.twist_ );
+}
+
+[[nodiscard]] inline operator const Vec6d () const {
+	return twist_;
+}
+
 [[nodiscard]] inline const Vec3d GetAxis() const {
-    return twist_.block< 3, 1 >( 0, 0 );
+	return axis_;
 }
 
 [[nodiscard]] inline const Vec3d GetLinear() const {
-    return twist_.block< 3, 1 >( 3, 0 );
-}
-
-[[nodiscard]] inline const Limits Limits() const {
-    return limits_;
+	return linear_;
 }
 
 [[nodiscard]] inline bool IsRevolute() const {
-    return GetAxis().norm() > epsilon;
+	return axis_.norm() > epsilon;
 }
 
 [[nodiscard]] inline bool IsPrismatic() const {
-    return GetAxis().norm() < epsilon && GetLinear().norm() > epsilon;
+	return axis_.norm() < epsilon && linear_.norm() > epsilon;
 }
 
 [[nodiscard]] const Mat4d ExponentialMatrix( double thetha ) const;
@@ -49,17 +44,21 @@ Twist() = delete;
 private:
 struct Cache
 {
-    Mat3d omega_hat;
-    Mat3d omega_hat_squared;
-    Mat3d omega_cross_v;
-    Mat3d omega_omegaT_v;
+	Mat3d omega_hat;
+	Mat3d omega_hat_squared;
+	Vec3d omega_cross_v;
+	Vec3d omega_omegaT_v;
 };
 
-const struct Limits limits_;
+Twist( const Vec6d& twist );
 
 const Vec6d twist_;
+const Vec3d axis_;
+const Vec3d linear_;
+
 const Cache cache_;
 
+static Vec6d ComputeTwist( const Vec3d& linear );
 static Vec6d ComputeTwist( const Vec3d& axis, const Vec3d& point_on_axis );
 static Cache ComputeCache( const Vec6d& twist );
 };

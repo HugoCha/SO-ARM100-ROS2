@@ -4,7 +4,7 @@
 
 #include "NumericSolverState.hpp"
 
-namespace SOArm100::Kinematics 
+namespace SOArm100::Kinematics
 {
 struct NumericSolverResult
 {
@@ -31,11 +31,11 @@ private:
 		}
 	}
 
-	friend std::ostream& operator << ( std::ostream& os, const NumericSolverResult& obj ) {
+	friend std::ostream& operator << ( std::ostream& os, const NumericSolverResult& obj ){
 		os << "{ State :" << NumericSolverResult::SolverStateToString( obj.state ) << ", "
-			<< "Error :" << obj.final_error << ", "
-			<< "Iteration :" << obj.iterations_used << ", "
-			<< "Joints :" << obj.joint_angles.transpose() << " }";
+		   << "Error :" << obj.final_error << ", "
+		   << "Iteration :" << obj.iterations_used << ", "
+		   << "Joints :" << obj.joint_angles.transpose() << " }";
 		return os;
 	}
 };

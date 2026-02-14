@@ -1,11 +1,10 @@
 #include "WorkspaceFilter.hpp"
 
+#include "JointChain.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
-#include <moveit/robot_model/joint_model.hpp>
-#include <moveit/robot_model/robot_model.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 namespace SOArm100::Kinematics::Test
@@ -28,9 +27,8 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
-	const auto& robot_model = Data::GetRevoluteOnlyRobot();     // Replace with your robot model creation logic
-	const auto& joint_model_group = robot_model->getJointModelGroup( "arm" );
-    workspace_filter_.reset( new WorkspaceFilter( joint_model_group, "base_link" ) );
+	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();     // Replace with your robot model creation logic
+	workspace_filter_.reset( new WorkspaceFilter( joint_chain ) );
 }
 
 void TearDown() override

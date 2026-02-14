@@ -3,33 +3,27 @@
 #include "Global.hpp"
 
 #include <geometry_msgs/msg/pose.hpp>
-#include <moveit/macros/class_forward.hpp>
-#include <span>
-
-namespace moveit::core
-{
-MOVEIT_CLASS_FORWARD( JointModel );
-}
 
 namespace SOArm100::Kinematics
 {
+class JointChain;
+
 class WorkspaceFilter
 {
 public:
-WorkspaceFilter() = default;
-WorkspaceFilter( const std::span< const moveit::core::JointModel* const >& joint_models );
+WorkspaceFilter( const JointChain& joint_chain );
 
 [[nodiscard]] bool IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const;
 
 protected:
-const std::span< const moveit::core::JointModel* const > joint_models_;
+const Vec3d base_frame_;
 
-virtual void ComputeWorkspace( const std::span< const moveit::core::JointModel* const >& joint_models );
+virtual void ComputeWorkspace( const JointChain& joint_chain );
 
-[[nodiscard]] virtual double ComputeMaxReach( const std::span< const moveit::core::JointModel* const >& joint_models ) const;
-[[nodiscard]] virtual double ComputeMinReach( const std::span< const moveit::core::JointModel* const >& joint_models ) const;
+[[nodiscard]] virtual double ComputeMaxReach( const JointChain& joint_chain ) const;
+[[nodiscard]] virtual double ComputeMinReach( const JointChain& joint_chain ) const;
 
-[[nodiscard]] const Mat4d GetBaseFrame() const;
+[[nodiscard]] const Vec3d GetBaseFrame() const;
 
 private:
 double min_reach_;

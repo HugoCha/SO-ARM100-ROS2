@@ -1,7 +1,11 @@
 #include "RobotModelTestData.hpp"
 
+#include "Global.hpp"
+#include "JointChain.hpp"
 #include "KinematicsUtils.hpp"
-#include "Twist.hpp"
+#include "Limits.hpp"
+#include "Link.hpp"
+
 #include <cmath>
 #include <Eigen/Dense>
 #include <memory>
@@ -13,7 +17,6 @@
 #include <string>
 #include <srdfdom/model.h>
 #include <urdf_parser/urdf_parser.h>
-#include <vector>
 
 namespace SOArm100::Kinematics::Test::Data
 {
@@ -194,29 +197,51 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 
 // ------------------------------------------------------------
 
-std::vector< TwistConstPtr > GetRevoluteOnlyRobotTwists()
+const JointChain GetRevoluteOnlyRobotJointChain()
 {
-	std::vector< TwistConstPtr > twists;
-
+	JointChain joint_chain( 3 );
 	// // Configuration HOME (tous les angles à 0)
 	// Joint 1: Axe Z à l'origine
 	Vec3d axis1( 0, 0, 1 );           // Axe Z
 	Vec3d point1( 0, 0, 0 );          // Origine
-	twists.emplace_back( std::make_shared< const Twist >( axis1, point1, -M_PI, M_PI  ) );
+	Twist twist1( axis1, point1 );
+
+	Mat4d origin1 = Mat4d::Identity();
+	Link link1( origin1 );
+
+	Limits limits1( -M_PI, M_PI );
+
+	joint_chain.Add( twist1, link1, limits1 );
 
 	// Joint 2: Axe Y après translation de 0.5m en X
 	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
 	Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
 	Vec3d point2( 0.5, 0, 0 );        // Position à home
-	twists.emplace_back(std::make_shared< const Twist >( axis2, point2, -M_PI, M_PI  ) );
+	Twist twist2( axis2, point2 );
+
+	Mat4d origin2 = Mat4d::Identity();
+	origin2( 0, 3 ) = 0.5;
+	Link link2( origin2 );
+
+	Limits limits2( -M_PI, M_PI );
+
+	joint_chain.Add( twist2, link2, limits2 );
 
 	// Joint 3: Axe Z après translation totale de 1.0m en X
 	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
 	Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
 	Vec3d point3( 1.0, 0, 0 );        // Position à home
-	twists.emplace_back(std::make_shared< const Twist >( axis3, point3, -M_PI, M_PI  ) );
+	Twist twist3( axis3, point3 );
 
-	return twists;
+	Mat4d origin3 = Mat4d::Identity();
+	origin3( 0, 3 ) = 1.0;
+	Link link3( origin3 );
+
+	Limits limits3( -M_PI, M_PI );
+
+	joint_chain.Add( twist3, link3, limits3 );
+
+	return joint_chain;
 }
 
 // ------------------------------------------------------------

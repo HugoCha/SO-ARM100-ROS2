@@ -2,10 +2,9 @@
 
 #include "Global.hpp"
 
-#include "Twist.hpp"
+#include "JointChain.hpp"
 #include "WorkspaceFilter.hpp"
 
-#include <geometry_msgs/msg/pose.hpp>
 #include <memory>
 #include <moveit/macros/class_forward.hpp>
 #include <span>
@@ -34,8 +33,7 @@ virtual void Initialize(
 	double search_discretization );
 
 virtual void Initialize(
-	const std::span< const moveit::core::JointModel* const >& joint_models,
-	const std::span< TwistConstPtr >& twists,
+	const JointChain& joint_chain,
 	const Mat4d& home_configuration,
 	double search_discretization );
 
@@ -43,20 +41,21 @@ virtual void Initialize(
 	const std::span< const double >& joint_angles,
 	geometry_msgs::msg::Pose& pose ) const;
 
+[[nodiscard]] bool ForwardKinematic(
+	const VecXd& joint_angles,
+	Mat4d& pose ) const;
+
 [[nodiscard]] bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints,
 	std::vector< double >& joints ) const;
 
 protected:
-std::span< const moveit::core::JointModel* const > joint_models_;
-std::span< TwistConstPtr > twists_;
-std::unique_ptr< const Mat4d > p_home_configuration_;
-std::unique_ptr< WorkspaceFilter > p_workspace_filter_;
-
-[[nodiscard]] bool ForwardKinematic(
-	const VecXd& joint_angles,
-	Mat4d& pose ) const;
+// std::span< const moveit::core::JointModel* const > joint_models_;
+// std::span< TwistConstPtr > twists_;
+std::unique_ptr< const JointChain > joint_chain_;
+std::unique_ptr< const Mat4d > home_configuration_;
+std::unique_ptr< WorkspaceFilter > workspace_filter_;
 
 [[nodiscard]] virtual bool InverseKinematic(
 	const Mat4d& target_pose,

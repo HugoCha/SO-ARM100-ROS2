@@ -1,5 +1,7 @@
 #include "KinematicsUtils.hpp"
 
+#include "JointChain.hpp"
+
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <cmath>
@@ -35,23 +37,25 @@ void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept
 // ------------------------------------------------------------
 
 void SpaceJacobian(
-	const std::span< const TwistConstPtr >& space_twists,
+	const JointChain& joint_chain,
 	const VecXd& joint_angles,
 	MatXd& jacobian ) noexcept
 {
-	const size_t n = space_twists.size();
+	const size_t n = joint_chain.GetActiveJointCount();
 	if ( static_cast< size_t >( jacobian.cols() ) != n )
 		jacobian.resize( 6, n );
 
 	Mat4d T_cumul = Mat4d::Identity();
 	Mat6d adj_buf;
 
-	jacobian.col( 0 ) = static_cast< Vec6d >( space_twists[0] );
+	const auto& active_joints = joint_chain.GetActiveJoints();
+
+	jacobian.col( 0 ) = static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( 0 ) );
 	for ( size_t i = 1; i < n; ++i )
 	{
-		T_cumul *= space_twists[i - 1]->ExponentialMatrix( joint_angles[i - 1] );
+		T_cumul *= joint_chain.GetActiveJointTwist( i - 1 ).ExponentialMatrix( joint_angles[i - 1] );
 		Adjoint( T_cumul, adj_buf );
-		jacobian.col( i ) = adj_buf * static_cast< Vec6d >( space_twists[i] );
+		jacobian.col( i ) = adj_buf * static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( i ) );
 	}
 }
 
@@ -96,18 +100,19 @@ void WeightedPoseError(
 
 // ------------------------------------------------------------
 
-void POE( 	
-	const std::span< const TwistConstPtr >& twists, 
-	const std::span< const double >& thetas, 
+void POE(
+	const JointChain& joint_chain,
 	const Mat4d& M,
+	const std::span< const double >& thetas,
 	Mat4d& poe )
 {
-	assert( twists.size() == thetas.size() );
+	assert( joint_chain.GetActiveJointCount() == thetas.size() );
 	poe.setIdentity();
 
-	for ( auto i = 0; i < twists.size(); i++ )
+	for ( size_t i = 0; i < joint_chain.GetActiveJointCount(); i++ )
 	{
-		poe.noalias() = poe * twists[i]->ExponentialMatrix(thetas[i]);
+		const auto& twist = joint_chain.GetActiveJointTwist( i );
+		poe.noalias() = poe * twist.ExponentialMatrix( thetas[i] );
 	}
 
 	poe.noalias() = poe * M;
@@ -115,18 +120,19 @@ void POE(
 
 // ------------------------------------------------------------
 
-void POE( 	
-	const std::span< const TwistConstPtr >& twists, 
-	const VecXd& thetas, 
+void POE(
+	const JointChain& joint_chain,
 	const Mat4d& M,
+	const VecXd& thetas,
 	Mat4d& poe )
 {
 	assert( twists.size() == thetas.size() );
 	poe.setIdentity();
 
-	for ( auto i = 0; i < twists.size(); i++ )
+	for ( size_t i = 0; i < joint_chain.GetActiveJointCount(); i++ )
 	{
-		poe.noalias() = poe * twists[i]->ExponentialMatrix(thetas[i]);
+		const auto& twist = joint_chain.GetActiveJointTwist( i );
+		poe.noalias() = poe * twist.ExponentialMatrix( thetas[i] );
 	}
 
 	poe.noalias() = poe * M;

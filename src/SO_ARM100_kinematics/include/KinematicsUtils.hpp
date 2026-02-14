@@ -2,21 +2,21 @@
 
 #include "Global.hpp"
 
-#include "Twist.hpp"
-
 #include <span>
 
 namespace SOArm100::Kinematics
 {
-[[nodiscard]] inline Mat3d Rotation( const Mat4d& matrix ) noexcept {
+class JointChain;
+
+[[nodiscard]] inline const Mat3d Rotation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 3 >( 0, 0 );
 }
 
-[[nodiscard]] inline Vec3d Translation( const Mat4d& matrix ) noexcept {
+[[nodiscard]] inline const Vec3d Translation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 1 >( 0, 3 );
 }
 
-[[nodiscard]] constexpr Mat3d SkewMatrix( const Vec3d& vec ) noexcept {
+[[nodiscard]] constexpr const Mat3d SkewMatrix( const Vec3d& vec ) noexcept {
 	Mat3d skew;
 	skew << 0, -vec.z(), vec.y(),
 	    vec.z(), 0, -vec.x(),
@@ -27,7 +27,7 @@ namespace SOArm100::Kinematics
 [[nodiscard]] const Mat4d Inverse( const Mat4d& transform ) noexcept;
 
 void SpaceJacobian(
-	const std::span< const TwistConstPtr >& space_twists,
+	const JointChain& joint_chain,
 	const VecXd& joint_angles,
 	MatXd& jacobian ) noexcept;
 
@@ -44,13 +44,13 @@ void WeightedPoseError(
 	Vec6d& pose_error ) noexcept;
 
 void POE( 	
-	const std::span< const TwistConstPtr >& twists, 
+	const JointChain& joint_chain, 
+	const Mat4d& M,
 	const std::span< const double >& thetas, 
-	const Mat4d& M,
-	 Mat4d& poe );
+	Mat4d& poe );
 void POE( 	
-	const std::span< const TwistConstPtr >& twists, 
-	const VecXd& thetas, 
+	const JointChain& joint_chain,
 	const Mat4d& M,
+	const VecXd& thetas, 
 	Mat4d& poe );
 }

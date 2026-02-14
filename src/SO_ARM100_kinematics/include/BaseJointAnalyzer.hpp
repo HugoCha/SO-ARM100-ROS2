@@ -1,16 +1,18 @@
 #pragma once
 
-#include "BaseJointModel.hpp"
-#include "Twist.hpp"
-#include "WristModel.hpp"
+#include <optional>
 
-namespace SOArm100::Kinematics 
+namespace SOArm100::Kinematics
 {
+class BaseJointModel;
+class JointChain;
+class WristModel;
+
 class BaseJointAnalyzer
 {
 public:
-[[nodiscard]] static std::optional< BaseJointModel > Analyze( 
-    TwistConstPtr base_twist, 
-    const std::optional< WristModel >& wrist_model );
+[[nodiscard]] static std::optional< BaseJointModel > Analyze(
+	const JointChain& joint_chain,
+	const std::optional< WristModel >& wrist_model );
 };
 }

@@ -1,11 +1,12 @@
 #include "Global.hpp"
 
 #include "KinematicsUtils.hpp"
+#include "JointChain.hpp"
+#include "Limits.hpp"
 #include "RobotModelTestData.hpp"
 #include "Twist.hpp"
 
 #include <gtest/gtest.h>
-#include <memory>
 #include <ostream>
 
 namespace SOArm100::Kinematics::Test
@@ -76,15 +77,17 @@ TEST_F( KinematicsUtilsTest, AdjointNonIdentityTransform )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
-	std::vector< TwistConstPtr > twists = {
-		std::make_shared< const Twist >( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI ) 
-	}; // Pure rotation around z-axis
+	JointChain joint_chain( 1 );
+	Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
+	Link link( Mat4d::Zero() );
+	Limits limits( -M_PI, M_PI );
+	joint_chain.Add( twist, link, limits ); // Pure rotation around z-axis
 
 	VecXd joint_angles( 1 );
 	joint_angles << 0.0;
 
 	MatXd jacobian( 6, 1 );
-	SpaceJacobian( twists, joint_angles, jacobian );
+	SpaceJacobian( joint_chain, joint_angles, jacobian );
 
 	// Expected Jacobian for a single twist (pure rotation around z-axis)
 	Vec6d expected_jacobian;
@@ -96,15 +99,23 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
-	std::vector< TwistConstPtr > twists = {
-		std::make_shared< const Twist >( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI  ), // Pure rotation around z-axis
-		std::make_shared< const Twist >( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ), -M_PI, M_PI  )  // Pure rotation around y-axis
-	};
+	JointChain joint_chain( 2 );
+
+	joint_chain.Add(
+		{ Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
+		{ Mat4d::Zero() },
+		{ -M_PI, M_PI } );
+
+	joint_chain.Add(
+		{ Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) },
+		{ Mat4d::Zero() },
+		{ -M_PI, M_PI } );
+
 	VecXd joint_angles( 2 );
 	joint_angles << 0.0, 0.0;
 
 	MatXd jacobian( 6, 2 );
-	SpaceJacobian( twists, joint_angles, jacobian );
+	SpaceJacobian( joint_chain, joint_angles, jacobian );
 
 	// Expected Jacobian for two twists (pure rotations around z and y axes)
 	Vec6d expected_jacobian_col1, expected_jacobian_col2;
@@ -118,7 +129,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianRevoluteOnlyRobotTwist )
 {
-	std::vector< TwistConstPtr > twists = Data::GetRevoluteOnlyRobotTwists();
+	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
 	VecXd joint_angles( 3 );
 	joint_angles << 1.5708, 0.7854, 0.3927;
 
@@ -135,7 +146,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianRevoluteOnlyRobotTwist )
 	MatXd expected_space_jacobian = adjoint_T0e * geom_jacobian;
 
 	MatXd space_jacobian( 6, 3 );
-	SpaceJacobian( twists, joint_angles, space_jacobian );
+	SpaceJacobian( joint_chain, joint_angles, space_jacobian );
 
 	EXPECT_TRUE( expected_space_jacobian.isApprox( space_jacobian ) )
 	    << "Expected = \n" << expected_space_jacobian << std::endl

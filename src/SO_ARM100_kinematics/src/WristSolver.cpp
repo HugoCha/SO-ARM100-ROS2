@@ -2,6 +2,7 @@
 
 #include "DLSKinematicsSolver.hpp"
 #include "Global.hpp"
+#include "JointChain.hpp"
 #include "KinematicsUtils.hpp"
 #include "WristModel.hpp"
 
@@ -13,78 +14,80 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-void WristSolver::Initialize( 
-    const WristModel& wrist_model,
-    double search_discretization )
+void WristSolver::Initialize(
+	const JointChain& joint_chain,
+	const WristModel& wrist_model,
+	double search_discretization )
 {
-    assert( wrist_model );
+	assert( wrist_model );
 
-    if ( !p_dls_wrist_solver )
-    {
-        p_dls_wrist_solver = std::make_unique< DLSKinematicsSolver >();
-    }
+	if ( !dls_wrist_solver_ )
+	{
+		dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
+	}
 
-    p_wrist_model_ = std::make_unique< const WristModel >( wrist_model );
+	joint_chain_ = std::make_unique< const JointChain >( joint_chain.SubChain( wrist_model.start_index, wrist_model.count ) );
+	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
 
-    p_dls_wrist_solver->Initialize( 
-        p_wrist_model_->wrist_joints, 
-        p_wrist_model_->twists,
-        p_wrist_model_->tcp_in_wrist_at_home, 
-        search_discretization );
+	dls_wrist_solver_->Initialize(
+		*joint_chain_,
+		wrist_model_->tcp_in_wrist_at_home,
+		search_discretization );
 }
 
 // ------------------------------------------------------------
 
 void WristSolver::ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center ) const
 {
-	wrist_center.noalias() = target * p_wrist_model_->tcp_in_wrist_at_home_inv;
+	wrist_center.noalias() = target * wrist_model_->tcp_in_wrist_at_home_inv;
 }
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::IK( 
-    const Mat4d& target_in_wrist,
-    const std::span< const double > seed_joints ) const
+WristSolverResult WristSolver::IK(
+	const Mat4d& target_in_wrist,
+	const std::span< const double > seed_joints ) const
 {
-    assert(p_wrist_model);
-    assert(p_dls_wrist_solver);
+	assert( joint_chain_ );
+	assert( wrist_model_ );
+	assert( dls_wrist_solver_ );
 
-    const auto& R_target_in_wrist = Rotation( target_in_wrist );
+	const auto& R_target_in_wrist = Rotation( target_in_wrist );
 
-    WristSolverResult result{ p_wrist_model_->count };
-	switch ( p_wrist_model_->type )
+	WristSolverResult result{ wrist_model_->count };
+	switch ( wrist_model_->type )
 	{
 	case WristType::Revolute1:
-        result = SolveRevolute1( *p_wrist_model_, R_target_in_wrist );
-        break;
+		result = SolveRevolute1( *joint_chain_, R_target_in_wrist );
+		break;
 	case WristType::Revolute2:
-        result = SolveRevolute2( *p_wrist_model_, R_target_in_wrist );
-        break;
+		result = SolveRevolute2( *joint_chain_, R_target_in_wrist );
+		break;
 	case WristType::Revolute3:
-        result = SolveRevolute3( *p_wrist_model_, R_target_in_wrist );
-        break;
-    default:
-        break;
-    }
+		result = SolveRevolute3( *joint_chain_, R_target_in_wrist );
+		break;
+	default:
+		break;
+	}
 
-    if ( !result.Success() && !result.Unreachable() )
-    {
-        result = SolveNumeric(target_in_wrist, seed_joints);
-    }
+	if ( !result.Success() && !result.Unreachable() )
+	{
+		result = SolveNumeric( target_in_wrist, seed_joints );
+	}
 
 	return result;
 }
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute1( 
-    const WristModel& wrist, 
-    const Mat3d& R_target_in_wrist ) const
+WristSolverResult WristSolver::SolveRevolute1(
+	const JointChain& joint_chain,
+	const Mat3d& R_target_in_wrist ) const
 {
-	assert( wrist.twists.size() == 1 );
+	assert( joint_chain_->GetActiveJointCount() == 1 );
 	WristSolverResult result( 1 );
 
-	const Vec3d& axis = wrist.twists[0]->GetAxis();
+	const Vec3d& axis = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
 	Eigen::AngleAxisd aa( R_target_in_wrist );
 	double proj = aa.axis().dot( axis );
 
@@ -102,15 +105,15 @@ WristSolverResult WristSolver::SolveRevolute1(
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute2( 
-    const WristModel& wrist, 
-    const Mat3d& R_target_in_wrist ) const
+WristSolverResult WristSolver::SolveRevolute2(
+	const JointChain& joint_chain,
+	const Mat3d& R_target_in_wrist ) const
 {
-    assert( wrist.twists.size() == 2 );
+	assert( joint_chain_->GetActiveJointCount() == 2 );
 	WristSolverResult result( 2 );
 
-	const Vec3d& axis1 = wrist.twists[0]->GetAxis();
-	const Vec3d& axis2 = wrist.twists[1]->GetAxis();
+	const Vec3d& axis1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
+	const Vec3d& axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
 
 	const Vec3d& e1 = axis1;
 	const Vec3d& e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
@@ -148,16 +151,16 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute3( 
-    const WristModel& wrist, 
-    const Mat3d& R_target_in_wrist ) const
+WristSolverResult WristSolver::SolveRevolute3(
+	const JointChain& joint_chain,
+	const Mat3d& R_target_in_wrist ) const
 {
-    assert( wrist.twists.size() == 3 );
+	assert( joint_chain_->GetActiveJointCount() == 3 );
 	WristSolverResult result( 3 );
 
-	Vec3d axis1 = wrist.twists[0]->GetAxis();
-	Vec3d axis2 = wrist.twists[1]->GetAxis();
-	Vec3d axis3 = wrist.twists[2]->GetAxis();
+	Vec3d axis1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
+	Vec3d axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
+	Vec3d axis3 = joint_chain.GetActiveJointTwist( 2 ).GetAxis();
 
 	Vec3d e1 = axis1;
 	Vec3d e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
@@ -170,7 +173,7 @@ WristSolverResult WristSolver::SolveRevolute3(
 
 	Mat3d R = B.transpose() * R_target_in_wrist * B;
 
-    // R = Rz(q1) * Ry(q2) * Rz(q3)
+	// R = Rz(q1) * Ry(q2) * Rz(q3)
 	double c2 = std::clamp( R( 2, 2 ), -1.0, 1.0 );
 	double q2 = acos( c2 );
 
@@ -190,19 +193,19 @@ WristSolverResult WristSolver::SolveRevolute3(
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveNumeric( 
-    const Mat4d& target_in_wrist, 
-    const std::span< const double > seed_joints ) const
+WristSolverResult WristSolver::SolveNumeric(
+	const Mat4d& target_in_wrist,
+	const std::span< const double > seed_joints ) const
 {
-    WristSolverResult result { p_wrist_model_->count };
+	WristSolverResult result { wrist_model_->count };
 
-    bool success = p_dls_wrist_solver->InverseKinematic(
-        target_in_wrist, 
-        seed_joints.subspan( p_wrist_model_->start_index, p_wrist_model_->count ), 
-        result.joints );
+	bool success = dls_wrist_solver_->InverseKinematic(
+		target_in_wrist,
+		seed_joints.subspan( wrist_model_->start_index, wrist_model_->count ),
+		result.joints );
 
-    result.state = success ? WristSolverState::Success : WristSolverState::Unreachable;
-    return result;
+	result.state = success ? WristSolverState::Success : WristSolverState::Unreachable;
+	return result;
 }
 
 // ------------------------------------------------------------

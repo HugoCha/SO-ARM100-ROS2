@@ -3,14 +3,12 @@
 #include "Global.hpp"
 
 #include "KinematicsSolver.hpp"
-#include "NumericSolverResult.hpp"
-#include "NumericSolverState.hpp"
-
-#include <Eigen/Geometry>
-#include <rclcpp/exceptions/exceptions.hpp>
 
 namespace SOArm100::Kinematics
 {
+struct NumericSolverResult;
+enum class NumericSolverState;
+
 class DLSKinematicsSolver : public KinematicsSolver
 {
 public:
@@ -37,8 +35,6 @@ struct SolverParameters
 	}
 };
 
-
-
 public:
 explicit DLSKinematicsSolver();
 explicit DLSKinematicsSolver( SolverParameters parameters );
@@ -59,6 +55,10 @@ virtual bool InverseKinematic(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
 	VecXd& joint_angles ) const override;
+
+[[nodiscard]] NumericSolverResult SolveIK(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints ) const;
 
 private:
 struct SolverBuffers {
@@ -95,10 +95,6 @@ struct IterationState {
 
 SolverParameters parameters_;
 mutable SolverBuffers buffers_{ 6 };
-
-[[nodiscard]] NumericSolverResult SolveIK(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints ) const;
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
