@@ -100,7 +100,6 @@ void KinematicsSolver::Initialize(
 
 		joint_chain->Add( twist, link, limits );
 	}
-
 	joint_chain_ = std::move( joint_chain );
 	workspace_filter_ = std::make_unique< WorkspaceFilter >( *joint_chain_ );
 }

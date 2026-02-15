@@ -17,7 +17,8 @@ class JointChain;
 namespace SOArm100::Kinematics::Test::Data
 {
 moveit::core::RobotModelConstPtr GetRevoluteOnlyRobot();
+Mat4d GetRevoluteOnlyRobotHome();
 Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3 );
-const JointChain GetRevoluteOnlyRobotJointChain();
+JointChain GetRevoluteOnlyRobotJointChain();
 MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 );
 }

@@ -30,7 +30,7 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 {
 	int numeric_count = joint_chain.GetActiveJointCount();
 	int numeric_start_index = !base_joint ? 0 : 1;
-	int wrist_count = !wrist_model ? 0 : wrist_model->count;
+	int wrist_count = !wrist_model ? 0 : wrist_model->active_joint_count;
 
 	numeric_count = numeric_count - numeric_start_index - wrist_count;
 

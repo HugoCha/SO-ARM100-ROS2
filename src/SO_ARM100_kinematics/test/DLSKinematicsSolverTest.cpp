@@ -657,4 +657,4 @@ TEST_F( DLSKinematicsSolverTest, Configuration_GetAndSet )
 
 // ------------------------------------------------------------
 
-} // namespace SOArm100::Kinematics::Test
+}

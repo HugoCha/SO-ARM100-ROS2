@@ -44,6 +44,24 @@ TEST_F( KinematicsUtilsTest, SkewMatrixTest )
 
 // ------------------------------------------------------------
 
+TEST_F( KinematicsUtilsTest, InverseTransform )
+{
+	Mat4d transform = Mat4d::Identity();
+	transform.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
+	transform.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 2.0, 3.0 );
+
+	Mat4d inverse = Inverse( transform );
+
+	// Verify that transform * inverse = identity
+	Mat4d identity = inverse * transform;
+	EXPECT_TRUE( identity.isApprox( Mat4d::Identity(), 1e-6 ) ) <<
+	    "Transform=\n" << transform <<
+	    "\nInverse=\n" << inverse <<
+	    "\nInverse * Transform=\n" << identity << std::endl;
+}
+
+// ------------------------------------------------------------
+
 TEST_F( KinematicsUtilsTest, AdjointIdentityTransform )
 {
 	Mat4d identity = Mat4d::Identity();
@@ -227,6 +245,61 @@ TEST_F( KinematicsUtilsTest, PoseErrorNonIdentityPose )
 	Vec6d expected_error;
 	expected_error << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0;
 	EXPECT_TRUE( pose_error.isApprox( expected_error, 1e-6 ) ) << "Pose error should match expected values";
+}
+
+// ------------------------------------------------------------
+
+TEST_F( KinematicsUtilsTest, WeightedPoseError )
+{
+	Mat4d target = Mat4d::Identity();
+	target.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
+	target.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 2.0, 3.0 );
+
+	Mat4d current = Mat4d::Identity();
+	Vec6d pose_error;
+
+	double rotation_weight = 2.0;
+	double translation_weight = 0.5;
+	WeightedPoseError( target, current, rotation_weight, translation_weight, pose_error );
+
+	// Expected pose error: rotation error around z-axis, translation error in x, y, z
+	Vec6d expected_error;
+	expected_error << 0.0, 0.0, M_PI / 2 * rotation_weight, 1.0 * translation_weight, 2.0 * translation_weight, 3.0 * translation_weight;
+	EXPECT_TRUE( pose_error.isApprox( expected_error, 1e-6 ) ) << "Weighted pose error should match expected values";
+}
+
+// ------------------------------------------------------------
+
+TEST_F( KinematicsUtilsTest, POEWithSpan )
+{
+	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	Mat4d M = Data::GetRevoluteOnlyRobotHome();
+
+	std::vector< double > thetas = { 1.5708, 0.7854, 0.3927 };
+	std::span< const double > thetas_span( thetas );
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( thetas[0], thetas[1], thetas[2] );
+	Mat4d poe;
+	POE( joint_chain, M, thetas_span, poe );
+
+	EXPECT_TRUE( poe.isApprox( transform ) ) <<
+	    "POE=\n" << poe <<
+	    "\nTransform=\n" << transform << std::endl;
+}
+
+// ------------------------------------------------------------
+
+TEST_F( KinematicsUtilsTest, POEWithVecXd )
+{
+	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	Mat4d M = Data::GetRevoluteOnlyRobotHome();
+
+	VecXd thetas( 3 );
+	thetas << 1.5708, 0.7854, 0.3927;
+	auto transform  = Data::GetRevoluteOnlyRobotTransform( thetas[0], thetas[1], thetas[2] );
+	Mat4d poe;
+	POE( joint_chain, M, thetas, poe );
+
+	EXPECT_TRUE( poe.isApprox( transform ) );
 }
 
 // ------------------------------------------------------------

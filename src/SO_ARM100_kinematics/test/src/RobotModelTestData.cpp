@@ -197,7 +197,7 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 
 // ------------------------------------------------------------
 
-const JointChain GetRevoluteOnlyRobotJointChain()
+JointChain GetRevoluteOnlyRobotJointChain()
 {
 	JointChain joint_chain( 3 );
 	// // Configuration HOME (tous les angles à 0)
@@ -242,6 +242,18 @@ const JointChain GetRevoluteOnlyRobotJointChain()
 	joint_chain.Add( twist3, link3, limits3 );
 
 	return joint_chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d GetRevoluteOnlyRobotHome()
+{
+	Mat4d home;
+	home << 1, 0, 0, 1,
+	    0, 1, 0, 0,
+	    0, 0, 1, 0,
+	    0, 0, 0, 1;
+	return home;
 }
 
 // ------------------------------------------------------------

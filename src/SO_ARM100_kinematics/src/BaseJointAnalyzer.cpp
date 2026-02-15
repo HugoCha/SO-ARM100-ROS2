@@ -26,7 +26,7 @@ std::optional< BaseJointModel > BaseJointAnalyzer::Analyze(
 	const Vec3d r = wrist_center_at_home - base_twist.GetLinear();
 	const Vec3d reference_direction = r - r.dot( omega ) * omega;
 
-	return BaseJointModel{ reference_direction };
+	return BaseJointModel{ reference_direction.normalized() };
 }
 
 // ------------------------------------------------------------

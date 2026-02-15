@@ -7,6 +7,11 @@ namespace SOArm100::Kinematics
 class Link
 {
 public:
+Link() :
+	Link( Mat4d::Zero() )
+{
+}
+
 Link( const Mat4d& joint_origin ) :
 	joint_origin_( joint_origin ),
 	length_( joint_origin_.norm() )

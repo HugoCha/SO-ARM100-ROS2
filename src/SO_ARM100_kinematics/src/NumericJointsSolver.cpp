@@ -20,8 +20,13 @@ void NumericJointsSolver::Initialize(
 	double search_discretization )
 {
 	numeric_joints_model_ = std::make_unique< const NumericJointsModel >( numeric_joint_model );
+
+	const auto& active_joints = joint_chain.GetActiveJoints();
+	auto start = active_joints[numeric_joint_model.start_index];
+	auto end = active_joints[numeric_joint_model.start_index + numeric_joint_model.count];
+
 	dls_solver_->Initialize(
-		joint_chain.SubChain( numeric_joint_model.start_index, numeric_joint_model.count ),
+		joint_chain.SubChain( start, end ),
 		numeric_joint_model.home_configuration,
 		search_discretization );
 }

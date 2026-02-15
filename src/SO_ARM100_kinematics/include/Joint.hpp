@@ -16,7 +16,10 @@ class Joint
 {
 public:
 Joint( const Joint& joint ) :
-	Joint( Twist( joint.GetTwist() ), Link( joint.GetLink() ), Limits( joint.GetLimits() ) )
+	Joint(
+		Twist( joint.GetTwist() ),
+		Link( joint.GetLink() ),
+		Limits( joint.GetLimits() ) )
 {
 }
 
@@ -35,6 +38,9 @@ Joint( const Link& link ) :
 		Limits( -std::numeric_limits< double >::infinity(), std::numeric_limits< double >::infinity() ) )
 {
 }
+
+Joint( Joint&& ) = default;
+Joint& operator = ( Joint&& ) = default;
 
 JointType GetType() const {
 	return type_;

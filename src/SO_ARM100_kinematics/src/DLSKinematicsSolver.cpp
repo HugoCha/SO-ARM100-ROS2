@@ -35,7 +35,7 @@ DLSKinematicsSolver::DLSKinematicsSolver() :
 // ------------------------------------------------------------
 
 DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
-	: parameters_( parameters ), buffers_( joint_chain_->GetActiveJointCount() )
+	: parameters_( parameters ), buffers_( 0 )
 {
 	if ( !parameters_.IsValid() )
 	{

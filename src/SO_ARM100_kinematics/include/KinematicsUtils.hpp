@@ -43,14 +43,14 @@ void WeightedPoseError(
 	double translation_weight,
 	Vec6d& pose_error ) noexcept;
 
-void POE( 	
-	const JointChain& joint_chain, 
-	const Mat4d& M,
-	const std::span< const double >& thetas, 
-	Mat4d& poe );
-void POE( 	
+void POE(
 	const JointChain& joint_chain,
 	const Mat4d& M,
-	const VecXd& thetas, 
+	const std::span< const double >& thetas,
+	Mat4d& poe );
+void POE(
+	const JointChain& joint_chain,
+	const Mat4d& M,
+	const VecXd& thetas,
 	Mat4d& poe );
 }

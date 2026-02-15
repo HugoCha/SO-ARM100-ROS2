@@ -19,14 +19,15 @@ void WristSolver::Initialize(
 	const WristModel& wrist_model,
 	double search_discretization )
 {
-	assert( wrist_model );
-
 	if ( !dls_wrist_solver_ )
 	{
 		dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
 	}
 
-	joint_chain_ = std::make_unique< const JointChain >( joint_chain.SubChain( wrist_model.start_index, wrist_model.count ) );
+	const auto& active_joints = joint_chain.GetActiveJoints();
+	auto wrist_start_joint = active_joints[wrist_model.active_joint_start];
+	auto wrist_end_joint = active_joints[wrist_model.active_joint_start + wrist_model.active_joint_count - 1];
+	joint_chain_ = std::make_unique< const JointChain >( joint_chain.SubChain( wrist_start_joint, wrist_end_joint ) );
 	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
 
 	dls_wrist_solver_->Initialize(
@@ -54,7 +55,7 @@ WristSolverResult WristSolver::IK(
 
 	const auto& R_target_in_wrist = Rotation( target_in_wrist );
 
-	WristSolverResult result{ wrist_model_->count };
+	WristSolverResult result{ wrist_model_->active_joint_count };
 	switch ( wrist_model_->type )
 	{
 	case WristType::Revolute1:
@@ -115,7 +116,7 @@ WristSolverResult WristSolver::SolveRevolute2(
 	const Vec3d& axis1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
 	const Vec3d& axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
 
-	const Vec3d& e1 = axis1;
+	const Vec3d& e1 = axis1.normalized();
 	const Vec3d& e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
 	const Vec3d& e3 = e1.cross( e2 ).normalized();
 
@@ -134,11 +135,11 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 	double q1 = atan2( R( 1, 2 ), R( 0, 2 ) );
 
-	const Mat3d& R_check =
+	Mat3d R_check =
 		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
 		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
 
-	if ( ( R_check - R_target_in_wrist ).norm() > epsilon )
+	if ( R_check.isApprox( R_target_in_wrist, epsilon ) )
 	{
 		result.state = WristSolverState::Unreachable;
 		return result;
@@ -162,7 +163,7 @@ WristSolverResult WristSolver::SolveRevolute3(
 	Vec3d axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
 	Vec3d axis3 = joint_chain.GetActiveJointTwist( 2 ).GetAxis();
 
-	Vec3d e1 = axis1;
+	Vec3d e1 = axis1.normalized();
 	Vec3d e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
 	Vec3d e3 = e1.cross( e2 );
 
@@ -197,11 +198,11 @@ WristSolverResult WristSolver::SolveNumeric(
 	const Mat4d& target_in_wrist,
 	const std::span< const double > seed_joints ) const
 {
-	WristSolverResult result { wrist_model_->count };
+	WristSolverResult result { wrist_model_->active_joint_count };
 
 	bool success = dls_wrist_solver_->InverseKinematic(
 		target_in_wrist,
-		seed_joints.subspan( wrist_model_->start_index, wrist_model_->count ),
+		seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ),
 		result.joints );
 
 	result.state = success ? WristSolverState::Success : WristSolverState::Unreachable;

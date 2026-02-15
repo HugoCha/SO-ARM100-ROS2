@@ -2,6 +2,7 @@
 
 #include "BaseJointSolver.hpp"
 
+#include "JointChain.hpp"
 #include "KinematicsUtils.hpp"
 
 #include <cmath>

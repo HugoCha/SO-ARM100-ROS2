@@ -13,9 +13,9 @@ namespace SOArm100::Kinematics
 
 const Mat4d Inverse( const Mat4d& transform ) noexcept
 {
-	Mat4d inverse;
-	const Mat3d R = Rotation( transform );
-	const Vec3d t = Translation( transform );
+	Mat4d inverse = Mat4d::Identity();
+	const Mat3d& R = Rotation( transform );
+	const Vec3d& t = Translation( transform );
 	inverse.block< 3, 3 >( 0, 0 ).noalias() = R.transpose();
 	inverse.block< 3, 1 >( 0, 3 ).noalias() = -R.transpose() * t;
 	return inverse;
@@ -112,10 +112,10 @@ void POE(
 	for ( size_t i = 0; i < joint_chain.GetActiveJointCount(); i++ )
 	{
 		const auto& twist = joint_chain.GetActiveJointTwist( i );
-		poe.noalias() = poe * twist.ExponentialMatrix( thetas[i] );
+		poe *= twist.ExponentialMatrix( thetas[i] );
 	}
 
-	poe.noalias() = poe * M;
+	poe *= M;
 }
 
 // ------------------------------------------------------------
@@ -126,16 +126,16 @@ void POE(
 	const VecXd& thetas,
 	Mat4d& poe )
 {
-	assert( twists.size() == thetas.size() );
+	assert( joint_chain.GetActiveJointCount() == thetas.size() );
 	poe.setIdentity();
 
 	for ( size_t i = 0; i < joint_chain.GetActiveJointCount(); i++ )
 	{
 		const auto& twist = joint_chain.GetActiveJointTwist( i );
-		poe.noalias() = poe * twist.ExponentialMatrix( thetas[i] );
+		poe *= twist.ExponentialMatrix( thetas[i] );
 	}
 
-	poe.noalias() = poe * M;
+	poe *= M;
 }
 
 // ------------------------------------------------------------

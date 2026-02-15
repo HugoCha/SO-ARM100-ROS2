@@ -36,17 +36,17 @@ std::optional< WristModel > WristAnalyzer::Analyze(
 		if ( !AxesIndependent( active_joints.last( k ) ) )
 			break;
 
-		wrist.start_index = active_joints.size() - k - 1;
-		wrist.count = k;
+		wrist.active_joint_start = active_joints.size() - k;
+		wrist.active_joint_count = k;
 		wrist.center_at_home = *maybe_center;
 	}
 
-	if ( wrist.count == 0 )
+	if ( wrist.active_joint_count == 0 )
 		return std::nullopt;
 
 	wrist.tcp_in_wrist_at_home = ComputeTCPinWrist( wrist.center_at_home, home_configuration );
 	wrist.tcp_in_wrist_at_home_inv = Inverse( wrist.tcp_in_wrist_at_home );
-	wrist.type = static_cast< WristType >( wrist.count );
+	wrist.type = static_cast< WristType >( wrist.active_joint_count );
 	return wrist;
 }
 

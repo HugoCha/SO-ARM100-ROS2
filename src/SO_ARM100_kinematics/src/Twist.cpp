@@ -1,89 +1,105 @@
-#include "Global.hpp"
-
 #include "Twist.hpp"
 
-#include <gtest/gtest.h>
+#include "Global.hpp"
+#include "KinematicsUtils.hpp"
+
 #include <Eigen/Dense>
+#include <optional>
 
-namespace SOArm100::Kinematics::Test
+namespace SOArm100::Kinematics
 {
-class TwistTest : public ::testing::Test
-{
-protected:
-void SetUp() override
-{
-}
-void TearDown() override
-{
-}
-};
 
 // ------------------------------------------------------------
 
-TEST_F( TwistTest, DefaultConstructor )
+Twist::Twist() :
+	Twist( Vec3d::Zero() )
 {
-	Twist twist;
-	ASSERT_TRUE( static_cast< Vec6d >( twist ).isApprox( Vec6d::Zero() ) );
-	ASSERT_TRUE( twist.GetAxis().isApprox( Vec3d::Zero() ) );
-	ASSERT_TRUE( twist.GetLinear().isApprox( Vec3d::Zero() ) );
 }
 
 // ------------------------------------------------------------
 
-TEST_F( TwistTest, ConstructorWithLinear )
+Twist::Twist( const Vec3d& linear ) :
+	twist_( ComputeTwist( linear ) ),
+	axis_( twist_.head( 3 ) ),
+	linear_( twist_.tail( 3 ) ),
+	cache_( ComputeCache( twist_ ) )
 {
-	Vec3d linear( 1.0, 2.0, 3.0 );
-	Twist twist( linear );
-
-	Vec6d expected_twist;
-	expected_twist << 0.0, 0.0, 0.0, 1.0, 2.0, 3.0;
-	expected_twist.tail< 3 >().normalize();
-
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_twist.tail< 3 >() ) );
-	ASSERT_TRUE( twist.GetAxis().isApprox( Vec3d::Zero() ) );
 }
 
 // ------------------------------------------------------------
 
-TEST_F( TwistTest, ConstructorWithPointOnAxis )
+Twist::Twist( const Vec3d& axis, const Vec3d& point_on_axis ) :
+	twist_( ComputeTwist( axis, point_on_axis ) ),
+	axis_( twist_.head( 3 ) ),
+	linear_( twist_.tail( 3 ) ),
+	cache_( ComputeCache( twist_ ) )
 {
-	Vec3d axis( 0.0, 0.0, 1.0 );
-	Vec3d point_on_axis( 0.5, 0.5, 1.5 );
-
-	Twist twist( axis, point_on_axis );
-
-	Vec3d expected_linear = -axis.normalized().cross( point_on_axis );
-	Vec3d expected_axis = axis.normalized();
-
-	ASSERT_TRUE( twist.GetAxis().isApprox( expected_axis ) );
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) );
 }
 
 // ------------------------------------------------------------
 
-TEST_F( TwistTest, ExponentialMatrix )
+Vec6d Twist::ComputeTwist( const Vec3d& linear )
 {
-	Vec3d axis( 0.0, 0.0, 1.0 );
-	Vec3d point_on_axis( 0.5, 0.5, 1.5 );
-	Twist twist( axis, point_on_axis );
-
-	double theta = M_PI / 2.0; // 90 degrees
-	Mat4d exponential = twist.ExponentialMatrix( theta );
-
-	// Expected rotation matrix for 90 degrees around z-axis
-	Mat3d expected_rotation;
-	expected_rotation << 0.0, -1.0, 0.0,
-	    1.0,  0.0, 0.0,
-	    0.0,  0.0, 1.0;
-
-	// Expected translation vector
-	Vec3d expected_translation = -expected_rotation* twist.GetLinear() + twist.GetAxis() * theta * twist.GetLinear().dot( twist.GetAxis() );
-	Mat3d rot = exponential.block< 3, 3 >( 0, 0 );
-	Mat3d trans = exponential.block< 3, 1 >( 0, 3 );
-	ASSERT_TRUE( rot.isApprox( expected_rotation, 1e-6 ) );
-	ASSERT_TRUE( trans.isApprox( expected_translation, 1e-6 ) );
+	Vec6d twist;
+	twist.head( 3 ) = Vec3d::Zero();
+	twist.tail( 3 ) = linear.normalized();
+	return twist;
 }
 
 // ------------------------------------------------------------
 
-} // namespace SOArm100::Kinematics::Test
+Vec6d Twist::ComputeTwist( const Vec3d& axis, const Vec3d& point_on_axis )
+{
+	Vec6d twist;
+	const Vec3d& axis_normalized = axis.normalized();
+	const Vec3d& linear = -axis_normalized.cross( point_on_axis );
+	twist.head( 3 ) = axis_normalized;
+	twist.tail( 3 ) = linear;
+	return twist;
+}
+
+// ------------------------------------------------------------
+
+std::optional< Twist::Cache > Twist::ComputeCache( const Vec6d& twist )
+{
+	if ( !IsRevolute( twist ) )
+		return std::nullopt;
+
+	const Vec3d omega = twist.head( 3 );
+	const Vec3d v = twist.tail( 3 );
+
+	Cache cache;
+	cache.omega_hat = SkewMatrix( omega );
+	cache.omega_hat_squared = cache.omega_hat * cache.omega_hat;
+	cache.omega_cross_v = cache.omega_hat * v;
+	cache.omega_omegaT_v = omega * omega.transpose() * v;
+
+	return cache;
+}
+
+// ------------------------------------------------------------
+
+const Mat4d Twist::ExponentialMatrix( double thetha ) const
+{
+	Mat4d exponential = Mat4d::Identity();
+	Mat3d R;
+	Vec3d t;
+
+	if ( !cache_ )
+	{
+		exponential.block< 3, 1 >( 0, 3 ).noalias() = linear_ * thetha;
+	}
+	else
+	{
+		R.noalias() = cache_->omega_hat * sin( thetha ) + cache_->omega_hat_squared * ( 1 - cos( thetha ) );
+		t.noalias() = ( -R * cache_->omega_cross_v ) + cache_->omega_omegaT_v * thetha;
+		exponential.block< 3, 3 >( 0, 0 ).noalias() += R;
+		exponential.block< 3, 1 >( 0, 3 ).noalias() = t;
+	}
+
+	return exponential;
+}
+
+// ------------------------------------------------------------
+
+}

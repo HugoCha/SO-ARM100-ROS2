@@ -1,4 +1,6 @@
 #include "JointChain.hpp"
+#include "Joint.hpp"
+#include <algorithm>
 
 namespace SOArm100::Kinematics
 {
@@ -28,22 +30,37 @@ JointChain::JointChain( const std::span< JointConstPtr const >& joints )
 void JointChain::Add( JointConstPtr joint )
 {
 	if ( !joint )
-		return;
+		throw std::invalid_argument( "Joint pointer cannot be null" );
 
-	joints_.emplace_back( std::move( joint ) );
+	joints_.emplace_back( joint );
 	if ( joint->GetType() != JointType::FIXED )
 		active_joints_.emplace_back( joint );
 }
 
 // ------------------------------------------------------------
 
-[[nodiscard]] const JointChain JointChain::SubChain( int start_index, int count ) const
+const JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
 {
 	const auto& joints = GetJoints();
-	if ( start_index < 0 || count < 0 || start_index + count > static_cast< int >( joints.size() ) )
+
+	auto start_it = std::find( joints.begin(), joints.end(), start );
+	auto end_it = std::find( joints.begin(), joints.end(), end );
+
+	if ( start_it == joints.end() || end_it == joints.end() )
 	{
-		throw std::out_of_range( "Invalid subspan range" );
+		throw std::out_of_range( "Invalid subchain link" );
 	}
+
+	size_t start_index = static_cast< size_t >( std::distance( joints.begin(), start_it ) );
+	size_t end_index = static_cast< size_t >( std::distance( joints.begin(), end_it ) );
+
+	if ( start_index > end_index )
+	{
+		throw std::out_of_range( "Start index must be less than or equal to end index" );
+	}
+
+	size_t count = end_index - start_index + 1;
+
 	return JointChain( joints.subspan( start_index, count ) );
 }
 

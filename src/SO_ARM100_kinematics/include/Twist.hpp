@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace SOArm100::Kinematics
 {
@@ -13,11 +14,11 @@ Twist();
 Twist( const Vec3d& linear );
 Twist( const Vec3d& axis, const Vec3d& point_on_axis );
 Twist( const Twist& other ) = default;
+Twist( Twist&& ) = default;
+
 ~Twist() = default;
 
-Twist operator = ( const Twist& other ){
-	return Twist( other.twist_ );
-}
+Twist& operator = ( Twist&& ) = default;
 
 [[nodiscard]] inline operator const Vec6d () const {
 	return twist_;
@@ -32,11 +33,11 @@ Twist operator = ( const Twist& other ){
 }
 
 [[nodiscard]] inline bool IsRevolute() const {
-	return axis_.norm() > epsilon;
+	return IsRevolute( twist_ );
 }
 
 [[nodiscard]] inline bool IsPrismatic() const {
-	return axis_.norm() < epsilon && linear_.norm() > epsilon;
+	return IsPrismatic( twist_ );
 }
 
 [[nodiscard]] const Mat4d ExponentialMatrix( double thetha ) const;
@@ -50,17 +51,23 @@ struct Cache
 	Vec3d omega_omegaT_v;
 };
 
-Twist( const Vec6d& twist );
+Vec6d twist_;
+Vec3d axis_;
+Vec3d linear_;
 
-const Vec6d twist_;
-const Vec3d axis_;
-const Vec3d linear_;
+std::optional< Cache > cache_;
 
-const Cache cache_;
+static bool IsRevolute( const Vec6d& twist ){
+	return twist.head( 3 ).norm() > epsilon;
+}
+
+static bool IsPrismatic( const Vec6d& twist ){
+	return twist.head( 3 ).norm() < epsilon && twist.tail( 3 ).norm() > epsilon;
+}
 
 static Vec6d ComputeTwist( const Vec3d& linear );
 static Vec6d ComputeTwist( const Vec3d& axis, const Vec3d& point_on_axis );
-static Cache ComputeCache( const Vec6d& twist );
+static std::optional< Cache > ComputeCache( const Vec6d& twist );
 };
 
 using TwistConstPtr = std::shared_ptr< const Twist >;

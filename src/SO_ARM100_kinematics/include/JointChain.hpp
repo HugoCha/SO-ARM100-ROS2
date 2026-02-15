@@ -18,6 +18,9 @@ JointChain( const JointChain& chain ) :
 {
 }
 
+JointChain( JointChain&& ) = default;
+JointChain& operator = ( JointChain&& ) = default;
+
 [[nodiscard]] std::span< JointConstPtr const > GetJoints() const {
 	return joints_;
 }
@@ -26,20 +29,20 @@ JointChain( const JointChain& chain ) :
 	return active_joints_;
 }
 
-JointConstPtr const GetActiveJoint( int i ) const {
-	if ( i < 0 || i >= active_joints_.size() )
+JointConstPtr GetActiveJoint( int i ) const {
+	if ( i < 0 || i >= static_cast< int >( active_joints_.size() ) )
 		throw std::out_of_range( "Invalid active joint index" );
 	return active_joints_[i];
 }
 
 const Twist& GetActiveJointTwist( int i ) const {
-	if ( i < 0 || i >= active_joints_.size() )
+	if ( i < 0 || i >= static_cast< int >( active_joints_.size() ) )
 		throw std::out_of_range( "Invalid active joint index" );
 	return active_joints_[i]->GetTwist();
 }
 
 const Limits& GetActiveJointLimits( int i ) const {
-	if ( i < 0 || i >= active_joints_.size() )
+	if ( i < 0 || i >= static_cast< int >( active_joints_.size() ) )
 		throw std::out_of_range( "Invalid active joint index" );
 	return active_joints_[i]->GetLimits();
 }
@@ -66,7 +69,7 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 	Add( std::make_shared< const Joint >( twist, link, limits ) );
 }
 
-[[nodiscard]] const JointChain SubChain( int start_index, int count ) const;
+[[nodiscard]] const JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
 
 private:
 std::vector< JointConstPtr > joints_;
