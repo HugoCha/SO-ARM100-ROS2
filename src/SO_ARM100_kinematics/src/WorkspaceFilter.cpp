@@ -1,10 +1,8 @@
 #include "WorkspaceFilter.hpp"
 
-#include "Global.hpp"
-
-#include "Converter.hpp"
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
+#include "Joint/JointChain.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <cassert>
 

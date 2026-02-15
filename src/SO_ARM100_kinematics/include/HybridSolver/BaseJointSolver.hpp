@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "BaseJointModel.hpp"
-#include "Joint.hpp"
+#include "Joint/Joint.hpp"
 
 #include <span>
 

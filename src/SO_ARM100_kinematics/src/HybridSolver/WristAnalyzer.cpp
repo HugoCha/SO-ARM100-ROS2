@@ -1,11 +1,9 @@
-#include "WristAnalyzer.hpp"
+#include "HybridSolver/WristAnalyzer.hpp"
 
-#include "Global.hpp"
-
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
-#include "Twist.hpp"
-#include "WristModel.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Twist.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <optional>
 

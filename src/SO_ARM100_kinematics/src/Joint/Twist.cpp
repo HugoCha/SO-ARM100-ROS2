@@ -1,7 +1,6 @@
-#include "Twist.hpp"
+#include "Joint/Twist.hpp"
 
-#include "Global.hpp"
-#include "KinematicsUtils.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/Dense>
 #include <optional>

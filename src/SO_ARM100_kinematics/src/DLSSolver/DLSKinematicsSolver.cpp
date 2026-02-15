@@ -1,10 +1,10 @@
-#include "DLSKinematicsSolver.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
 
-#include "Converter.hpp"
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
-#include "NumericSolverResult.hpp"
-#include "NumericSolverState.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
+#include "DLSSolver/NumericSolverState.hpp"
+#include "Joint/JointChain.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/SVD/JacobiSVD.h>
@@ -101,13 +101,13 @@ NumericSolverResult DLSKinematicsSolver::SolveIK(
 bool DLSKinematicsSolver::InverseKinematic(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
-	VecXd& joint_angles ) const
+	VecXd& joints ) const
 {
 	auto result = SolveIK( target_pose, seed_joints );
 
 	if ( result.Success() )
 	{
-		joint_angles = result.joint_angles;
+		joints = result.joints;
 		return true;
 	}
 

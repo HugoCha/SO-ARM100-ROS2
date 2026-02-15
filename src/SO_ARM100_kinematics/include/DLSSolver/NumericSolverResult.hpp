@@ -9,7 +9,7 @@ namespace SOArm100::Kinematics
 struct NumericSolverResult
 {
 	NumericSolverState state;
-	VecXd joint_angles;
+	VecXd joints;
 	double final_error;
 	int iterations_used;
 
@@ -35,7 +35,7 @@ private:
 		os << "{ State :" << NumericSolverResult::SolverStateToString( obj.state ) << ", "
 		   << "Error :" << obj.final_error << ", "
 		   << "Iteration :" << obj.iterations_used << ", "
-		   << "Joints :" << obj.joint_angles.transpose() << " }";
+		   << "Joints :" << obj.joints.transpose() << " }";
 		return os;
 	}
 };

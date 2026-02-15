@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "JointChain.hpp"
+#include "Joint/JointChain.hpp"
 #include "WorkspaceFilter.hpp"
 
 #include <memory>
@@ -38,11 +38,11 @@ virtual void Initialize(
 	double search_discretization );
 
 [[nodiscard]] bool ForwardKinematic(
-	const std::span< const double >& joint_angles,
+	const std::span< const double >& joints,
 	geometry_msgs::msg::Pose& pose ) const;
 
 [[nodiscard]] bool ForwardKinematic(
-	const VecXd& joint_angles,
+	const VecXd& joints,
 	Mat4d& pose ) const;
 
 [[nodiscard]] bool InverseKinematic(
@@ -69,6 +69,6 @@ std::unique_ptr< WorkspaceFilter > workspace_filter_;
 	const std::vector< std::string >& tip_frames,
 	double search_discretization ) const noexcept;
 
-[[nodiscard]] bool CheckLimits( const std::span< const double >& joint_angles ) const;
+[[nodiscard]] bool CheckLimits( const std::span< const double >& joints ) const;
 };
 }

@@ -15,7 +15,7 @@ public:
 struct SolverParameters
 {
 	int max_iterations{ 200 };
-	double error_tolerance{ 1e-4 };
+	double error_tolerance{ 1e-6 };
 	double min_step{ 0.1 };
 	double max_step{ 1.0 };
 	double min_damping{ 0.01 };

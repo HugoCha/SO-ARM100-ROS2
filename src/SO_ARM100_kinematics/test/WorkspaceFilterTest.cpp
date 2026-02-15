@@ -1,6 +1,6 @@
 #include "WorkspaceFilter.hpp"
 
-#include "JointChain.hpp"
+#include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <gtest/gtest.h>

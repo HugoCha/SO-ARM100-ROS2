@@ -1,10 +1,9 @@
-#include "WristSolver.hpp"
+#include "HybridSolver/WristSolver.hpp"
 
-#include "DLSKinematicsSolver.hpp"
-#include "Global.hpp"
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
-#include "WristModel.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <memory>
 #include <moveit/robot_model/joint_model.hpp>
@@ -108,38 +107,51 @@ WristSolverResult WristSolver::SolveRevolute1(
 
 WristSolverResult WristSolver::SolveRevolute2(
 	const JointChain& joint_chain,
-	const Mat3d& R_target_in_wrist ) const
+	const Mat3d& R_target ) const
 {
 	assert( joint_chain_->GetActiveJointCount() == 2 );
 	WristSolverResult result( 2 );
 
-	const Vec3d& axis1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
-	const Vec3d& axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
+	const Vec3d& e1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis().normalized();
+	const Vec3d& e2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis().normalized();
 
-	const Vec3d& e1 = axis1.normalized();
-	const Vec3d& e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
-	const Vec3d& e3 = e1.cross( e2 ).normalized();
+	Vec3d v  = e2;
+	Vec3d vp = R_target * e2;
 
-	Mat3d B;
-	B.col( 0 ) = e1;
-	B.col( 1 ) = e2;
-	B.col( 2 ) = e3;
+	Vec3d v_perp  = v  - e1.dot( v )  * e1;
+	Vec3d vp_perp = vp - e1.dot( vp ) * e1;
 
-	Mat3d R = B.transpose() * R_target_in_wrist * B;
+	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
+	{
+		result.state = WristSolverState::Unreachable;
+		return result;
+	}
 
-	// R = Rz(q1) * Ry(q2)
-	double s2 = -R( 2, 0 );
-	double c2 =  R( 2, 2 );
+	double q1 = atan2(
+		e1.dot( v_perp.cross( vp_perp ) ),
+		v_perp.dot( vp_perp )
+		);
 
-	double q2 = atan2( s2, c2 );
+	Mat3d R1 = Eigen::AngleAxisd( q1, e1 ).toRotationMatrix();
+	Mat3d R2 = R1.transpose() * R_target;
 
-	double q1 = atan2( R( 1, 2 ), R( 0, 2 ) );
+	// R2 = I + sin(q2) e2x + ( 1 - cos(q2) ) * ( e2x * e2x )
+	// Transpose( e2x ) = -e2x
+	// R2 - Transpose( R2 ) = 2 * sin( q2 )
+	// trace( R ) = 1 + 2 * cos( q2 )
+	Vec3d w = 0.5 * Vec3d(
+		R2( 2, 1 ) - R2( 1, 2 ),
+		R2( 0, 2 ) - R2( 2, 0 ),
+		R2( 1, 0 ) - R2( 0, 1 )
+		);
+
+	double q2 = atan2( e2.dot( w ), ( R2.trace() - 1.0 ) * 0.5 );
 
 	Mat3d R_check =
 		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
 		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
 
-	if ( R_check.isApprox( R_target_in_wrist, epsilon ) )
+	if ( !R_check.isApprox( R_target, 1e-6 ) )
 	{
 		result.state = WristSolverState::Unreachable;
 		return result;
@@ -147,6 +159,7 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 	result.joints << q1, q2;
 	result.state = WristSolverState::Success;
+
 	return result;
 }
 
@@ -154,38 +167,72 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 WristSolverResult WristSolver::SolveRevolute3(
 	const JointChain& joint_chain,
-	const Mat3d& R_target_in_wrist ) const
+	const Mat3d& R_target ) const
 {
-	assert( joint_chain_->GetActiveJointCount() == 3 );
+	assert( joint_chain.GetActiveJointCount() == 3 );
+
 	WristSolverResult result( 3 );
 
-	Vec3d axis1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
-	Vec3d axis2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis();
-	Vec3d axis3 = joint_chain.GetActiveJointTwist( 2 ).GetAxis();
+	Vec3d e1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis().normalized();
+	Vec3d e2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis().normalized();
+	Vec3d e3 = joint_chain.GetActiveJointTwist( 2 ).GetAxis().normalized();
 
-	Vec3d e1 = axis1.normalized();
-	Vec3d e2 = ( axis2 - axis2.dot( e1 ) * e1 ).normalized();
-	Vec3d e3 = e1.cross( e2 );
+	Mat3d R = R_target;
 
-	Mat3d B;
-	B.col( 0 ) = e1;
-	B.col( 1 ) = e2;
-	B.col( 2 ) = e3;
+	// STEP 1: Solve q1 by aligning e3
+	Vec3d v  = e3;
+	Vec3d vp = R * e3;
 
-	Mat3d R = B.transpose() * R_target_in_wrist * B;
+	Vec3d v_perp  = v  - e1.dot( v )  * e1;
+	Vec3d vp_perp = vp - e1.dot( vp ) * e1;
 
-	// R = Rz(q1) * Ry(q2) * Rz(q3)
-	double c2 = std::clamp( R( 2, 2 ), -1.0, 1.0 );
-	double q2 = acos( c2 );
-
-	if ( std::abs( std::sin( q2 ) ) < epsilon )
+	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
 		result.state = WristSolverState::Singularity;
 		return result;
 	}
 
-	double q1 = atan2( R( 1, 2 ), R( 0, 2 ) );
-	double q3 = atan2( R( 2, 1 ), -R( 2, 0 ) );
+	double q1 = atan2( e1.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
+
+	Mat3d R1 = Eigen::AngleAxisd( q1, e1 ).toRotationMatrix();
+	R = R1.transpose() * R;
+
+	// STEP 2: Solve q2 by aligning e3 again
+	v  = e3;
+	vp = R * e3;
+
+	v_perp  = v  - e2.dot( v )  * e2;
+	vp_perp = vp - e2.dot( vp ) * e2;
+
+	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
+	{
+		result.state = WristSolverState::Singularity;
+		return result;
+	}
+
+	double q2 = atan2( e2.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
+
+	Mat3d R2 = Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
+	R = R2.transpose() * R;
+
+	// STEP 3: Extract q3 directly
+	Vec3d w = 0.5 * Vec3d(
+		R( 2, 1 ) - R( 1, 2 ),
+		R( 0, 2 ) - R( 2, 0 ),
+		R( 1, 0 ) - R( 0, 1 ) );
+
+	double q3 = atan2( e3.dot( w ), ( R.trace() - 1.0 ) * 0.5 );
+
+	Mat3d R_check =
+		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
+		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix() *
+		Eigen::AngleAxisd( q3, e3 ).toRotationMatrix();
+
+	if ( !R_check.isApprox( R_target, 1e-6 ) )
+	{
+		result.state = WristSolverState::Unreachable;
+		return result;
+	}
 
 	result.joints << q1, q2, q3;
 	result.state = WristSolverState::Success;

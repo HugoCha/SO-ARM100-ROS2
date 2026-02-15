@@ -1,5 +1,7 @@
-#include "JointChain.hpp"
-#include "Joint.hpp"
+#include "Joint/JointChain.hpp"
+
+#include "Joint/Joint.hpp"
+
 #include <algorithm>
 
 namespace SOArm100::Kinematics

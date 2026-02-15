@@ -1,6 +1,6 @@
 #include "KinematicsSolver.hpp"
 
-#include "KinematicsUtils.hpp"
+#include "Utils/KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <cmath>

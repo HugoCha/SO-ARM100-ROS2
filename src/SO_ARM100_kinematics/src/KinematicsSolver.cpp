@@ -1,9 +1,9 @@
 #include "KinematicsSolver.hpp"
 
-#include "Converter.hpp"
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
-#include "Twist.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Twist.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 #include "WorkspaceFilter.hpp"
 
 #include <cassert>
@@ -119,12 +119,11 @@ void KinematicsSolver::Initialize(
 // ------------------------------------------------------------
 
 bool KinematicsSolver::ForwardKinematic(
-	const std::span< const double >& joint_angles,
+	const std::span< const double >& joints,
 	geometry_msgs::msg::Pose& pose ) const
 {
 	Mat4d T_end;
-	VecXd joints = ToVecXd( joint_angles );
-	if ( ForwardKinematic( joints, T_end ) )
+	if ( ForwardKinematic( ToVecXd( joints ), T_end ) )
 	{
 		pose = ToPoseMsg( T_end );
 		return true;
@@ -135,7 +134,7 @@ bool KinematicsSolver::ForwardKinematic(
 // ------------------------------------------------------------
 
 bool KinematicsSolver::ForwardKinematic(
-	const VecXd& joint_angles,
+	const VecXd& joints,
 	Mat4d& pose ) const
 {
 	if ( !joint_chain_  )
@@ -144,16 +143,16 @@ bool KinematicsSolver::ForwardKinematic(
 		return false;
 	}
 
-	if ( joint_angles.size() != joint_chain_->GetActiveJointCount() )
+	if ( joints.size() != joint_chain_->GetActiveJointCount() )
 	{
 		RCLCPP_ERROR(
 			get_logger(),
 			"Joint angles size (%zu) does not match number of twists (%zu).",
-			joint_angles.size(), joint_chain_->GetActiveJointCount() );
+			joints.size(), joint_chain_->GetActiveJointCount() );
 		return false;
 	}
 
-	POE( *joint_chain_, *home_configuration_, joint_angles, pose );
+	POE( *joint_chain_, *home_configuration_, joints, pose );
 
 	return true;
 }
@@ -222,13 +221,13 @@ bool KinematicsSolver::AreValidInitializeParameters(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::CheckLimits( const std::span< const double >& joint_angles ) const
+bool KinematicsSolver::CheckLimits( const std::span< const double >& joints ) const
 {
-	assert( joint_chain_->GetActiveJointCount() == joint_angles.size() );
+	assert( joint_chain_->GetActiveJointCount() == joints.size() );
 
 	const auto& active_joints = joint_chain_->GetActiveJoints();
 	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		if ( !active_joints[i]->GetLimits().Within( joint_angles[i] ) )
+		if ( !active_joints[i]->GetLimits().Within( joints[i] ) )
 			return false;
 	return true;
 }

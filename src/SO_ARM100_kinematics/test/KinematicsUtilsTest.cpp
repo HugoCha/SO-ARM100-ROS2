@@ -1,10 +1,10 @@
 #include "Global.hpp"
 
-#include "KinematicsUtils.hpp"
-#include "JointChain.hpp"
-#include "Limits.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Limits.hpp"
+#include "Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
-#include "Twist.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
 #include <ostream>

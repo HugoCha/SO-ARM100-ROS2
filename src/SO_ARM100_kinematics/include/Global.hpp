@@ -18,5 +18,5 @@ using MatXd = Eigen::MatrixXd;
 
 using Iso3d = Eigen::Isometry3d;
 
-constexpr double epsilon = 1e-4;
+constexpr double epsilon = 1e-6;
 }

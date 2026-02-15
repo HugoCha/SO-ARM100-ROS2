@@ -1,10 +1,10 @@
-#include "NumericJointsAnalyzer.hpp"
+#include "HybridSolver/NumericJointsAnalyzer.hpp"
 
-#include "BaseJointModel.hpp"
-#include "JointChain.hpp"
-#include "NumericJointsModel.hpp"
-#include "KinematicsUtils.hpp"
-#include "WristModel.hpp"
+#include "HybridSolver/BaseJointModel.hpp"
+#include "HybridSolver/NumericJointsModel.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics
 {
@@ -17,7 +17,7 @@ const Mat4d ComputeReducedHome(
 {
 	if ( !wrist_model )
 		return full_home;
-	return full_home * Inverse( wrist_model->tcp_in_wrist_at_home );
+	return full_home * wrist_model->tcp_in_wrist_at_home_inv;
 }
 
 // ------------------------------------------------------------

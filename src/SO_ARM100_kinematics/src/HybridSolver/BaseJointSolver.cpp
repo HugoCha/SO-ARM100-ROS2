@@ -1,9 +1,7 @@
-#include "Global.hpp"
+#include "HybridSolver/BaseJointSolver.hpp"
 
-#include "BaseJointSolver.hpp"
-
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
+#include "Joint/JointChain.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
 

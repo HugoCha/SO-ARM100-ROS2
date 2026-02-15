@@ -1,9 +1,10 @@
-#include "BaseJointAnalyzer.hpp"
+#include "HybridSolver/BaseJointAnalyzer.hpp"
 
-#include "BaseJointModel.hpp"
-#include "JointChain.hpp"
+#include "HybridSolver/BaseJointModel.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
-#include "WristModel.hpp"
 
 #include <gtest/gtest.h>
 #include <optional>

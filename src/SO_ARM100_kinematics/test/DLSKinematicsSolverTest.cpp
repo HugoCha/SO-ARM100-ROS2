@@ -1,9 +1,9 @@
 #include "Global.hpp"
 
-#include "Converter.hpp"
-#include "KinematicsUtils.hpp"
-#include "NumericSolverResult.hpp"
-#include "NumericSolverState.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
+#include "DLSSolver/NumericSolverState.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -23,7 +23,7 @@
 #pragma push_macro("protected")
 #define private public
 #define protected public
-#include "DLSKinematicsSolver.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "KinematicsSolver.hpp"
 #pragma pop_macro("protected")
 #pragma pop_macro("private")
@@ -193,10 +193,10 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 	EXPECT_EQ( result.state, NumericSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
 	EXPECT_LT( result.final_error, DEFAULT_TOLERANCE );
-	EXPECT_EQ( result.joint_angles.size(), 3 );
+	EXPECT_EQ( result.joints.size(), 3 );
 
 	// Verify the solution reaches the target
-	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
+	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
 	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose ) );
 }
 
@@ -223,11 +223,11 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 	EXPECT_TRUE( result.Success() );
 
 	// Verify solution
-	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
+	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
 	EXPECT_TRUE( PosesEqual( achieved_pose, target_pose, 0.01, 0.01 ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
-	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
+	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -244,11 +244,11 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 
 	EXPECT_EQ( result.state, NumericSolverState::Converged );
 
-	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
+	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
 	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
-	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
+	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -267,11 +267,11 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 	EXPECT_TRUE( result.Success() );
 
 	// Verify it reaches the target (may be different joint config)
-	auto achieved_pose = ComputeFK( ToStdVector( result.joint_angles ) );
+	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
 	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.01, 0.01 ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
-	    << "Joints = " << std::endl << result.joint_angles.matrix() << std::endl;
+	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
 }
 
 // ------------------------------------------------------------

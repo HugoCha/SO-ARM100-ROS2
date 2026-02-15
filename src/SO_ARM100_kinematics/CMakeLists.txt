@@ -22,17 +22,17 @@ if(NOT DEFINED CMAKE_EXPORT_COMPILE_COMMANDS)
 endif()
 
 # Add all source files from src folder
-file(GLOB SOURCE_FILES src/*.cpp)
+file(GLOB_RECURSE SOURCE_FILES src/*.cpp)
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 if(BUILD_TESTING)
-find_package(ament_cmake_gtest REQUIRED)
-find_package(ament_cmake_cppcheck REQUIRED)
-find_package(ament_cmake_uncrustify REQUIRED)
-find_package(code_style REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_cppcheck REQUIRED)
+  find_package(ament_cmake_uncrustify REQUIRED)
+  find_package(code_style REQUIRED)
 
-  file(GLOB INCLUDE_FILES include/*.hpp)
+  file(GLOB_RECURSE INCLUDE_FILES include/*.hpp)
   file(GLOB TEST_FILES test/*Test.cpp)
   file(GLOB TEST_INCLUDE_FILES test/include/*.hpp)
 

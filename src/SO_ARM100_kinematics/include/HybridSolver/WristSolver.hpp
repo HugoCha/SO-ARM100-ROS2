@@ -2,8 +2,8 @@
 
 #include "Global.hpp"
 
-#include "DLSKinematicsSolver.hpp"
-#include "JointChain.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "Joint/JointChain.hpp"
 #include "WristModel.hpp"
 
 #include <memory>

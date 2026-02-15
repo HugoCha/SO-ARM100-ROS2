@@ -1,11 +1,9 @@
-#include "Global.hpp"
+#include "HybridSolver/BaseJointAnalyzer.hpp"
 
-#include "BaseJointAnalyzer.hpp"
-
-#include "BaseJointModel.hpp"
-#include "JointChain.hpp"
-#include "Twist.hpp"
-#include "WristModel.hpp"
+#include "HybridSolver/BaseJointModel.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Twist.hpp"
 
 namespace SOArm100::Kinematics
 {

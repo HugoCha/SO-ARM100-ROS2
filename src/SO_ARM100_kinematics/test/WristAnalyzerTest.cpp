@@ -1,12 +1,12 @@
-#include "WristAnalyzer.hpp"
+#include "HybridSolver/WristAnalyzer.hpp"
 
 #include "Global.hpp"
-#include "JointChain.hpp"
+#include "HybridSolver/WristModel.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
-#include "WristModel.hpp"
 
 #include <gtest/gtest.h>
-#include <optional>
 
 namespace SOArm100::Kinematics::Test
 {

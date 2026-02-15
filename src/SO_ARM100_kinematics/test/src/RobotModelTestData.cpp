@@ -1,10 +1,11 @@
 #include "RobotModelTestData.hpp"
 
 #include "Global.hpp"
-#include "JointChain.hpp"
-#include "KinematicsUtils.hpp"
-#include "Limits.hpp"
-#include "Link.hpp"
+#include "Joint/JointChain.hpp"
+#include "Joint/Limits.hpp"
+#include "Joint/Link.hpp"
+#include "Joint/Twist.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
 #include <Eigen/Dense>

@@ -1,10 +1,10 @@
-#include "HybridKinematicsSolver.hpp"
+#include "HybridSolver/HybridKinematicsSolver.hpp"
 
-#include "BaseJointAnalyzer.hpp"
-#include "NumericJointsAnalyzer.hpp"
-#include "NumericSolverResult.hpp"
-#include "KinematicsUtils.hpp"
-#include "WristAnalyzer.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
+#include "HybridSolver/BaseJointAnalyzer.hpp"
+#include "HybridSolver/NumericJointsAnalyzer.hpp"
+#include "HybridSolver/WristAnalyzer.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <cmath>
@@ -12,6 +12,42 @@
 
 namespace SOArm100::Kinematics
 {
+
+// ------------------------------------------------------------
+
+class IKSolver
+{
+	virtual bool IK(
+		const Mat4d& target_pose,
+		const std::span< const double >& seed_joints,
+		VecXd& joints ) = 0;
+};
+
+// ------------------------------------------------------------
+
+class BaseAndWristSolver : IKSolver
+{
+	virtual bool IK(
+		const Mat4d& target_pose,
+		const std::span< const double >& seed_joints,
+		VecXd& joints ) override
+	{
+		return false;
+	}
+};
+
+// ------------------------------------------------------------
+
+class BaseAndNumericAndWristSolver : IKSolver
+{
+	virtual bool IK(
+		const Mat4d& target_pose,
+		const std::span< const double >& seed_joints,
+		VecXd& joints ) override
+	{
+		return false;
+	}
+};
 
 // ------------------------------------------------------------
 
@@ -177,7 +213,7 @@ bool HybridKinematicsSolver::InverseKinematic(
 				seed_joints ) ).Success() )
 		return false;
 
-	numeric_solver_->FK( buffer_.num_result.joint_angles, buffer_.T_num );
+	numeric_solver_->FK( buffer_.num_result.joints, buffer_.T_num );
 	auto T_wrist_target = Inverse( buffer_.T_num ) * buffer_.num_target;
 	if ( !( buffer_.wrist_result = wrist_solver_->IK(
 				T_wrist_target,
@@ -185,7 +221,7 @@ bool HybridKinematicsSolver::InverseKinematic(
 		return false;
 
 	joints << buffer_.base_result.base_joint,
-	    buffer_.num_result.joint_angles,
+	    buffer_.num_result.joints,
 	    buffer_.wrist_result.joints;
 
 	return true;

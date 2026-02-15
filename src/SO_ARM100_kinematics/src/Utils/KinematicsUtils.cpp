@@ -1,6 +1,6 @@
-#include "KinematicsUtils.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
-#include "JointChain.hpp"
+#include "Joint/JointChain.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>

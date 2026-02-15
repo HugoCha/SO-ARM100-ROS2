@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DLSKinematicsSolver.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "NumericJointsModel.hpp"
 
 #include <memory>

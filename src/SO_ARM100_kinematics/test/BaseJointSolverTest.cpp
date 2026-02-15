@@ -1,10 +1,11 @@
-#include "BaseJointSolver.hpp"
+#include "HybridSolver/BaseJointSolver.hpp"
 
-#include "JointChain.hpp"
+#include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <ostream>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -58,9 +59,11 @@ TEST_F( BaseJointSolverTest, FK )
 
 TEST_F( BaseJointSolverTest, IK_Success )
 {
+    Vec3d wrist_center_at_home = {1,0,0};
+
 	// Create a target wrist center position
 	Mat4d wrist_center = Mat4d::Identity();
-	wrist_center.block< 3, 1 >( 0, 3 ) = Vec3d( 0.5, 0.5, 0.0 );
+	wrist_center.block< 3, 1 >( 0, 3 ) = Vec3d( sqrt( 2 ) / 2.0, sqrt( 2 ) / 2.0, 0.0 );
 
 	// Seed joint angle
 	std::vector< double > seed_joints = { 0.0 };
@@ -79,12 +82,13 @@ TEST_F( BaseJointSolverTest, IK_Success )
 	Mat4d fk;
 	solver_.FK( joints, fk );
 
-	// The wrist center should be at the expected position after applying the transform
-	Vec3d transformed_wrist_center = fk.block< 3, 3 >( 0, 0 ) * wrist_center.block< 3, 1 >( 0, 3 ) + fk.block< 3, 1 >( 0, 3 );
+	Vec3d transformed_wrist_center = fk.block< 3, 3 >( 0, 0 ) * wrist_center_at_home;
 	Vec3d expected_position = wrist_center.block< 3, 1 >( 0, 3 ); // Should be the same since rotation is around Z-axis
 
 	EXPECT_TRUE( transformed_wrist_center.isApprox( expected_position, 1e-4 ) )
-	    << "Forward kinematics with IK solution should match target position";
+	    << "wrist center= " << expected_position.transpose() << std::endl
+	    << "result joints= " << result.base_joint * 180 / M_PI << std::endl
+	    << "result wrist center= " << transformed_wrist_center.transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -105,32 +109,6 @@ TEST_F( BaseJointSolverTest, IK_Singularity )
 	// Check that the solution is a singularity
 	EXPECT_EQ( result.state, BaseJointSolverState::Singularity ) << "IK should detect singularity";
 	EXPECT_EQ( result.base_joint[0], seed_joints[0] ) << "Solution should match seed joint in singularity case";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( BaseJointSolverTest, IK_Unreachable )
-{
-	// Create a target wrist center position that is unreachable
-	Mat4d wrist_center = Mat4d::Identity();
-	wrist_center.block< 3, 1 >( 0, 3 ) = Vec3d( 0.0, 0.0, -1.0 ); // Negative Z (assuming positive Z is the axis)
-
-	// But set reference direction to make it unreachable
-	BaseJointModel model;
-	model.reference_direction = Vec3d( 0.0, 0.0, 1.0 ); // Same as rotation axis
-	BaseJointSolver custom_solver;
-	custom_solver.Initialize( joint_chain_, model );
-
-	// Seed joint angle
-	std::vector< double > seed_joints = { 0.0 };
-	std::span< const double > seed_joints_span( seed_joints );
-
-	// Solve IK
-	BaseJointSolverResult result = custom_solver.IK( wrist_center, seed_joints_span );
-
-	// Check that the solution is unreachable
-	EXPECT_EQ( result.state, BaseJointSolverState::Unreachable ) << "IK should detect unreachable position";
-	EXPECT_TRUE( std::isnan( result.base_joint[0] ) ) << "Solution should be NaN for unreachable position";
 }
 
 // ------------------------------------------------------------

@@ -4,10 +4,10 @@
 
 #include "BaseJointModel.hpp"
 #include "BaseJointSolver.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
 #include "KinematicsSolver.hpp"
 #include "NumericJointsModel.hpp"
 #include "NumericJointsSolver.hpp"
-#include "NumericSolverResult.hpp"
 #include "WristSolver.hpp"
 #include "WristModel.hpp"
 

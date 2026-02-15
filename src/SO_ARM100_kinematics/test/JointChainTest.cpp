@@ -1,4 +1,4 @@
-#include "JointChain.hpp"
+#include "Joint/JointChain.hpp"
 
 #include "RobotModelTestData.hpp"
 

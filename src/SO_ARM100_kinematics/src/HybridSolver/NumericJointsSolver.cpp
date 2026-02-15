@@ -1,6 +1,9 @@
-#include "NumericJointsSolver.hpp"
+#include "HybridSolver/NumericJointsSolver.hpp"
 
-#include "NumericSolverResult.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
+
+#include <memory>
 
 namespace SOArm100::Kinematics
 {
@@ -8,7 +11,7 @@ namespace SOArm100::Kinematics
 // ------------------------------------------------------------
 
 NumericJointsSolver::NumericJointsSolver() :
-	dls_solver_()
+	dls_solver_( std::make_unique< DLSKinematicsSolver >() )
 {
 }
 
@@ -23,7 +26,7 @@ void NumericJointsSolver::Initialize(
 
 	const auto& active_joints = joint_chain.GetActiveJoints();
 	auto start = active_joints[numeric_joint_model.start_index];
-	auto end = active_joints[numeric_joint_model.start_index + numeric_joint_model.count];
+	auto end = active_joints[numeric_joint_model.start_index + numeric_joint_model.count-1];
 
 	dls_solver_->Initialize(
 		joint_chain.SubChain( start, end ),
