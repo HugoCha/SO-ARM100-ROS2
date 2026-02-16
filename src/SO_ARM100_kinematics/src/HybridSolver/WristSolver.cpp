@@ -1,6 +1,7 @@
 #include "HybridSolver/WristSolver.hpp"
 
 #include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "SolverResult.hpp"
@@ -15,19 +16,30 @@ namespace SOArm100::Kinematics
 // ------------------------------------------------------------
 
 WristSolver::WristSolver(
-	const JointChain& joint_chain,
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
 	const WristModel& wrist_model )
 {
-	const auto& active_joints = joint_chain.GetActiveJoints();
+	const auto& active_joints = joint_chain->GetActiveJoints();
 	auto wrist_start_joint = active_joints[wrist_model.active_joint_start];
 	auto wrist_end_joint = active_joints[wrist_model.active_joint_start + wrist_model.active_joint_count - 1];
-	joint_chain_ = std::make_unique< const JointChain >( joint_chain.SubChain( wrist_start_joint, wrist_end_joint ) );
+
+	if ( active_joints.front() == wrist_start_joint && active_joints.back() == wrist_end_joint )
+	{
+		joint_chain_ = joint_chain;
+		home_configuration_ = home_configuration;
+	}
+	else
+	{
+		joint_chain_ = std::make_shared< const JointChain >( joint_chain->SubChain( wrist_start_joint, wrist_end_joint ) );
+		home_configuration_ = std::make_shared< const Mat4d >( wrist_model_->tcp_in_wrist_at_home );
+	}
+
 	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
-	
 	dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
 	dls_wrist_solver_->Initialize(
-		*joint_chain_,
-		wrist_model_->tcp_in_wrist_at_home,
+		joint_chain_,
+		home_configuration_,
 		0.01 );
 }
 
@@ -70,6 +82,18 @@ SolverResult WristSolver::IK(
 	if ( !result.Success() && !result.Unreachable() )
 	{
 		result = SolveNumeric( target_in_wrist, seed_joints );
+	}
+
+	if ( home_configuration_ )
+	{
+		Mat4d fk_result;
+		CheckSolverResult(
+			*joint_chain_,
+			*home_configuration_,
+			target_in_wrist,
+			fk_result,
+			result,
+			epsilon );
 	}
 
 	return result;

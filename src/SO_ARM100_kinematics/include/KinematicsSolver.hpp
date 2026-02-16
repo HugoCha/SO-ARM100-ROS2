@@ -33,8 +33,8 @@ virtual void Initialize(
 	double search_discretization );
 
 virtual void Initialize(
-	const JointChain& joint_chain,
-	const Mat4d& home_configuration,
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
 	double search_discretization );
 
 [[nodiscard]] bool ForwardKinematic(
@@ -51,10 +51,8 @@ virtual void Initialize(
 	std::vector< double >& joints ) const;
 
 protected:
-// std::span< const moveit::core::JointModel* const > joint_models_;
-// std::span< TwistConstPtr > twists_;
-std::unique_ptr< const JointChain > joint_chain_;
-std::unique_ptr< const Mat4d > home_configuration_;
+std::shared_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const Mat4d > home_configuration_;
 std::unique_ptr< WorkspaceFilter > workspace_filter_;
 
 [[nodiscard]] virtual bool InverseKinematic(

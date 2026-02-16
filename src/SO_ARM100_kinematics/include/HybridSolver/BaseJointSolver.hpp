@@ -16,7 +16,8 @@ class BaseJointSolver : public IKinematicsSolver
 {
 public:
 BaseJointSolver(
-	const JointChain& joint_chain,
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
 	const BaseJointModel& base_joint_model );
 
 virtual SolverResult IK(
@@ -27,7 +28,11 @@ virtual SolverResult IK(
 void FK( const VecXd& base_joint, Mat4d& fk ) const;
 
 private:
-const Joint* base_joint;
+std::shared_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const Mat4d > home_configuration_;
+
 BaseJointModelUniqueConstPtr base_joint_model_;
+
+const Joint* GetBaseJoint() const;
 };
 }

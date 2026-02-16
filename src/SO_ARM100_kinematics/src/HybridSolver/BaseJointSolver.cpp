@@ -1,5 +1,6 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 
+#include "Global.hpp"
 #include "Joint/JointChain.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -12,10 +13,12 @@ namespace SOArm100::Kinematics
 // ------------------------------------------------------------
 
 BaseJointSolver::BaseJointSolver(
-	const JointChain& joint_chain,
-	const BaseJointModel& base_joint_model )
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
+	const BaseJointModel& base_joint_model ) :
+	joint_chain_( joint_chain ),
+	home_configuration_( home_configuration )
 {
-	base_joint = joint_chain.GetActiveJoint( 0 ).get();
 	base_joint_model_ = std::make_unique< const BaseJointModel >( base_joint_model );
 }
 
@@ -25,9 +28,9 @@ void BaseJointSolver::FK(
 	const VecXd& joints,
 	Mat4d& fk ) const
 {
-	assert( base_joint );
+	assert( joint_chain_ );
 
-	const auto& base_twist = base_joint->GetTwist();
+	const auto& base_twist = GetBaseJoint()->GetTwist();
 	fk.noalias() = base_twist.ExponentialMatrix( joints[0] );
 }
 
@@ -38,11 +41,11 @@ SolverResult BaseJointSolver::IK(
 	const std::span< const double >& seed_joints,
 	double search_discretization ) const
 {
-	assert( base_joint );
+	assert( joint_chain_ );
 
 	SolverResult result( 1 );
 
-	const auto& base_twist = base_joint->GetTwist();
+	const auto& base_twist = GetBaseJoint()->GetTwist();
 
 	const Vec3d& omega = base_twist.GetAxis();
 	const Vec3d& t_wrist_center = Translation( wrist_center );
@@ -68,7 +71,27 @@ SolverResult BaseJointSolver::IK(
 		               SolverState::Success;
 	}
 
+	if ( home_configuration_ )
+	{
+		Mat4d result_pose;
+		CheckSolverResult(
+			*joint_chain_,
+			*home_configuration_,
+			wrist_center,
+			result_pose,
+			result,
+			epsilon );
+	}
+
 	return result;
+}
+
+// ------------------------------------------------------------
+
+const Joint* BaseJointSolver::GetBaseJoint() const
+{
+	assert( joint_chain_ );
+	return joint_chain_->GetActiveJoint( 0 ).get();
 }
 
 // ------------------------------------------------------------

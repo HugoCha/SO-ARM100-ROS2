@@ -61,9 +61,9 @@ void KinematicsSolver::Initialize(
 	const auto& joint_models = joint_model_group->getJointModels();
 
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
-	home_configuration_ = std::make_unique< const Mat4d >( home_configuration );
+	home_configuration_ = std::make_shared< const Mat4d >( home_configuration );
 
-	auto joint_chain = std::make_unique< JointChain >( joint_models.size() );
+	auto joint_chain = std::make_shared< JointChain >( joint_models.size() );
 
 	for ( const auto* joint_model : joint_models )
 	{
@@ -107,13 +107,13 @@ void KinematicsSolver::Initialize(
 // ------------------------------------------------------------
 
 void KinematicsSolver::Initialize(
-	const JointChain& joint_chain,
-	const Mat4d& home_configuration,
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
 	double search_discretization )
 {
-	joint_chain_ = std::make_unique< const JointChain >( joint_chain );
-	workspace_filter_ = std::make_unique< WorkspaceFilter >( joint_chain );
-	home_configuration_ = std::make_unique< const Mat4d >( home_configuration );
+	joint_chain_ = joint_chain;
+	home_configuration_ = home_configuration;
+	workspace_filter_ = std::make_unique< WorkspaceFilter >( *joint_chain );
 }
 
 // ------------------------------------------------------------

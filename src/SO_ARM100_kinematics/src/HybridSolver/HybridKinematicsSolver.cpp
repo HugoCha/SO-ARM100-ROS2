@@ -38,10 +38,13 @@ void HybridKinematicsSolver::Initialize(
 	search_discretization_ = search_discretization;
 
 	const HybridSolverConfiguration& configuration = HybridSolverAnalyzer::AnalyzeConfiguration(
-		*joint_chain_, 
+		*joint_chain_,
 		*home_configuration_ );
 
-	solver_ = std::move( HybridSolverFactory::Get( *joint_chain_, configuration ) );
+	solver_ = std::move( HybridSolverFactory::Get(
+							 joint_chain_,
+							 home_configuration_,
+							 configuration ) );
 }
 
 // ------------------------------------------------------------

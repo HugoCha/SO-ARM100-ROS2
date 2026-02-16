@@ -7,6 +7,7 @@
 namespace SOArm100::Kinematics
 {
 class JointChain;
+struct SolverResult;
 
 [[nodiscard]] inline const Mat3d Rotation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 3 >( 0, 0 );
@@ -53,4 +54,12 @@ void POE(
 	const Mat4d& M,
 	const VecXd& thetas,
 	Mat4d& poe );
+
+void CheckSolverResult(
+	const JointChain& joint_chain,
+	const Mat4d& home_configuration,
+	const Mat4d& target,
+	Mat4d& result_pose,
+	SolverResult& solver_result,
+	double tolerance );
 }

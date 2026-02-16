@@ -16,6 +16,6 @@ virtual ~IKinematicsSolver() = default;
 [[nodiscard]] virtual SolverResult IK(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
-    double search_discretization ) const = 0;
+	double search_discretization ) const = 0;
 };
 }

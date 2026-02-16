@@ -1,6 +1,8 @@
 #include "Utils/KinematicsUtils.hpp"
 
+#include "Global.hpp"
 #include "Joint/JointChain.hpp"
+#include "SolverResult.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -136,6 +138,25 @@ void POE(
 	}
 
 	poe *= M;
+}
+
+// ------------------------------------------------------------
+
+void CheckSolverResult(
+	const JointChain& joint_chain,
+	const Mat4d& home_configuration,
+	const Mat4d& target,
+	Mat4d& result_pose,
+	SolverResult& solver_result,
+	double tolerance )
+{
+	if ( solver_result.Unreachable() )
+		return;
+
+	POE( joint_chain, home_configuration, solver_result.joints, result_pose );
+
+	if ( !target.isApprox( result_pose, tolerance ) )
+		solver_result.state = SolverState::Unreachable;
 }
 
 // ------------------------------------------------------------

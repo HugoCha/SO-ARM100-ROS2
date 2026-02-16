@@ -20,12 +20,14 @@ struct SolverResult
 	SolverResult( int n ) :
 		state( SolverState::None ),
 		joints( n )
-	{}
+	{
+	}
 
-    SolverResult( SolverState result_state, VecXd result_joints ) :
-        state( result_state ),
-        joints( result_joints )
-    {}
+	SolverResult( SolverState result_state, VecXd result_joints ) :
+		state( result_state ),
+		joints( result_joints )
+	{
+	}
 
 	inline bool Unreachable() const {
 		return state == SolverState::Unreachable;
@@ -40,19 +42,19 @@ struct SolverResult
 	}
 };
 
-static SolverState GetSolverState( 
-    const std::vector< SolverResult >& results )
+static SolverState GetSolverState(
+	const std::vector< SolverResult >& results )
 {
-    SolverState state = SolverState::Success;
+	SolverState state = SolverState::Success;
 
-    for ( auto result : results )
-    {
-        if ( result.Unreachable() )
-            return SolverState::Unreachable;
-        if ( result.Singularity() )
-            state = SolverState::Singularity;
-    }
+	for ( auto result : results )
+	{
+		if ( result.Unreachable() )
+			return SolverState::Unreachable;
+		if ( result.Singularity() )
+			state = SolverState::Singularity;
+	}
 
-    return state;
+	return state;
 }
 }

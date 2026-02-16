@@ -1,5 +1,6 @@
 #include "HybridSolver/NumericJointsSolver.hpp"
 
+#include "Global.hpp"
 #include "HybridSolver/NumericJointsModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
@@ -7,6 +8,7 @@
 #include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <ostream>
 #include <vector>
 
@@ -22,7 +24,9 @@ protected:
 void SetUp() override
 {
 	// Create a simple revolute joint chain for testing
-	joint_chain_ = Data::GetRevoluteOnlyRobotJointChain();
+	joint_chain_ = std::make_shared< const JointChain >( Data::GetRevoluteOnlyRobotJointChain() );
+
+	home_ = std::make_shared< const Mat4d >( Data::GetRevoluteOnlyRobotHome() );
 
 	// Create a numeric joints model for the first 3 joints
 	numeric_joint_model_.start_index = 0;
@@ -34,7 +38,8 @@ void TearDown() override
 {
 }
 
-JointChain joint_chain_{ 0 };
+std::shared_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const Mat4d > home_;
 NumericJointsModel numeric_joint_model_{};
 };
 
@@ -47,7 +52,7 @@ TEST_F( NumericJointsSolverTest, FK )
 	VecXd joints( 3 );
 	joints << M_PI / 4, M_PI / 6, M_PI / 8;
 
-    NumericJointsSolver solver( joint_chain_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
 	// Compute forward kinematics
 	Mat4d fk;
 	bool success = solver.FK( joints, fk );
@@ -59,10 +64,10 @@ TEST_F( NumericJointsSolverTest, FK )
 	Mat4d expected = Mat4d::Identity();
 	for ( int i = 0; i < 3; ++i )
 	{
-		const auto& twist = joint_chain_.GetActiveJointTwist( i );
+		const auto& twist = joint_chain_->GetActiveJointTwist( i );
 		expected = expected * twist.ExponentialMatrix( joints[i] );
 	}
-    expected *= Data::GetRevoluteOnlyRobotHome();
+	expected *= Data::GetRevoluteOnlyRobotHome();
 	EXPECT_TRUE( fk.isApprox( expected, 1e-6 ) ) << "Forward kinematics result should match expected transform";
 }
 
@@ -77,7 +82,8 @@ TEST_F( NumericJointsSolverTest, FK_WithSubChain )
 	sub_model.home_configuration = Mat4d::Identity();
 
 	// Initialize a solver with the sub-chain
-	NumericJointsSolver sub_solver( joint_chain_, sub_model );
+	auto sub_home = std::make_shared< const Mat4d >( sub_model.home_configuration );
+	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model );
 
 	// Create joint angles for the sub-chain
 	VecXd joints( 2 );
@@ -98,7 +104,7 @@ TEST_F( NumericJointsSolverTest, FK_WithSubChain )
 	Mat4d expected = Mat4d::Identity();
 	for ( int i = 1; i < 3; ++i )    // Start from index 1
 	{
-		const auto& twist = joint_chain_.GetActiveJointTwist( i );
+		const auto& twist = joint_chain_->GetActiveJointTwist( i );
 		expected = expected * twist.ExponentialMatrix( full_joints[i] );
 	}
 
@@ -110,16 +116,16 @@ TEST_F( NumericJointsSolverTest, FK_WithSubChain )
 TEST_F( NumericJointsSolverTest, IK )
 {
 	// Create a target pose
-    VecXd joints(3);
-    joints << M_PI / 4, M_PI / 6, M_PI / 8;
+	VecXd joints( 3 );
+	joints << M_PI / 4, M_PI / 6, M_PI / 8;
 	Mat4d target;
-    POE(joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
+	POE( *joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
 
 	// Seed joints
 	std::vector< double > seed_joints{ 0.0, 0.0, 0.0 };
 
 	// Solve IK
-    NumericJointsSolver solver( joint_chain_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
 	SolverResult result = solver.IK( target, seed_joints, 0 );
 
 	// Check that the solution is valid
@@ -129,10 +135,10 @@ TEST_F( NumericJointsSolverTest, IK )
 	Mat4d fk;
 	solver.FK( result.joints, fk );
 
-	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) ) 
-        << "target=\n" << target << std::endl
-        << "fk=\n" << fk << std::endl
-        << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
+	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) )
+	    << "target=\n" << target << std::endl
+	    << "fk=\n" << fk << std::endl
+	    << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -146,13 +152,14 @@ TEST_F( NumericJointsSolverTest, IK_WithSubChain )
 	sub_model.home_configuration = Data::GetRevoluteOnlyRobotHome();
 
 	// Initialize a solver with the sub-chain
-	NumericJointsSolver sub_solver( joint_chain_, sub_model );
+	auto sub_home = std::make_shared< const Mat4d >( sub_model.home_configuration );
+	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model );
 
 	// Create a target pose for the sub-chain
-    VecXd joints(3);
-    joints << M_PI / 4, M_PI / 6;
+	VecXd joints( 3 );
+	joints << M_PI / 4, M_PI / 6;
 	Mat4d target;
-    POE(joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
+	POE( *joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
 
 	// Seed joints
 	std::vector< double > seed_joints{ 0.0, 0.0, 0.0 };
@@ -167,10 +174,10 @@ TEST_F( NumericJointsSolverTest, IK_WithSubChain )
 	Mat4d fk;
 	sub_solver.FK( result.joints, fk );
 
-	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) )        
-        << "target=\n" << target << std::endl
-        << "fk=\n" << fk << std::endl
-        << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
+	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) )
+	    << "target=\n" << target << std::endl
+	    << "fk=\n" << fk << std::endl
+	    << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -185,7 +192,7 @@ TEST_F( NumericJointsSolverTest, IK_UnreachableTarget )
 	std::vector< double > seed_joints{ 0.0, 0.0, 0.0 };
 
 	// Solve IK
-    NumericJointsSolver solver( joint_chain_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
 	SolverResult result = solver.IK( target, seed_joints, 0 );
 
 	// Check that the solution is not successful
@@ -197,19 +204,19 @@ TEST_F( NumericJointsSolverTest, IK_UnreachableTarget )
 TEST_F( NumericJointsSolverTest, IK_WithDifferentSeedJoints )
 {
 	// Create a target pose
-    VecXd joints(3);
-    joints << M_PI / 4, M_PI / 6, M_PI / 8;
+	VecXd joints( 3 );
+	joints << M_PI / 4, M_PI / 6, M_PI / 8;
 	Mat4d target;
-    POE(joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
+	POE( *joint_chain_, Data::GetRevoluteOnlyRobotHome(), joints, target );
 
 	// Test with different seed joints
-	std::vector< std::vector<double> > seed_joints_list = {
-		{0,0,0},
-        {M_PI / 4,M_PI / 4,M_PI / 4},
-        {-M_PI / 4,-M_PI / 4,-M_PI / 4}
+	std::vector< std::vector< double >> seed_joints_list = {
+		{ 0, 0, 0 },
+		{ M_PI / 4, M_PI / 4, M_PI / 4 },
+		{ -M_PI / 4, -M_PI / 4, -M_PI / 4 }
 	};
 
-    NumericJointsSolver solver( joint_chain_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
 
 	for ( const auto& seed_joints : seed_joints_list )
 	{
@@ -218,16 +225,16 @@ TEST_F( NumericJointsSolverTest, IK_WithDifferentSeedJoints )
 
 		// Check that the solution is valid
 		EXPECT_TRUE( result.Success() ) << "IK should succeed for reachable target with seed joints: "
-		                              << seed_joints[0] << std::endl;
+		                                << seed_joints[0] << std::endl;
 
 		// Verify the solution by checking the resulting transform
 		Mat4d fk;
 		solver.FK( result.joints, fk );
 
-		EXPECT_TRUE( fk.isApprox( target, 1e-3 ) )       
-            << "target=\n" << target << std::endl
-            << "fk=\n" << fk << std::endl
-            << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
+		EXPECT_TRUE( fk.isApprox( target, 1e-3 ) )
+		    << "target=\n" << target << std::endl
+		    << "fk=\n" << fk << std::endl
+		    << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
 	}
 }
 

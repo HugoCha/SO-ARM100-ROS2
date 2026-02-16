@@ -1,11 +1,13 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 
+#include "Global.hpp"
 #include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 #include "SolverResult.hpp"
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <memory>
 #include <ostream>
 
 namespace SOArm100::Kinematics::Test
@@ -20,8 +22,8 @@ protected:
 void SetUp() override
 {
 	// Create a simple revolute joint chain for testing
-	joint_chain_ = JointChain( Data::GetRevoluteOnlyRobotJointChain() );
-
+	joint_chain_ = std::make_shared< const JointChain >( Data::GetRevoluteOnlyRobotJointChain() );
+	home_ = std::make_shared< const Mat4d >( Mat4d::Identity() );
 	// Create a base joint model
 	base_joint_model_.reference_direction = Vec3d( 1.0, 0.0, 0.0 );
 }
@@ -30,7 +32,8 @@ void TearDown() override
 {
 }
 
-JointChain joint_chain_{ 0 };
+std::shared_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const Mat4d > home_;
 BaseJointModel base_joint_model_{};
 };
 
@@ -42,7 +45,7 @@ TEST_F( BaseJointSolverTest, FK )
 	VecXd joints( 1 );
 	joints[0] = M_PI / 2.0; // 90 degrees
 
-    BaseJointSolver solver( joint_chain_, base_joint_model_ );
+	BaseJointSolver solver( joint_chain_, home_, base_joint_model_ );
 
 	Mat4d fk;
 	solver.FK( joints, fk );
@@ -58,7 +61,7 @@ TEST_F( BaseJointSolverTest, FK )
 
 TEST_F( BaseJointSolverTest, IK_Success )
 {
-    Vec3d wrist_center_at_home = {1,0,0};
+	Vec3d wrist_center_at_home = { 1, 0, 0 };
 
 	// Create a target wrist center position
 	Mat4d wrist_center = Mat4d::Identity();
@@ -69,7 +72,7 @@ TEST_F( BaseJointSolverTest, IK_Success )
 	std::span< const double > seed_joints_span( seed_joints );
 
 	// Solve IK
-    BaseJointSolver solver( joint_chain_, base_joint_model_ );
+	BaseJointSolver solver( joint_chain_, home_, base_joint_model_ );
 	SolverResult result = solver.IK( wrist_center, seed_joints_span, 0 );
 
 	// Check that the solution is valid
@@ -104,7 +107,7 @@ TEST_F( BaseJointSolverTest, IK_Singularity )
 	std::span< const double > seed_joints_span( seed_joints );
 
 	// Solve IK
-    BaseJointSolver solver( joint_chain_, base_joint_model_ );
+	BaseJointSolver solver( joint_chain_, home_, base_joint_model_ );
 	SolverResult result = solver.IK( wrist_center, seed_joints_span, 0 );
 
 	// Check that the solution is a singularity
@@ -123,7 +126,7 @@ TEST_F( BaseJointSolverTest, IK_EdgeCases )
 	std::vector< double > seed_joints = { 0.0 };
 	std::span< const double > seed_joints_span( seed_joints );
 
-    BaseJointSolver solver( joint_chain_, base_joint_model_ );
+	BaseJointSolver solver( joint_chain_, home_, base_joint_model_ );
 	SolverResult result = solver.IK( wrist_center, seed_joints_span, 0 );
 
 	// Should be a singularity since the wrist center is on the axis

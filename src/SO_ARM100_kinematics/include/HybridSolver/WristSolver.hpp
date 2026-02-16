@@ -17,7 +17,8 @@ class WristSolver : public IKinematicsSolver
 {
 public:
 WristSolver(
-	const JointChain& joint_chain,
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
 	const WristModel& wrist_model );
 
 virtual SolverResult IK(
@@ -28,7 +29,9 @@ virtual SolverResult IK(
 void ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center ) const;
 
 private:
-std::unique_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const JointChain > joint_chain_;
+std::shared_ptr< const Mat4d > home_configuration_;
+
 WristModelUniqueConstPtr wrist_model_;
 std::unique_ptr< DLSKinematicsSolver > dls_wrist_solver_;
 

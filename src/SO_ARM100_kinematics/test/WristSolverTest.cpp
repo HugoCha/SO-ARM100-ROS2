@@ -8,6 +8,7 @@
 #include "SolverResult.hpp"
 
 #include <gtest/gtest.h>
+#include <memory>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -32,17 +33,18 @@ void TearDown() override
 
 TEST_F( WristSolverTest, ComputeWristCenter )
 {
-	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	auto joint_chain = std::make_shared< const JointChain >( Data::GetRevoluteOnlyRobotJointChain() );
 
 	// Create a wrist model for the last 3 joints
 	WristModel wrist_model;
 	wrist_model.type = WristType::Revolute3;
-	wrist_model.active_joint_start = joint_chain.GetActiveJointCount() - 3;
+	wrist_model.active_joint_start = joint_chain->GetActiveJointCount() - 3;
 	wrist_model.active_joint_count = 3;
 	wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
+	auto home = std::make_shared< const Mat4d >( wrist_model.tcp_in_wrist_at_home );
 	// Create a target transform
 	Mat4d target = Mat4d::Identity();
 	target.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 4, Vec3d( 0, 0, 1 ) ).toRotationMatrix();
@@ -50,7 +52,7 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 
 	// Compute the wrist center
 	Mat4d wrist_center;
-	WristSolver solver( joint_chain, wrist_model );
+	WristSolver solver( joint_chain, home, wrist_model );
 	solver.ComputeWristCenter( target, wrist_center );
 
 	// The wrist center should be the target transform multiplied by the inverse of the TCP transform
@@ -64,8 +66,8 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 TEST_F( WristSolverTest, SolveRevolute1 )
 {
 	// Create a joint chain with a single revolute joint
-	JointChain single_joint_chain( 1 );
-	single_joint_chain.Add(
+	auto single_joint_chain = std::make_shared< JointChain >( 1 );
+	single_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -79,9 +81,10 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 	single_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	single_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	single_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( single_wrist_model.tcp_in_wrist_at_home );
 
 	// Initialize a solver for the single joint
-	WristSolver single_solver( single_joint_chain, single_wrist_model );
+	WristSolver single_solver( single_joint_chain, home, single_wrist_model );
 
 	// Test with a target rotation around the Z-axis
 	Mat4d R_target = Mat4d::Identity();
@@ -105,8 +108,8 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 {
 	// Create a joint chain with a single revolute joint
-	JointChain single_joint_chain( 1 );
-	single_joint_chain.Add(
+	auto single_joint_chain = std::make_shared< JointChain >( 1 );
+	single_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -120,9 +123,10 @@ TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 	single_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	single_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	single_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( single_wrist_model.tcp_in_wrist_at_home );
 
 	// Initialize a solver for the single joint
-	WristSolver single_solver( single_joint_chain, single_wrist_model );
+	WristSolver single_solver( single_joint_chain, home, single_wrist_model );
 
 	// Test with a target rotation around the X-axis (unreachable for a Z-axis joint)
 	Mat4d R_target = Mat4d::Identity();
@@ -141,13 +145,13 @@ TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 TEST_F( WristSolverTest, SolveRevolute2 )
 {
 	// Create a joint chain with two revolute joints
-	JointChain two_joint_chain( 2 );
-	two_joint_chain.Add(
+	auto two_joint_chain = std::make_shared< JointChain >( 2 );
+	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	two_joint_chain.Add(
+	two_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -161,15 +165,16 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 	two_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	two_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	two_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( two_wrist_model.tcp_in_wrist_at_home );
 
 	// Initialize a solver for the two joints
-	WristSolver two_solver( two_joint_chain, two_wrist_model );
+	WristSolver two_solver( two_joint_chain, home, two_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target;
 	VecXd initial_joints( 2 );
 	initial_joints << M_PI / 3, M_PI / 6;
-	POE( two_joint_chain, Mat4d::Identity(), initial_joints, R_target );
+	POE( *two_joint_chain, Mat4d::Identity(), initial_joints, R_target );
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0, 0.0 };
@@ -180,7 +185,7 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 
 	// Verify the solution by checking the resulting rotation
 	Mat4d R_result;
-	POE( two_joint_chain, Mat4d::Identity(), result.joints, R_result );
+	POE( *two_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
 	EXPECT_TRUE( R_result.isApprox( R_target, 1e-6 ) )
 	    << "Initial joints: { " << initial_joints.transpose() << " }"  << std::endl
@@ -194,13 +199,13 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 {
 	// Create a joint chain with two parallel revolute joints
-	JointChain two_joint_chain( 2 );
-	two_joint_chain.Add(
+	auto two_joint_chain = std::make_shared< JointChain >( 2 );
+	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	two_joint_chain.Add(
+	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1 ) ),  // Parallel to the first joint
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -214,9 +219,10 @@ TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 	two_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	two_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	two_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( two_wrist_model.tcp_in_wrist_at_home );
 
 	// Initialize a solver for the two joints
-	WristSolver two_solver( two_joint_chain, two_wrist_model );
+	WristSolver two_solver( two_joint_chain, home, two_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target = Mat4d::Identity();
@@ -236,18 +242,18 @@ TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 TEST_F( WristSolverTest, SolveRevolute3 )
 {
 	// Create a joint chain with three revolute joints (spherical wrist)
-	JointChain three_joint_chain( 3 );
-	three_joint_chain.Add(
+	auto three_joint_chain = std::make_shared< JointChain >( 3 );
+	three_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	three_joint_chain.Add(
+	three_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	three_joint_chain.Add(
+	three_joint_chain->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -261,15 +267,16 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 	three_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	three_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	three_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( three_wrist_model.tcp_in_wrist_at_home );
 
 	// Initialize a solver for the three joints
-	WristSolver three_solver( three_joint_chain, three_wrist_model );
+	WristSolver three_solver( three_joint_chain, home, three_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target;
 	VecXd initial_joints( 3 );
 	initial_joints << M_PI / 4, M_PI / 6, M_PI / 8;
-	POE( three_joint_chain, Mat4d::Identity(), initial_joints, R_target );
+	POE( *three_joint_chain, Mat4d::Identity(), initial_joints, R_target );
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0, 0.0, 0.0 };
@@ -280,7 +287,7 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 
 	// Verify the solution by checking the resulting rotation
 	Mat4d R_result;
-	POE( three_joint_chain, Mat4d::Identity(), result.joints, R_result );
+	POE( *three_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
 	EXPECT_TRUE( R_result.isApprox( R_target, 1e-6 ) )
 	    << "Initial joints: { " << initial_joints.transpose() << " }" << std::endl
@@ -293,18 +300,18 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 
 TEST_F( WristSolverTest, IK_FallbackToNumeric )
 {
-	JointChain three_joint_chain( 3 );
-	three_joint_chain.Add(
+	auto three_joint_chain = std::make_shared< JointChain >( 2 );
+	three_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	three_joint_chain.Add(
+	three_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
 		);
-	three_joint_chain.Add(
+	three_joint_chain->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
 		Link( Mat4d::Identity() ),
 		Limits( -M_PI, M_PI )
@@ -318,8 +325,9 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 	three_wrist_model.center_at_home = Vec3d( 0, 0, 0 );
 	three_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	three_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
+	auto home = std::make_shared< const Mat4d >( three_wrist_model.tcp_in_wrist_at_home );
 
-	WristSolver three_solver( three_joint_chain, three_wrist_model );
+	WristSolver three_solver( three_joint_chain, home, three_wrist_model );
 
 	// Create a target transform that might be hard to solve analytically
 	Mat4d target;
@@ -338,7 +346,7 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 
 	ASSERT_TRUE( result.Success() );
 	Mat4d R_result;
-	POE( three_joint_chain, Mat4d::Identity(), result.joints, R_result );
+	POE( *three_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
 	EXPECT_TRUE( R_result.isApprox( R_result, 1e-6 ) );
 }
