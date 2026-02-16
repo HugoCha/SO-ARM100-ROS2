@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "NumericSolverState.hpp"
+#include "SolverResult.hpp"
 
 namespace SOArm100::Kinematics
 {
@@ -39,4 +40,26 @@ private:
 		return os;
 	}
 };
+
+static SolverResult ToSolverResult( NumericSolverResult numeric_result )
+{
+	switch ( numeric_result.state )
+	{
+	case NumericSolverState::Converged:
+		return SolverResult(
+			SolverState::Success,
+			numeric_result.joints );
+	case NumericSolverState::MaxIterations:
+	case NumericSolverState::Failed:
+		return SolverResult(
+			SolverState::Unreachable,
+			numeric_result.joints );
+	case NumericSolverState::Improving:
+	case NumericSolverState::Stalled:
+	default:
+		return SolverResult(
+			SolverState::None,
+			numeric_result.joints );
+	}
+}
 }

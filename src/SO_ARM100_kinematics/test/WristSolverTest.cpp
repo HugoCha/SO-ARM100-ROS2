@@ -3,8 +3,9 @@
 #include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
-#include "Utils/KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
+#include "Utils/KinematicsUtils.hpp"
+#include "SolverResult.hpp"
 
 #include <gtest/gtest.h>
 
@@ -24,9 +25,6 @@ void SetUp() override
 void TearDown() override
 {
 }
-
-// JointChain joint_chain_{0};
-WristSolver solver_{};
 };
 
 // ------------------------------------------------------------
@@ -52,8 +50,8 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 
 	// Compute the wrist center
 	Mat4d wrist_center;
-	solver_.Initialize( joint_chain, wrist_model, 0.01 );
-	solver_.ComputeWristCenter( target, wrist_center );
+	WristSolver solver( joint_chain, wrist_model );
+	solver.ComputeWristCenter( target, wrist_center );
 
 	// The wrist center should be the target transform multiplied by the inverse of the TCP transform
 	// Since the TCP transform is identity, the wrist center should be the same as the target
@@ -83,8 +81,7 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 	single_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
 	// Initialize a solver for the single joint
-	WristSolver single_solver;
-	single_solver.Initialize( single_joint_chain, single_wrist_model, 0.01 );
+	WristSolver single_solver( single_joint_chain, single_wrist_model );
 
 	// Test with a target rotation around the Z-axis
 	Mat4d R_target = Mat4d::Identity();
@@ -92,10 +89,10 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0 };
-	WristSolverResult result = single_solver.IK( R_target, seeds );
+	SolverResult result = single_solver.IK( R_target, seeds, 0 );
 
 	// Check that the solution is valid
-	EXPECT_EQ( result.state, WristSolverState::Success ) << "IK should succeed for reachable target";
+	EXPECT_EQ( result.state, SolverState::Success ) << "IK should succeed for reachable target";
 	EXPECT_NEAR( result.joints[0], M_PI / 4, 1e-6 ) << "Solution should match target angle";
 
 	// Verify the solution by checking the resulting rotation
@@ -125,8 +122,7 @@ TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 	single_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
 	// Initialize a solver for the single joint
-	WristSolver single_solver;
-	single_solver.Initialize( single_joint_chain, single_wrist_model, 0.01 );
+	WristSolver single_solver( single_joint_chain, single_wrist_model );
 
 	// Test with a target rotation around the X-axis (unreachable for a Z-axis joint)
 	Mat4d R_target = Mat4d::Identity();
@@ -134,10 +130,10 @@ TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0 };
-	WristSolverResult result = single_solver.IK( R_target, seeds );
+	SolverResult result = single_solver.IK( R_target, seeds, 0 );
 
 	// Check that the solution is unreachable
-	EXPECT_EQ( result.state, WristSolverState::Unreachable ) << "IK should fail for unreachable target";
+	EXPECT_EQ( result.state, SolverState::Unreachable ) << "IK should fail for unreachable target";
 }
 
 // ------------------------------------------------------------
@@ -167,8 +163,7 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 	two_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
 	// Initialize a solver for the two joints
-	WristSolver two_solver;
-	two_solver.Initialize( two_joint_chain, two_wrist_model, 0.01 );
+	WristSolver two_solver( two_joint_chain, two_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target;
@@ -178,10 +173,10 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0, 0.0 };
-	WristSolverResult result = two_solver.IK( R_target, seeds );
+	SolverResult result = two_solver.IK( R_target, seeds, 0 );
 
 	// Check that the solution is valid
-	EXPECT_EQ( result.state, WristSolverState::Success ) << "IK should succeed for reachable target";
+	EXPECT_EQ( result.state, SolverState::Success ) << "IK should succeed for reachable target";
 
 	// Verify the solution by checking the resulting rotation
 	Mat4d R_result;
@@ -221,8 +216,7 @@ TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 	two_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
 	// Initialize a solver for the two joints
-	WristSolver two_solver;
-	two_solver.Initialize( two_joint_chain, two_wrist_model, 0.01 );
+	WristSolver two_solver( two_joint_chain, two_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target = Mat4d::Identity();
@@ -231,10 +225,10 @@ TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0, 0.0 };
-	WristSolverResult result = two_solver.IK( R_target, seeds );
+	SolverResult result = two_solver.IK( R_target, seeds, 0 );
 
 	// Check that the solution is unreachable (because the axes are parallel)
-	EXPECT_EQ( result.state, WristSolverState::Unreachable ) << "IK should fail for parallel axes";
+	EXPECT_EQ( result.state, SolverState::Unreachable ) << "IK should fail for parallel axes";
 }
 
 // ------------------------------------------------------------
@@ -269,8 +263,7 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 	three_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
 	// Initialize a solver for the three joints
-	WristSolver three_solver;
-	three_solver.Initialize( three_joint_chain, three_wrist_model, 0.01 );
+	WristSolver three_solver( three_joint_chain, three_wrist_model );
 
 	// Test with a target rotation
 	Mat4d R_target;
@@ -280,10 +273,10 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 
 	// Solve IK
 	std::vector< double > seeds = { 0.0, 0.0, 0.0 };
-	WristSolverResult result = three_solver.IK( R_target, seeds );
+	SolverResult result = three_solver.IK( R_target, seeds, 0 );
 
 	// Check that the solution is valid
-	EXPECT_EQ( result.state, WristSolverState::Success ) << "IK should succeed for reachable target";
+	EXPECT_EQ( result.state, SolverState::Success ) << "IK should succeed for reachable target";
 
 	// Verify the solution by checking the resulting rotation
 	Mat4d R_result;
@@ -326,9 +319,7 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 	three_wrist_model.tcp_in_wrist_at_home = Mat4d::Identity();
 	three_wrist_model.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
-	WristSolver three_solver;
-	three_solver.Initialize( three_joint_chain, three_wrist_model, 0.01 );
-
+	WristSolver three_solver( three_joint_chain, three_wrist_model );
 
 	// Create a target transform that might be hard to solve analytically
 	Mat4d target;
@@ -343,7 +334,7 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 	std::span< const double > seed_joints_span( seed_joints );
 
 	// Solve IK
-	WristSolverResult result = three_solver.IK( target, seed_joints_span );
+	SolverResult result = three_solver.IK( target, seed_joints_span, 0 );
 
 	ASSERT_TRUE( result.Success() );
 	Mat4d R_result;

@@ -1,27 +1,26 @@
 #pragma once
 
 #include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "IKinematicsSolver.hpp"
 #include "NumericJointsModel.hpp"
 
 #include <memory>
 
 namespace SOArm100::Kinematics
 {
-struct NumericSolverResult;
+struct SolverResult;
 
-class NumericJointsSolver
+class NumericJointsSolver : public IKinematicsSolver
 {
 public:
-NumericJointsSolver();
-
-void Initialize(
+NumericJointsSolver(
 	const JointChain& joint_chain,
-	const NumericJointsModel& numeric_joint_model,
-	double search_discretization );
+	const NumericJointsModel& numeric_joint_model );
 
-[[nodiscard]] NumericSolverResult IK(
+virtual SolverResult IK(
 	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints ) const;
+	const std::span< const double >& seed_joints,
+	double search_discretization ) const override;
 
 bool FK( const VecXd& joints, Mat4d& fk ) const;
 

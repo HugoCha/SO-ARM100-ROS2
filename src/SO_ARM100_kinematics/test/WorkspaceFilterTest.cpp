@@ -27,7 +27,7 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
-	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();     // Replace with your robot model creation logic
+	const JointChain& joint_chain = Data::GetRevoluteOnlyRobotJointChain();     // Replace with your robot model creation logic
 	workspace_filter_.reset( new WorkspaceFilter( joint_chain ) );
 }
 

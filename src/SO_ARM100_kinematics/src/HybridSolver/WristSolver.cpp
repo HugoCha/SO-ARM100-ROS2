@@ -3,6 +3,7 @@
 #include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
+#include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <memory>
@@ -13,26 +14,21 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-void WristSolver::Initialize(
+WristSolver::WristSolver(
 	const JointChain& joint_chain,
-	const WristModel& wrist_model,
-	double search_discretization )
+	const WristModel& wrist_model )
 {
-	if ( !dls_wrist_solver_ )
-	{
-		dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
-	}
-
 	const auto& active_joints = joint_chain.GetActiveJoints();
 	auto wrist_start_joint = active_joints[wrist_model.active_joint_start];
 	auto wrist_end_joint = active_joints[wrist_model.active_joint_start + wrist_model.active_joint_count - 1];
 	joint_chain_ = std::make_unique< const JointChain >( joint_chain.SubChain( wrist_start_joint, wrist_end_joint ) );
 	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
-
+	
+	dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
 	dls_wrist_solver_->Initialize(
 		*joint_chain_,
 		wrist_model_->tcp_in_wrist_at_home,
-		search_discretization );
+		0.01 );
 }
 
 // ------------------------------------------------------------
@@ -44,9 +40,10 @@ void WristSolver::ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center )
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::IK(
+SolverResult WristSolver::IK(
 	const Mat4d& target_in_wrist,
-	const std::span< const double > seed_joints ) const
+	const std::span< const double >& seed_joints,
+	double search_discreatization ) const
 {
 	assert( joint_chain_ );
 	assert( wrist_model_ );
@@ -54,7 +51,7 @@ WristSolverResult WristSolver::IK(
 
 	const auto& R_target_in_wrist = Rotation( target_in_wrist );
 
-	WristSolverResult result{ wrist_model_->active_joint_count };
+	SolverResult result{ wrist_model_->active_joint_count };
 	switch ( wrist_model_->type )
 	{
 	case WristType::Revolute1:
@@ -80,12 +77,12 @@ WristSolverResult WristSolver::IK(
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute1(
+SolverResult WristSolver::SolveRevolute1(
 	const JointChain& joint_chain,
 	const Mat3d& R_target_in_wrist ) const
 {
 	assert( joint_chain_->GetActiveJointCount() == 1 );
-	WristSolverResult result( 1 );
+	SolverResult result( 1 );
 
 	const Vec3d& axis = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
 	Eigen::AngleAxisd aa( R_target_in_wrist );
@@ -94,23 +91,23 @@ WristSolverResult WristSolver::SolveRevolute1(
 	// aa.axis() // axis <=> | proj | = 1
 	if ( std::abs( proj ) < 1 - epsilon )
 	{
-		result.state = WristSolverState::Unreachable;
+		result.state = SolverState::Unreachable;
 		return result;
 	}
 
 	result.joints << proj * aa.angle();
-	result.state = WristSolverState::Success;
+	result.state = SolverState::Success;
 	return result;
 }
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute2(
+SolverResult WristSolver::SolveRevolute2(
 	const JointChain& joint_chain,
 	const Mat3d& R_target ) const
 {
 	assert( joint_chain_->GetActiveJointCount() == 2 );
-	WristSolverResult result( 2 );
+	SolverResult result( 2 );
 
 	const Vec3d& e1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis().normalized();
 	const Vec3d& e2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis().normalized();
@@ -123,7 +120,7 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
-		result.state = WristSolverState::Unreachable;
+		result.state = SolverState::Unreachable;
 		return result;
 	}
 
@@ -153,25 +150,25 @@ WristSolverResult WristSolver::SolveRevolute2(
 
 	if ( !R_check.isApprox( R_target, 1e-6 ) )
 	{
-		result.state = WristSolverState::Unreachable;
+		result.state = SolverState::Unreachable;
 		return result;
 	}
 
 	result.joints << q1, q2;
-	result.state = WristSolverState::Success;
+	result.state = SolverState::Success;
 
 	return result;
 }
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveRevolute3(
+SolverResult WristSolver::SolveRevolute3(
 	const JointChain& joint_chain,
 	const Mat3d& R_target ) const
 {
 	assert( joint_chain.GetActiveJointCount() == 3 );
 
-	WristSolverResult result( 3 );
+	SolverResult result( 3 );
 
 	Vec3d e1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis().normalized();
 	Vec3d e2 = joint_chain.GetActiveJointTwist( 1 ).GetAxis().normalized();
@@ -188,7 +185,7 @@ WristSolverResult WristSolver::SolveRevolute3(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
-		result.state = WristSolverState::Singularity;
+		result.state = SolverState::Singularity;
 		return result;
 	}
 
@@ -206,7 +203,7 @@ WristSolverResult WristSolver::SolveRevolute3(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
-		result.state = WristSolverState::Singularity;
+		result.state = SolverState::Singularity;
 		return result;
 	}
 
@@ -230,29 +227,29 @@ WristSolverResult WristSolver::SolveRevolute3(
 
 	if ( !R_check.isApprox( R_target, 1e-6 ) )
 	{
-		result.state = WristSolverState::Unreachable;
+		result.state = SolverState::Unreachable;
 		return result;
 	}
 
 	result.joints << q1, q2, q3;
-	result.state = WristSolverState::Success;
+	result.state = SolverState::Success;
 	return result;
 }
 
 // ------------------------------------------------------------
 
-WristSolverResult WristSolver::SolveNumeric(
+SolverResult WristSolver::SolveNumeric(
 	const Mat4d& target_in_wrist,
 	const std::span< const double > seed_joints ) const
 {
-	WristSolverResult result { wrist_model_->active_joint_count };
+	SolverResult result { wrist_model_->active_joint_count };
 
 	bool success = dls_wrist_solver_->InverseKinematic(
 		target_in_wrist,
 		seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ),
 		result.joints );
 
-	result.state = success ? WristSolverState::Success : WristSolverState::Unreachable;
+	result.state = success ? SolverState::Success : SolverState::Unreachable;
 	return result;
 }
 

@@ -1,6 +1,7 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 
 #include "Joint/JointChain.hpp"
+#include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
@@ -10,7 +11,7 @@ namespace SOArm100::Kinematics
 
 // ------------------------------------------------------------
 
-void BaseJointSolver::Initialize(
+BaseJointSolver::BaseJointSolver(
 	const JointChain& joint_chain,
 	const BaseJointModel& base_joint_model )
 {
@@ -32,13 +33,14 @@ void BaseJointSolver::FK(
 
 // ------------------------------------------------------------
 
-BaseJointSolverResult BaseJointSolver::IK(
+SolverResult BaseJointSolver::IK(
 	const Mat4d& wrist_center,
-	const std::span< const double >& seed_joints ) const
+	const std::span< const double >& seed_joints,
+	double search_discretization ) const
 {
 	assert( base_joint );
 
-	BaseJointSolverResult result;
+	SolverResult result( 1 );
 
 	const auto& base_twist = base_joint->GetTwist();
 
@@ -51,8 +53,8 @@ BaseJointSolverResult BaseJointSolver::IK(
 
 	if ( r_proj.norm() < epsilon )
 	{
-		result.base_joint[0] = seed_joints[0];
-		result.state = BaseJointSolverState::Singularity;
+		result.joints[0] = seed_joints[0];
+		result.state = SolverState::Singularity;
 	}
 	else
 	{
@@ -60,10 +62,10 @@ BaseJointSolverResult BaseJointSolver::IK(
 		double s_theta = omega.dot( r0.cross( r_proj ) );
 		double c_theta = r0.dot( r_proj );
 
-		result.base_joint[0] = atan2( s_theta, c_theta );
-		result.state = std::isnan( result.base_joint[0] ) ?
-		               BaseJointSolverState::Unreachable :
-		               BaseJointSolverState::Success;
+		result.joints[0] = atan2( s_theta, c_theta );
+		result.state = std::isnan( result.joints[0] ) ?
+		               SolverState::Unreachable :
+		               SolverState::Success;
 	}
 
 	return result;

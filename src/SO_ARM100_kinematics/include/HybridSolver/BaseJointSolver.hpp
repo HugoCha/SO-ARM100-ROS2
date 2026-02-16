@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "BaseJointModel.hpp"
+#include "IKinematicsSolver.hpp"
 #include "Joint/Joint.hpp"
 
 #include <span>
@@ -11,38 +12,17 @@ namespace SOArm100::Kinematics
 {
 class JointChain;
 
-enum class BaseJointSolverState
-{
-	None,
-	Success,
-	Unreachable,
-	Singularity
-};
-
-struct BaseJointSolverResult
-{
-	BaseJointSolverState state{ BaseJointSolverState::None };
-	VecXd base_joint{ 1 };
-
-	inline bool Fail() const {
-		return state == BaseJointSolverState::Unreachable;
-	}
-
-	inline bool Success() const {
-		return state == BaseJointSolverState::Success;
-	}
-};
-
-class BaseJointSolver
+class BaseJointSolver : public IKinematicsSolver
 {
 public:
-void Initialize(
+BaseJointSolver(
 	const JointChain& joint_chain,
 	const BaseJointModel& base_joint_model );
 
-[[nodiscard]] BaseJointSolverResult IK(
-	const Mat4d& wrist_center,
-	const std::span< const double >& seed_joint ) const;
+virtual SolverResult IK(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints,
+	double search_discretization ) const override;
 
 void FK( const VecXd& base_joint, Mat4d& fk ) const;
 
