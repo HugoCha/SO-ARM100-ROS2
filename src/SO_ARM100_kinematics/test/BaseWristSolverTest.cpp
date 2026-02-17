@@ -71,7 +71,10 @@ void SetUp() override
 	wrist_model_.tcp_in_wrist_at_home = Mat4d::Identity();
 	wrist_model_.tcp_in_wrist_at_home_inv = Mat4d::Identity();
 
-	home_ = std::make_shared< const Mat4d >( Mat4d::Identity() );
+	Mat4d home = Mat4d::Identity();
+	home.block< 3, 1 >( 0, 3 ) = wrist_model_.center_at_home;
+	home_ = std::make_shared< const Mat4d >( home );
+
 	// Initialize the solver
 	solver_ = std::make_unique< BaseWristSolver >( joint_chain_, home_, base_model_, wrist_model_ );
 }

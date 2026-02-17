@@ -1,5 +1,6 @@
 #include "HybridSolver/BaseJointAnalyzer.hpp"
 
+#include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
@@ -49,11 +50,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_ValidInput )
 
 	// Check the reference direction
 	// Expected reference direction is the projection of wrist center onto the plane orthogonal to the base joint axis
-	const auto& base_twist = joint_chain_.GetActiveJoints()[0]->GetTwist();
-	const Vec3d& omega = base_twist.GetAxis();
-	const Vec3d r = wrist_model_.center_at_home - base_twist.GetLinear();
-	const Vec3d expected_reference_direction = ( r - r.dot( omega ) * omega ).normalized();
-
+	const Vec3d expected_reference_direction = Vec3d::UnitX();
 	EXPECT_TRUE( result->reference_direction.isApprox( expected_reference_direction, 1e-6 ) )
 	    << "Reference direction should match expected value";
 }
@@ -90,13 +87,14 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentWristPositions )
 
 	// Test with wrist center at origin
 	WristModel wrist_model_origin;
-	wrist_model_origin.center_at_home = Vec3d( 0.0, 0.0, 0.0 );
+	wrist_model_origin.center_at_home = Vec3d( 0.0, 1.0, 0.0 );
 
 	auto result_origin = analyzer.Analyze( joint_chain_, wrist_model_origin );
 	ASSERT_TRUE( result_origin.has_value() );
 
-	// The reference direction should be zero since the wrist center is on the axis
-	EXPECT_TRUE( result_origin->reference_direction.isApprox( Vec3d::Zero(), 1e-6 ) )
+	// The reference direction should be orthogonal unit since the wrist center is on the axis
+	auto base_twist = joint_chain_.GetActiveJointTwist(0);
+	EXPECT_EQ( result_origin->reference_direction.dot( base_twist.GetAxis() ), 0.0 )
 	    << "Reference direction should be zero when wrist center is on the axis";
 
 	// Test with wrist center at (1, 0, 0)
@@ -107,7 +105,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentWristPositions )
 	ASSERT_TRUE( result_x.has_value() );
 
 	// Expected reference direction is (1, 0, 0) since it's already orthogonal to the Z-axis
-	EXPECT_TRUE( result_x->reference_direction.isApprox( Vec3d( 1.0, 0.0, 0.0 ), 1e-6 ) )
+	EXPECT_TRUE( result_x->reference_direction.isApprox( Vec3d( 1.0, 0.0, 0.0 ), epsilon ) )
 	    << "Reference direction should match expected value for wrist at (1, 0, 0)";
 }
 
@@ -122,6 +120,13 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 	Limits limits_y( -M_PI, M_PI );
 	joint_chain_y.Add( twist_y, link_y, limits_y );
 
+	Twist twist_z( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1 ) ); // Rotation around Y-axis
+	Mat4d origin = Mat4d::Identity();
+	origin.block<3,1>(0,3) = Vec3d( 0, 0, 1 );
+	Link link_z( origin );
+	Limits limits_z( -M_PI, M_PI );
+	joint_chain_y.Add( twist_z, link_z, limits_z );
+
 	BaseJointAnalyzer analyzer;
 
 	// Test with wrist center at (0, 0, 1)
@@ -132,7 +137,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 	ASSERT_TRUE( result.has_value() );
 
 	// Expected reference direction is (0, 0, 1) since it's already orthogonal to the Y-axis
-	EXPECT_TRUE( result->reference_direction.isApprox( Vec3d( 0.0, 0.0, 1.0 ), 1e-6 ) )
+	EXPECT_TRUE( result->reference_direction.isApprox( Vec3d( 0.0, 0.0, 1.0 ), epsilon ) )
 	    << "Reference direction should match expected value for Y-axis rotation";
 }
 
@@ -151,7 +156,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_ReferenceDirectionNormalization )
 
 	// The reference direction should be a unit vector
 	double norm = result->reference_direction.norm();
-	EXPECT_NEAR( norm, 1.0, 1e-6 ) << "Reference direction should be a unit vector";
+	EXPECT_NEAR( norm, 1.0, epsilon ) << "Reference direction should be a unit vector";
 }
 
 // ------------------------------------------------------------

@@ -6,6 +6,7 @@
 #include "Limits.hpp"
 #include "Link.hpp"
 #include "Twist.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <limits>
 #include <memory>
@@ -56,6 +57,26 @@ const Link& GetLink() const {
 
 const Limits& GetLimits() const {
 	return *limits_;
+}
+
+const Vec3d Origin() const {
+	return Translation( link_->GetJointOrigin() );
+}
+
+const Vec3d Axis() const {
+	return twist_->GetAxis();
+}
+
+bool IsRevolute() const {
+	return type_ == JointType::REVOLUTE;
+}
+
+bool IsPrismatic() const {
+	return type_ == JointType::PRISMATIC;
+}
+
+bool IsFixed() const {
+	return type_ == JointType::FIXED;
 }
 
 private:

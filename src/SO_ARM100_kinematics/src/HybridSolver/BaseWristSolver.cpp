@@ -23,8 +23,8 @@ BaseWristSolver::BaseWristSolver(
 	home_configuration_( home_configuration ),
 	buffer_( SolverBuffer( 1, wrist_model.active_joint_count ) )
 {
-	base_joint_solver_ = std::make_unique< BaseJointSolver >( joint_chain, nullptr, base_model );
-	wrist_solver_ = std::make_unique< WristSolver >( joint_chain, nullptr, wrist_model );
+	base_joint_solver_ = std::make_unique< BaseJointSolver >( joint_chain, home_configuration, base_model );
+	wrist_solver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
 }
 
 // ------------------------------------------------------------
@@ -48,7 +48,7 @@ SolverResult BaseWristSolver::IK(
 	}
 
 	base_joint_solver_->FK( buffer_.base_result.joints, buffer_.T_base );
-	buffer_.wrist_target = Inverse( buffer_.T_base ) * buffer_.wrist_center;
+	buffer_.wrist_target = Inverse( buffer_.T_base ) * target_pose;
 
 	if ( ( buffer_.wrist_result = wrist_solver_->IK(
 			   buffer_.wrist_target,
@@ -66,18 +66,14 @@ SolverResult BaseWristSolver::IK(
 		} );
 
 	result.joints << buffer_.base_result.joints,
-	    buffer_.wrist_result.joints;
+	    			 buffer_.wrist_result.joints;
 
-	if ( home_configuration_ )
-	{
-		CheckSolverResult(
-			*joint_chain_,
-			*home_configuration_,
-			target_pose,
-			buffer_.fk_result,
-			result,
-			epsilon );
-	}
+	CheckSolverResult(
+		*joint_chain_,
+		*home_configuration_,
+		target_pose,
+		buffer_.fk_result,
+		result );
 
 	return result;
 }

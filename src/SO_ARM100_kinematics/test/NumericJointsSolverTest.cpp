@@ -135,7 +135,7 @@ TEST_F( NumericJointsSolverTest, IK )
 	Mat4d fk;
 	solver.FK( result.joints, fk );
 
-	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) )
+	EXPECT_TRUE( IsApprox( target, fk ) )
 	    << "target=\n" << target << std::endl
 	    << "fk=\n" << fk << std::endl
 	    << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;
@@ -174,7 +174,7 @@ TEST_F( NumericJointsSolverTest, IK_WithSubChain )
 	Mat4d fk;
 	sub_solver.FK( result.joints, fk );
 
-	EXPECT_TRUE( fk.isApprox( target, 1e-5 ) )
+	EXPECT_TRUE( IsApprox( target, fk ) )
 	    << "target=\n" << target << std::endl
 	    << "fk=\n" << fk << std::endl
 	    << "Result joints=" << result.joints.transpose() * 180 / M_PI << std::endl;

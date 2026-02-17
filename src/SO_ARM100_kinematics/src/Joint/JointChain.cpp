@@ -29,14 +29,62 @@ JointChain::JointChain( const std::span< JointConstPtr const >& joints )
 
 // ------------------------------------------------------------
 
+int JointChain::GetJointIndex( const JointConstPtr& joint ) const
+{
+	if ( Empty() || !joint ) 
+		return -1;
+
+	auto it = std::ranges::find( joints_, joint );
+
+	if ( it != joints_.end() )
+	{
+		return std::distance( joints_.begin(), it );
+	}
+
+	return -1;
+}
+
+// ------------------------------------------------------------
+
+const Joint* JointChain::GetNextJoint( const JointConstPtr& joint ) const
+{
+	auto index = GetJointIndex( joint );
+
+	if ( index >= 0 && index + 1 < joints_.size() )
+	{
+		return joints_[ index + 1 ].get();
+	}
+
+	return nullptr;
+}
+
+// ------------------------------------------------------------
+
+const Joint* JointChain::GetPreviousJoint( const JointConstPtr& joint ) const
+{
+	auto index = GetJointIndex( joint );
+
+	if ( index >= 1 )
+	{
+		return joints_[ index - 1 ].get();
+	}
+
+	return nullptr;
+}
+
+// ------------------------------------------------------------
+
 void JointChain::Add( JointConstPtr joint )
 {
 	if ( !joint )
 		throw std::invalid_argument( "Joint pointer cannot be null" );
 
 	joints_.emplace_back( joint );
-	if ( joint->GetType() != JointType::FIXED )
+	if ( !joint->IsFixed() )
+	{
+		active_joints_to_joints_map_.emplace( joint, active_joints_.size() );
 		active_joints_.emplace_back( joint );
+	}
 }
 
 // ------------------------------------------------------------

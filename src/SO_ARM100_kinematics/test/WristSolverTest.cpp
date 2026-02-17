@@ -57,7 +57,7 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 
 	// The wrist center should be the target transform multiplied by the inverse of the TCP transform
 	// Since the TCP transform is identity, the wrist center should be the same as the target
-	EXPECT_TRUE( wrist_center.isApprox( target, 1e-6 ) )
+	EXPECT_TRUE( IsApprox( target, wrist_center ) )
 	    << "Wrist center should match target when TCP transform is identity";
 }
 
@@ -100,7 +100,7 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 
 	// Verify the solution by checking the resulting rotation
 	Mat3d R_result = Eigen::AngleAxisd( result.joints[0], Vec3d( 0, 0, 1 ) ).toRotationMatrix();
-	EXPECT_TRUE( R_result.isApprox( R_target.block< 3, 3 >( 0, 0 ), 1e-6 ) ) << "Resulting rotation should match target";
+	EXPECT_TRUE( R_result.isApprox( R_target.block< 3, 3 >( 0, 0 ), rotation_tolerance ) ) << "Resulting rotation should match target";
 }
 
 // ------------------------------------------------------------
@@ -187,7 +187,7 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 	Mat4d R_result;
 	POE( *two_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
-	EXPECT_TRUE( R_result.isApprox( R_target, 1e-6 ) )
+	EXPECT_TRUE( IsApprox( R_target, R_result ) )
 	    << "Initial joints: { " << initial_joints.transpose() << " }"  << std::endl
 	    << "Expected Mat\n" << R_target  << std::endl
 	    << "Result joint: { " << result.joints.transpose() << " }" << std::endl
@@ -289,7 +289,7 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 	Mat4d R_result;
 	POE( *three_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
-	EXPECT_TRUE( R_result.isApprox( R_target, 1e-6 ) )
+	EXPECT_TRUE( IsApprox( R_target, R_result ) )
 	    << "Initial joints: { " << initial_joints.transpose() << " }" << std::endl
 	    << "Expected Mat\n" << R_target << std::endl
 	    << "Result joint: { " << result.joints.transpose() << " }" << std::endl
@@ -348,7 +348,7 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 	Mat4d R_result;
 	POE( *three_joint_chain, Mat4d::Identity(), result.joints, R_result );
 
-	EXPECT_TRUE( R_result.isApprox( R_result, 1e-6 ) );
+	EXPECT_TRUE( IsApprox( target, R_result ) );
 }
 
 // ------------------------------------------------------------

@@ -19,4 +19,8 @@ using MatXd = Eigen::MatrixXd;
 using Iso3d = Eigen::Isometry3d;
 
 constexpr double epsilon = 1e-6;
+
+constexpr double tolerance = 1e-4;
+constexpr double rotation_tolerance = 1e-2;
+constexpr double translation_tolerance = 1e-3;
 }

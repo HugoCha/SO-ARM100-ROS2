@@ -23,7 +23,7 @@ class KinematicsSolver
 {
 public:
 KinematicsSolver();
-~KinematicsSolver() = default;
+virtual ~KinematicsSolver() = default;
 
 virtual void Initialize(
 	const moveit::core::RobotModelConstPtr& robot_model,
@@ -50,15 +50,15 @@ virtual void Initialize(
 	const std::span< const double >& seed_joints,
 	std::vector< double >& joints ) const;
 
+[[nodiscard]] bool InverseKinematic(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints,
+	VecXd& joints ) const;
+
 protected:
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 std::unique_ptr< WorkspaceFilter > workspace_filter_;
-
-[[nodiscard]] virtual bool InverseKinematic(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints,
-	VecXd& joints ) const = 0;
 
 [[nodiscard]] bool AreValidInitializeParameters(
 	const moveit::core::RobotModelConstPtr& robot_model,
@@ -66,6 +66,13 @@ std::unique_ptr< WorkspaceFilter > workspace_filter_;
 	const std::string& base_frame,
 	const std::vector< std::string >& tip_frames,
 	double search_discretization ) const noexcept;
+
+[[nodiscard]] virtual bool InverseKinematicImpl(
+	const Mat4d& target,
+	const std::span< const double >& seed_joints,
+	double* joints ) const = 0;
+
+[[nodiscard]] bool IsUnreachable( const Mat4d& target ) const;
 
 [[nodiscard]] bool CheckLimits( const std::span< const double >& joints ) const;
 };

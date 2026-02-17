@@ -19,10 +19,10 @@ namespace SOArm100::Kinematics::Test
 class DummyKinematicsSolver : public KinematicsSolver
 {
 public:
-bool InverseKinematic(
+bool InverseKinematicImpl(
 	const Mat4d& target_pose,
 	const std::span< const double >& initial_joints,
-	VecXd& joint_angles ) const override
+	double* joint_angles ) const override
 {
 	return false;
 }

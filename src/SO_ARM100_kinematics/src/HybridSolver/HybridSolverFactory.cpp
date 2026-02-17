@@ -5,11 +5,13 @@
 #include "HybridSolver/BaseNumericWristSolver.hpp"
 #include "HybridSolver/HybridSolverConfiguration.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
+#include "HybridSolver/NumericWristSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
 #include "IKinematicsSolver.hpp"
 #include "Joint/JointChain.hpp"
 
 #include <memory>
+#include <stdexcept>
 
 namespace SOArm100::Kinematics
 {
@@ -21,6 +23,10 @@ std::unique_ptr< IKinematicsSolver > HybridSolverFactory::Get(
 	std::shared_ptr< const Mat4d > home_configuration,
 	const HybridSolverConfiguration& configuration )
 {
+    if ( !joint_chain || !home_configuration )
+    {
+        throw std::invalid_argument("Arguments should not be null");
+    }
 	switch ( configuration.solver_flags )
 	{
 	case HybridSolverFlags::Base:
@@ -38,8 +44,13 @@ std::unique_ptr< IKinematicsSolver > HybridSolverFactory::Get(
 			joint_chain,
 			home_configuration,
 			*configuration.base_joint_model,
-			*configuration.wrist_model
-			);
+			*configuration.wrist_model );
+	case HybridSolverFlags::NumericWrist:
+		return std::make_unique< NumericWristSolver >(
+			joint_chain,
+			home_configuration,
+			*configuration.numeric_joints_model,
+			*configuration.wrist_model );
 	case HybridSolverFlags::BaseNumericWrist:
 		return std::make_unique< BaseNumericWristSolver >(
 			joint_chain,

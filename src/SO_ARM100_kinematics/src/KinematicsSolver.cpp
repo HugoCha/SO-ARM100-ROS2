@@ -164,23 +164,29 @@ bool KinematicsSolver::InverseKinematic(
 	const std::span< const double >& seed_joints,
 	std::vector< double >& joints ) const
 {
-	joints.clear();
+	if ( joints.size() != joint_chain_->GetActiveJointCount() )
+		joints.resize( joint_chain_->GetActiveJointCount() );
 
-	if ( workspace_filter_->IsUnreachable( target_pose ) )
-	{
-		return false;
-	}
+	return InverseKinematicImpl( 
+		ToMat4d( target_pose ),
+		seed_joints, 
+		joints.data() );
+}
 
-	const auto& target = ToMat4d( target_pose );
-	VecXd output_joints;
+// ------------------------------------------------------------
 
-	if ( InverseKinematic( target, seed_joints, output_joints ) )
-	{
-		joints = ToStdVector( output_joints );
-		return true;
-	}
+bool KinematicsSolver::InverseKinematic(
+	const Mat4d& target_pose,
+	const std::span< const double >& seed_joints,
+	VecXd& joints ) const
+{
+	if ( joints.size() != joint_chain_->GetActiveJointCount() )
+		joints.resize( joint_chain_->GetActiveJointCount() );
 
-	return false;
+	return InverseKinematicImpl( 
+		target_pose, 
+		seed_joints, 
+		joints.data() );
 }
 
 // ------------------------------------------------------------
@@ -217,6 +223,14 @@ bool KinematicsSolver::AreValidInitializeParameters(
 	}
 
 	return true;
+}
+
+// ------------------------------------------------------------
+
+bool KinematicsSolver::IsUnreachable( const Mat4d& target ) const
+{
+	assert( workspace_filter_ );
+	return workspace_filter_->IsUnreachable( target );
 }
 
 // ------------------------------------------------------------

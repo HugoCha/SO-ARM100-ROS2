@@ -4,6 +4,7 @@
 #include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 #include "SolverResult.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
 #include <cmath>
@@ -54,7 +55,7 @@ TEST_F( BaseJointSolverTest, FK )
 	Mat4d expected = Mat4d::Identity();
 	expected.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
 
-	EXPECT_TRUE( fk.isApprox( expected, 1e-6 ) ) << "Forward kinematics should match expected rotation";
+	EXPECT_TRUE( IsApprox( expected, fk ) ) << "Forward kinematics should match expected rotation";
 }
 
 // ------------------------------------------------------------
@@ -88,7 +89,7 @@ TEST_F( BaseJointSolverTest, IK_Success )
 	Vec3d transformed_wrist_center = fk.block< 3, 3 >( 0, 0 ) * wrist_center_at_home;
 	Vec3d expected_position = wrist_center.block< 3, 1 >( 0, 3 ); // Should be the same since rotation is around Z-axis
 
-	EXPECT_TRUE( transformed_wrist_center.isApprox( expected_position, 1e-4 ) )
+	EXPECT_TRUE( expected_position.isApprox( transformed_wrist_center, translation_tolerance ) )
 	    << "wrist center= " << expected_position.transpose() << std::endl
 	    << "result joints= " << result.joints * 180 / M_PI << std::endl
 	    << "result wrist center= " << transformed_wrist_center.transpose() << std::endl;

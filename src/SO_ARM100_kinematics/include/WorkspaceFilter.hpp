@@ -14,9 +14,10 @@ public:
 WorkspaceFilter( const JointChain& joint_chain );
 
 [[nodiscard]] bool IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const;
+[[nodiscard]] bool IsUnreachable( const Mat4d& target_pose ) const;
 
 protected:
-const Vec3d base_frame_;
+Vec3d base_frame_;
 
 virtual void ComputeWorkspace( const JointChain& joint_chain );
 

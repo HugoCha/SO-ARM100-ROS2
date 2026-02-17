@@ -49,14 +49,39 @@ void HybridKinematicsSolver::Initialize(
 
 // ------------------------------------------------------------
 
-bool HybridKinematicsSolver::InverseKinematic(
+void HybridKinematicsSolver::Initialize(
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
+	double search_discretization ) 
+{
+	KinematicsSolver::Initialize( joint_chain, home_configuration, search_discretization );
+	search_discretization_ = search_discretization;
+
+	HybridSolverConfiguration configuration = HybridSolverAnalyzer::AnalyzeConfiguration(
+		*joint_chain_,
+		*home_configuration_ );
+
+	solver_ = std::move( HybridSolverFactory::Get(
+							 joint_chain_,
+							 home_configuration_,
+							 configuration ) );
+}
+
+// ------------------------------------------------------------
+
+bool HybridKinematicsSolver::InverseKinematicImpl(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
-	VecXd& joints ) const
+	double* joints ) const
 {
 	assert( solver_ );
-	const auto& result = solver_->IK( target_pose, seed_joints, search_discretization_ );
-	joints = result.joints;
+
+	if ( KinematicsSolver::IsUnreachable( target_pose ) )
+		return false;
+
+	auto result = solver_->IK( target_pose, seed_joints, search_discretization_ );
+	std::copy( result.joints.begin(), result.joints.end(), joints );
+
 	return result.Success() || result.Singularity();
 }
 

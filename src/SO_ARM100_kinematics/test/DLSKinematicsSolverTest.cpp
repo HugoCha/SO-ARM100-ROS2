@@ -1,10 +1,10 @@
 #include "Global.hpp"
 
-#include "Utils/Converter.hpp"
-#include "Utils/KinematicsUtils.hpp"
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "DLSSolver/NumericSolverState.hpp"
 #include "RobotModelTestData.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <Eigen/src/Geometry/Quaternion.h>
@@ -90,21 +90,6 @@ const VecXd RandomValidJoints()
 	return random;
 }
 
-// Helper: Check if two poses are approximately equal
-bool PosesEqual( const Mat4d& p1,
-                 const Mat4d& p2,
-                 double pos_tol = 0.01,
-                 double rot_tol = 0.01 ) const
-{
-	bool pos_match =
-		Translation( p1 ).isApprox( Translation( p2 ), pos_tol );
-
-	bool rot_match =
-		Rotation( p1 ).isApprox( Rotation( p2 ), rot_tol );
-
-	return pos_match && rot_match;
-}
-
 // Helper: Compute FK for given joint angles
 const Mat4d ComputeFK( const std::vector< double >& joints ) const
 {
@@ -118,7 +103,7 @@ const Mat4d ComputeFK( const std::vector< double >& joints ) const
 
 protected:
 std::unique_ptr< DLSKinematicsSolver > solver_;
-static constexpr double DEFAULT_TOLERANCE = 1e-3;
+static constexpr double DEFAULT_TOLERANCE = tolerance;
 };
 
 // ------------------------------------------------------------
@@ -179,7 +164,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorInvalidDampingRange )
 }
 
 // ------------------------------------------------------------
-// SolveIK - Success Cases
+// InverseKinematic - Success Cases
 // ------------------------------------------------------------
 
 TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
@@ -188,7 +173,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 	auto target_pose = ComputeFK( seed_joints );
 
-	auto result = solver_->SolveIK( target_pose, seed_joints );
+	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_EQ( result.state, NumericSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
@@ -197,7 +182,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 
 	// Verify the solution reaches the target
 	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
-	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose ) );
+	EXPECT_TRUE( IsApprox( target_pose, achieved_pose ) );
 }
 
 // ------------------------------------------------------------
@@ -213,20 +198,18 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 	    -0.56008127792585183,    0.20925706824955959,   -0.80157372805284965,  -0.29894797143293017,
 	    0,                      0,                      0,                    1;
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	auto lParams = solver_->GetParameters();
-	lParams.max_iterations = 2000;
-	solver_->SetParameters( lParams );
 
-	auto result = solver_->SolveIK( target_pose, seed_joints );
+	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_EQ( result.state, NumericSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
 
 	// Verify solution
 	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
-	EXPECT_TRUE( PosesEqual( achieved_pose, target_pose, 0.01, 0.01 ) )
+	EXPECT_TRUE( IsApprox( achieved_pose, target_pose ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
+	    << "Diff = " << std::endl << target_pose - achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
 }
 
@@ -240,12 +223,12 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 
-	auto result = solver_->SolveIK( target_pose, seed_joints );
+	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_EQ( result.state, NumericSolverState::Converged );
 
 	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
-	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.02 ) )
+	EXPECT_TRUE( IsApprox( target_pose, achieved_pose ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
@@ -262,13 +245,13 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 
-	auto result = solver_->SolveIK( target_pose, seed_joints );
+	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_TRUE( result.Success() );
 
 	// Verify it reaches the target (may be different joint config)
 	auto achieved_pose = ComputeFK( ToStdVector( result.joints ) );
-	EXPECT_TRUE( PosesEqual( target_pose, achieved_pose, 0.01, 0.01 ) )
+	EXPECT_TRUE( IsApprox( target_pose, achieved_pose ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
@@ -283,11 +266,11 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 
 	// Test 1: Bad seed
 	std::vector< double > bad_seed = { -1.0, -1.0, -1.0 };
-	auto result_bad = solver_->SolveIK( target_pose, bad_seed );
+	auto result_bad = solver_->InverseKinematic( target_pose, bad_seed );
 
 	// Test 2: Good seed (close to target)
 	std::vector< double > good_seed = { 0.6, 0.4, -0.1 };
-	auto result_good = solver_->SolveIK( target_pose, good_seed );
+	auto result_good = solver_->InverseKinematic( target_pose, good_seed );
 
 	EXPECT_TRUE( result_good.Success() );
 
@@ -299,7 +282,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 }
 
 // ------------------------------------------------------------
-// SolveIK - Failure Cases
+// InverseKinematic - Failure Cases
 // ------------------------------------------------------------
 
 TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
@@ -308,7 +291,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
 	auto target_pose = CreatePose( 10.0, 10.0, 10.0 );
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 
-	auto result = solver_->SolveIK( target_pose, seed_joints );
+	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_NE( result.state, NumericSolverState::Converged );
 	EXPECT_FALSE( result.Success() );
@@ -334,7 +317,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MaxIterationsReached )
 	auto target_pose = CreatePose( 0.5, 0.5, 0.0 );
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 
-	auto result = solver.SolveIK( target_pose, seed_joints );
+	auto result = solver.InverseKinematic( target_pose, seed_joints );
 
 	EXPECT_EQ( result.state, NumericSolverState::MaxIterations );
 	EXPECT_EQ( result.iterations_used, params.max_iterations );
@@ -347,7 +330,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
 	auto target_pose = CreatePose( 0.5, 0.0, 0.0 );
 	std::vector< double > invalid_seed = { 0.0, 0.0 };  // Wrong size (should be 3)
 
-	auto result = solver_->SolveIK( target_pose, invalid_seed );
+	auto result = solver_->InverseKinematic( target_pose, invalid_seed );
 
 	EXPECT_EQ( result.state, NumericSolverState::Failed );
 	EXPECT_FALSE( result.Success() );
@@ -361,16 +344,18 @@ TEST_F( DLSKinematicsSolverTest, InverseKinematic_Success )
 {
 	auto reachable_position = ComputeFK( { 0.1, 0.5, 0.7 } );
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	VecXd solution_joints;
+	VecXd solution_joints(3);
 
-	bool success = solver_->InverseKinematic( reachable_position, seed_joints, solution_joints );
+	bool success = solver_->InverseKinematicImpl( reachable_position, seed_joints, solution_joints.data() );
 
 	EXPECT_TRUE( success );
 	EXPECT_EQ( solution_joints.size(), 3 );
 
 	// Verify solution
 	auto achieved_pose = ComputeFK( ToStdVector( solution_joints ) );
-	EXPECT_TRUE( PosesEqual( reachable_position, achieved_pose, 0.02 ) );
+	EXPECT_TRUE( IsApprox( reachable_position, achieved_pose ) )
+		<< "Expected Pose=\n" << reachable_position << std::endl
+		<< "Result Pose=\n" << achieved_pose << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -381,7 +366,7 @@ TEST_F( DLSKinematicsSolverTest, InverseKinematic_Failure )
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 	VecXd solution_joints;
 
-	bool success = solver_->InverseKinematic( target_pose, seed_joints, solution_joints );
+	bool success = solver_->InverseKinematicImpl( target_pose, seed_joints, solution_joints.data() );
 
 	EXPECT_FALSE( success );
 }
@@ -399,7 +384,7 @@ TEST_F( DLSKinematicsSolverTest, AdaptiveDamping_NearSingularity )
 	// Perturb slightly to force solver to work near singularity
 	target_pose( 0, 3 ) += 0.001;
 
-	auto result = solver_->SolveIK( target_pose, near_singular );
+	auto result = solver_->InverseKinematic( target_pose, near_singular );
 
 	// Should still converge (damping helps near singularities)
 	EXPECT_TRUE( result.Success() )
@@ -416,7 +401,7 @@ TEST_F( DLSKinematicsSolverTest, AdaptiveStep_ConvergenceControl )
 
 	std::vector< double > far_seed = { -1.5, -1.0, 1.0 };
 
-	auto result = solver_->SolveIK( target_pose, far_seed );
+	auto result = solver_->InverseKinematic( target_pose, far_seed );
 
 	if ( result.Success() )
 	{
@@ -440,7 +425,7 @@ TEST_F( DLSKinematicsSolverTest, RandomRestart_RecoverFromBadSeed )
 	// Very bad seed (near joint limits)
 	std::vector< double > terrible_seed = { 3.0, 3.0, 3.0 };  // Out of bounds
 
-	auto result = solver_->SolveIK( target_pose, terrible_seed );
+	auto result = solver_->InverseKinematic( target_pose, terrible_seed );
 
 	// Should recover via random restart
 	EXPECT_TRUE( result.Success() )
@@ -470,7 +455,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Strict )
 
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
 
-	auto result = solver.SolveIK( target_pose, seed );
+	auto result = solver.InverseKinematic( target_pose, seed );
 
 	if ( result.Success() )
 	{
@@ -499,7 +484,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Loose )
 
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
 
-	auto result = solver.SolveIK( target_pose, seed );
+	auto result = solver.InverseKinematic( target_pose, seed );
 
 	// Should converge quickly with loose tolerance
 	EXPECT_TRUE( result.Success() );
@@ -516,7 +501,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_ZeroLengthMove )
 	std::vector< double > joints = { 0.5, 0.3, -0.2 };
 	auto target_pose = ComputeFK( joints );
 
-	auto result = solver_->SolveIK( target_pose, joints );
+	auto result = solver_->InverseKinematic( target_pose, joints );
 
 	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( result.iterations_used, 0 )
@@ -533,7 +518,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_JointLimits )
 
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
 
-	auto result = solver_->SolveIK( target_pose, seed );
+	auto result = solver_->InverseKinematic( target_pose, seed );
 
 	// Should either converge or gracefully fail (not crash)
 	EXPECT_NO_THROW( auto success = result.Success() );
@@ -550,7 +535,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_NearSingularTarget )
 
 	std::vector< double > seed = { 0.5, 0.5, 0.5 };
 
-	auto result = solver_->SolveIK( target_pose, seed );
+	auto result = solver_->InverseKinematic( target_pose, seed );
 
 	// Should handle gracefully
 	EXPECT_NO_THROW( auto success = result.Success() );
@@ -572,7 +557,7 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 		Mat4d target_pose;
 		bool fk_success = solver_->ForwardKinematic( RandomValidJoints(), target_pose );
 
-		auto result = solver_->SolveIK( target_pose, seed );
+		auto result = solver_->InverseKinematic( target_pose, seed );
 
 		if ( result.Success() )
 		{
@@ -605,7 +590,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_RepeatedCalls )
 		while ( !solver_->ForwardKinematic( RandomValidJoints(), target_pose ) )
 			;
 
-		auto result = solver_->SolveIK( target_pose, seed );
+		auto result = solver_->InverseKinematic( target_pose, seed );
 		EXPECT_TRUE( result.Success() )
 		    << "Iteration " << i << std::endl
 		    << "Target = " << target_pose << std::endl
@@ -630,7 +615,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_DifferentTargets )
 	for ( const auto& target_pos : targets )
 	{
 		auto target_pose = CreatePose( target_pos[0], target_pos[1], target_pos[2] );
-		auto result = solver_->SolveIK( target_pose, seed );
+		auto result = solver_->InverseKinematic( target_pose, seed );
 
 		// At least should not crash
 		EXPECT_NO_THROW( auto success = result.Success() );

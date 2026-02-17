@@ -3,6 +3,7 @@
 #include "Joint.hpp"
 
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <span>
 
@@ -53,6 +54,10 @@ const Link& GetActiveJointLink( int i ) const {
 	return active_joints_[i]->GetLink();
 }
 
+int GetJointIndex( const JointConstPtr& joint ) const;
+const Joint* GetNextJoint( const JointConstPtr& joint ) const;
+const Joint* GetPreviousJoint( const JointConstPtr& joint ) const;
+
 [[nodiscard]] bool Empty() const {
 	return joints_.empty();
 }
@@ -74,6 +79,7 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 private:
 std::vector< JointConstPtr > joints_;
 std::vector< JointConstPtr > active_joints_;
+std::map< JointConstPtr, int > active_joints_to_joints_map_;
 
 JointChain( const std::span< JointConstPtr const >& joints );
 

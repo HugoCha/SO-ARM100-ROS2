@@ -2,7 +2,7 @@
 
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "DLSSolver/NumericSolverState.hpp"
-#include "Joint/JointChain.hpp"
+#include "KinematicsSolver.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -45,10 +45,15 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 
 // ------------------------------------------------------------
 
-NumericSolverResult DLSKinematicsSolver::SolveIK(
+NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints ) const
 {
+	if ( KinematicsSolver::IsUnreachable( target ) )
+	{
+		return { NumericSolverState::Failed, {}, -1,  0 };
+	}
+	
 	if ( seed_joints.size() != static_cast< int >( joint_chain_->GetActiveJointCount() ) )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
@@ -98,16 +103,16 @@ NumericSolverResult DLSKinematicsSolver::SolveIK(
 
 // ------------------------------------------------------------
 
-bool DLSKinematicsSolver::InverseKinematic(
+bool DLSKinematicsSolver::InverseKinematicImpl(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
-	VecXd& joints ) const
+	double* joints ) const
 {
-	auto result = SolveIK( target_pose, seed_joints );
+	auto result = InverseKinematic( target_pose, seed_joints );
 
 	if ( result.Success() )
 	{
-		joints = result.joints;
+		std::copy( result.joints.begin(), result.joints.end(), joints );
 		return true;
 	}
 

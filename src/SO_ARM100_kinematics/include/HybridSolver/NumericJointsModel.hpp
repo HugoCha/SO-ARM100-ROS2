@@ -9,7 +9,7 @@ namespace SOArm100::Kinematics
 struct NumericJointsModel
 {
 	int start_index{ 0 };
-	int count{ 0 };
+	size_t count{ 0 };
 	Mat4d home_configuration{ Mat4d::Identity() };
 };
 

@@ -55,11 +55,24 @@ void POE(
 	const VecXd& thetas,
 	Mat4d& poe );
 
+double RotationError( const Mat3d& target_rotation, const Mat3d& result_rotation );
+double RotationError( const Mat4d& target, const Mat4d& result );
+
+double PositionError( const Vec3d& target_translation, const Vec3d& result_translation );
+double PositionError( const Mat4d& target, const Mat4d& result );
+
+bool IsApprox( 
+	const Mat4d& target, 
+	const Mat4d& result, 
+	double rotation_tol = rotation_tolerance, 
+	double translation_tol = translation_tolerance );
+	
 void CheckSolverResult(
 	const JointChain& joint_chain,
 	const Mat4d& home_configuration,
 	const Mat4d& target,
 	Mat4d& result_pose,
 	SolverResult& solver_result,
-	double tolerance );
+	double rotation_tol = rotation_tolerance,
+	double translation_tol = translation_tolerance );
 }

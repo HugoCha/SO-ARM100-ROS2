@@ -17,7 +17,7 @@ struct SolverResult
 	SolverState state;
 	VecXd joints;
 
-	SolverResult( int n ) :
+	SolverResult( size_t n ) :
 		state( SolverState::None ),
 		joints( n )
 	{

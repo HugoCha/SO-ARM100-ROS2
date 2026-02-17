@@ -1,0 +1,17 @@
+#include "Utils/MathUtils.hpp"
+
+#include <cmath>
+
+namespace SOArm100::Kinematics
+{
+
+// ------------------------------------------------------------
+
+template< typename T >
+T findClosest( const T& target, const T& a, const T& b ){
+	return ( std::abs( a - target ) < std::abs( b - target ) ) ? a : b;
+}
+
+// ------------------------------------------------------------
+
+}

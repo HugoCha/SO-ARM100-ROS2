@@ -20,11 +20,16 @@ virtual void Initialize(
 	const std::vector< std::string >& tip_frames,
 	double search_discretization ) override;
 
+virtual void Initialize(
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
+	double search_discretization ) override;
+
 protected:
-virtual bool InverseKinematic(
-	const Mat4d& target_pose,
+virtual bool InverseKinematicImpl(
+	const Mat4d& target,
 	const std::span< const double >& seed_joints,
-	VecXd& joints ) const override;
+	double* joints ) const override;
 
 private:
 std::unique_ptr< IKinematicsSolver > solver_;

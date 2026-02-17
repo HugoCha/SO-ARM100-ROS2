@@ -1,14 +1,15 @@
 #include "HybridSolver/WristSolver.hpp"
 
 #include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
+#include "IKinematicsSolver.hpp"
 #include "Joint/JointChain.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <memory>
-#include <moveit/robot_model/joint_model.hpp>
 
 namespace SOArm100::Kinematics
 {
@@ -27,14 +28,13 @@ WristSolver::WristSolver(
 	if ( active_joints.front() == wrist_start_joint && active_joints.back() == wrist_end_joint )
 	{
 		joint_chain_ = joint_chain;
-		home_configuration_ = home_configuration;
 	}
 	else
 	{
 		joint_chain_ = std::make_shared< const JointChain >( joint_chain->SubChain( wrist_start_joint, wrist_end_joint ) );
-		home_configuration_ = std::make_shared< const Mat4d >( wrist_model_->tcp_in_wrist_at_home );
 	}
 
+	home_configuration_ = home_configuration;
 	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
 	dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
 	dls_wrist_solver_->Initialize(
@@ -58,6 +58,7 @@ SolverResult WristSolver::IK(
 	double search_discreatization ) const
 {
 	assert( joint_chain_ );
+	assert( home_configuration_ );
 	assert( wrist_model_ );
 	assert( dls_wrist_solver_ );
 
@@ -84,17 +85,13 @@ SolverResult WristSolver::IK(
 		result = SolveNumeric( target_in_wrist, seed_joints );
 	}
 
-	if ( home_configuration_ )
-	{
-		Mat4d fk_result;
-		CheckSolverResult(
-			*joint_chain_,
-			*home_configuration_,
-			target_in_wrist,
-			fk_result,
-			result,
-			epsilon );
-	}
+	Mat4d fk_result;
+	CheckSolverResult(
+		*joint_chain_,
+		*home_configuration_,
+		target_in_wrist,
+		fk_result,
+		result );
 
 	return result;
 }
@@ -172,7 +169,7 @@ SolverResult WristSolver::SolveRevolute2(
 		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
 		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
 
-	if ( !R_check.isApprox( R_target, 1e-6 ) )
+	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
 		result.state = SolverState::Unreachable;
 		return result;
@@ -249,7 +246,7 @@ SolverResult WristSolver::SolveRevolute3(
 		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix() *
 		Eigen::AngleAxisd( q3, e3 ).toRotationMatrix();
 
-	if ( !R_check.isApprox( R_target, 1e-6 ) )
+	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
 		result.state = SolverState::Unreachable;
 		return result;
@@ -268,13 +265,9 @@ SolverResult WristSolver::SolveNumeric(
 {
 	SolverResult result { wrist_model_->active_joint_count };
 
-	bool success = dls_wrist_solver_->InverseKinematic(
+	return ToSolverResult( dls_wrist_solver_->InverseKinematic(
 		target_in_wrist,
-		seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ),
-		result.joints );
-
-	result.state = success ? SolverState::Success : SolverState::Unreachable;
-	return result;
+		seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ) ) );
 }
 
 // ------------------------------------------------------------

@@ -13,6 +13,7 @@ namespace SOArm100::Kinematics
 
 WorkspaceFilter::WorkspaceFilter( const JointChain& joint_chain )
 {
+	base_frame_ = joint_chain.GetJoints()[0]->GetTwist().GetLinear();
 	ComputeWorkspace( joint_chain );
 }
 
@@ -27,8 +28,14 @@ const Vec3d WorkspaceFilter::GetBaseFrame() const
 
 bool WorkspaceFilter::IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const
 {
-	const auto& target_frame = ToMat4d( target_pose );
-	double distance = ( Translation( target_frame ) - GetBaseFrame() ).norm();
+	return IsUnreachable( ToMat4d( target_pose ) );
+}
+
+// ------------------------------------------------------------
+
+bool WorkspaceFilter::IsUnreachable( const Mat4d& target_pose ) const
+{
+	double distance = ( Translation( target_pose ) - GetBaseFrame() ).norm();
 	return distance < min_reach_ || distance > max_reach_;
 }
 

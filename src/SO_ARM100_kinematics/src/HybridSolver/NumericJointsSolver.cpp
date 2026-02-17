@@ -54,9 +54,9 @@ SolverResult NumericJointsSolver::IK(
 	const std::span< const double >& seed_joints,
 	double search_discretization ) const
 {
-	return ToSolverResult( dls_solver_->SolveIK(
-							   target_pose,
-							   seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) ) );
+	return ToSolverResult( dls_solver_->InverseKinematic(
+							target_pose,
+							seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) ) );
 }
 
 // ------------------------------------------------------------
