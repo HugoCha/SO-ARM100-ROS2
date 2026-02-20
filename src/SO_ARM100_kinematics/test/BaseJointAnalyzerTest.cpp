@@ -1,6 +1,5 @@
 #include "HybridSolver/BaseJointAnalyzer.hpp"
 
-#include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
@@ -50,7 +49,11 @@ TEST_F( BaseJointAnalyzerTest, Analyze_ValidInput )
 
 	// Check the reference direction
 	// Expected reference direction is the projection of wrist center onto the plane orthogonal to the base joint axis
-	const Vec3d expected_reference_direction = Vec3d::UnitX();
+	const auto& base_twist = joint_chain_.GetActiveJoints()[0]->GetTwist();
+	const Vec3d& omega = base_twist.GetAxis();
+	const Vec3d r = wrist_model_.center_at_home - base_twist.GetLinear();
+	const Vec3d expected_reference_direction = ( r - r.dot( omega ) * omega ).normalized();
+
 	EXPECT_TRUE( result->reference_direction.isApprox( expected_reference_direction, 1e-6 ) )
 	    << "Reference direction should match expected value";
 }
@@ -122,7 +125,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 
 	Twist twist_z( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1 ) ); // Rotation around Y-axis
 	Mat4d origin = Mat4d::Identity();
-	origin.block<3,1>(0,3) = Vec3d( 0, 0, 1 );
+	origin.block<3,1>(0,0)= Vec3d( 0, 0, 1 );
 	Link link_z( origin );
 	Limits limits_z( -M_PI, M_PI );
 	joint_chain_y.Add( twist_z, link_z, limits_z );

@@ -52,7 +52,7 @@ TEST_F( ConvertTest, ToStdVectorTest )
 
 // ------------------------------------------------------------
 
-TEST_F( ConvertTest, ToMat4dTest )
+TEST_F( ConvertTest, ToTransformMatrixTest )
 {
 	geometry_msgs::msg::Pose pose;
 	pose.position.x = 1.0;
@@ -66,7 +66,7 @@ TEST_F( ConvertTest, ToMat4dTest )
 	pose.orientation.z = q.z();
 	pose.orientation.w = q.w();
 
-	Mat4d mat = SOArm100::Kinematics::ToMat4d( pose );
+	Mat4d mat = ToTransformMatrix( pose );
 
 	EXPECT_DOUBLE_EQ( mat( 0, 3 ), 1.0 );
 	EXPECT_DOUBLE_EQ( mat( 1, 3 ), 2.0 );
@@ -120,7 +120,7 @@ TEST_F( ConvertTest, PoseRoundTripTest )
 	input_pose.orientation.z = q.z();
 	input_pose.orientation.w = q.w();
 
-	Mat4d mat = SOArm100::Kinematics::ToMat4d( input_pose );
+	Mat4d mat = ToTransformMatrix( input_pose );
 	geometry_msgs::msg::Pose output_pose =
 		SOArm100::Kinematics::ToPoseMsg( mat );
 

@@ -28,7 +28,7 @@ const Vec3d WorkspaceFilter::GetBaseFrame() const
 
 bool WorkspaceFilter::IsUnreachable( const geometry_msgs::msg::Pose& target_pose ) const
 {
-	return IsUnreachable( ToMat4d( target_pose ) );
+	return IsUnreachable( ToTransformMatrix( target_pose ) );
 }
 
 // ------------------------------------------------------------

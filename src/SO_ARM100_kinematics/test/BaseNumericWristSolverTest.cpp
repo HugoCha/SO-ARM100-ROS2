@@ -1,6 +1,5 @@
 #include "HybridSolver/BaseNumericWristSolver.hpp"
 
-#include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/NumericJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
@@ -33,7 +32,6 @@ std::shared_ptr<JointChain> CreateTestJointChain()
     );
 
     // Numeric joints (2 revolute joints)
-    Vec3d origin = Vec3d( 0,0,0.5 );
     joint_chain->Add(
         Twist(Vec3d(0, 1, 0), Vec3d(0, 0, 0.5)),
         Link(Mat4d::Identity()),

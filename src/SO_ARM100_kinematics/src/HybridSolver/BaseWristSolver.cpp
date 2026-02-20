@@ -66,7 +66,7 @@ SolverResult BaseWristSolver::IK(
 		} );
 
 	result.joints << buffer_.base_result.joints,
-	    			 buffer_.wrist_result.joints;
+	    buffer_.wrist_result.joints;
 
 	CheckSolverResult(
 		*joint_chain_,

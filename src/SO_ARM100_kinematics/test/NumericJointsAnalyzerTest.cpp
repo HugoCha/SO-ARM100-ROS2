@@ -7,6 +7,7 @@
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Twist.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
 
@@ -82,8 +83,8 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJoint )
 	ASSERT_TRUE( result.has_value() ) << "Should return a valid NumericJointsModel";
 
 	// Check the numeric joint model properties
-	EXPECT_EQ( result->start_index, 1 ) << "Start index should be 1 (after base joint)";
-	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() - 1 ) << "Count should be total active joints minus 1";
+	EXPECT_EQ( result->start_index, 0 ) << "Start index should be 0";
+	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() ) << "Count should be total active joints";
 	EXPECT_TRUE( result->home_configuration.isApprox( home_configuration_, 1e-6 ) )
 	    << "Home configuration should match input";
 }
@@ -121,9 +122,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJointAndWristModel )
 	ASSERT_TRUE( result.has_value() ) << "Should return a valid NumericJointsModel";
 
 	// Check the numeric joint model properties
-	EXPECT_EQ( result->start_index, 1 ) << "Start index should be 1 (after base joint)";
-	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() - 1 - wrist_model_.active_joint_count )
-	    << "Count should be total active joints minus base joint and wrist joints";
+	EXPECT_EQ( result->start_index, 0 ) << "Start index should be 0";
+	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() - wrist_model_.active_joint_count )
+	    << "Count should be total active joints wrist joints";
 	EXPECT_TRUE( result->home_configuration.isApprox( home_configuration_, 1e-6 ) )
 	    << "Home configuration should match input";
 }
@@ -202,12 +203,11 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithReducedHomeConfiguration )
 
 	// Create a wrist model with a non-identity TCP transform
 	WristModel wrist_model;
-	wrist_model_.type = WristType::Revolute1;
-	wrist_model_.active_joint_start = joint_chain_.GetActiveJointCount() - 1;
-	wrist_model_.active_joint_count = 1;
-	wrist_model_.center_at_home = Vec3d( 1.0, 0, 0 );
-	wrist_model_.tcp_in_wrist_at_home = Mat4d::Identity();
-	wrist_model.tcp_in_wrist_at_home.block< 3, 1 >( 0, 3 ) = Vec3d( 0, 0, 0.5 );
+	wrist_model.type = WristType::Revolute1;
+	wrist_model.active_joint_start = joint_chain_.GetActiveJointCount() - 1;
+	wrist_model.active_joint_count = 1;
+	wrist_model.center_at_home = Vec3d( 1.0, 0, 0 );
+	wrist_model.tcp_in_wrist_at_home = ToTransformMatrix( Vec3d( 0, 0, 0.5 ) );
 	wrist_model.tcp_in_wrist_at_home_inv = Inverse( wrist_model.tcp_in_wrist_at_home );
 
 	// Test with a base joint and a wrist model

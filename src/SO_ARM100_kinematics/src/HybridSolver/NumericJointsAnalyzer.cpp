@@ -13,11 +13,9 @@ namespace SOArm100::Kinematics
 
 const Mat4d ComputeReducedHome(
 	const Mat4d& full_home,
-	const std::optional< WristModel >& wrist_model )
+	const WristModel& wrist_model )
 {
-	if ( !wrist_model )
-		return full_home;
-	return full_home * wrist_model->tcp_in_wrist_at_home_inv;
+	return full_home * wrist_model.tcp_in_wrist_at_home_inv;
 }
 
 // ------------------------------------------------------------
@@ -28,7 +26,7 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 	const std::optional< BaseJointModel >& base_joint,
 	const std::optional< WristModel >& wrist_model )
 {
-	int numeric_count = joint_chain.GetActiveJointCount();
+	int numeric_count = joint_chain.GetJointCount();
 	int numeric_start_index = 0;
 	int wrist_count = !wrist_model ? 0 : wrist_model->active_joint_count;
 
@@ -41,13 +39,15 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 	numeric_joint_model.start_index = numeric_start_index;
 	numeric_joint_model.count = numeric_count;
 
-	if ( numeric_count == joint_chain.GetActiveJointCount() )
+	if ( numeric_count == joint_chain.GetJointCount() || !wrist_model )
 	{
 		numeric_joint_model.home_configuration = home_configuration;
 	}
 	else
 	{
-		numeric_joint_model.home_configuration = ComputeReducedHome( home_configuration, wrist_model );
+		numeric_joint_model.home_configuration = ComputeReducedHome( 
+			home_configuration, 
+			*wrist_model );
 	}
 
 	return numeric_joint_model;

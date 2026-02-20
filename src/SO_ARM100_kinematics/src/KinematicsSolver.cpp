@@ -168,7 +168,7 @@ bool KinematicsSolver::InverseKinematic(
 		joints.resize( joint_chain_->GetActiveJointCount() );
 
 	return InverseKinematicImpl( 
-		ToMat4d( target_pose ),
+		ToTransformMatrix( target_pose ),
 		seed_joints, 
 		joints.data() );
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "BaseJointSolver.hpp"
+#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "Global.hpp"
 #include "IKinematicsSolver.hpp"
 #include "NumericJointsSolver.hpp"
 #include "SolverResult.hpp"
@@ -34,10 +36,8 @@ private:
 struct SolverBuffer
 {
 	Mat4d wrist_center{};
-	Mat4d num_target{};
 	Mat4d wrist_target{};
 
-	Mat4d T_base{};
 	Mat4d T_num{};
 	Mat4d fk_result{};
 
@@ -56,7 +56,7 @@ struct SolverBuffer
 
 	int Size() const
 	{
-		return base_result.joints.size() + numeric_result.joints.size() + wrist_result.joints.size();
+		return numeric_result.joints.size() + wrist_result.joints.size();
 	}
 };
 
@@ -65,8 +65,10 @@ mutable SolverBuffer buffer_;
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 
-std::unique_ptr< BaseJointSolver > base_joint_solver_;
-std::unique_ptr< NumericJointsSolver > numeric_solver_;
-std::unique_ptr< WristSolver > wrist_solver_;
+std::unique_ptr< BaseJointSolver > base_joint_presolver_;
+std::unique_ptr< NumericJointsSolver > numeric_presolver_;
+std::unique_ptr< WristSolver > wrist_presolver_;
+
+std::unique_ptr< DLSKinematicsSolver > full_solver_;
 };
 }

@@ -35,24 +35,24 @@ std::shared_ptr<JointChain> CreateTestJointChain()
         Limits(-M_PI/2, M_PI/2)
     );
     joint_chain->Add(
-        Twist(Vec3d(0, 1, 0), Vec3d(0, 0.0, 1.0)),
+        Twist(Vec3d(0, 1, 0), Vec3d(0, 0, 1.0)),
         Link(Mat4d::Identity()),
         Limits(-M_PI/2, M_PI/2)
     );
     joint_chain->Add(
-        Twist(Vec3d(0, 0, 1), Vec3d(0, 0.0, 1.5)),
+        Twist(Vec3d(0, 0, 1), Vec3d(0, 0, 1.5)),
         Link(Mat4d::Identity()),
         Limits(-M_PI, M_PI)
     );
 
     // Wrist joints (2 joints)
     joint_chain->Add(
-        Twist(Vec3d(1, 0, 0), Vec3d(0, 1, 1.5)),
+        Twist(Vec3d(1, 0, 0), Vec3d(0, 0, 1.5)),
         Link(Mat4d::Identity()),
         Limits(-M_PI, M_PI)
     );
     joint_chain->Add(
-        Twist(Vec3d(0, 1, 0), Vec3d(0, 1, 1.5)),
+        Twist(Vec3d(0, 1, 0), Vec3d(0, 0, 1.5)),
         Link(Mat4d::Identity()),
         Limits(-M_PI, M_PI)
     );
@@ -74,7 +74,6 @@ protected:
 
         // Create a home configuration
         home_configuration_ = Mat4d::Identity();
-        home_configuration_.block<3,1>(0,0) = Vec3d(0, 1, 1.5);
     }
 
     void TearDown() override

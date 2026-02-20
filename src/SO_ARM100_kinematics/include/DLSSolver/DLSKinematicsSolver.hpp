@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "KinematicsSolver.hpp"
+#include "SolverType.hpp"
 
 namespace SOArm100::Kinematics
 {
@@ -23,7 +24,7 @@ struct SolverParameters
 	double epsilon_step{ 0.01 };
 	double min_sv_factor{ 10.0 };
 	int max_stalle_iterations{ 5 };
-	double translation_weight{ 10.0 };	
+	double translation_weight{ 10.0 };
 	double rotation_weight{ 1.0 };
 
 	[[nodiscard]] constexpr bool IsValid() const noexcept {
@@ -37,6 +38,7 @@ struct SolverParameters
 
 public:
 explicit DLSKinematicsSolver();
+explicit DLSKinematicsSolver( SolverType type );
 explicit DLSKinematicsSolver( SolverParameters parameters );
 ~DLSKinematicsSolver() = default;
 
@@ -63,6 +65,7 @@ virtual bool InverseKinematicImpl(
 
 private:
 struct SolverBuffers {
+	MatXd partial_jacobian;
 	MatXd jacobian;
 	MatXd damped;
 	MatXd jac_transpose;
@@ -78,6 +81,7 @@ struct SolverBuffers {
 
 	explicit SolverBuffers( size_t n_joints )
 	{
+		jacobian.resize( 3, n_joints );
 		jacobian.resize( 6, n_joints );
 		damped.resize( n_joints, n_joints );
 		jac_transpose.resize( n_joints, 6 );
@@ -96,6 +100,8 @@ struct IterationState {
 
 SolverParameters parameters_;
 mutable SolverBuffers buffers_{ 6 };
+
+[[nodiscard]] static SolverParameters InitializeParameters( SolverType type );
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
@@ -129,6 +135,23 @@ void UpdateErrorConvergence(
 	double last_error,
 	double current_error,
 	IterationState& state ) const;
+
+
+void GetPartialPositionJacobian( const MatXd& jacobian, SolverBuffers& buffer ) const {
+	buffers_.partial_jacobian.noalias() = jacobian.bottomRows( 3 );
+}
+
+void GetPartialOrientationJacobian( const MatXd& jacobian, SolverBuffers& buffer ) const {
+	buffers_.partial_jacobian.noalias() = jacobian.topRows( 3 );
+}
+
+[[nodiscard]] bool IsPositionOnlySolver() const {
+	return parameters_.rotation_weight == 0;
+}
+
+[[nodiscard]] bool IsOrientationOnlySolver() const {
+	return parameters_.translation_weight == 0;
+}
 
 [[nodiscard]] constexpr double BacktrackStep( double step ) const noexcept {
 	return std::max( step * 0.5, parameters_.min_step );

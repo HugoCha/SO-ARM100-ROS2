@@ -1,4 +1,5 @@
 #include "Utils/Converter.hpp"
+#include "Global.hpp"
 
 #include <Eigen/Dense>
 #include <sstream>
@@ -22,7 +23,7 @@ std::vector< double > ToStdVector( const VecXd& vec )
 
 // ------------------------------------------------------------
 
-Mat4d ToMat4d( const geometry_msgs::msg::Pose& pose_msg )
+Mat4d ToTransformMatrix( const geometry_msgs::msg::Pose& pose_msg )
 {
 	Mat4d pose = Mat4d::Identity();
 
@@ -36,6 +37,34 @@ Mat4d ToMat4d( const geometry_msgs::msg::Pose& pose_msg )
 	pose.block< 3, 3 >( 0, 0 ) = quaternion.normalized().toRotationMatrix();
 
 	return pose;
+}
+
+// ------------------------------------------------------------
+
+Mat4d ToTransformMatrix( const Mat3d& rotation, const Vec3d translation )
+{
+	Mat4d transform = Mat4d::Identity();
+	transform.block<3,3>(0,0) = rotation;
+	transform.block<3,1>(0,3) = translation;
+	return transform;
+}
+
+// ------------------------------------------------------------
+
+Mat4d ToTransformMatrix( const Mat3d& rotation )
+{
+	Mat4d transform = Mat4d::Identity();
+	transform.block<3,3>(0,0) = rotation;
+	return transform;
+}
+
+// ------------------------------------------------------------
+
+Mat4d ToTransformMatrix( const Vec3d& translation )
+{
+	Mat4d transform = Mat4d::Identity();
+	transform.block<3,1>(0,3) = translation;
+	return transform;
 }
 
 // ------------------------------------------------------------

@@ -74,7 +74,7 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 	Add( std::make_shared< const Joint >( twist, link, limits ) );
 }
 
-[[nodiscard]] const JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
+[[nodiscard]] JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
 
 private:
 std::vector< JointConstPtr > joints_;

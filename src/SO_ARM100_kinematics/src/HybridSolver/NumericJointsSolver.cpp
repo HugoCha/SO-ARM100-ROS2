@@ -14,7 +14,8 @@ namespace SOArm100::Kinematics
 NumericJointsSolver::NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
-	const NumericJointsModel& numeric_joint_model )
+	const NumericJointsModel& numeric_joint_model,
+	SolverType type )
 {
 	numeric_joints_model_ = std::make_unique< const NumericJointsModel >( numeric_joint_model );
 

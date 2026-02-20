@@ -209,7 +209,6 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 	EXPECT_TRUE( IsApprox( achieved_pose, target_pose ) )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
-	    << "Diff = " << std::endl << target_pose - achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
 }
 

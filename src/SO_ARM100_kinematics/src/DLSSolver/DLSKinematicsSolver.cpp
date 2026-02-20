@@ -34,6 +34,13 @@ DLSKinematicsSolver::DLSKinematicsSolver() :
 
 // ------------------------------------------------------------
 
+DLSKinematicsSolver::DLSKinematicsSolver( SolverType type ) :
+	DLSKinematicsSolver( InitializeParameters( type ) )
+{
+}
+
+// ------------------------------------------------------------
+
 DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 	: parameters_( parameters ), buffers_( 0 )
 {
@@ -41,6 +48,30 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 	{
 		throw std::invalid_argument( "Invalid DLS configuration" );
 	}
+}
+
+// ------------------------------------------------------------
+
+DLSKinematicsSolver::SolverParameters DLSKinematicsSolver::InitializeParameters( SolverType type )
+{
+	SolverParameters parameters;
+	switch ( type )
+	{
+		case SolverType::Orientation:
+			parameters.rotation_weight = 1.0;
+			parameters.translation_weight = 0.0;
+			break;
+		case SolverType::Position:
+			parameters.rotation_weight = 0.0;
+			parameters.translation_weight = 1.0;
+			break;
+		case SolverType::Full:
+		default:
+			parameters.rotation_weight = 1.0;
+			parameters.translation_weight = 10.0;
+			break;
+	}
+	return parameters;
 }
 
 // ------------------------------------------------------------
@@ -207,7 +238,22 @@ void DLSKinematicsSolver::PerformIteration(
 		state.error = current_error;
 
 		ComputeWeightedJacobianAndDamping( state.joints, weights, state.damping, buffers );
-		const double min_sv = GetMinSingularValue( buffers.jacobian );
+		
+		double min_sv;
+		if ( IsOrientationOnlySolver() )
+		{
+			GetPartialOrientationJacobian( buffers.jacobian, buffers );
+			min_sv = GetMinSingularValue( buffers.partial_jacobian );
+		}
+		else if ( IsPositionOnlySolver() )
+		{
+			GetPartialPositionJacobian( buffers.jacobian, buffers );
+			min_sv = GetMinSingularValue( buffers.partial_jacobian );
+		}
+		else 
+		{
+			min_sv = GetMinSingularValue( buffers.jacobian );
+		}
 
 		state.damping = ComputeAdaptiveDamping( min_sv );
 		state.step = ComputeAdaptiveStep( min_sv );
@@ -248,8 +294,6 @@ void DLSKinematicsSolver::ComputeWeightedJacobianAndDamping(
 {
 	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
 	buffers.jacobian.noalias() = weights * buffers.jacobian;
-
-	const int n = buffers.jacobian.cols();
 	buffers.damped.noalias() = buffers.jacobian.transpose() * buffers.jacobian;
 	buffers.damped.diagonal().array() += damping_factor * damping_factor;
 }

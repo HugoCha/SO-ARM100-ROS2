@@ -1,5 +1,7 @@
 #include "HybridSolver/BaseNumericWristSolver.hpp"
 
+#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
@@ -24,9 +26,11 @@ BaseNumericWristSolver::BaseNumericWristSolver(
 	home_configuration_( home_configuration ),
 	buffer_( SolverBuffer( 1, numeric_model.count, wrist_model.active_joint_count ) )
 {
-	base_joint_solver_ = std::make_unique< BaseJointSolver >( joint_chain, home_configuration, base_model );
-	numeric_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model );
-	wrist_solver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
+	base_joint_presolver_ = std::make_unique< BaseJointSolver >( joint_chain, home_configuration, base_model );
+	numeric_presolver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model );
+	wrist_presolver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
+
+	full_solver_ = std::make_unique< DLSKinematicsSolver >();
 }
 
 // ------------------------------------------------------------
@@ -37,61 +41,39 @@ SolverResult BaseNumericWristSolver::IK(
 	double discretization ) const
 {
 	SolverResult result( buffer_.Size() );
+
 	buffer_.seed_joints.assign( seed_joints.begin(), seed_joints.end() );
 
-	wrist_solver_->ComputeWristCenter( target_pose, buffer_.wrist_center );
-
-	if ( ( buffer_.base_result = base_joint_solver_->IK(
-			   buffer_.wrist_center,
-			   seed_joints,
-			   discretization ) ).Unreachable() )
-	{
-		result.state = SolverState::Unreachable;
-		return result;
-	}
-
-	base_joint_solver_->FK( buffer_.base_result.joints, buffer_.T_base );
-	buffer_.num_target = Inverse( buffer_.T_base ) * buffer_.wrist_center;
+	// Base joint Heuristic for Full solver
+	wrist_presolver_->ComputeWristCenter( target_pose, buffer_.wrist_center );
+	
+	buffer_.base_result = base_joint_presolver_->Heuristic(
+				buffer_.wrist_center,
+				seed_joints,
+				discretization );
 	buffer_.seed_joints[0] = buffer_.base_result.joints[0];
 
-	if ( ( buffer_.numeric_result = numeric_solver_->IK(
-			   buffer_.num_target,
-			   buffer_.seed_joints,
-			   discretization ) ).Unreachable() )
-	{
-		result.state = SolverState::Unreachable;
-		return result;
-	}
-
-	numeric_solver_->FK( buffer_.numeric_result.joints, buffer_.T_num );
-	buffer_.wrist_target = Inverse( buffer_.T_num ) * buffer_.num_target;
+	// Intermediate joint Heuristic for Full solver
+	buffer_.numeric_result = numeric_presolver_->IK(
+			   buffer_.wrist_center,
+			   seed_joints,
+			   discretization );
+	std::copy( buffer_.numeric_result.joints.data(), 
+				buffer_.numeric_result.joints.data() + buffer_.numeric_result.joints.size(), 
+			  buffer_.seed_joints.data() + numeric_presolver_->GetNumericJointsModel()->start_index );
 	
-	if ( ( buffer_.wrist_result = wrist_solver_->IK(
+	// Wrist joint Heuristic for Full solver
+	numeric_presolver_->FK( buffer_.numeric_result.joints, buffer_.T_num );
+	buffer_.wrist_target = Inverse( buffer_.T_num ) * target_pose;
+	buffer_.wrist_result = wrist_presolver_->Heuristic(
 			   buffer_.wrist_target,
-			   buffer_.seed_joints,
-			   discretization ) ).Unreachable() )
-	{
-		result.state = SolverState::Unreachable;
-		return result;
-	}
+			   seed_joints,
+			   discretization );
+	std::copy( buffer_.wrist_result.joints.data(), 
+				buffer_.wrist_result.joints.data() + buffer_.wrist_result.joints.size(), 
+				buffer_.seed_joints.data() + wrist_presolver_->GetWristModel()->active_joint_start );
 
-	result.state = GetSolverState(
-		{
-			buffer_.base_result,
-			buffer_.numeric_result,
-			buffer_.wrist_result
-		} );
-
-	result.joints << buffer_.numeric_result.joints, buffer_.wrist_result.joints;
-
-	CheckSolverResult(
-		*joint_chain_,
-		*home_configuration_,
-		target_pose,
-		buffer_.fk_result,
-		result );
-
-	return true;
+	return ToSolverResult( full_solver_->InverseKinematic( target_pose, buffer_.seed_joints ) );
 }
 
 // ------------------------------------------------------------

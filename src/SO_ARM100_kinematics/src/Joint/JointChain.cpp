@@ -89,7 +89,7 @@ void JointChain::Add( JointConstPtr joint )
 
 // ------------------------------------------------------------
 
-const JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
+JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
 {
 	const auto& joints = GetJoints();
 

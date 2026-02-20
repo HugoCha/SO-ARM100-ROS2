@@ -75,7 +75,6 @@ protected:
 
         // Create a home configuration
         home_configuration_ = std::make_shared<Mat4d>(Mat4d::Identity());
-        home_configuration_->block<3,1>(0,3) = Vec3d(0,0,1.5);
 
         // Create a solver
         solver_ = std::make_unique<HybridKinematicsSolver>();

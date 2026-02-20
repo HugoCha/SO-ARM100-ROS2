@@ -9,6 +9,7 @@
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <cassert>
 #include <memory>
 
 namespace SOArm100::Kinematics
@@ -52,6 +53,17 @@ void WristSolver::ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center )
 
 // ------------------------------------------------------------
 
+SolverResult WristSolver::Heuristic(
+	const Mat4d& target_in_wrist,
+	const std::span< const double >& seed_joints,
+	double search_discreatization ) const
+{
+	const auto& R_target_in_wrist = Rotation( target_in_wrist );
+	return SolveAnalytical( *joint_chain_, R_target_in_wrist, seed_joints );
+}
+
+// ------------------------------------------------------------
+
 SolverResult WristSolver::IK(
 	const Mat4d& target_in_wrist,
 	const std::span< const double >& seed_joints,
@@ -64,25 +76,12 @@ SolverResult WristSolver::IK(
 
 	const auto& R_target_in_wrist = Rotation( target_in_wrist );
 
-	SolverResult result{ wrist_model_->active_joint_count };
-	switch ( wrist_model_->type )
-	{
-	case WristType::Revolute1:
-		result = SolveRevolute1( *joint_chain_, R_target_in_wrist );
-		break;
-	case WristType::Revolute2:
-		result = SolveRevolute2( *joint_chain_, R_target_in_wrist );
-		break;
-	case WristType::Revolute3:
-		result = SolveRevolute3( *joint_chain_, R_target_in_wrist );
-		break;
-	default:
-		break;
-	}
+	auto result = SolveAnalytical( *joint_chain_, R_target_in_wrist, seed_joints );
 
 	if ( !result.Success() && !result.Unreachable() )
 	{
-		result = SolveNumeric( target_in_wrist, seed_joints );
+		std::vector< double > new_seed_joints( result.joints.begin(), result.joints.end() );
+		result = SolveNumeric( target_in_wrist, new_seed_joints );
 	}
 
 	Mat4d fk_result;
@@ -98,9 +97,31 @@ SolverResult WristSolver::IK(
 
 // ------------------------------------------------------------
 
+SolverResult WristSolver::SolveAnalytical( 
+	const JointChain& joint_chain, 
+	const Mat3d& R_target_in_wrist,
+	const std::span< const double >& seed_joints ) const
+{
+	switch ( wrist_model_->type )
+	{
+	case WristType::Revolute1:
+		return SolveRevolute1( *joint_chain_, R_target_in_wrist, seed_joints );
+	case WristType::Revolute2:
+		return SolveRevolute2( *joint_chain_, R_target_in_wrist, seed_joints );
+	case WristType::Revolute3:
+		return SolveRevolute3( *joint_chain_, R_target_in_wrist, seed_joints );
+	default:
+		assert("Should not run wrist solver with None type");
+	}
+	return { wrist_model_->active_joint_count };;
+}
+
+// ------------------------------------------------------------
+
 SolverResult WristSolver::SolveRevolute1(
 	const JointChain& joint_chain,
-	const Mat3d& R_target_in_wrist ) const
+	const Mat3d& R_target_in_wrist,
+	const std::span< const double >& seed_joints ) const
 {
 	assert( joint_chain_->GetActiveJointCount() == 1 );
 	SolverResult result( 1 );
@@ -112,6 +133,7 @@ SolverResult WristSolver::SolveRevolute1(
 	// aa.axis() // axis <=> | proj | = 1
 	if ( std::abs( proj ) < 1 - epsilon )
 	{
+		result.joints << seed_joints[0];
 		result.state = SolverState::Unreachable;
 		return result;
 	}
@@ -125,7 +147,8 @@ SolverResult WristSolver::SolveRevolute1(
 
 SolverResult WristSolver::SolveRevolute2(
 	const JointChain& joint_chain,
-	const Mat3d& R_target ) const
+	const Mat3d& R_target,
+	const std::span< const double >& seed_joints ) const
 {
 	assert( joint_chain_->GetActiveJointCount() == 2 );
 	SolverResult result( 2 );
@@ -141,7 +164,8 @@ SolverResult WristSolver::SolveRevolute2(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
-		result.state = SolverState::Unreachable;
+		result.joints << seed_joints[0], seed_joints[1];
+		result.state = SolverState::Singularity;
 		return result;
 	}
 
@@ -171,6 +195,7 @@ SolverResult WristSolver::SolveRevolute2(
 
 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
+		result.joints << q1, seed_joints[1];
 		result.state = SolverState::Unreachable;
 		return result;
 	}
@@ -185,7 +210,8 @@ SolverResult WristSolver::SolveRevolute2(
 
 SolverResult WristSolver::SolveRevolute3(
 	const JointChain& joint_chain,
-	const Mat3d& R_target ) const
+	const Mat3d& R_target,
+	const std::span< const double >& seed_joints ) const
 {
 	assert( joint_chain.GetActiveJointCount() == 3 );
 
@@ -206,6 +232,7 @@ SolverResult WristSolver::SolveRevolute3(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
+		result.joints << seed_joints[0], seed_joints[1], seed_joints[2];
 		result.state = SolverState::Singularity;
 		return result;
 	}
@@ -224,6 +251,7 @@ SolverResult WristSolver::SolveRevolute3(
 
 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
 	{
+		result.joints << q1, seed_joints[1], seed_joints[2];
 		result.state = SolverState::Singularity;
 		return result;
 	}
@@ -248,6 +276,7 @@ SolverResult WristSolver::SolveRevolute3(
 
 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
+		result.joints << q1, q2, seed_joints[2];
 		result.state = SolverState::Unreachable;
 		return result;
 	}

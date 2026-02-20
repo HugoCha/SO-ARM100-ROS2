@@ -142,47 +142,14 @@ void POE(
 
 // ------------------------------------------------------------
 
-double RotationError( const Mat3d& target_rotation, const Mat3d& result_rotation )
-{
-	Mat3d R_error = target_rotation.transpose() * result_rotation;
-
-	double cos_angle = ( R_error.trace() - 1.0 ) * 0.5;
-	cos_angle = std::clamp(cos_angle, -1.0, 1.0);
-
-	return std::acos(cos_angle);
-}	
-
-// ------------------------------------------------------------
-
-double RotationError( const Mat4d& target, const Mat4d& result )
-{
-	return RotationError( Rotation( target ), Rotation( result ) );
-}
-
-// ------------------------------------------------------------
-
-double PositionError( const Vec3d& target_translation, const Vec3d& result_translation )
-{
-	return ( target_translation - result_translation ).norm();
-}
-
-// ------------------------------------------------------------
-
-double PositionError( const Mat4d& target, const Mat4d& result )
-{
-	return PositionError( Translation( target ), Translation( result ) );
-}
-
-// ------------------------------------------------------------
-
 bool IsApprox( 
 	const Mat4d& target, 
 	const Mat4d& result, 
 	double rotation_tol, 
 	double translation_tol )
 {
-	return RotationError( target, result ) <= rotation_tol &&
-		   PositionError( target, result ) <= translation_tol;
+	return Rotation( target ).isApprox( Rotation( result ), rotation_tol ) &&
+		   Translation( target ).isApprox( Translation( result ), translation_tol );
 }
 
 // ------------------------------------------------------------
