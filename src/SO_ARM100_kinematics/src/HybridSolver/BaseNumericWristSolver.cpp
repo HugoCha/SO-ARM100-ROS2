@@ -1,14 +1,15 @@
 #include "HybridSolver/BaseNumericWristSolver.hpp"
 
-#include "DLSSolver/DLSKinematicsSolver.hpp"
-#include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
+#include "SolverType.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "SolverResult.hpp"
 
+#include <cassert>
+#include <iostream>
 #include <memory>
 
 namespace SOArm100::Kinematics
@@ -24,13 +25,13 @@ BaseNumericWristSolver::BaseNumericWristSolver(
 	const WristModel& wrist_model ) :
 	joint_chain_( joint_chain ),
 	home_configuration_( home_configuration ),
-	buffer_( SolverBuffer( 1, numeric_model.count, wrist_model.active_joint_count ) )
+	buffer_( SolverBuffer( numeric_model.count, wrist_model.active_joint_count ) )
 {
 	base_joint_presolver_ = std::make_unique< BaseJointSolver >( joint_chain, home_configuration, base_model );
-	numeric_presolver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model );
+	numeric_presolver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model, SolverType::Position );
 	wrist_presolver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
 
-	full_solver_ = std::make_unique< DLSKinematicsSolver >();
+	full_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, SolverType::Full );
 }
 
 // ------------------------------------------------------------
@@ -40,6 +41,8 @@ SolverResult BaseNumericWristSolver::IK(
 	const std::span< const double >& seed_joints,
 	double discretization ) const
 {
+	assert( seed_joints.size() == buffer_.Size() );
+
 	SolverResult result( buffer_.Size() );
 
 	buffer_.seed_joints.assign( seed_joints.begin(), seed_joints.end() );
@@ -58,9 +61,9 @@ SolverResult BaseNumericWristSolver::IK(
 			   buffer_.wrist_center,
 			   seed_joints,
 			   discretization );
-	std::copy( buffer_.numeric_result.joints.data(), 
-				buffer_.numeric_result.joints.data() + buffer_.numeric_result.joints.size(), 
-			  buffer_.seed_joints.data() + numeric_presolver_->GetNumericJointsModel()->start_index );
+	std::copy( buffer_.numeric_result.joints.begin(), 
+				buffer_.numeric_result.joints.begin() + buffer_.numeric_result.joints.size(), 
+			  buffer_.seed_joints.begin() );
 	
 	// Wrist joint Heuristic for Full solver
 	numeric_presolver_->FK( buffer_.numeric_result.joints, buffer_.T_num );
@@ -69,11 +72,15 @@ SolverResult BaseNumericWristSolver::IK(
 			   buffer_.wrist_target,
 			   seed_joints,
 			   discretization );
-	std::copy( buffer_.wrist_result.joints.data(), 
-				buffer_.wrist_result.joints.data() + buffer_.wrist_result.joints.size(), 
-				buffer_.seed_joints.data() + wrist_presolver_->GetWristModel()->active_joint_start );
 
-	return ToSolverResult( full_solver_->InverseKinematic( target_pose, buffer_.seed_joints ) );
+	std::cout << "seed size = " << buffer_.seed_joints.size() << "\n";
+	std::cout << "numeric size = " << buffer_.numeric_result.joints.size() << "\n";
+	std::cout << "wrist size = " << buffer_.wrist_result.joints.size() << "\n";
+	std::copy( buffer_.wrist_result.joints.begin(), 
+				buffer_.wrist_result.joints.begin() + buffer_.wrist_result.joints.size(), 
+				buffer_.seed_joints.begin() + wrist_presolver_->GetWristModel()->active_joint_start );
+
+	return full_solver_->IK( target_pose, buffer_.seed_joints, discretization );
 }
 
 // ------------------------------------------------------------

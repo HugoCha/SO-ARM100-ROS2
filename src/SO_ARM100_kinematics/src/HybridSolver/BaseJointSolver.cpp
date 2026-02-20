@@ -4,6 +4,7 @@
 #include "Joint/JointChain.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/MathUtils.hpp"
 
 #include <cmath>
 #include <memory>
@@ -69,11 +70,11 @@ SolverResult BaseJointSolver::SolverAnalytical(
 
 	SolverResult result( 1 );
 
-	const auto& base_twist = GetBaseJoint()->GetTwist();
+	const auto* base_joint = GetBaseJoint();
 
-	const Vec3d& omega = base_twist.GetAxis();
+	const Vec3d& omega = base_joint->Axis();
 	const Vec3d& t_wrist_center = Translation( wrist_center );
-	const Vec3d& r = t_wrist_center - base_twist.GetLinear();
+	const Vec3d& r = t_wrist_center - base_joint->Origin();
 
 	// project into plane orthogonal to axis
 	const Vec3d& r_proj = r - r.dot( omega ) * omega;
@@ -89,10 +90,17 @@ SolverResult BaseJointSolver::SolverAnalytical(
 		double s_theta = omega.dot( r0.cross( r_proj ) );
 		double c_theta = r0.dot( r_proj );
 
-		result.joints[0] = atan2( s_theta, c_theta );
-		result.state = std::isnan( result.joints[0] ) ?
-		               SolverState::Unreachable :
-		               SolverState::Success;
+		double theta = atan2( s_theta, c_theta );
+		if ( std::isnan( theta ) )
+		{
+			result.joints[0] = seed_joints[0];
+			result.state = SolverState::Unreachable;
+		}
+		else
+		{
+			result.joints[0] = FindClosest( seed_joints[0], theta, M_PI - theta );
+			result.state = SolverState::Success;
+		}
 	}
 
 	return result;

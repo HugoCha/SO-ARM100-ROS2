@@ -123,7 +123,7 @@ SolverResult WristSolver::SolveRevolute1(
 	const Mat3d& R_target_in_wrist,
 	const std::span< const double >& seed_joints ) const
 {
-	assert( joint_chain_->GetActiveJointCount() == 1 );
+	assert( joint_chain.GetActiveJointCount() == 1 );
 	SolverResult result( 1 );
 
 	const Vec3d& axis = joint_chain.GetActiveJointTwist( 0 ).GetAxis();
@@ -150,7 +150,7 @@ SolverResult WristSolver::SolveRevolute2(
 	const Mat3d& R_target,
 	const std::span< const double >& seed_joints ) const
 {
-	assert( joint_chain_->GetActiveJointCount() == 2 );
+	assert( joint_chain.GetActiveJointCount() == 2 );
 	SolverResult result( 2 );
 
 	const Vec3d& e1 = joint_chain.GetActiveJointTwist( 0 ).GetAxis().normalized();

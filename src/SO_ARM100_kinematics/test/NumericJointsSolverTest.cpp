@@ -5,6 +5,7 @@
 #include "Joint/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 #include "SolverResult.hpp"
+#include "SolverType.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
@@ -29,7 +30,6 @@ void SetUp() override
 	home_ = std::make_shared< const Mat4d >( Data::GetRevoluteOnlyRobotHome() );
 
 	// Create a numeric joints model for the first 3 joints
-	numeric_joint_model_.start_index = 0;
 	numeric_joint_model_.count = 3;
 	numeric_joint_model_.home_configuration = Data::GetRevoluteOnlyRobotHome();
 }
@@ -52,7 +52,7 @@ TEST_F( NumericJointsSolverTest, FK )
 	VecXd joints( 3 );
 	joints << M_PI / 4, M_PI / 6, M_PI / 8;
 
-	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_, SolverType::Full );
 	// Compute forward kinematics
 	Mat4d fk;
 	bool success = solver.FK( joints, fk );
@@ -77,13 +77,12 @@ TEST_F( NumericJointsSolverTest, FK_WithSubChain )
 {
 	// Create a numeric joints model for a subset of joints
 	NumericJointsModel sub_model;
-	sub_model.start_index = 1;
 	sub_model.count = 2;
 	sub_model.home_configuration = Mat4d::Identity();
 
 	// Initialize a solver with the sub-chain
 	auto sub_home = std::make_shared< const Mat4d >( sub_model.home_configuration );
-	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model );
+	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model, SolverType::Full  );
 
 	// Create joint angles for the sub-chain
 	VecXd joints( 2 );
@@ -125,7 +124,7 @@ TEST_F( NumericJointsSolverTest, IK )
 	std::vector< double > seed_joints{ 0.0, 0.0, 0.0 };
 
 	// Solve IK
-	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_, SolverType::Full  );
 	SolverResult result = solver.IK( target, seed_joints, 0 );
 
 	// Check that the solution is valid
@@ -147,13 +146,12 @@ TEST_F( NumericJointsSolverTest, IK_WithSubChain )
 {
 	// Create a numeric joints model for a subset of joints
 	NumericJointsModel sub_model;
-	sub_model.start_index = 0;
 	sub_model.count = 2;
 	sub_model.home_configuration = Data::GetRevoluteOnlyRobotHome();
 
 	// Initialize a solver with the sub-chain
 	auto sub_home = std::make_shared< const Mat4d >( sub_model.home_configuration );
-	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model );
+	NumericJointsSolver sub_solver( joint_chain_, sub_home, sub_model, SolverType::Full  );
 
 	// Create a target pose for the sub-chain
 	VecXd joints( 3 );
@@ -192,7 +190,7 @@ TEST_F( NumericJointsSolverTest, IK_UnreachableTarget )
 	std::vector< double > seed_joints{ 0.0, 0.0, 0.0 };
 
 	// Solve IK
-	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_, SolverType::Full );
 	SolverResult result = solver.IK( target, seed_joints, 0 );
 
 	// Check that the solution is not successful
@@ -216,7 +214,7 @@ TEST_F( NumericJointsSolverTest, IK_WithDifferentSeedJoints )
 		{ -M_PI / 4, -M_PI / 4, -M_PI / 4 }
 	};
 
-	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_ );
+	NumericJointsSolver solver( joint_chain_, home_, numeric_joint_model_, SolverType::Full  );
 
 	for ( const auto& seed_joints : seed_joints_list )
 	{

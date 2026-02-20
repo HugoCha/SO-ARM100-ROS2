@@ -63,7 +63,7 @@ std::unique_ptr< IKinematicsSolver > HybridSolverFactory::Get(
 		return std::make_unique< NumericJointsSolver >(
 			joint_chain,
 			home_configuration,
-			*configuration.numeric_joints_model );
+			SolverType::Full );
 	}
 }
 

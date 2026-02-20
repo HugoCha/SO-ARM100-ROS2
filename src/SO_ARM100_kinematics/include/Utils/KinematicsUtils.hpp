@@ -55,6 +55,13 @@ void POE(
 	const VecXd& thetas,
 	Mat4d& poe );
 
+
+double RotationError( const Mat3d& target, const Mat3d& result );
+double RotationError( const Mat4d& target, const Mat4d& result );
+
+double TranslationError( const Vec3d& target, const Vec3d& result );
+double TranslationError( const Mat4d& target, const Mat4d& result );
+
 bool IsApprox( 
 	const Mat4d& target, 
 	const Mat4d& result, 

@@ -4,6 +4,7 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
+#include "SolverType.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "SolverResult.hpp"
 
@@ -23,7 +24,7 @@ NumericWristSolver::NumericWristSolver(
 	home_configuration_( home_configuration ),
 	buffer_( SolverBuffer( numeric_model.count, wrist_model.active_joint_count ) )
 {
-	numeric_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model );
+	numeric_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model, SolverType::Orientation );
 	wrist_solver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
 }
 

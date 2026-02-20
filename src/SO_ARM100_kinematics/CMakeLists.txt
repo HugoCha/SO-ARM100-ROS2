@@ -10,6 +10,10 @@ endif()
 #   add_compile_options(-Wall -Wextra -Wpedantic)
 # endif()
 
+# Uncomment the following lines to enable AddressSanitizer for debugging
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+# set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(moveit_core REQUIRED)

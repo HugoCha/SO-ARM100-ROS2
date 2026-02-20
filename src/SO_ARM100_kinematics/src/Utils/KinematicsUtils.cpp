@@ -94,7 +94,7 @@ void WeightedPoseError(
 	Vec6d& pose_error ) noexcept
 {
 	Mat4d T_diff;
-	T_diff.noalias() = target * current.inverse();
+	T_diff.noalias() = target * Inverse( current );
 	Eigen::AngleAxisd aa( Rotation( T_diff ) );
 	pose_error.head( 3 ).noalias() = rotation_weight * aa.axis() * aa.angle();
 	pose_error.tail( 3 ).noalias() = translation_weight * Translation( T_diff );
@@ -142,14 +142,43 @@ void POE(
 
 // ------------------------------------------------------------
 
+double RotationError( const Mat3d& target, const Mat3d& result )
+{
+	Mat3d R_error = result.transpose() * target;
+	return acos( ( R_error.trace() - 1 ) / 2.0 );
+}
+
+// ------------------------------------------------------------
+
+double RotationError( const Mat4d& target, const Mat4d& result )
+{
+	return RotationError( Rotation( target ), Rotation( result ) );
+}
+
+// ------------------------------------------------------------
+
+double TranslationError( const Vec3d& target, const Vec3d& result )
+{
+	return ( target - result ).norm();
+}
+
+// ------------------------------------------------------------
+
+double TranslationError( const Mat4d& target, const Mat4d& result )
+{
+	return TranslationError( Translation( target ), Translation( result ) );
+}
+
+// ------------------------------------------------------------
+
 bool IsApprox( 
 	const Mat4d& target, 
 	const Mat4d& result, 
 	double rotation_tol, 
 	double translation_tol )
 {
-	return Rotation( target ).isApprox( Rotation( result ), rotation_tol ) &&
-		   Translation( target ).isApprox( Translation( result ), translation_tol );
+	return RotationError( target, result ) <= rotation_tol &&
+		   TranslationError( target, result ) <= translation_tol;
 }
 
 // ------------------------------------------------------------

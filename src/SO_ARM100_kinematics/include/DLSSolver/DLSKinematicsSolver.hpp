@@ -32,7 +32,8 @@ struct SolverParameters
 		       error_tolerance > 0 &&
 		       min_step > 0 && min_step <= max_step &&
 		       min_damping > 0 && min_damping <= max_damping &&
-		       translation_weight > 0 && rotation_weight > 0;
+		       translation_weight >= 0 && rotation_weight >= 0 &&
+			   ( translation_weight > 0 || rotation_weight > 0 );
 	}
 };
 

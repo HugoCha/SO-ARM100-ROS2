@@ -3,6 +3,7 @@
 #include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "IKinematicsSolver.hpp"
 #include "NumericJointsModel.hpp"
+#include "SolverType.hpp"
 
 #include <memory>
 
@@ -13,18 +14,16 @@ struct SolverResult;
 class NumericJointsSolver : public IKinematicsSolver
 {
 public:
-enum class SolverType
-{
-	Position,
-	Orientation,
-	Full
-};
-
 NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
 	const NumericJointsModel& numeric_joint_model,
-	SolverType type = SolverType::Full );
+	SolverType type );
+
+NumericJointsSolver(
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
+	SolverType type );
 
 virtual SolverResult IK(
 	const Mat4d& target_pose,

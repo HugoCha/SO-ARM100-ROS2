@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BaseJointSolver.hpp"
-#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "Global.hpp"
 #include "IKinematicsSolver.hpp"
 #include "NumericJointsSolver.hpp"
@@ -27,6 +26,14 @@ BaseNumericWristSolver(
 	const NumericJointsModel& numeric_model,
 	const WristModel& wrist_model );
 
+BaseNumericWristSolver( const BaseNumericWristSolver& ) = delete;
+BaseNumericWristSolver& operator = ( const BaseNumericWristSolver& ) = delete;
+
+BaseNumericWristSolver( BaseNumericWristSolver&& ) noexcept = default;
+BaseNumericWristSolver& operator = ( BaseNumericWristSolver&& ) noexcept = default;
+
+~BaseNumericWristSolver() = default;
+
 virtual SolverResult IK(
 	const Mat4d& target_pose,
 	const std::span< const double >& seed_joints,
@@ -47,10 +54,11 @@ struct SolverBuffer
 
 	std::vector< double > seed_joints;
 
-	SolverBuffer( int base, int numeric, int wrist ) :
-		base_result( base ),
+	SolverBuffer( int numeric, int wrist ) :
+		base_result( 1 ),
 		numeric_result( numeric ),
-		wrist_result( wrist )
+		wrist_result( wrist ),
+		seed_joints( numeric + wrist )
 	{
 	}
 
@@ -69,6 +77,6 @@ std::unique_ptr< BaseJointSolver > base_joint_presolver_;
 std::unique_ptr< NumericJointsSolver > numeric_presolver_;
 std::unique_ptr< WristSolver > wrist_presolver_;
 
-std::unique_ptr< DLSKinematicsSolver > full_solver_;
+std::unique_ptr< NumericJointsSolver > full_solver_;
 };
 }

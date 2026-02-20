@@ -1,8 +1,8 @@
 #pragma once
 
+#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "Global.hpp"
 
-#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "IKinematicsHeuristic.hpp"
 #include "IKinematicsSolver.hpp"
 #include "Joint/JointChain.hpp"
@@ -24,6 +24,14 @@ WristSolver(
 	std::shared_ptr< const Mat4d > home_configuration,
 	const WristModel& wrist_model );
 
+WristSolver(const WristSolver&) = delete;
+WristSolver& operator=(const WristSolver&) = delete;
+
+WristSolver(WristSolver&&) noexcept = default;
+WristSolver& operator=(WristSolver&&) noexcept = default;
+
+~WristSolver() = default;
+
 virtual SolverResult Heuristic(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints,
@@ -43,7 +51,6 @@ const WristModel* GetWristModel() const {
 private:
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
-
 WristModelUniqueConstPtr wrist_model_;
 std::unique_ptr< DLSKinematicsSolver > dls_wrist_solver_;
 

@@ -3,6 +3,7 @@
 #include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
+#include "HybridSolver/NumericJointsModel.hpp"
 
 #include <memory>
 
@@ -20,8 +21,8 @@ NumericJointsSolver::NumericJointsSolver(
 	numeric_joints_model_ = std::make_unique< const NumericJointsModel >( numeric_joint_model );
 
 	const auto& active_joints = joint_chain->GetActiveJoints();
-	auto start = active_joints[numeric_joint_model.start_index];
-	auto end = active_joints[numeric_joint_model.start_index + numeric_joint_model.count - 1];
+	auto start = active_joints[0];
+	auto end = active_joints[numeric_joint_model.count - 1];
 
 	if ( start == active_joints.front() && end == active_joints.back() )
 	{
@@ -34,11 +35,25 @@ NumericJointsSolver::NumericJointsSolver(
 		home_configuration_ = std::make_shared< const Mat4d >( numeric_joint_model.home_configuration );
 	}
 
-	dls_solver_ = std::make_unique< DLSKinematicsSolver >();
+	dls_solver_ = std::make_unique< DLSKinematicsSolver >( type );
 	dls_solver_->Initialize(
 		joint_chain_,
 		home_configuration_,
 		0.01 );
+}
+
+// ------------------------------------------------------------
+
+NumericJointsSolver::NumericJointsSolver(
+	std::shared_ptr< const JointChain > joint_chain,
+	std::shared_ptr< const Mat4d > home_configuration,
+	SolverType type ) :
+	NumericJointsSolver( 
+		joint_chain, 
+		home_configuration, 
+		{ joint_chain->GetActiveJointCount(), *home_configuration }, 
+		type )
+{
 }
 
 // ------------------------------------------------------------
@@ -57,7 +72,7 @@ SolverResult NumericJointsSolver::IK(
 {
 	return ToSolverResult( dls_solver_->InverseKinematic(
 							target_pose,
-							seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) ) );
+							seed_joints.subspan( 0, numeric_joints_model_->count ) ) );
 }
 
 // ------------------------------------------------------------
