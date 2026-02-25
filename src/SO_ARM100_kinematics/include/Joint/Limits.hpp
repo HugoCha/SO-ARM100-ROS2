@@ -47,6 +47,17 @@ void Random( random_numbers::RandomNumberGenerator& rng, double* random ) const 
 	*random = rng.uniformReal( min_, max_ );
 }
 
+void RandomNear( random_numbers::RandomNumberGenerator& rng, 
+				 double seed, 
+				 double distance, 
+				 double* random ) const {
+	if ( random == nullptr )
+		throw std::invalid_argument( "random pointer must not be null" );
+	double min = std::max( min_, seed - std::abs( distance ) );
+	double max = std::min( max_, seed + std::abs( distance ) );
+	*random = rng.uniformReal( min, max );
+}
+
 [[nodiscard]] double Range() const noexcept {
 	return max_ - min_;
 }

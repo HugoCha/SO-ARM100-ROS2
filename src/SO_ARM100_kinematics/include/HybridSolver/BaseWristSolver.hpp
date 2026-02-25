@@ -32,7 +32,8 @@ virtual SolverResult IK(
 private:
 struct SolverBuffer
 {
-	Mat4d wrist_center{};
+	Vec3d wrist_center{};
+	Mat4d wrist_center_target{};
 	Mat4d wrist_target{};
 	Mat4d fk_result{};
 

@@ -16,7 +16,7 @@ namespace SOArm100::Kinematics
 [[nodiscard]] geometry_msgs::msg::Pose ToPoseMsg( const Iso3d& matrix );
 
 [[nodiscard]] Mat4d ToTransformMatrix( const geometry_msgs::msg::Pose& pose_msg );
-[[nodiscard]] Mat4d ToTransformMatrix( const Mat3d& rotation, const Vec3d translation );
+[[nodiscard]] Mat4d ToTransformMatrix( const Mat3d& rotation, const Vec3d& translation );
 [[nodiscard]] Mat4d ToTransformMatrix( const Mat3d& rotation );
 [[nodiscard]] Mat4d ToTransformMatrix( const Vec3d& translation );
 

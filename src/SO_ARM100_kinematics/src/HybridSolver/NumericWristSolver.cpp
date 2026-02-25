@@ -4,7 +4,7 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
-#include "SolverType.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "SolverResult.hpp"
 
@@ -24,7 +24,7 @@ NumericWristSolver::NumericWristSolver(
 	home_configuration_( home_configuration ),
 	buffer_( SolverBuffer( numeric_model.count, wrist_model.active_joint_count ) )
 {
-	numeric_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model, SolverType::Orientation );
+	numeric_solver_ = std::make_unique< NumericJointsSolver >( joint_chain, home_configuration, numeric_model );
 	wrist_solver_ = std::make_unique< WristSolver >( joint_chain, home_configuration, wrist_model );
 }
 
@@ -39,8 +39,11 @@ SolverResult NumericWristSolver::IK(
 
 	wrist_solver_->ComputeWristCenter( target_pose, buffer_.wrist_center );
 
+	buffer_.wrist_center_target = ToTransformMatrix(
+		Rotation( numeric_solver_->GetNumericJointsModel()->home_configuration ),
+		buffer_.wrist_center );
 	if ( ( buffer_.numeric_result = numeric_solver_->IK(
-			   buffer_.wrist_center,
+			   buffer_.wrist_center_target,
 			   seed_joints,
 			   discretization ) ).Unreachable() )
 	{
@@ -49,7 +52,7 @@ SolverResult NumericWristSolver::IK(
 	}
 
 	numeric_solver_->FK( buffer_.numeric_result.joints, buffer_.T_num );
-	buffer_.wrist_target = Inverse( buffer_.T_num ) * buffer_.wrist_center;
+	buffer_.wrist_target = Inverse( buffer_.T_num ) * target_pose;
 	if ( ( buffer_.wrist_result = wrist_solver_->IK(
 			   buffer_.wrist_target,
 			   seed_joints,

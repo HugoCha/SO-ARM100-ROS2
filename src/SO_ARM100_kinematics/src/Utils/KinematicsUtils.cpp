@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <cmath>
+#include <stdexcept>
 
 namespace SOArm100::Kinematics
 {
@@ -52,13 +53,50 @@ void SpaceJacobian(
 
 	const auto& active_joints = joint_chain.GetActiveJoints();
 
-	jacobian.col( 0 ) = static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( 0 ) );
+	jacobian.col( 0 ).noalias() = static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( 0 ) );
 	for ( size_t i = 1; i < n; ++i )
 	{
 		T_cumul *= joint_chain.GetActiveJointTwist( i - 1 ).ExponentialMatrix( joint_angles[i - 1] );
 		Adjoint( T_cumul, adj_buf );
-		jacobian.col( i ) = adj_buf * static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( i ) );
+		jacobian.col( i ).noalias() = adj_buf * static_cast< const Vec6d >( joint_chain.GetActiveJointTwist( i ) );
 	}
+}
+
+// ------------------------------------------------------------
+
+void WeightedJacobian( 
+	const MatXd& jacobian, 
+	const MatXd& weights, 
+	MatXd& weighted_jacobian ) noexcept
+{
+	const int dofs = weights.rows();
+	const int n_joints = jacobian.cols();
+	if ( weighted_jacobian.cols() != dofs || weighted_jacobian.rows() != n_joints )
+		weighted_jacobian.resize( dofs, n_joints );
+
+	weighted_jacobian.noalias() = weights * jacobian;
+}
+
+// ------------------------------------------------------------
+
+void JacobianSVD( const MatXd& jacobian, Eigen::JacobiSVD< MatXd >& svd ) noexcept
+{
+	svd = Eigen::JacobiSVD< MatXd >( 
+		jacobian,
+		Eigen::ComputeThinU | Eigen::ComputeThinV );
+}
+
+// ------------------------------------------------------------
+
+void Gradient( const MatXd& jacobian, const VecXd& error, VecXd& gradient )
+{
+	const int dofs = jacobian.rows();
+	if ( dofs != error.rows() )
+		throw std::runtime_error( "Size mismatch between jacobian and error" );
+	if ( dofs != gradient.rows() )
+		gradient.resize( dofs );
+
+	gradient.noalias() = jacobian.transpose() * error;
 }
 
 // ------------------------------------------------------------
@@ -72,32 +110,78 @@ void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept
 
 void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexcept
 {
-	MatXd Identity = MatXd::Identity( jacobian.cols(), jacobian.cols() );
-	damped.noalias() = jacobian.transpose() *
-	                   ( jacobian.transpose() * jacobian + damping_factor * Identity );
+	const int n_joints = jacobian.cols();
+	if ( damped.cols() != n_joints || damped.rows() != n_joints )
+		damped.resize( n_joints, n_joints );
+
+	damped.noalias() = jacobian.transpose() * jacobian;
+	damped.diagonal().array() += damping_factor * damping_factor;
 }
 
 // ------------------------------------------------------------
 
-void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept
+void Manipulability( const MatXd& jacobian, MatXd& manipulability ) noexcept
 {
-	return WeightedPoseError( target, current, 1.0, 1.0, pose_error );
+	const int dofs = jacobian.rows();
+	if ( manipulability.cols() != dofs || manipulability.rows() != dofs )
+		manipulability.resize( dofs, dofs );
+
+	manipulability.noalias() = jacobian * jacobian.transpose();
+}
+
+// ------------------------------------------------------------
+
+void PoseError(
+	const Mat4d& target,
+	const Mat4d& current,
+	Vec6d& pose_error ) noexcept
+{
+	Mat3d R_error = Rotation( current ).transpose() * Rotation( target );
+	Eigen::AngleAxisd aa( R_error );
+	pose_error.head( 3 ).noalias() = aa.axis() * aa.angle();
+	pose_error.tail( 3 ).noalias() = Translation( target ) - Translation( current );
 }
 
 // ------------------------------------------------------------
 
 void WeightedPoseError(
-	const Mat4d& target,
-	const Mat4d& current,
+	const Vec6d& error,
 	double rotation_weight,
 	double translation_weight,
-	Vec6d& pose_error ) noexcept
+	VecXd& weighted_error ) noexcept
 {
-	Mat4d T_diff;
-	T_diff.noalias() = target * Inverse( current );
-	Eigen::AngleAxisd aa( Rotation( T_diff ) );
-	pose_error.head( 3 ).noalias() = rotation_weight * aa.axis() * aa.angle();
-	pose_error.tail( 3 ).noalias() = translation_weight * Translation( T_diff );
+	int weighted_error_size = 6;
+	if ( rotation_weight <= 0 ) weighted_error_size -= 3;
+	if ( translation_weight <= 0 ) weighted_error_size -= 3;
+	if ( weighted_error.size() != weighted_error_size )
+		weighted_error.resize( weighted_error_size );
+
+	if ( rotation_weight > 0 )
+		weighted_error.head( 3 ).noalias() = rotation_weight * error.head( 3 );
+
+	if ( translation_weight > 0 )
+		weighted_error.tail( 3 ).noalias() = translation_weight * error.tail( 3 );
+}
+
+// ------------------------------------------------------------
+
+void ReachableError( 
+	const Eigen::JacobiSVD< MatXd >& jacobian_svd, 
+	const VecXd& error,
+	double min_sv_tolerance,
+	VecXd& reachable_error )
+{
+	const int dofs = jacobian_svd.rows();
+	if ( dofs != error.rows() )
+		throw std::runtime_error( "Size mismatch between jacobian svd and error" );
+	if ( dofs != reachable_error.rows() )
+		reachable_error.resize( dofs );
+
+	VecXd sigma = jacobian_svd.singularValues();
+	MatXd U = jacobian_svd.matrixU();
+	int rank = ( sigma.array() > min_sv_tolerance ).count();
+
+	reachable_error.noalias() = U.leftCols( rank ) * U.leftCols( rank ).transpose();
 }
 
 // ------------------------------------------------------------
@@ -106,7 +190,7 @@ void POE(
 	const JointChain& joint_chain,
 	const Mat4d& M,
 	const std::span< const double >& thetas,
-	Mat4d& poe )
+	Mat4d& poe ) noexcept
 {
 	assert( joint_chain.GetActiveJointCount() == thetas.size() );
 	poe.setIdentity();
@@ -126,7 +210,7 @@ void POE(
 	const JointChain& joint_chain,
 	const Mat4d& M,
 	const VecXd& thetas,
-	Mat4d& poe )
+	Mat4d& poe ) noexcept
 {
 	assert( joint_chain.GetActiveJointCount() == thetas.size() );
 	poe.setIdentity();
@@ -142,7 +226,7 @@ void POE(
 
 // ------------------------------------------------------------
 
-double RotationError( const Mat3d& target, const Mat3d& result )
+double RotationError( const Mat3d& target, const Mat3d& result ) noexcept
 {
 	Mat3d R_error = result.transpose() * target;
 	return acos( ( R_error.trace() - 1 ) / 2.0 );
@@ -150,35 +234,35 @@ double RotationError( const Mat3d& target, const Mat3d& result )
 
 // ------------------------------------------------------------
 
-double RotationError( const Mat4d& target, const Mat4d& result )
+double RotationError( const Mat4d& target, const Mat4d& result ) noexcept
 {
 	return RotationError( Rotation( target ), Rotation( result ) );
 }
 
 // ------------------------------------------------------------
 
-double TranslationError( const Vec3d& target, const Vec3d& result )
+double TranslationError( const Vec3d& target, const Vec3d& result ) noexcept
 {
 	return ( target - result ).norm();
 }
 
 // ------------------------------------------------------------
 
-double TranslationError( const Mat4d& target, const Mat4d& result )
+double TranslationError( const Mat4d& target, const Mat4d& result ) noexcept
 {
 	return TranslationError( Translation( target ), Translation( result ) );
 }
 
 // ------------------------------------------------------------
 
-bool IsApprox( 
-	const Mat4d& target, 
-	const Mat4d& result, 
-	double rotation_tol, 
-	double translation_tol )
+bool IsApprox(
+	const Mat4d& target,
+	const Mat4d& result,
+	double rotation_tol,
+	double translation_tol ) noexcept
 {
 	return RotationError( target, result ) <= rotation_tol &&
-		   TranslationError( target, result ) <= translation_tol;
+	       TranslationError( target, result ) <= translation_tol;
 }
 
 // ------------------------------------------------------------
@@ -190,7 +274,7 @@ void CheckSolverResult(
 	Mat4d& result_pose,
 	SolverResult& solver_result,
 	double rot_tolerance,
-	double trans_tolerance )
+	double trans_tolerance ) noexcept
 {
 	if ( solver_result.Unreachable() )
 		return;

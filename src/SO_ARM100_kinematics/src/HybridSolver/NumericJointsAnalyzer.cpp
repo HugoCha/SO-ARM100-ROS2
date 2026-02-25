@@ -26,15 +26,17 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 	const std::optional< BaseJointModel >& base_joint,
 	const std::optional< WristModel >& wrist_model )
 {
+	int numeric_start = !base_joint ? 0 : 1;
 	int numeric_count = joint_chain.GetJointCount();
 	int wrist_count = !wrist_model ? 0 : wrist_model->active_joint_count;
 
-	numeric_count = numeric_count - wrist_count;
+	numeric_count = numeric_count - numeric_start - wrist_count;
 
 	if ( numeric_count <= 0 )
 		return std::nullopt;
 
 	NumericJointsModel numeric_joint_model;
+	numeric_joint_model.start_index = numeric_start;
 	numeric_joint_model.count = numeric_count;
 
 	if ( numeric_count == joint_chain.GetJointCount() || !wrist_model )

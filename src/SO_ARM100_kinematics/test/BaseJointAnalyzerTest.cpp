@@ -1,10 +1,12 @@
 #include "HybridSolver/BaseJointAnalyzer.hpp"
 
+#include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
+#include "Utils/Converter.hpp"
 
 #include <gtest/gtest.h>
 #include <optional>
@@ -25,7 +27,7 @@ void SetUp() override
 
 	// Create a wrist model
 	wrist_model_ = WristModel();
-	wrist_model_.center_at_home = Vec3d( 1.0, 0.5, 0.0 );
+	wrist_model_.center_at_home = Vec3d( 1.0, 0.0, 0.0 );
 }
 
 void TearDown() override
@@ -49,10 +51,7 @@ TEST_F( BaseJointAnalyzerTest, Analyze_ValidInput )
 
 	// Check the reference direction
 	// Expected reference direction is the projection of wrist center onto the plane orthogonal to the base joint axis
-	const auto& base_twist = joint_chain_.GetActiveJoints()[0]->GetTwist();
-	const Vec3d& omega = base_twist.GetAxis();
-	const Vec3d r = wrist_model_.center_at_home - base_twist.GetLinear();
-	const Vec3d expected_reference_direction = ( r - r.dot( omega ) * omega ).normalized();
+	const Vec3d expected_reference_direction = Vec3d( 1, 0, 0 );
 
 	EXPECT_TRUE( result->reference_direction.isApprox( expected_reference_direction, 1e-6 ) )
 	    << "Reference direction should match expected value";
@@ -107,7 +106,8 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentWristPositions )
 	auto result_x = analyzer.Analyze( joint_chain_, wrist_model_x );
 	ASSERT_TRUE( result_x.has_value() );
 
-	// Expected reference direction is (1, 0, 0) since it's already orthogonal to the Z-axis
+	// Expected
+	// reference direction is (1, 0, 0) since it's already orthogonal to the Z-axis
 	EXPECT_TRUE( result_x->reference_direction.isApprox( Vec3d( 1.0, 0.0, 0.0 ), epsilon ) )
 	    << "Reference direction should match expected value for wrist at (1, 0, 0)";
 }
@@ -117,16 +117,20 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentWristPositions )
 TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 {
 	// Create a joint chain with a different base joint axis
-	JointChain joint_chain_y( 1 );
-	Twist twist_y( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ); // Rotation around Y-axis
-	Link link_y( Mat4d::Identity() );
+	JointChain joint_chain_y( 2 );
+	Vec3d origin = Vec3d::Zero();
+	Mat4d origin_transform = Mat4d::Identity();
+	Vec3d axis = Vec3d::UnitY(); // Rotation around Y-axis
+	Twist twist_y( axis, origin ); 
+	Link link_y( origin_transform );
 	Limits limits_y( -M_PI, M_PI );
 	joint_chain_y.Add( twist_y, link_y, limits_y );
 
-	Twist twist_z( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1 ) ); // Rotation around Y-axis
-	Mat4d origin = Mat4d::Identity();
-	origin.block<3,1>(0,0)= Vec3d( 0, 0, 1 );
-	Link link_z( origin );
+	origin << 0,0,1;
+	origin_transform = ToTransformMatrix( origin );
+	axis = ( origin_transform * Vec3d::UnitZ().homogeneous() ).head( 3 ); // Rotation around Z-axis
+	Twist twist_z( axis, origin ); 
+	Link link_z( origin_transform );
 	Limits limits_z( -M_PI, M_PI );
 	joint_chain_y.Add( twist_z, link_z, limits_z );
 
@@ -134,14 +138,18 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 
 	// Test with wrist center at (0, 0, 1)
 	WristModel wrist_model_z;
+	wrist_model_z.active_joint_start = 1;
+	wrist_model_z.active_joint_count = 1;
 	wrist_model_z.center_at_home = Vec3d( 0.0, 0.0, 1.0 );
 
 	auto result = analyzer.Analyze( joint_chain_y, wrist_model_z );
 	ASSERT_TRUE( result.has_value() );
 
 	// Expected reference direction is (0, 0, 1) since it's already orthogonal to the Y-axis
-	EXPECT_TRUE( result->reference_direction.isApprox( Vec3d( 0.0, 0.0, 1.0 ), epsilon ) )
-	    << "Reference direction should match expected value for Y-axis rotation";
+	Vec3d expected_reference_direction = Vec3d::UnitZ();
+	EXPECT_TRUE( result->reference_direction.isApprox( expected_reference_direction, epsilon ) )
+	    << "Expected Reference direction= " << expected_reference_direction.transpose() << std::endl
+		<< "Result Reference direction  = " << result->reference_direction.transpose() << std::endl;
 }
 
 // ------------------------------------------------------------

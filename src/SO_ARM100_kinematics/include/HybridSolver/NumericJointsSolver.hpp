@@ -18,12 +18,11 @@ NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
 	const NumericJointsModel& numeric_joint_model,
-	SolverType type );
+	SolverType type = SolverType::Full );
 
 NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
-	std::shared_ptr< const Mat4d > home_configuration,
-	SolverType type );
+	std::shared_ptr< const Mat4d > home_configuration );
 
 virtual SolverResult IK(
 	const Mat4d& target_pose,
@@ -40,9 +39,9 @@ private:
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 
-static DLSKinematicsSolver::SolverParameters GetParameters( SolverType type );
-
 std::unique_ptr< DLSKinematicsSolver > dls_solver_;
 NumericJointsModelUniqueConstPtr numeric_joints_model_;
+
+static DLSKinematicsSolver::SolverParameters InitializeParameters( SolverType type );
 };
 }

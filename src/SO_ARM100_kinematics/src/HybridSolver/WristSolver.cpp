@@ -46,9 +46,10 @@ WristSolver::WristSolver(
 
 // ------------------------------------------------------------
 
-void WristSolver::ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center ) const
+void WristSolver::ComputeWristCenter( const Mat4d& target, Vec3d& wrist_center ) const
 {
-	wrist_center.noalias() = target * wrist_model_->tcp_in_wrist_at_home_inv;
+	wrist_center.noalias() = Translation( target ) - 
+		Rotation( target ) * Translation( wrist_model_->tcp_in_wrist_at_home );
 }
 
 // ------------------------------------------------------------

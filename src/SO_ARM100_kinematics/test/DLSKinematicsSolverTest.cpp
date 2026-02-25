@@ -103,7 +103,7 @@ const Mat4d ComputeFK( const std::vector< double >& joints ) const
 
 protected:
 std::unique_ptr< DLSKinematicsSolver > solver_;
-static constexpr double DEFAULT_TOLERANCE = tolerance;
+static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 };
 
 // ------------------------------------------------------------

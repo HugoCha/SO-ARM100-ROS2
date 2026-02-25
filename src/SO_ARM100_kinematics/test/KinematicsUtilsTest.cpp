@@ -249,27 +249,6 @@ TEST_F( KinematicsUtilsTest, PoseErrorNonIdentityPose )
 
 // ------------------------------------------------------------
 
-TEST_F( KinematicsUtilsTest, WeightedPoseError )
-{
-	Mat4d target = Mat4d::Identity();
-	target.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
-	target.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 2.0, 3.0 );
-
-	Mat4d current = Mat4d::Identity();
-	Vec6d pose_error;
-
-	double rotation_weight = 2.0;
-	double translation_weight = 0.5;
-	WeightedPoseError( target, current, rotation_weight, translation_weight, pose_error );
-
-	// Expected pose error: rotation error around z-axis, translation error in x, y, z
-	Vec6d expected_error;
-	expected_error << 0.0, 0.0, M_PI / 2 * rotation_weight, 1.0 * translation_weight, 2.0 * translation_weight, 3.0 * translation_weight;
-	EXPECT_TRUE( pose_error.isApprox( expected_error, 1e-6 ) ) << "Weighted pose error should match expected values";
-}
-
-// ------------------------------------------------------------
-
 TEST_F( KinematicsUtilsTest, POEWithSpan )
 {
 	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();

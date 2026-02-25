@@ -4,6 +4,7 @@
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "SolverResult.hpp"
 
@@ -38,8 +39,9 @@ SolverResult BaseWristSolver::IK(
 
 	wrist_solver_->ComputeWristCenter( target_pose, buffer_.wrist_center );
 
+	buffer_.wrist_center_target = ToTransformMatrix( buffer_.wrist_center );
 	if ( ( buffer_.base_result = base_joint_solver_->IK(
-			   buffer_.wrist_center,
+			   buffer_.wrist_center_target,
 			   seed_joints,
 			   discretization ) ).Unreachable() )
 	{

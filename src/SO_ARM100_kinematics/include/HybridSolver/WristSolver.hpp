@@ -42,7 +42,7 @@ virtual SolverResult IK(
 	const std::span< const double >& seed_joints,
 	double search_discretization ) const override;
 
-void ComputeWristCenter( const Mat4d& target, Mat4d& wrist_center ) const;
+void ComputeWristCenter( const Mat4d& target, Vec3d& wrist_center ) const;
 
 const WristModel* GetWristModel() const {
 	return wrist_model_.get();

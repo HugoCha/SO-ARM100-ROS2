@@ -51,13 +51,14 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 	target.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 0.0, 0.0 );
 
 	// Compute the wrist center
-	Mat4d wrist_center;
+	Vec3d wrist_center;
 	WristSolver solver( joint_chain, home, wrist_model );
 	solver.ComputeWristCenter( target, wrist_center );
 
+	auto target_translation = target.block< 3,1 >(0,3);
 	// The wrist center should be the target transform multiplied by the inverse of the TCP transform
 	// Since the TCP transform is identity, the wrist center should be the same as the target
-	EXPECT_TRUE( IsApprox( target, wrist_center ) )
+	EXPECT_TRUE( target_translation.isApprox( wrist_center, error_tolerance ) )
 	    << "Wrist center should match target when TCP transform is identity";
 }
 

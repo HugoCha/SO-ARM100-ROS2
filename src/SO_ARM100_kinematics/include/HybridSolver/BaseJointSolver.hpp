@@ -48,5 +48,11 @@ SolverResult SolverAnalytical(
 	const Mat4d& wrist_center,
 	const std::span< const double >& seed_joints ) const;
 const Joint* GetBaseJoint() const;
+
+bool ValidateAndSelectJoint( 
+	const Joint* base_joint, 
+	double seed, 
+	double theta1, 
+	double& selection ) const;
 };
 }

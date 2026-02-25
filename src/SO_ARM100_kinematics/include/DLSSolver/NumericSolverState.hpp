@@ -6,6 +6,7 @@ enum class NumericSolverState
 {
 	Converged,
 	Improving,
+	BestPossible,
 	Stalled,
 	MaxIterations,
 	Failed

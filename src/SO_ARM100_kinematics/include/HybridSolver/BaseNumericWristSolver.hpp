@@ -42,7 +42,8 @@ virtual SolverResult IK(
 private:
 struct SolverBuffer
 {
-	Mat4d wrist_center{};
+	Vec3d wrist_center{};
+	Mat4d wrist_center_target{};
 	Mat4d wrist_target{};
 
 	Mat4d T_num{};
@@ -64,7 +65,7 @@ struct SolverBuffer
 
 	int Size() const
 	{
-		return numeric_result.joints.size() + wrist_result.joints.size();
+		return base_result.joints.size() + numeric_result.joints.size() + wrist_result.joints.size();
 	}
 };
 

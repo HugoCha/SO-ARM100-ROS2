@@ -41,7 +41,7 @@ Mat4d ToTransformMatrix( const geometry_msgs::msg::Pose& pose_msg )
 
 // ------------------------------------------------------------
 
-Mat4d ToTransformMatrix( const Mat3d& rotation, const Vec3d translation )
+Mat4d ToTransformMatrix( const Mat3d& rotation, const Vec3d& translation )
 {
 	Mat4d transform = Mat4d::Identity();
 	transform.block<3,3>(0,0) = rotation;
