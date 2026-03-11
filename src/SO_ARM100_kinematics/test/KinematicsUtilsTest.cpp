@@ -210,7 +210,7 @@ TEST_F( KinematicsUtilsTest, DampedIdentityMatrix )
 	Damped( identity, damping_factor, damped );
 
 	// Damped matrix should be close to identity for small damping factor
-	MatXd expected = identity.transpose() * ( identity.transpose() * identity + damping_factor * MatXd::Identity( 6, 6 ) );
+	MatXd expected = identity.transpose() * ( identity.transpose() * identity + pow( damping_factor, 2 ) * MatXd::Identity( 6, 6 ) );
 	EXPECT_TRUE( damped.isApprox( expected, 1e-6 ) ) << "Damped matrix should match expected values";
 }
 

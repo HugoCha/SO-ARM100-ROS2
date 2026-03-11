@@ -1,10 +1,12 @@
 #include "HybridSolver/HybridSolverAnalyzer.hpp"
 
+#include "Global.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Twist.hpp"
 #include "Joint/Link.hpp"
 #include "Joint/Limits.hpp"
 #include "HybridSolver/HybridSolverConfiguration.hpp"
+#include "Utils/Converter.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -112,6 +114,7 @@ TEST_F(HybridSolverAnalyzerTest, AnalyzeConfiguration_WithBaseWristOnly)
     auto simple_chain = std::make_shared<JointChain>(3);
 
     // Base joint
+    Vec3d origin = Vec3d::Zero();
     simple_chain->Add(
         Twist(Vec3d(0, 0, 1), Vec3d(0, 0, 0)),
         Link(Mat4d::Identity()),
@@ -119,14 +122,15 @@ TEST_F(HybridSolverAnalyzerTest, AnalyzeConfiguration_WithBaseWristOnly)
     );
 
     // Wrist joints (2 joints)
+    origin = Vec3d(0, 0.5, 0);
     simple_chain->Add(
-        Twist(Vec3d(1, 0, 0), Vec3d(0, 0, 0.5)),
-        Link(Mat4d::Identity()),
+        Twist(Vec3d(1, 0, 0), origin ),
+        Link(ToTransformMatrix( origin )),
         Limits(-M_PI, M_PI)
     );
     simple_chain->Add(
-        Twist(Vec3d(0, 1, 0), Vec3d(0, 0, 0.5)),
-        Link(Mat4d::Identity()),
+        Twist(Vec3d(0, 1, 0), origin ),
+        Link(ToTransformMatrix( origin )),
         Limits(-M_PI, M_PI)
     );
 

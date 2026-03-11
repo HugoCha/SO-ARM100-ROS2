@@ -82,16 +82,28 @@ DLSKinematicsSolver::SolverParameters NumericJointsSolver::InitializeParameters(
 			parameters.rotation_weight = 0;
 			parameters.translation_weight = 1.0;
 			parameters.max_iterations = 50;
-			parameters.gradient_tolerance = 1e-6;
-			parameters.min_sv_tolerance = 1e-2;
+			parameters.gradient_tolerance = 1e-5;
 			parameters.max_stalle_iterations = 5;
 			parameters.min_step = 0.01;
-			parameters.max_step = 0.75;
-			parameters.min_damping = 1e-2;
-			parameters.max_damping = 1.0;
-			parameters.max_dq = 0.45;
+			parameters.max_step = 1.0;
+			parameters.min_sv_tolerance = 1e-2;
+			parameters.min_damping = 5e-3;
+			parameters.max_damping = 5e-1;
+			parameters.max_dq = 0.5;
 			break;
 		case SolverType::Full:
+			parameters.error_tolerance = error_tolerance;
+			parameters.rotation_weight = 1.0;
+			parameters.translation_weight = 10.0;
+			parameters.max_iterations = 200;
+			parameters.gradient_tolerance = 1e-6;
+			parameters.max_stalle_iterations = 5;
+			parameters.min_step = 0.1;
+			parameters.max_step = 1.0;
+			parameters.min_sv_tolerance = 1e-1;
+			parameters.min_damping = 1e-2;
+			parameters.max_damping = 3e-1;
+			parameters.max_dq = 1.0;
 		break;
 	}
 	return parameters;

@@ -71,7 +71,7 @@ void WeightedJacobian(
 {
 	const int dofs = weights.rows();
 	const int n_joints = jacobian.cols();
-	if ( weighted_jacobian.cols() != dofs || weighted_jacobian.rows() != n_joints )
+	if ( weighted_jacobian.rows() != dofs || weighted_jacobian.cols() != n_joints )
 		weighted_jacobian.resize( dofs, n_joints );
 
 	weighted_jacobian.noalias() = weights * jacobian;
@@ -90,11 +90,13 @@ void JacobianSVD( const MatXd& jacobian, Eigen::JacobiSVD< MatXd >& svd ) noexce
 
 void Gradient( const MatXd& jacobian, const VecXd& error, VecXd& gradient )
 {
-	const int dofs = jacobian.rows();
-	if ( dofs != error.rows() )
+	const int task_dofs = jacobian.rows();
+	const int n_joints  = jacobian.cols(); 
+
+	if ( task_dofs != error.rows() )
 		throw std::runtime_error( "Size mismatch between jacobian and error" );
-	if ( dofs != gradient.rows() )
-		gradient.resize( dofs );
+	if ( n_joints != gradient.rows() )
+		gradient.resize( n_joints );
 
 	gradient.noalias() = jacobian.transpose() * error;
 }
@@ -136,10 +138,11 @@ void PoseError(
 	const Mat4d& current,
 	Vec6d& pose_error ) noexcept
 {
-	Mat3d R_error = Rotation( current ).transpose() * Rotation( target );
-	Eigen::AngleAxisd aa( R_error );
-	pose_error.head( 3 ).noalias() = aa.axis() * aa.angle();
-	pose_error.tail( 3 ).noalias() = Translation( target ) - Translation( current );
+	Mat4d T_error = target * Inverse( current );
+	Eigen::AngleAxisd aa( Rotation( T_error ) );
+	Vec3d omega = aa.axis() * aa.angle();
+	pose_error.head( 3 ).noalias() = omega;
+	pose_error.tail( 3 ).noalias() = Translation( T_error );
 }
 
 // ------------------------------------------------------------
@@ -180,8 +183,7 @@ void ReachableError(
 	VecXd sigma = jacobian_svd.singularValues();
 	MatXd U = jacobian_svd.matrixU();
 	int rank = ( sigma.array() > min_sv_tolerance ).count();
-
-	reachable_error.noalias() = U.leftCols( rank ) * U.leftCols( rank ).transpose();
+	reachable_error.noalias() = U.leftCols( rank ) * U.leftCols( rank ).transpose() * error;
 }
 
 // ------------------------------------------------------------

@@ -152,6 +152,11 @@ bool KinematicsSolver::ForwardKinematic(
 		return false;
 	}
 
+	if ( !joint_chain_->WithinLimits( joints ) )
+	{
+		return false;
+	}
+
 	POE( *joint_chain_, *home_configuration_, joints, pose );
 
 	return true;

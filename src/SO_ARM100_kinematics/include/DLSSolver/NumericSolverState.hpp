@@ -8,6 +8,7 @@ enum class NumericSolverState
 	Improving,
 	BestPossible,
 	Stalled,
+	MaxRestart,
 	MaxIterations,
 	Failed
 };

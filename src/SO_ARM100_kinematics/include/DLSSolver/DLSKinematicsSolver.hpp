@@ -20,11 +20,12 @@ struct SolverParameters
 	double error_tolerance{ SOArm100::Kinematics::error_tolerance };
 	double gradient_tolerance { SOArm100::Kinematics::gradient_tolerance };
 	double min_step{ 0.05 };
-	double max_step{ 0.3 };
-	double min_damping{ 0.1 };
-	double max_damping{ 1.0 };
+	double max_step{ 1.0 };
+	double line_search_factor { 0.75 };
+	double min_damping{ 5e-3 };
+	double max_damping{ 1e-1 };
 	double max_dq { 0.5 };
-	double min_sv_tolerance{ 0.1 };
+	double min_sv_tolerance{ 0.01 };
 	int max_stalle_iterations{ 5 };
 	double translation_weight{ 10.0 };
 	double rotation_weight{ 1.0 };
@@ -39,7 +40,7 @@ struct SolverParameters
 		       min_step > 0 && min_step <= max_step &&
 		       min_damping > 0 && min_damping <= max_damping &&
 			   ( translation_weight > 0 || rotation_weight > 0 ) &&
-			   ( translation_weight >= 0 || rotation_weight >= 0 );
+			   ( translation_weight >= 0 && rotation_weight >= 0 );
 	}
 };
 
@@ -119,7 +120,6 @@ struct SolverBuffers {
 
 struct IterationState {
 	VecXd joints;
-	double min_sv;
 	double error;
 	double error_reachable;
 	double error_unreachable;
@@ -128,6 +128,13 @@ struct IterationState {
 	double damping;
 	int fk_failures;
 	int stalled_error_iter;
+	int restart_counter;
+};
+
+struct RestartState
+{
+	int restart_counter{0};
+	std::optional< IterationState > iteration_state{std::nullopt};
 };
 
 SolverParameters parameters_;
@@ -140,6 +147,11 @@ mutable SolverBuffers buffers_{ 6, SolverType::Full };
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
+
+void Restart( 
+	const Mat4d& target, 
+	const std::span<const double>& seed_joints, 
+	RestartState& state ) const;
 
 [[nodiscard]] const VecXd RandomValidJoints() const noexcept;
 
@@ -166,10 +178,28 @@ void PerformIteration(
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
+bool UpdateBuffer(
+	const Mat4d& target,
+	const VecXd& joints,
+	SolverBuffers& buffers ) const;
+
+void GradientProjection( 
+	const JointChain& joint_chain, 
+	const VecXd& joints, 
+	VecXd& gradient ) const;
+
+void LineSearch(
+	const Mat4d& target,
+	IterationState& state,
+	SolverBuffers& buffers ) const;
+
+void PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const;
+void PrintState( const IterationState& state ) const;
+void PrintBuffer( const SolverBuffers& buffers ) const;
+
+
 [[nodiscard]] NumericSolverState EvaluateConvergence(
-	const IterationState& state,
-	const MatXd& jacobian,
-	const VecXd& error,
+	const RestartState& restart_state,
 	int iteration ) const noexcept;
 
 void UpdateDeltaQ(

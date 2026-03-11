@@ -157,7 +157,7 @@ TEST_F(BaseNumericWristSolverTest, IK_Success)
     // Create a target pose
     Mat4d target_pose;
     VecXd joints(6);
-    joints << M_PI / 4, M_PI / 2, M_PI / 2, 0, 0, 0;
+    joints << M_PI / 4, M_PI / 2, M_PI / 2, M_PI / 8, M_PI / 8, 0;
     //joints << 0,0,0, 0, 0, 0;
     POE( *joint_chain_, *home_configuration_, joints, target_pose );
     

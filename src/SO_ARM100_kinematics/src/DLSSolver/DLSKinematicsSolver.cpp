@@ -1,5 +1,7 @@
 #include "DLSSolver/DLSKinematicsSolver.hpp"
 
+#include "DLSSolver/AdaptativeDamping.hpp"
+#include "DLSSolver/AdaptativeStep.hpp"
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "DLSSolver/NumericSolverState.hpp"
 #include "Global.hpp"
@@ -32,7 +34,7 @@ static rclcpp::Logger get_logger()
 // ------------------------------------------------------------
 
 DLSKinematicsSolver::DLSKinematicsSolver() :
-	SOArm100::Kinematics::DLSKinematicsSolver( SolverParameters{} )
+	DLSKinematicsSolver( SolverParameters{} )
 {
 }
 
@@ -73,42 +75,38 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 		buffers_.weights = InitializeWeightMatrix( parameters_.rotation_weight, parameters_.translation_weight );
 	}
 
-	auto state = InitializeState( target, ToVecXd( seed_joints ) );
-	if ( !state )
+	RestartState restart_state;
+	restart_state.iteration_state = InitializeState( target, ToVecXd( seed_joints ) );
+	if ( !restart_state.iteration_state )
 	{
-		state = InitializeState( target, RandomValidJoints() );
-		if ( !state )
-		{
-			return { NumericSolverState::Failed, VecXd{}, 0.0, 0 };
-		}
+		Restart( target, seed_joints, restart_state );
 	}
 
+	int restart_count = 0;
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
 	{
-		auto solver_state = EvaluateConvergence( *state, buffers_.jacobian.bottomRows( 3 ), buffers_.error.tail( 3 ), iter );
+		std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
+
+		auto solver_state = EvaluateConvergence( restart_state, iter );
+
 		if ( solver_state == NumericSolverState::Converged )
 		{
-			return { NumericSolverState::Converged, state->joints, state->error, iter };
+			return { NumericSolverState::Converged, restart_state.iteration_state->joints, restart_state.iteration_state->error, iter };
 		}
-
+		if ( solver_state == NumericSolverState::BestPossible )
+		{
+			return { NumericSolverState::BestPossible, restart_state.iteration_state->joints, restart_state.iteration_state->error, iter };
+		}
 		if ( solver_state == NumericSolverState::Stalled )
 		{
-			state = InitializeState( target, RandomValidJointsNear( seed_joints, 0.03 ) );
-			if ( !state )
-			{
-				return { NumericSolverState::Stalled, VecXd{}, 0.0, iter };
-			}
+			Restart( target, seed_joints, restart_state );
 			continue;
 		}
 
-		std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
-
-		PerformIteration( target, *state, buffers_ );
-
-		// << "Damped=" << std::endl << buffers_.damped << std::endl;
+		PerformIteration( target, *restart_state.iteration_state, buffers_ );
 	}
 
-	return { NumericSolverState::MaxIterations, state->joints, state->error,
+	return { NumericSolverState::MaxIterations, restart_state.iteration_state->joints, restart_state.iteration_state->error,
 	         parameters_.max_iterations };
 }
 
@@ -151,12 +149,12 @@ const MatXd DLSKinematicsSolver::InitializeWeightMatrix(
 	if ( rotation_weight > 0 && translation_weight == 0 )
 	{
 		weight_matrix = MatXd::Zero( 3, 6 );
-		weight_matrix.diagonal().head( 3 ) = Vec3d::Constant( rotation_weight );
+		weight_matrix.block<3,3>(0,0) = Mat3d::Identity();
 	}
 	else if ( rotation_weight == 0 && translation_weight > 0 )
 	{
 		weight_matrix = MatXd::Zero( 3, 6 );
-		weight_matrix.diagonal().tail( 3 ) = Vec3d::Constant( translation_weight );
+		weight_matrix.block<3,3>(0,3) = Mat3d::Identity();
 	}
 	else
 	{
@@ -177,31 +175,60 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 	state.joints = initial_joints;
 	buffers_.joints = initial_joints;
 
-	if ( !ForwardKinematic( state.joints, buffers_.fk ) )
-	{
-		RCLCPP_ERROR( get_logger(), "InitializeState: Forward Kinematics failed." );
-		return std::nullopt;
-	}
+	if ( !UpdateBuffer( target, initial_joints, buffers_ ) )
+    {
+        RCLCPP_ERROR( get_logger(), "InitializeState: Buffer update failed." );
+        return std::nullopt;
+    }
 
-	SpaceJacobian( *joint_chain_, state.joints, buffers_.jacobian );
-	WeightedJacobian( buffers_.jacobian, buffers_.weights, buffers_.weighted_jacobian );
-	JacobianSVD( buffers_.weighted_jacobian, buffers_.svd );
-	PoseError( target, buffers_.fk, buffers_.error );
-	WeightedPoseError( buffers_.error, parameters_.rotation_weight, parameters_.translation_weight, buffers_.weighted_error );
-	ReachableError( buffers_.svd, buffers_.weighted_error, parameters_.min_sv_tolerance, buffers_.weighted_error_reachable );
-	Gradient( buffers_.weighted_jacobian, buffers_.weighted_error_reachable, buffers_.gradient );
-
-	state.error = buffers_.error.squaredNorm();
-	state.error_reachable = buffers_.weighted_error_reachable.squaredNorm();
-	state.error_unreachable = ( buffers_.weighted_error - buffers_.weighted_error_reachable ).squaredNorm();
-	state.gradient = buffers_.gradient.squaredNorm();
+    state.error = buffers_.weighted_error.squaredNorm();
+    state.error_reachable = buffers_.weighted_error_reachable.squaredNorm();
+    state.error_unreachable = ( buffers_.weighted_error - buffers_.weighted_error_reachable ).squaredNorm();
+    state.gradient = buffers_.gradient.squaredNorm();
 
 	state.stalled_error_iter = 0;
 	state.step = parameters_.max_step;
 	state.damping = parameters_.min_damping;
 	state.fk_failures = 0;
 
+	std::cout << "Initial state" <<std::endl;
+	PrintBuffer( buffers_ );
+	PrintState( state );
+
 	return state;
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::Restart( 
+	const Mat4d& target, 
+	const std::span<const double>& seed_joints, 
+	RestartState& restart_state ) const
+{
+	std::optional< IterationState > new_iteration_state;
+	int restart_counter = restart_state.restart_counter;
+
+	do 
+	{
+		VecXd new_seed_joints;
+
+		if ( restart_counter == 0 ||
+			( restart_state.iteration_state && 
+			  restart_state.iteration_state->error_unreachable / restart_state.iteration_state->error < 0.15 ) )
+		{
+			new_seed_joints = RandomValidJointsNear( seed_joints, 0.1 );
+		}
+		else
+		{
+			new_seed_joints = RandomValidJoints();
+		}
+		new_iteration_state = InitializeState( target, new_seed_joints );
+		restart_counter++;
+	}
+	while ( !new_iteration_state );
+
+	restart_state.iteration_state = new_iteration_state;
+	restart_state.restart_counter = restart_counter;
 }
 
 // ------------------------------------------------------------
@@ -232,68 +259,161 @@ const VecXd DLSKinematicsSolver::RandomValidJoints() const noexcept
 // ------------------------------------------------------------
 
 void DLSKinematicsSolver::PerformIteration(
-	const Mat4d& target,
-	IterationState& state,
-	SolverBuffers& buffers ) const
+    const Mat4d& target,
+    IterationState& state,
+    SolverBuffers& buffers ) const
 {
-	SpaceJacobian( *joint_chain_, state.joints, buffers.jacobian );
-	WeightedJacobian( buffers.jacobian, buffers.weights, buffers.weighted_jacobian );
+	SolverBuffers state_buffers = buffers;
+
 	Damped( buffers.weighted_jacobian, state.damping, buffers.damped );
-	Gradient( buffers.weighted_jacobian, buffers.weighted_error, buffers.gradient );
-	
+	GradientProjection( *joint_chain_, buffers.joints, buffers.gradient );
 	UpdateDeltaQ( buffers.damped, buffers.gradient, buffers.dq );
-	buffers.joints.noalias() =  state.joints + state.step * buffers.dq;
+	LineSearch( target, state, buffers );
 
-	if ( !ForwardKinematic( buffers.joints, buffers.fk ) )
+	const double error = buffers.weighted_error.squaredNorm();
+	UpdateErrorConvergence( state.error, error, state );
+
+	PrintIteration( state, buffers );
+
+	if ( error < state.error )
 	{
-		state.step = BacktrackStep( state.step );
-		state.damping = BacktrackDamping( state.damping );
-		state.fk_failures++;
-		return;
-	}
-
-	JacobianSVD( buffers.weighted_jacobian, buffers.svd );
-	PoseError( target, buffers.fk, buffers.error );
-	WeightedPoseError( buffers.error, parameters_.rotation_weight, parameters_.translation_weight, buffers.weighted_error );
-	ReachableError( buffers.svd, buffers.weighted_error, parameters_.min_sv_tolerance, buffers.weighted_error_reachable );
-	const double current_error_reachable = buffers.weighted_error_reachable.squaredNorm();
-	UpdateErrorConvergence( state.error_reachable, current_error_reachable, state );
-
-	std::cout
-	    << "damping=" << state.damping << std::endl
-	    << "WJac=" << std::endl << buffers_.jacobian << std::endl
-	    << "state joints=" << std::endl << state.joints.transpose() << std::endl
-	    << "buffer joints=" << std::endl << buffers_.joints.transpose() << std::endl
-	    << "step=" << state.step << std::endl
-	    << "dq=" << std::endl << buffers_.dq.transpose() << std::endl
-	    << "target position =" << Translation( target ).transpose() << std::endl
-	    << "current position=" << Translation( buffers_.fk ).transpose() << std::endl
-	    << "Buffer error="  << std::endl << buffers_.error.tail( 3 ).transpose() << std::endl
-	    << "current error=" << current_error_reachable  << std::endl
-	    << "state error=" << state.error  << std::endl;
-
-	if ( current_error_reachable < state.error_reachable )
-	{
-		state.error_reachable = current_error_reachable;
+		state.joints = buffers.joints;
 		state.error = buffers.weighted_error.squaredNorm();
+		state.error_reachable = buffers.weighted_error_reachable.squaredNorm();
 		state.error_unreachable = ( buffers.weighted_error - buffers.weighted_error_reachable ).squaredNorm();
-		state.gradient = buffers.gradient.squaredNorm();
-
-		state.joints.noalias() = buffers.joints;
+	
+		state.gradient = buffers.gradient.norm();
+		
 		state.fk_failures = 0;
+		state.stalled_error_iter = 0;
 
-		if ( state.min_sv <= parameters_.min_sv_tolerance )
-		{
-			state.damping = ComputeAdaptiveDamping( state.min_sv );
-			state.step = ComputeAdaptiveStep( state.min_sv );
-		}
+		// state.damping = AdaptativeDamping::ManipulabilityMinSV( 
+		// 	buffers.type,
+		// 	buffers.weighted_jacobian,
+		// 	buffers.weighted_error,
+		// 	state.damping,
+		// 	parameters_.min_damping, 
+		// 	parameters_.max_damping, 
+		// 	parameters_.min_sv_tolerance );
+		// state.damping = AdaptativeDamping::ManipulabilityDeterminant( 
+		// 		buffers.weighted_jacobian,
+		// 		parameters_.min_damping, 
+		// 		parameters_.max_damping, 
+		// 		parameters_.min_sv_tolerance );
 
-		std::cout << "min_sv=" << state.min_sv << std::endl;
+		state.damping = ComputeAdaptiveDamping( buffers.svd.singularValues().minCoeff() );
+
+		PrintBuffer( buffers );
+		PrintState( state );
 	}
 	else
 	{
 		state.damping = BacktrackDamping( state.damping );
-		state.step = BacktrackStep( state.step );
+		buffers = state_buffers;
+	}
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::LineSearch(
+	const Mat4d& target,
+	IterationState& state,
+	SolverBuffers& buffers ) const
+{
+	assert( parameters_.line_search_factor < 1.0 && parameters_.line_search_factor > 0.0 );
+	double step = parameters_.max_step;
+
+	while ( buffers.weighted_error.squaredNorm() >= state.error && step >= parameters_.min_step )
+	{
+		buffers.joints = state.joints + step * buffers.dq;
+
+		if ( !UpdateBuffer( target, buffers.joints, buffers ) )
+		{
+			state.fk_failures++;
+			return;
+		}
+		if ( buffers.weighted_error.squaredNorm() >= state.error )
+			step *= parameters_.line_search_factor;
+	}
+
+	state.step = step;
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const
+{
+	std::cout 
+		<< "step      = " << state.step << std::endl 
+		<< "damping   = " << state.damping << std::endl
+		<< "Sjoints   = " << state.joints.transpose() << std::endl
+		<< "dq        = " << buffers.dq.transpose() << std::endl
+		<< "Bjoints   = " << buffers.joints.transpose() << std::endl
+		<< "gradient  = " << buffers.gradient.transpose() << std::endl
+		<< "error     = " << buffers.weighted_error.transpose() << std::endl
+		<< "error norm= " << buffers.weighted_error.squaredNorm() << std::endl;
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::PrintState( const IterationState& state ) const
+{
+	std::cout 
+		<< "State" << std::endl
+		<< "Werror  = " << state.error << std::endl
+		<< "Rerror  = " << state.error_reachable << std::endl
+		<< "Uerror  = " << state.error_unreachable << std::endl
+		<< "Gradient= " << state.gradient << std::endl;
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
+{
+	std::cout
+		<< "Buffer" << std::endl
+		<< "WJac  =" << std::endl << buffers.weighted_jacobian << std::endl
+		<< "Joints= " << buffers.joints.transpose() << std::endl
+		<< "Werror= " << buffers.weighted_error.transpose() << std::endl
+		<< "Rerror= " << buffers.weighted_error_reachable.transpose() << std::endl;
+}
+
+// ------------------------------------------------------------
+
+bool DLSKinematicsSolver::UpdateBuffer(
+	const Mat4d& target,
+	const VecXd& joints,
+	SolverBuffers& buffers ) const 
+{
+	if ( !ForwardKinematic( joints, buffers.fk ) ) return false;
+
+	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
+	PoseError( target, buffers.fk, buffers.error );
+	WeightedPoseError( buffers.error, parameters_.rotation_weight, parameters_.translation_weight, buffers.weighted_error );
+	WeightedJacobian( buffers.jacobian, buffers.weights, buffers.weighted_jacobian );
+	JacobianSVD( buffers.weighted_jacobian, buffers.svd );
+	ReachableError( buffers.svd, buffers.weighted_error, parameters_.min_sv_tolerance, buffers.weighted_error_reachable );
+	Gradient( buffers.weighted_jacobian, buffers.weighted_error, buffers.gradient );
+
+	return true;
+}
+
+// ------------------------------------------------------------
+
+void DLSKinematicsSolver::GradientProjection( 
+	const JointChain& joint_chain, 
+	const VecXd& joints, 
+	VecXd& gradient ) const
+{
+	const auto& active_joints = joint_chain.GetActiveJoints();
+	for (int i = 0; i < active_joints.size(); ++i) 
+	{
+		if ( joints[i] >= active_joints[i]->GetLimits().Max() && gradient[i] > 0) {
+			gradient[i] = 0;
+		}
+		if (joints[i] <= active_joints[i]->GetLimits().Min()  && gradient[i] < 0) {
+			gradient[i] = 0;
+		}
 	}
 }
 
@@ -304,7 +424,7 @@ void DLSKinematicsSolver::UpdateErrorConvergence(
 	double current_error,
 	IterationState& state ) const
 {
-	if ( abs( last_error - current_error ) <= parameters_.error_tolerance )
+	if ( last_error - current_error <= parameters_.error_tolerance )
 	{
 		state.stalled_error_iter++;
 	}
@@ -324,25 +444,30 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 	buffers_.ldlt_solver.compute( damped );
 	dq.noalias() = buffers_.ldlt_solver.solve( gradient );
 
-	if ( dq.norm() > parameters_.max_dq )
-		dq *= ( parameters_.max_dq ) / dq.norm();
+	if ( dq.norm() >= parameters_.max_dq )
+		dq *= parameters_.max_dq / dq.norm();
 }
 
 // ------------------------------------------------------------
 
 NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
-	const IterationState& state,
-	const MatXd& jacobian,
-	const VecXd& error,
+	const RestartState& restart_state,
 	int iteration ) const noexcept
 {
+	if ( !restart_state.iteration_state )
+	{
+		return NumericSolverState::Stalled;
+	}
+
+	auto state = *restart_state.iteration_state;
 	if ( state.error <= parameters_.error_tolerance )
 	{
 		return NumericSolverState::Converged;
 	}
 
 	if ( state.error_reachable < parameters_.error_tolerance &&
-	     state.error_unreachable > parameters_.error_tolerance )
+	     state.error_unreachable > parameters_.error_tolerance && 
+		 state.gradient < parameters_.gradient_tolerance )
 	{
 		return NumericSolverState::BestPossible;
 	}
@@ -354,8 +479,10 @@ NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 
 	if ( ( state.gradient < parameters_.gradient_tolerance &&
 	       state.error_reachable > parameters_.error_tolerance ) ||
+		 ( state.error_unreachable / state.error > 0.5 ) ||
+		 ( state.stalled_error_iter > 0 && state.damping >= parameters_.max_damping && state.step <= parameters_.min_step ) ||
 	     ( state.stalled_error_iter >= parameters_.max_stalle_iterations ) ||
-	     ( state.fk_failures >= parameters_.max_stalle_iterations ) )
+	     ( state.fk_failures >= 2 ) )
 	{
 		return NumericSolverState::Stalled;
 	}

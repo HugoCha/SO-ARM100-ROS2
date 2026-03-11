@@ -82,7 +82,8 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJoint )
 	ASSERT_TRUE( result.has_value() ) << "Should return a valid NumericJointsModel";
 
 	// Check the numeric joint model properties
-	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() ) << "Count should be total active joints";
+	EXPECT_EQ( result->start_index, 1 );
+	EXPECT_EQ( result->count, 2 );
 	EXPECT_TRUE( result->home_configuration.isApprox( home_configuration_, 1e-6 ) )
 	    << "Home configuration should match input";
 }
@@ -119,8 +120,8 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJointAndWristModel )
 	ASSERT_TRUE( result.has_value() ) << "Should return a valid NumericJointsModel";
 
 	// Check the numeric joint model properties
-	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() - wrist_model_.active_joint_count )
-	    << "Count should be total active joints wrist joints";
+	EXPECT_EQ( result->start_index, 1 );
+	EXPECT_EQ( result->count, joint_chain_.GetActiveJointCount() - wrist_model_.active_joint_count - 1 );
 	EXPECT_TRUE( result->home_configuration.isApprox( home_configuration_, 1e-6 ) )
 	    << "Home configuration should match input";
 }

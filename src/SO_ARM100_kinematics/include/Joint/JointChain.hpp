@@ -58,6 +58,8 @@ int GetJointIndex( const JointConstPtr& joint ) const;
 const Joint* GetNextJoint( const JointConstPtr& joint ) const;
 const Joint* GetPreviousJoint( const JointConstPtr& joint ) const;
 
+[[nodiscard]] bool WithinLimits( const VecXd& joints ) const;
+
 [[nodiscard]] bool Empty() const {
 	return joints_.empty();
 }

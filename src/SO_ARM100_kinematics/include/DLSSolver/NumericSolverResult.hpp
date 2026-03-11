@@ -49,6 +49,8 @@ static SolverResult ToSolverResult( NumericSolverResult numeric_result )
 		return SolverResult(
 			SolverState::Success,
 			numeric_result.joints );
+	case NumericSolverState::BestPossible:
+	case NumericSolverState::MaxRestart:
 	case NumericSolverState::MaxIterations:
 	case NumericSolverState::Failed:
 		return SolverResult(

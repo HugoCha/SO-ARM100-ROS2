@@ -74,6 +74,24 @@ const Joint* JointChain::GetPreviousJoint( const JointConstPtr& joint ) const
 
 // ------------------------------------------------------------
 
+bool JointChain::WithinLimits( const VecXd& joints ) const
+{
+	if ( joints.size() != GetActiveJointCount() )
+		return false;
+
+	const auto& active_joints = GetActiveJoints();
+	for ( size_t i = 0; i < active_joints.size(); i++ )
+	{
+		if ( !active_joints[i]->GetLimits().Within( joints[i ]))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+// ------------------------------------------------------------
+
 void JointChain::Add( JointConstPtr joint )
 {
 	if ( !joint )
