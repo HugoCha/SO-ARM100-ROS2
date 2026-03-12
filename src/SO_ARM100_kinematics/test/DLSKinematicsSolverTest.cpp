@@ -53,12 +53,12 @@ void SetUp() override
 
     // Use position-only for 3-DOF robot
 	parameters.rotation_weight        = 1;
-	parameters.translation_weight     = sqrt( 10 );
+	parameters.translation_weight     = 10;
 	
-	parameters.error_tolerance        = 1e-6;   // squaredNorm, ~1mm
+	parameters.error_tolerance        = 1e-3;   // norm(), ~1mm
 	parameters.max_iterations         = 200;
-	parameters.gradient_tolerance     = 1e-8;
-	parameters.max_stalle_iterations  = 5;
+	parameters.gradient_tolerance     = 1e-4;
+	parameters.max_stalle_iterations  = 2;
 	
 	parameters.min_step               = 0.01;
 	parameters.max_step               = 1.0;
@@ -210,10 +210,13 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 {
 	// Target: end effector at (0.7, 0.0, 0.0)
 	VecXd thetas{3};
-	thetas << M_PI / 4, M_PI / 4, M_PI / 8;
+	//thetas << M_PI / 4, M_PI / 4, M_PI / 8;
+	thetas = RandomValidJoints();
 	Mat4d target_pose = ComputeFK( thetas );
+	//std::vector< double > seed_joints = { 3.0, 3.0, 0.0 };
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
 	//std::vector< double > seed_joints = { thetas[0] + 0.05, thetas[1] + 0.05, thetas[2] + 0.05 };
+	std::cout << "target joints=" << thetas.transpose() <<std::endl;
 
 	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 

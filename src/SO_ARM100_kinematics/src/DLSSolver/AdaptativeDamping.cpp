@@ -9,6 +9,19 @@ namespace SOArm100::Kinematics
 {
 
 // ------------------------------------------------------------
+// Linear Adaptative Damping
+// ------------------------------------------------------------
+
+double AdaptativeDamping::LinearDamping(
+	double damping,
+	double min_damping,
+	double max_damping,
+	double alpha )
+{
+	return std::clamp( alpha * damping, min_damping, max_damping );
+}
+
+// ------------------------------------------------------------
 // Manipulability min singular value Adaptative Damping
 // ------------------------------------------------------------
 
@@ -74,7 +87,7 @@ double AdaptativeDamping::ManipulabilityMinSV(
 
 	if ( std::isnan( min_sv ) )
 		return max_damping;
-	
+
 	double ratio = min_sv / min_sv_tolerance;
 	return std::max( min_damping, max_damping * ( 1.0 - ratio * ratio ) );
 }

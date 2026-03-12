@@ -100,8 +100,8 @@ void JointChain::Add( JointConstPtr joint )
 	joints_.emplace_back( joint );
 	if ( !joint->IsFixed() )
 	{
-		active_joints_to_joints_map_.emplace( joint, active_joints_.size() );
 		active_joints_.emplace_back( joint );
+		active_joint_centers_.emplace_back( joint->GetLimits().Center() );
 	}
 }
 

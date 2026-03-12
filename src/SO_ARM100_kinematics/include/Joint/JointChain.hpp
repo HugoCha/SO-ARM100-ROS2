@@ -3,9 +3,9 @@
 #include "Joint.hpp"
 
 #include <cstddef>
-#include <map>
 #include <memory>
 #include <span>
+#include <vector>
 
 namespace SOArm100::Kinematics
 {
@@ -15,7 +15,8 @@ public:
 JointChain( int n );
 JointChain( const JointChain& chain ) :
 	joints_( chain.joints_ ),
-	active_joints_( chain.active_joints_ )
+	active_joints_( chain.active_joints_ ),
+	active_joint_centers_( chain.active_joint_centers_ )
 {
 }
 
@@ -58,6 +59,10 @@ int GetJointIndex( const JointConstPtr& joint ) const;
 const Joint* GetNextJoint( const JointConstPtr& joint ) const;
 const Joint* GetPreviousJoint( const JointConstPtr& joint ) const;
 
+[[nodiscard]] std::vector< double > ActiveJointCenters() const noexcept {
+	return active_joint_centers_;
+}
+
 [[nodiscard]] bool WithinLimits( const VecXd& joints ) const;
 
 [[nodiscard]] bool Empty() const {
@@ -81,7 +86,7 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 private:
 std::vector< JointConstPtr > joints_;
 std::vector< JointConstPtr > active_joints_;
-std::map< JointConstPtr, int > active_joints_to_joints_map_;
+std::vector< double > active_joint_centers_;
 
 JointChain( const std::span< JointConstPtr const >& joints );
 

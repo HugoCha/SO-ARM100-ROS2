@@ -30,6 +30,14 @@ struct SolverParameters
 	double translation_weight{ 10.0 };
 	double rotation_weight{ 1.0 };
 
+	[[nodiscard]] constexpr double RotationWeightSqrt() const noexcept {
+		return sqrt( rotation_weight );
+	}
+
+	[[nodiscard]] constexpr double TranslationWeightSqrt() const noexcept {
+		return sqrt( translation_weight );
+	}
+
 	[[nodiscard]] constexpr double AdaptativeDampingCoefficient() const noexcept {
 		return - std::log( 0.99 ) / ( min_sv_tolerance * min_sv_tolerance );
 	}
@@ -76,6 +84,7 @@ struct SolverBuffers {
 
 	MatXd weights;
 	MatXd jacobian;
+	MatXd jacobian_psi;
 	MatXd weighted_jacobian;
 	Eigen::JacobiSVD< MatXd > svd;
 	Vec6d error;
@@ -96,6 +105,7 @@ struct SolverBuffers {
 		type( solver_type )
 	{
 		jacobian.resize( 6, n_joints );
+		jacobian_psi.resize( n_joints, n_joints );
 		damped.resize( n_joints, n_joints );
 		joints.resize( n_joints );
 		dq.resize( n_joints );
@@ -131,14 +141,30 @@ struct IterationState {
 	int restart_counter;
 };
 
-struct RestartState
+enum class SeedStrategy
+{
+	NearCenter,
+	NearJoints,
+	Random,
+};
+
+struct SolverHistory
 {
 	int restart_counter{0};
-	std::optional< IterationState > iteration_state{std::nullopt};
+	VecXd best_joints{0};
+	double best_error{0};
+};
+
+struct SeedParameters
+{
+	SeedStrategy strategy{SeedStrategy::NearJoints};
+	double distance{0.05};
+	double margin_percent{0.1};
 };
 
 SolverParameters parameters_;
 mutable SolverBuffers buffers_{ 6, SolverType::Full };
+mutable random_numbers::RandomNumberGenerator rng_;
 
 [[nodiscard]] static SolverType GetSolverType( SolverParameters parameters );
 [[nodiscard]] static const MatXd InitializeWeightMatrix( 
@@ -148,92 +174,135 @@ mutable SolverBuffers buffers_{ 6, SolverType::Full };
 [[nodiscard]] std::optional< IterationState > InitializeState(
 	const Mat4d& target, const VecXd& initial_joints ) const;
 
-void Restart( 
-	const Mat4d& target, 
-	const std::span<const double>& seed_joints, 
-	RestartState& state ) const;
+[[nodiscard]] SolverHistory InitializeHistory( 
+	const std::optional< IterationState >& state, const VecXd& initial_joints ) const;
 
-[[nodiscard]] const VecXd RandomValidJoints() const noexcept;
+[[nodiscard]] SeedParameters InitializeSeedParameters(
+	const std::optional< IterationState >& state, const VecXd& initial_joints ) const;
+
+[[nodiscard]] const VecXd RandomValidJoints( double margin_percent ) const noexcept;
+
+[[nodiscard]] const VecXd RandomValidJointsTargeted( 
+	const VecXd& joints, 
+	double distance,
+	double margin_percent ) const noexcept {
+	assert( joints.size() == joint_chain_->GetActiveJointCount() );
+	return RandomValidJointsTargeted( joints.data(), distance, margin_percent );
+}
+
+[[nodiscard]] const VecXd RandomValidJointsTargeted( 
+	const std::span<const double>& joints, 
+	double distance,
+	double margin_percent ) const noexcept {
+	assert( joints.size() == joint_chain_->GetActiveJointCount() );
+	return RandomValidJointsTargeted( joints.data(), distance, margin_percent );
+}
+
+[[nodiscard]] const VecXd RandomValidJointsTargeted( 
+	const double* joints, 
+	double distance,
+	double margin_percent ) const noexcept;
 
 [[nodiscard]] const VecXd RandomValidJointsNear( 
 	const VecXd& joints, 
-	double distance ) const noexcept {
+	double distance,
+	double margin_percent ) const noexcept {
 	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNear( joints.data(), distance );
+	return RandomValidJointsNear( joints.data(), distance, margin_percent );
 }
 
 [[nodiscard]] const VecXd RandomValidJointsNear( 
 	const std::span<const double>& joints, 
-	double distance ) const noexcept {
+	double distance,
+	double margin_percent ) const noexcept {
 	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNear( joints.data(), distance );
+	return RandomValidJointsNear( joints.data(), distance, margin_percent );
 }
 
 [[nodiscard]] const VecXd RandomValidJointsNear( 
 	const double* joints, 
-	double distance ) const noexcept;
+	double distance,
+	double margin_percent ) const noexcept;
+
+constexpr double SmallError() const noexcept {
+	return parameters_.rotation_weight * small_rotation_error + 
+		   parameters_.translation_weight * small_translation_error;
+}
+
+constexpr double LargeError() const noexcept {
+	return parameters_.rotation_weight * large_rotation_error + 
+		   parameters_.translation_weight * large_translation_error;
+}
 
 void PerformIteration(
 	const Mat4d& target,
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
+void UpdateSeedJoints(
+	const SeedParameters& seed_parameters,
+	const SolverHistory& history,
+	VecXd& seed_joints ) const;
+
 bool UpdateBuffer(
 	const Mat4d& target,
 	const VecXd& joints,
 	SolverBuffers& buffers ) const;
 
-void GradientProjection( 
-	const JointChain& joint_chain, 
-	const VecXd& joints, 
-	VecXd& gradient ) const;
+void UpdateHistory(
+	const IterationState& state,
+	SolverHistory& history ) const;
 
 void LineSearch(
 	const Mat4d& target,
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
+void JacobianPSI( const Eigen::JacobiSVD< MatXd >& svd, MatXd& jacobian_psi ) const;
+
 void PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const;
 void PrintState( const IterationState& state ) const;
 void PrintBuffer( const SolverBuffers& buffers ) const;
 
-
 [[nodiscard]] NumericSolverState EvaluateConvergence(
-	const RestartState& restart_state,
+	const IterationState& state,
 	int iteration ) const noexcept;
+
+void UpdateDeltaQPrimary(
+	const MatXd& damped,
+	const VecXd& gradient,
+	VecXd& dq_primary ) const;
+
+void UpdateDeltaQSecondary(
+	const VecXd& joints,
+	const MatXd& jacobian,
+	const MatXd& jacobian_psi,
+	VecXd& dq_secondary ) const;
 
 void UpdateDeltaQ(
 	const MatXd& damped,
 	const VecXd& gradient,
+	const VecXd& joints,
+	const MatXd& jacobian,
+	const MatXd& jacobian_psi,
 	VecXd& dq ) const;
+
+void ClampDeltaQ( const VecXd& joints, VecXd& dq ) const;
 
 void UpdateErrorConvergence(
 	double last_error,
 	double current_error,
 	IterationState& state ) const;
 
-[[nodiscard]] constexpr double BacktrackStep( double step ) const noexcept {
-	return std::max( step * 0.5, parameters_.min_step );
-}
+[[nodiscard]] SeedStrategy ChooseSeedStategy(
+	const IterationState& state,
+	const SolverHistory& history ) const;
 
-[[nodiscard]] constexpr double BacktrackDamping( double damping ) const noexcept {
-	return std::min( damping * 2.0, parameters_.max_damping );
-}
+void UpdateSeedParameters(
+	const IterationState& state,
+	const SolverHistory& history,
+	SeedParameters& seed_parameters
+) const;
 
-[[nodiscard]] double ComputeAdaptiveStep( double min_sigma ) const noexcept {
-	const double step = ( min_sigma * min_sigma ) / ( min_sigma * min_sigma + parameters_.min_sv_tolerance * parameters_.min_sv_tolerance );
-	return std::clamp( step, parameters_.min_step, parameters_.max_step );
-}
-
-[[nodiscard]] double ComputeAdaptiveDamping( double min_sigma ) const noexcept {
-	const double range = parameters_.max_damping - parameters_.min_damping;
-	const double factor = std::exp( -parameters_.AdaptativeDampingCoefficient() * min_sigma * min_sigma );
-	return parameters_.min_damping + range * factor;
-}
-
-[[nodiscard]] double GetMinSingularValue( const MatXd& jacobian ) const {
-	Eigen::JacobiSVD< MatXd > svd( jacobian );
-	return svd.singularValues().minCoeff();
-}
 };
 }
