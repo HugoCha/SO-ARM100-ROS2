@@ -31,13 +31,14 @@ void SpaceJacobian(
 	const JointChain& joint_chain,
 	const VecXd& joint_angles,
 	MatXd& jacobian ) noexcept;
-void WeightedJacobian( 
-	const MatXd& jacobian, 
-	const MatXd& weights, 
+void WeightedJacobian(
+	const MatXd& jacobian,
+	const MatXd& weights,
 	MatXd& weighted_jacobian ) noexcept;
 void JacobianSVD( const MatXd& jacobian, Eigen::JacobiSVD< MatXd >& svd ) noexcept;
 void Gradient( const MatXd& jacobian, const VecXd& error, VecXd& gradient );
 void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept;
+void PseudoInverse( const Eigen::JacobiSVD< MatXd >& svd, double min_sv_tolerance, MatXd& psi ) noexcept;
 void PseudoInverse( const MatXd& jacobian, MatXd& psi ) noexcept;
 void Damped( const MatXd& jacobian, double damping_factor, MatXd& damped ) noexcept;
 void Manipulability( const MatXd& jacobian, MatXd& manipulability ) noexcept;
@@ -48,8 +49,8 @@ void WeightedPoseError(
 	double rotation_weight,
 	double translation_weight,
 	VecXd& weighted_error ) noexcept;
-void ReachableError( 
-	const Eigen::JacobiSVD< MatXd >& jacobian_svd, 
+void ReachableError(
+	const Eigen::JacobiSVD< MatXd >& jacobian_svd,
 	const VecXd& error,
 	double min_sv_tolerance,
 	VecXd& reachable_error );
@@ -72,12 +73,12 @@ double RotationError( const Mat4d& target, const Mat4d& result ) noexcept;
 double TranslationError( const Vec3d& target, const Vec3d& result ) noexcept;
 double TranslationError( const Mat4d& target, const Mat4d& result ) noexcept;
 
-bool IsApprox( 
-	const Mat4d& target, 
-	const Mat4d& result, 
-	double rotation_tol = rotation_tolerance, 
+bool IsApprox(
+	const Mat4d& target,
+	const Mat4d& result,
+	double rotation_tol = rotation_tolerance,
 	double translation_tol = translation_tolerance ) noexcept;
-	
+
 void CheckSolverResult(
 	const JointChain& joint_chain,
 	const Mat4d& home_configuration,

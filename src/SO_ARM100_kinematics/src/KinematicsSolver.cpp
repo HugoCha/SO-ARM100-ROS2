@@ -172,9 +172,9 @@ bool KinematicsSolver::InverseKinematic(
 	if ( joints.size() != joint_chain_->GetActiveJointCount() )
 		joints.resize( joint_chain_->GetActiveJointCount() );
 
-	return InverseKinematicImpl( 
+	return InverseKinematicImpl(
 		ToTransformMatrix( target_pose ),
-		seed_joints, 
+		seed_joints,
 		joints.data() );
 }
 
@@ -188,9 +188,9 @@ bool KinematicsSolver::InverseKinematic(
 	if ( joints.size() != joint_chain_->GetActiveJointCount() )
 		joints.resize( joint_chain_->GetActiveJointCount() );
 
-	return InverseKinematicImpl( 
-		target_pose, 
-		seed_joints, 
+	return InverseKinematicImpl(
+		target_pose,
+		seed_joints,
 		joints.data() );
 }
 

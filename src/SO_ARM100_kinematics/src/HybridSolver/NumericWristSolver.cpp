@@ -69,7 +69,7 @@ SolverResult NumericWristSolver::IK(
 		} );
 
 	result.joints << buffer_.numeric_result.joints,
-                     buffer_.wrist_result.joints;
+	    buffer_.wrist_result.joints;
 
 	CheckSolverResult(
 		*joint_chain_,

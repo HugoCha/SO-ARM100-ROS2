@@ -48,8 +48,8 @@ WristSolver::WristSolver(
 
 void WristSolver::ComputeWristCenter( const Mat4d& target, Vec3d& wrist_center ) const
 {
-	wrist_center.noalias() = Translation( target ) - 
-		Rotation( target ) * Translation( wrist_model_->tcp_in_wrist_at_home );
+	wrist_center.noalias() = Translation( target ) -
+	                         Rotation( target ) * Translation( wrist_model_->tcp_in_wrist_at_home );
 }
 
 // ------------------------------------------------------------
@@ -98,8 +98,8 @@ SolverResult WristSolver::IK(
 
 // ------------------------------------------------------------
 
-SolverResult WristSolver::SolveAnalytical( 
-	const JointChain& joint_chain, 
+SolverResult WristSolver::SolveAnalytical(
+	const JointChain& joint_chain,
 	const Mat3d& R_target_in_wrist,
 	const std::span< const double >& seed_joints ) const
 {
@@ -112,7 +112,7 @@ SolverResult WristSolver::SolveAnalytical(
 	case WristType::Revolute3:
 		return SolveRevolute3( *joint_chain_, R_target_in_wrist, seed_joints );
 	default:
-		assert("Should not run wrist solver with None type");
+		assert( "Should not run wrist solver with None type" );
 	}
 	return { wrist_model_->active_joint_count };;
 }
@@ -296,8 +296,8 @@ SolverResult WristSolver::SolveNumeric(
 	SolverResult result { wrist_model_->active_joint_count };
 
 	return ToSolverResult( dls_wrist_solver_->InverseKinematic(
-		target_in_wrist,
-		seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ) ) );
+							   target_in_wrist,
+							   seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ) ) );
 }
 
 // ------------------------------------------------------------

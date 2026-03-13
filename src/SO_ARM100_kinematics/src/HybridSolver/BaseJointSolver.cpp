@@ -62,7 +62,7 @@ SolverResult BaseJointSolver::Heuristic(
 
 // ------------------------------------------------------------
 
-SolverResult BaseJointSolver::SolverAnalytical(	
+SolverResult BaseJointSolver::SolverAnalytical(
 	const Mat4d& wrist_center,
 	const std::span< const double >& seed_joints ) const
 {
@@ -91,11 +91,11 @@ SolverResult BaseJointSolver::SolverAnalytical(
 		double c_theta = r0.dot( r_proj );
 
 		double theta = atan2( s_theta, c_theta );
-		if ( ValidateAndSelectJoint( 
-			base_joint, 
-			seed_joints[0], 
-			theta, 
-			result.joints[0] ) )
+		if ( ValidateAndSelectJoint(
+				 base_joint,
+				 seed_joints[0],
+				 theta,
+				 result.joints[0] ) )
 		{
 			result.state = SolverState::Success;
 		}
@@ -118,10 +118,10 @@ const Joint* BaseJointSolver::GetBaseJoint() const
 
 // ------------------------------------------------------------
 
-bool BaseJointSolver::ValidateAndSelectJoint( 
-	const Joint* base_joint, 
-	double seed, 
-	double theta1, 
+bool BaseJointSolver::ValidateAndSelectJoint(
+	const Joint* base_joint,
+	double seed,
+	double theta1,
 	double& selection ) const
 {
 	if ( std::isnan( theta1 ) )
@@ -129,12 +129,12 @@ bool BaseJointSolver::ValidateAndSelectJoint(
 		selection = seed;
 		return false;
 	}
-	
+
 	double theta2 = 1e10;
 	if ( std::fmod( theta1, M_PI ) == 0 )
 	{
 		if ( base_joint->GetLimits().Within( 0 ) )
-			theta2 = 0; 
+			theta2 = 0;
 		if ( base_joint->GetLimits().Within( M_PI ) )
 			theta2 = FindClosest( seed, theta2, M_PI );
 		if ( base_joint->GetLimits().Within( -M_PI ) )
@@ -144,9 +144,9 @@ bool BaseJointSolver::ValidateAndSelectJoint(
 	{
 		theta2 = ( theta1 + M_PI > M_PI ) ? theta1 - M_PI : theta1 + M_PI;
 	}
-	
-	bool theta1_valid = base_joint->GetLimits().Within( theta1 ); 
-	bool theta2_valid = base_joint->GetLimits().Within( theta2 ); 
+
+	bool theta1_valid = base_joint->GetLimits().Within( theta1 );
+	bool theta2_valid = base_joint->GetLimits().Within( theta2 );
 
 	if ( theta1_valid && theta2_valid )
 	{

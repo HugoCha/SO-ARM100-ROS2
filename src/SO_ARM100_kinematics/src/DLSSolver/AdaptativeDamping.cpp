@@ -125,17 +125,17 @@ double AdaptativeDamping::ManipulabilityMinSVOrientation(
 	double linearization_trust = cos( angle_error / 2.0 );
 	double lambda_angle_boost = max_damping * ( 1.0f - linearization_trust );
 	return std::max( min_damping,
-		ManipulabilityMinSV(
-		jacobian.topRows( 3 ),
-		damping,
-		min_damping,
-		max_damping,
-		min_sv_tolerance ) +
-	       lambda_angle_boost );
+	                 ManipulabilityMinSV(
+						 jacobian.topRows( 3 ),
+						 damping,
+						 min_damping,
+						 max_damping,
+						 min_sv_tolerance ) +
+	                 lambda_angle_boost );
 }
 
 // ------------------------------------------------------------
-// Manipulability determinant Adaptative Damping 
+// Manipulability determinant Adaptative Damping
 // ------------------------------------------------------------
 
 double AdaptativeDamping::ManipulabilityDeterminant(
@@ -155,7 +155,7 @@ double AdaptativeDamping::ManipulabilityDeterminant(
 }
 
 // ------------------------------------------------------------
-// Manipulability trace Adaptative Damping 
+// Manipulability trace Adaptative Damping
 // ------------------------------------------------------------
 
 double AdaptativeDamping::ManipulabilityTrace(

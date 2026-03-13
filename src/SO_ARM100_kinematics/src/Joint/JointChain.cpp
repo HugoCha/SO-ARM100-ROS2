@@ -1,6 +1,7 @@
 #include "Joint/JointChain.hpp"
 
 #include "Joint/Joint.hpp"
+#include "Joint/Limits.hpp"
 
 #include <algorithm>
 
@@ -31,7 +32,7 @@ JointChain::JointChain( const std::span< JointConstPtr const >& joints )
 
 int JointChain::GetJointIndex( const JointConstPtr& joint ) const
 {
-	if ( Empty() || !joint ) 
+	if ( Empty() || !joint )
 		return -1;
 
 	auto it = std::ranges::find( joints_, joint );
@@ -52,7 +53,7 @@ const Joint* JointChain::GetNextJoint( const JointConstPtr& joint ) const
 
 	if ( index >= 0 && index + 1 < joints_.size() )
 	{
-		return joints_[ index + 1 ].get();
+		return joints_[index + 1].get();
 	}
 
 	return nullptr;
@@ -66,7 +67,7 @@ const Joint* JointChain::GetPreviousJoint( const JointConstPtr& joint ) const
 
 	if ( index >= 1 )
 	{
-		return joints_[ index - 1 ].get();
+		return joints_[index - 1].get();
 	}
 
 	return nullptr;
@@ -82,8 +83,12 @@ bool JointChain::WithinLimits( const VecXd& joints ) const
 	const auto& active_joints = GetActiveJoints();
 	for ( size_t i = 0; i < active_joints.size(); i++ )
 	{
-		if ( !active_joints[i]->GetLimits().Within( joints[i ]))
+		if ( !active_joints[i]->GetLimits().Within( joints[i] ) )
 		{
+			auto limits = active_joints[i]->GetLimits();
+			std::cout
+			    << "Joint = " << joints[i] << std::endl
+			    << "Limits = " << limits.Min() << ", " << limits.Max() << std::endl;
 			return false;
 		}
 	}

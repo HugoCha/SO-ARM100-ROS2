@@ -37,7 +37,7 @@ NumericJointsSolver::NumericJointsSolver(
 		home_configuration_ = std::make_shared< const Mat4d >( numeric_joint_model.home_configuration );
 	}
 
-	dls_solver_ = std::make_unique< DLSKinematicsSolver >( InitializeParameters( type ) );
+	dls_solver_ = std::make_unique< DLSKinematicsSolver >( InitializeParameters( type, joint_chain_->GetActiveJointCount() ) );
 	dls_solver_->Initialize(
 		joint_chain_,
 		home_configuration_,
@@ -49,9 +49,9 @@ NumericJointsSolver::NumericJointsSolver(
 NumericJointsSolver::NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration ) :
-	NumericJointsSolver( 
-		joint_chain, 
-		home_configuration, 
+	NumericJointsSolver(
+		joint_chain,
+		home_configuration,
 		{ 0, joint_chain->GetActiveJointCount(), *home_configuration },
 		SolverType::Full )
 {
@@ -59,51 +59,33 @@ NumericJointsSolver::NumericJointsSolver(
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SolverParameters NumericJointsSolver::InitializeParameters( SolverType type )
+DLSKinematicsSolver::SolverParameters NumericJointsSolver::InitializeParameters(
+	SolverType type,
+	int n_joints )
 {
 	DLSKinematicsSolver::SolverParameters parameters;
-	switch ( type ) 
+	switch ( type )
 	{
-		case SolverType::Orientation:
-			parameters.error_tolerance = rotation_tolerance;
-			parameters.rotation_weight = 1.0;
-			parameters.translation_weight = 0;
-			parameters.max_iterations = 50;
-			parameters.gradient_tolerance = 10 * gradient_tolerance;
-			parameters.min_sv_tolerance = 1e-1;
-			parameters.max_stalle_iterations = 5;
-			parameters.min_step = 0.05;
-			parameters.max_step = 0.5;
-			parameters.min_damping = 0.05;
-			parameters.max_damping = 0.5;
-			break;
-		case SolverType::Position:
-			parameters.error_tolerance = translation_tolerance;
-			parameters.rotation_weight = 0;
-			parameters.translation_weight = 1.0;
-			parameters.max_iterations = 50;
-			parameters.gradient_tolerance = 1e-5;
-			parameters.max_stalle_iterations = 5;
-			parameters.min_step = 0.01;
-			parameters.max_step = 1.0;
-			parameters.min_sv_tolerance = 1e-2;
-			parameters.min_damping = 5e-3;
-			parameters.max_damping = 5e-1;
-			parameters.max_dq = 0.5;
-			break;
-		case SolverType::Full:
-			parameters.error_tolerance = error_tolerance;
-			parameters.rotation_weight = 1.0;
-			parameters.translation_weight = 10.0;
-			parameters.max_iterations = 200;
-			parameters.gradient_tolerance = 1e-6;
-			parameters.max_stalle_iterations = 5;
-			parameters.min_step = 0.1;
-			parameters.max_step = 1.0;
-			parameters.min_sv_tolerance = 1e-1;
-			parameters.min_damping = 1e-2;
-			parameters.max_damping = 3e-1;
-			parameters.max_dq = 1.0;
+	case SolverType::Orientation:
+		parameters.error_tolerance = rotation_tolerance;
+		parameters.rotation_weight = 1.0;
+		parameters.translation_weight = 0;
+		parameters.max_iterations = 200;
+		parameters.max_dq = n_joints * 20 * M_PI / 180;
+		break;
+	case SolverType::Position:
+		parameters.error_tolerance = translation_tolerance;
+		parameters.rotation_weight = 0;
+		parameters.translation_weight = 1.0;
+		parameters.max_iterations = 200;
+		parameters.max_dq = n_joints * 20 * M_PI / 180;
+		break;
+	case SolverType::Full:
+		parameters.error_tolerance = error_tolerance;
+		parameters.rotation_weight = 1.0;
+		parameters.translation_weight = 10.0;
+		parameters.max_iterations = 400;
+		parameters.max_dq = n_joints * 15 * M_PI / 180;
 		break;
 	}
 	return parameters;
@@ -124,9 +106,8 @@ SolverResult NumericJointsSolver::IK(
 	double search_discretization ) const
 {
 	auto result = dls_solver_->InverseKinematic(
-							target_pose,
-							seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) );
-	std::cout << "Iterations=" << result.iterations_used << std::endl;
+		target_pose,
+		seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) );
 	return ToSolverResult( result );
 }
 

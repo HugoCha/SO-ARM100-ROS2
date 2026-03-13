@@ -55,7 +55,7 @@ TEST_F( WristSolverTest, ComputeWristCenter )
 	WristSolver solver( joint_chain, home, wrist_model );
 	solver.ComputeWristCenter( target, wrist_center );
 
-	auto target_translation = target.block< 3,1 >(0,3);
+	auto target_translation = target.block< 3, 1 >( 0, 3 );
 	// The wrist center should be the target transform multiplied by the inverse of the TCP transform
 	// Since the TCP transform is identity, the wrist center should be the same as the target
 	EXPECT_TRUE( target_translation.isApprox( wrist_center, error_tolerance ) )

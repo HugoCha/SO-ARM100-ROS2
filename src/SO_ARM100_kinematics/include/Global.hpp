@@ -20,14 +20,16 @@ using Iso3d = Eigen::Isometry3d;
 
 constexpr double epsilon = 1e-6;
 
-constexpr double large_rotation_error  = 14 * M_PI / 180; // rad
-constexpr double small_rotation_error  =  7 * M_PI / 180; // rad
+constexpr double large_rotation_error  = 18 * M_PI / 180; // rad
+constexpr double medium_rotation_error  =  9 * M_PI / 180; // rad
+constexpr double small_rotation_error  =  3 * M_PI / 180; // rad
 
-constexpr double large_translation_error  = 0.1;  // m
+constexpr double large_translation_error  = 0.12;  // m
+constexpr double medium_translation_error  = 0.03; // m
 constexpr double small_translation_error  = 0.01; // m
 
 constexpr double error_tolerance = 1e-3;
 constexpr double rotation_tolerance = 1e-2;
 constexpr double translation_tolerance = 1e-3;
-constexpr double gradient_tolerance = 1e-4;
+constexpr double gradient_tolerance = 1e-6;
 }

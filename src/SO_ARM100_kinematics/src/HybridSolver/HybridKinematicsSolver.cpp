@@ -52,7 +52,7 @@ void HybridKinematicsSolver::Initialize(
 void HybridKinematicsSolver::Initialize(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
-	double search_discretization ) 
+	double search_discretization )
 {
 	KinematicsSolver::Initialize( joint_chain, home_configuration, search_discretization );
 	search_discretization_ = search_discretization;

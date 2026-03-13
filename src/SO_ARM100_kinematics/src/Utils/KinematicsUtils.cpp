@@ -64,9 +64,9 @@ void SpaceJacobian(
 
 // ------------------------------------------------------------
 
-void WeightedJacobian( 
-	const MatXd& jacobian, 
-	const MatXd& weights, 
+void WeightedJacobian(
+	const MatXd& jacobian,
+	const MatXd& weights,
 	MatXd& weighted_jacobian ) noexcept
 {
 	const int dofs = weights.rows();
@@ -81,7 +81,7 @@ void WeightedJacobian(
 
 void JacobianSVD( const MatXd& jacobian, Eigen::JacobiSVD< MatXd >& svd ) noexcept
 {
-	svd = Eigen::JacobiSVD< MatXd >( 
+	svd = Eigen::JacobiSVD< MatXd >(
 		jacobian,
 		Eigen::ComputeThinU | Eigen::ComputeThinV );
 }
@@ -91,7 +91,7 @@ void JacobianSVD( const MatXd& jacobian, Eigen::JacobiSVD< MatXd >& svd ) noexce
 void Gradient( const MatXd& jacobian, const VecXd& error, VecXd& gradient )
 {
 	const int task_dofs = jacobian.rows();
-	const int n_joints  = jacobian.cols(); 
+	const int n_joints  = jacobian.cols();
 
 	if ( task_dofs != error.rows() )
 		throw std::runtime_error( "Size mismatch between jacobian and error" );
@@ -99,6 +99,22 @@ void Gradient( const MatXd& jacobian, const VecXd& error, VecXd& gradient )
 		gradient.resize( n_joints );
 
 	gradient.noalias() = jacobian.transpose() * error;
+}
+
+// ------------------------------------------------------------
+
+void PseudoInverse( const Eigen::JacobiSVD< MatXd >& svd,
+                    double min_sv_tolerance,
+                    MatXd& psi ) noexcept
+{
+	auto singularValues = svd.singularValues();
+	Eigen::VectorXd invertedSingularValues = Eigen::VectorXd::Zero( singularValues.size() );
+
+	for ( int i = 0; i < singularValues.size(); ++i )
+		if ( singularValues( i ) > min_sv_tolerance )
+			invertedSingularValues( i ) = 1.0 / singularValues( i );
+
+	psi.noalias() = svd.matrixV() * invertedSingularValues.asDiagonal() * svd.matrixU().transpose();
 }
 
 // ------------------------------------------------------------
@@ -154,8 +170,10 @@ void WeightedPoseError(
 	VecXd& weighted_error ) noexcept
 {
 	int weighted_error_size = 6;
-	if ( rotation_weight <= 0 ) weighted_error_size -= 3;
-	if ( translation_weight <= 0 ) weighted_error_size -= 3;
+	if ( rotation_weight <= 0 )
+		weighted_error_size -= 3;
+	if ( translation_weight <= 0 )
+		weighted_error_size -= 3;
 	if ( weighted_error.size() != weighted_error_size )
 		weighted_error.resize( weighted_error_size );
 
@@ -168,8 +186,8 @@ void WeightedPoseError(
 
 // ------------------------------------------------------------
 
-void ReachableError( 
-	const Eigen::JacobiSVD< MatXd >& jacobian_svd, 
+void ReachableError(
+	const Eigen::JacobiSVD< MatXd >& jacobian_svd,
 	const VecXd& error,
 	double min_sv_tolerance,
 	VecXd& reachable_error )

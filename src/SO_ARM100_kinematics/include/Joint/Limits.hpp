@@ -49,9 +49,9 @@ Limits( double min, double max ) :
 	return std::clamp( value, min_, max_ );
 }
 
-void Random( random_numbers::RandomNumberGenerator& rng, 
-			 double* random, 
-			 double margin_percent = 0.0 ) const {
+void Random( random_numbers::RandomNumberGenerator& rng,
+             double* random,
+             double margin_percent = 0.0 ) const {
 	if ( random == nullptr )
 		throw std::invalid_argument( "random pointer must not be null" );
 	margin_percent = std::clamp( margin_percent, 0.0, 1.0 );
@@ -61,11 +61,11 @@ void Random( random_numbers::RandomNumberGenerator& rng,
 	*random = rng.uniformReal( min, max );
 }
 
-void RandomNear( random_numbers::RandomNumberGenerator& rng, 
-				 double seed, 
-				 double* random, 
-				 double distance = 0.05, 
-				 double margin_percent = 0.0 ) const {
+void RandomNear( random_numbers::RandomNumberGenerator& rng,
+                 double seed,
+                 double* random,
+                 double distance = 0.05,
+                 double margin_percent = 0.0 ) const {
 	if ( random == nullptr )
 		throw std::invalid_argument( "random pointer must not be null" );
 	margin_percent = std::clamp( margin_percent, 0.0, 1.0 );
@@ -75,8 +75,52 @@ void RandomNear( random_numbers::RandomNumberGenerator& rng,
 	*random = rng.uniformReal( min, max );
 }
 
-[[nodiscard]] double Range() const noexcept {
-	return max_ - min_;
+void RandomNearWrapped(
+	random_numbers::RandomNumberGenerator& rng,
+	double seed,
+	double* random,
+	double distance = 0.05 ) const
+{
+	if ( random == nullptr )
+		throw std::invalid_argument( "random pointer must not be null" );
+
+	const double span = Span();
+	const double d = std::min( std::abs( distance ), span / 2.0 );
+
+	double lo = seed - d;
+	double hi = seed + d;
+
+	double overflow_min = min_ - lo;
+	double overflow_max = hi - max_;
+
+	double seg1_lo = std::max( lo, min_ );
+	double seg1_hi = std::min( hi, max_ );
+
+	double seg2_lo = min_;
+	double seg2_hi = min_ + std::max( 0.0, overflow_max );
+
+	double seg3_lo = max_ - std::max( 0.0, overflow_min );
+	double seg3_hi = max_;
+
+	double len1 = std::max( 0.0, seg1_hi - seg1_lo );
+	double len2 = std::max( 0.0, seg2_hi - seg2_lo );
+	double len3 = std::max( 0.0, seg3_hi - seg3_lo );
+	double total = len1 + len2 + len3;
+
+	if ( total <= 0.0 )
+	{
+		*random = seed;
+		return;
+	}
+
+	double pick = rng.uniformReal( 0.0, total );
+
+	if ( pick < len1 )
+		*random = seg1_lo + pick;
+	else if ( pick < len1 + len2 )
+		*random = seg2_lo + ( pick - len1 );
+	else
+		*random = seg3_lo + ( pick - len1 - len2 );
 }
 
 private:

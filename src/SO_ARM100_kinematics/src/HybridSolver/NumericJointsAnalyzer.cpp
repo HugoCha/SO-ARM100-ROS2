@@ -45,8 +45,8 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 	}
 	else
 	{
-		numeric_joint_model.home_configuration = ComputeReducedHome( 
-			home_configuration, 
+		numeric_joint_model.home_configuration = ComputeReducedHome(
+			home_configuration,
 			*wrist_model );
 	}
 

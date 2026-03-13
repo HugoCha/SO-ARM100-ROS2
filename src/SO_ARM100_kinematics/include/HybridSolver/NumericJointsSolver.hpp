@@ -42,6 +42,6 @@ std::shared_ptr< const Mat4d > home_configuration_;
 std::unique_ptr< DLSKinematicsSolver > dls_solver_;
 NumericJointsModelUniqueConstPtr numeric_joints_model_;
 
-static DLSKinematicsSolver::SolverParameters InitializeParameters( SolverType type );
+static DLSKinematicsSolver::SolverParameters InitializeParameters( SolverType type, int n_joints );
 };
 }

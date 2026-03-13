@@ -80,7 +80,7 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 	auto state = InitializeState( target, seed );
 	auto history = InitializeHistory( state, seed );
 	auto seed_parameters = InitializeSeedParameters( state, seed );
-	
+
 	if ( !state )
 	{
 		UpdateSeedJoints( seed_parameters, history, seed );
@@ -88,7 +88,7 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 		history = InitializeHistory( state, seed );
 		seed_parameters = InitializeSeedParameters( state, seed );
 	}
-	
+
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
 	{
 		std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
@@ -111,7 +111,7 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 			state = InitializeState( target, seed );
 			continue;
 		}
-		
+
 		PerformIteration( target, *state, buffers_ );
 	}
 
@@ -158,12 +158,12 @@ const MatXd DLSKinematicsSolver::InitializeWeightMatrix(
 	if ( rotation_weight > 0 && translation_weight == 0 )
 	{
 		weight_matrix = MatXd::Zero( 3, 6 );
-		weight_matrix.block<3,3>(0,0) = rotation_weight * Mat3d::Identity();
+		weight_matrix.block< 3, 3 >( 0, 0 ) = rotation_weight * Mat3d::Identity();
 	}
 	else if ( rotation_weight == 0 && translation_weight > 0 )
 	{
 		weight_matrix = MatXd::Zero( 3, 6 );
-		weight_matrix.block<3,3>(0,3) = translation_weight * Mat3d::Identity();
+		weight_matrix.block< 3, 3 >( 0, 3 ) = translation_weight * Mat3d::Identity();
 	}
 	else
 	{
@@ -185,22 +185,22 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 	buffers_.joints = initial_joints;
 
 	if ( !UpdateBuffer( target, initial_joints, buffers_ ) )
-    {
-        RCLCPP_ERROR( get_logger(), "InitializeState: Buffer update failed." );
-        return std::nullopt;
-    }
+	{
+		RCLCPP_ERROR( get_logger(), "InitializeState: Buffer update failed." );
+		return std::nullopt;
+	}
 
-    state.error = buffers_.weighted_error.norm();
-    state.error_reachable = buffers_.weighted_error_reachable.norm();
-    state.error_unreachable = ( buffers_.weighted_error - buffers_.weighted_error_reachable ).norm();
-    state.gradient = buffers_.gradient.norm();
+	state.error = buffers_.weighted_error.norm();
+	state.error_reachable = buffers_.weighted_error_reachable.norm();
+	state.error_unreachable = UnreachableError( state.error, state.error_reachable );
+	state.gradient = buffers_.gradient.norm();
 
 	state.stalled_error_iter = 0;
 	state.step = parameters_.max_step;
 	state.damping = parameters_.min_damping;
 	state.fk_failures = 0;
 
-	std::cout << "Initial state" <<std::endl;
+	std::cout << "Initial state" << std::endl;
 	PrintBuffer( buffers_ );
 	PrintState( state );
 
@@ -209,16 +209,16 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SolverHistory DLSKinematicsSolver::InitializeHistory( 
+DLSKinematicsSolver::SolverHistory DLSKinematicsSolver::InitializeHistory(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
 	SolverHistory history;
-	
+
 	if ( !state )
 	{
 		history.best_joints = initial_joints;
 	}
-	else 
+	else
 	{
 		history.best_joints = state->joints;
 		history.best_error = state->error;
@@ -237,6 +237,7 @@ void DLSKinematicsSolver::UpdateHistory(
 	{
 		history.best_joints = state.joints;
 		history.best_error = state.error;
+		history.last_improvement_restart_index = history.restart_counter;
 	}
 	history.restart_counter++;
 }
@@ -250,7 +251,7 @@ DLSKinematicsSolver::SeedParameters DLSKinematicsSolver::InitializeSeedParameter
 
 	seed_parameters.strategy = SeedStrategy::NearJoints;
 	seed_parameters.margin_percent = 0.1;
-	
+
 	if ( !state )
 	{
 		seed_parameters.distance = 0.1;
@@ -258,7 +259,7 @@ DLSKinematicsSolver::SeedParameters DLSKinematicsSolver::InitializeSeedParameter
 	else
 	{
 		double ratio = state->error_unreachable / state->error;
-		seed_parameters.distance = std::clamp( ratio, 0.1, 0.5 );
+		seed_parameters.distance = std::clamp( ratio, 0.1, 0.3 );
 	}
 
 	return seed_parameters;
@@ -270,18 +271,25 @@ DLSKinematicsSolver::SeedStrategy DLSKinematicsSolver::ChooseSeedStategy(
 	const IterationState& state,
 	const SolverHistory& history ) const
 {
-	if ( history.restart_counter == 0 && 
-		 state.error_reachable / state.error < 0.5 &&
-		 state.error >= 0.9 * history.best_error )
+	if ( history.restart_counter == 0 &&
+	     state.error_reachable / state.error < 0.5 &&
+	     state.error >= 0.9 * history.best_error )
 	{
 		return SeedStrategy::NearCenter;
 	}
 
-	if ( ( state.error_reachable / state.error > 0.35 && state.error < 0.9 * history.best_error ) || 
-		   state.error < 0.7 * history.best_error ||
-		   state.error < SmallError() )
+	int no_improvement_span = history.restart_counter - history.last_improvement_restart_index;
+	if ( ( no_improvement_span <= 4 && history.best_error <= MediumError() ) ||
+	     ( no_improvement_span <= 8 && history.best_error <= SmallError() ) )
 	{
 		return SeedStrategy::NearJoints;
+	}
+
+	if ( ( state.error_reachable / state.error > 0.35 && state.error < 0.9 * history.best_error ) ||
+	     state.error < 0.7 * history.best_error ||
+	     ( no_improvement_span <= 3 && history.best_error <= MediumError() && state.error <= LargeError() ) )
+	{
+		return SeedStrategy::NearJointsAvoidLimits;
 	}
 
 	return SeedStrategy::Random;
@@ -295,31 +303,35 @@ void DLSKinematicsSolver::UpdateSeedParameters(
 	SeedParameters& seed_parameters ) const
 {
 	seed_parameters.strategy = ChooseSeedStategy( state, history );
-	
-	constexpr double min_distance = 0.08;
+
+	constexpr double min_distance = 0.05;
 	constexpr double max_distance = 0.3;
 	constexpr double avg_distance = ( min_distance + max_distance ) / 2.0;
 	double distance;
-	
-	if ( state.error <= SmallError() )
+
+	if ( state.error <= SmallError() || history.best_error <= SmallError() )
 	{
-		if ( history.best_error > SmallError() )
+		if ( history.best_error > SmallError() ||
+		     state.error < history.best_error )
 			distance = min_distance;
 		else
-		 	distance = std::clamp( 1.1 * seed_parameters.distance, min_distance, avg_distance );
+			distance = std::clamp( 1.15 * seed_parameters.distance, min_distance, avg_distance );
 	}
 	else if ( state.error <= LargeError() )
 	{
 		if ( state.error < 0.7 * history.best_error )
-			distance = min_distance;
+			distance = ( min_distance + avg_distance ) / 2;
 		else
 			distance = avg_distance;
 	}
 	else
 	{
-		distance = max_distance;
+		if ( state.error < 0.7 * history.best_error )
+			distance = avg_distance;
+		else
+			distance = max_distance;
 	}
-	
+
 	seed_parameters.distance = std::clamp( distance, min_distance, max_distance );
 }
 
@@ -330,24 +342,27 @@ void DLSKinematicsSolver::UpdateSeedJoints(
 	const SolverHistory& history,
 	VecXd& seed_joints ) const
 {
-	switch ( seed_parameters.strategy ) 
+	switch ( seed_parameters.strategy )
 	{
-		case SeedStrategy::NearCenter:
-			seed_joints = RandomValidJointsNear( joint_chain_->ActiveJointCenters(), seed_parameters.distance, seed_parameters.margin_percent );
-			break;
-		case SeedStrategy::NearJoints:
-			seed_joints = RandomValidJointsTargeted( history.best_joints, seed_parameters.distance, seed_parameters.margin_percent );
-			break;
-		case SeedStrategy::Random:
-			seed_joints = RandomValidJoints( seed_parameters.margin_percent );
-			break;
+	case SeedStrategy::NearCenter:
+		seed_joints = RandomValidJointsNear( joint_chain_->ActiveJointCenters(), seed_parameters.distance, seed_parameters.margin_percent );
+		break;
+	case SeedStrategy::NearJointsAvoidLimits:
+		seed_joints = RandomValidJointsTargeted( history.best_joints, seed_parameters.distance, seed_parameters.margin_percent );
+		break;
+	case SeedStrategy::NearJoints:
+		seed_joints = RandomValidJointsNearWrapped( history.best_joints, seed_parameters.distance, 0 );
+		break;
+	case SeedStrategy::Random:
+		seed_joints = RandomValidJoints( seed_parameters.margin_percent );
+		break;
 	}
 }
 
 // ------------------------------------------------------------
 
-const VecXd DLSKinematicsSolver::RandomValidJointsTargeted( 
-	const double* joints, 
+const VecXd DLSKinematicsSolver::RandomValidJointsTargeted(
+	const double* joints,
 	double distance,
 	double margin_percent ) const noexcept
 {
@@ -362,11 +377,11 @@ const VecXd DLSKinematicsSolver::RandomValidJointsTargeted(
 		if ( target < min_tol || target > max_tol )
 			target = joint_limits.Center();
 
-		joint_limits.RandomNear( 
-			rng_, 
-			target, 
-			& random.data()[i], 
-			distance, 
+		joint_limits.RandomNear(
+			rng_,
+			target,
+			& random.data()[i],
+			distance,
 			margin_percent );
 	}
 	return random;
@@ -387,6 +402,38 @@ const VecXd DLSKinematicsSolver::RandomValidJointsNear(
 
 // ------------------------------------------------------------
 
+const VecXd DLSKinematicsSolver::RandomValidJointsNearWrapped(
+	const double* joints,
+	double distance,
+	double margin_percent ) const noexcept
+{
+	VecXd random( joint_chain_->GetActiveJointCount() );
+	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
+	{
+		auto joint = joint_chain_->GetActiveJoint( i );
+		const auto& limit = joint->GetLimits();
+		if ( joint->IsRevolute() && limit.Span() >= 3 * M_PI / 2 )
+		{
+			limit.RandomNearWrapped( rng_,
+			                         joints[i],
+			                         & random.data()[i],
+			                         distance );
+		}
+		else
+		{
+			limit.RandomNear( rng_,
+			                  joints[i],
+			                  & random.data()[i],
+			                  distance,
+			                  margin_percent );
+
+		}
+	}
+	return random;
+}
+
+// ------------------------------------------------------------
+
 const VecXd DLSKinematicsSolver::RandomValidJoints( double margin_percent ) const noexcept
 {
 	assert( joint_chain_ );
@@ -399,17 +446,17 @@ const VecXd DLSKinematicsSolver::RandomValidJoints( double margin_percent ) cons
 // ------------------------------------------------------------
 
 void DLSKinematicsSolver::PerformIteration(
-    const Mat4d& target,
-    IterationState& state,
-    SolverBuffers& buffers ) const
+	const Mat4d& target,
+	IterationState& state,
+	SolverBuffers& buffers ) const
 {
 	SolverBuffers state_buffers = buffers;
 
 	Damped( buffers.weighted_jacobian, state.damping, buffers.damped );
-	UpdateDeltaQ( 
-		buffers.damped, 
-		buffers.gradient, 
-		state.joints, 
+	UpdateDeltaQ(
+		buffers.damped,
+		buffers.gradient,
+		state.joints,
 		buffers.weighted_jacobian,
 		buffers.jacobian_psi,
 		buffers.dq );
@@ -420,21 +467,21 @@ void DLSKinematicsSolver::PerformIteration(
 
 	PrintIteration( state, buffers );
 
-	if ( error < state.error_reachable )
+	if ( state.error_reachable - error > parameters_.error_tolerance )
 	{
 		state.joints = buffers.joints;
 		state.error = buffers.weighted_error.norm();
 		state.error_reachable = buffers.weighted_error_reachable.norm();
-		state.error_unreachable = ( buffers.weighted_error - buffers.weighted_error_reachable ).norm();
-	
+		state.error_unreachable = UnreachableError( state.error, state.error_reachable );
+
 		state.gradient = buffers.gradient.norm();
-		
+
 		state.fk_failures = 0;
 		state.stalled_error_iter = 0;
 		state.damping = AdaptativeDamping::LinearDamping(
-			state.damping, 
-			parameters_.min_damping, 
-			parameters_.max_damping, 
+			state.damping,
+			parameters_.min_damping,
+			parameters_.max_damping,
 			0.5 );
 
 		PrintBuffer( buffers );
@@ -443,9 +490,9 @@ void DLSKinematicsSolver::PerformIteration(
 	else
 	{
 		state.damping = AdaptativeDamping::LinearDamping(
-			state.damping, 
-			parameters_.min_damping, 
-			parameters_.max_damping, 
+			state.damping,
+			parameters_.min_damping,
+			parameters_.max_damping,
 			4 );
 		buffers = state_buffers;
 	}
@@ -458,13 +505,14 @@ void DLSKinematicsSolver::LineSearch(
 	IterationState& state,
 	SolverBuffers& buffers ) const
 {
-	assert( parameters_.line_search_factor < 1.0 && parameters_.line_search_factor > 0.0 );
+	assert( parameters_.line_search_factor< 1.0 && parameters_.line_search_factor >0.0 );
 	double step = parameters_.max_step;
 
-	while ( buffers.weighted_error_reachable.norm() >= state.error_reachable && 
-			step >= parameters_.min_step )
+	while ( buffers.weighted_error_reachable.norm() >= state.error_reachable &&
+	        step >= parameters_.min_step )
 	{
 		buffers.joints = state.joints + step * buffers.dq;
+		WrapJoints( buffers.joints );
 
 		if ( !UpdateBuffer( target, buffers.joints, buffers ) )
 		{
@@ -481,30 +529,53 @@ void DLSKinematicsSolver::LineSearch(
 
 // ------------------------------------------------------------
 
+void DLSKinematicsSolver::WrapJoints( VecXd& joints ) const
+{
+	const auto& active_joints = joint_chain_->GetActiveJoints();
+	for ( size_t i = 0; i < active_joints.size(); i++ )
+	{
+		const auto joint = active_joints[i];
+		const auto& limits = joint->GetLimits();
+		if ( joint->IsRevolute() && limits.Span() >= 3 * M_PI / 2 )
+		{
+			if ( joints[i] > limits.Max() )
+			{
+				joints[i] = limits.Min() + ( joints[i] - limits.Max() );
+			}
+			else if ( joints[i] < limits.Min() )
+			{
+				joints[i] = limits.Max() - ( limits.Min() - joints[i] );
+			}
+		}
+	}
+}
+
+// ------------------------------------------------------------
+
 void DLSKinematicsSolver::PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const
 {
-	std::cout 
-		<< "step      = " << state.step << std::endl 
-		<< "damping   = " << state.damping << std::endl
-		<< "Sjoints   = " << state.joints.transpose() << std::endl
-		<< "dq        = " << buffers.dq.transpose() << std::endl
-		<< "Bjoints   = " << buffers.joints.transpose() << std::endl
-		<< "gradient  = " << buffers.gradient.transpose() << std::endl
-		<< "Rerror     = " << buffers.weighted_error_reachable.transpose() << std::endl
-		<< "Rerror norm= " << buffers.weighted_error_reachable.norm() << std::endl
-		<< "error norm= " << buffers.weighted_error.norm() << std::endl;
+	std::cout
+	    << "step      = " << state.step << std::endl
+	    << "damping   = " << state.damping << std::endl
+	    << "Sjoints   = " << state.joints.transpose() << std::endl
+	    << "dq        = " << buffers.dq.transpose() << std::endl
+	    << "Bjoints   = " << buffers.joints.transpose() << std::endl
+	    << "gradient  = " << buffers.gradient.transpose() << std::endl
+	    << "Rerror     = " << buffers.weighted_error_reachable.transpose() << std::endl
+	    << "Rerror norm= " << buffers.weighted_error_reachable.norm() << std::endl
+	    << "error norm= " << buffers.weighted_error.norm() << std::endl;
 }
 
 // ------------------------------------------------------------
 
 void DLSKinematicsSolver::PrintState( const IterationState& state ) const
 {
-	std::cout 
-		<< "State" << std::endl
-		<< "Werror  = " << state.error << std::endl
-		<< "Rerror  = " << state.error_reachable << std::endl
-		<< "Uerror  = " << state.error_unreachable << std::endl
-		<< "Gradient= " << state.gradient << std::endl;
+	std::cout
+	    << "State" << std::endl
+	    << "Werror  = " << state.error << std::endl
+	    << "Rerror  = " << state.error_reachable << std::endl
+	    << "Uerror  = " << state.error_unreachable << std::endl
+	    << "Gradient= " << state.gradient << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -512,11 +583,11 @@ void DLSKinematicsSolver::PrintState( const IterationState& state ) const
 void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
 {
 	std::cout
-		<< "Buffer" << std::endl
-		<< "WJac  =" << std::endl << buffers.weighted_jacobian << std::endl
-		<< "Joints= " << buffers.joints.transpose() << std::endl
-		<< "Werror= " << buffers.weighted_error.transpose() << std::endl
-		<< "Rerror= " << buffers.weighted_error_reachable.transpose() << std::endl;
+	    << "Buffer" << std::endl
+	    << "WJac  =" << std::endl << buffers.weighted_jacobian << std::endl
+	    << "Joints= " << buffers.joints.transpose() << std::endl
+	    << "Werror= " << buffers.weighted_error.transpose() << std::endl
+	    << "Rerror= " << buffers.weighted_error_reachable.transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -524,37 +595,21 @@ void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
 bool DLSKinematicsSolver::UpdateBuffer(
 	const Mat4d& target,
 	const VecXd& joints,
-	SolverBuffers& buffers ) const 
+	SolverBuffers& buffers ) const
 {
-	if ( !ForwardKinematic( joints, buffers.fk ) ) return false;
+	if ( !ForwardKinematic( joints, buffers.fk ) )
+		return false;
 
 	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
 	PoseError( target, buffers.fk, buffers.error );
 	WeightedPoseError( buffers.error, parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt(), buffers.weighted_error );
 	WeightedJacobian( buffers.jacobian, buffers.weights, buffers.weighted_jacobian );
 	JacobianSVD( buffers.weighted_jacobian, buffers.svd );
+	PseudoInverse( buffers.svd, parameters_.min_sv_tolerance, buffers.jacobian_psi );
 	ReachableError( buffers.svd, buffers.weighted_error, parameters_.min_sv_tolerance, buffers.weighted_error_reachable );
 	Gradient( buffers.weighted_jacobian, buffers.weighted_error_reachable, buffers.gradient );
-	JacobianPSI( buffers.svd, buffers.jacobian_psi );
 
 	return true;
-}
-
-// ------------------------------------------------------------
-
-void DLSKinematicsSolver::JacobianPSI( 
-	const Eigen::JacobiSVD< MatXd >& svd, MatXd& 
-	jacobian_psi ) const 
-{
-	auto singularValues = svd.singularValues();
-	Eigen::VectorXd invertedSingularValues = Eigen::VectorXd::Zero(singularValues.size());
-
-	double threshold = parameters_.min_sv_tolerance; 
-	for (int i = 0; i < singularValues.size(); ++i)
-    	if (singularValues(i) > threshold)
-        	invertedSingularValues(i) = 1.0 / singularValues(i);
-
-	jacobian_psi = svd.matrixV() * invertedSingularValues.asDiagonal() * svd.matrixU().transpose();
 }
 
 // ------------------------------------------------------------
@@ -593,14 +648,15 @@ void DLSKinematicsSolver::UpdateDeltaQSecondary(
 	const MatXd& jacobian_psi,
 	VecXd& dq ) const
 {
-    MatXd N = MatXd::Identity(joints.size(), joints.size()) - jacobian_psi * jacobian;
+	MatXd N = MatXd::Identity( joints.size(), joints.size() ) - jacobian_psi * jacobian;
 	VecXd centering{ joints.size() };
-	auto joint_centers = joint_chain_->ActiveJointCenters();
+	const auto& active_joints = joint_chain_->GetActiveJoints();
 	for ( int i = 0; i < joints.size(); i++ )
 	{
-		centering[i] = 0.05 * ( joint_centers[i] - joints[i] );
+		const auto& joint_limit = active_joints[i]->GetLimits();
+		centering[i] =  ( joints[i] - joint_limit.Center() ) / pow( joint_limit.Span(), 2 );
 	}
-	dq.noalias() = N * centering;
+	dq.noalias() = -0.005 * N * centering;
 }
 
 // ------------------------------------------------------------
@@ -624,7 +680,7 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 	VecXd dq_primary = VecXd::Zero( joints.size() );
 	VecXd dq_secondary = VecXd::Zero( joints.size() );
 	UpdateDeltaQPrimary( damped, gradient, dq_primary );
-	//UpdateDeltaQSecondary( joints, jacobian, jacobian_psi, dq_secondary );
+	UpdateDeltaQSecondary( joints, jacobian, jacobian_psi, dq_secondary );
 
 	dq.noalias() = dq_primary + dq_secondary;
 
@@ -643,8 +699,9 @@ NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 	}
 
 	if ( state.error_reachable < parameters_.error_tolerance &&
-	     state.error_unreachable > parameters_.error_tolerance && 
-		 state.gradient < parameters_.gradient_tolerance )
+	     state.error_unreachable > parameters_.error_tolerance &&
+	     state.gradient < parameters_.gradient_tolerance &&
+	     state.stalled_error_iter > 0 )
 	{
 		return NumericSolverState::BestPossible;
 	}
@@ -654,12 +711,16 @@ NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 		return NumericSolverState::MaxIterations;
 	}
 
+	double unreachable_ratio = state.error_unreachable / state.error;
+	double reachable_ratio = state.error_reachable / state.error;
+
 	if ( ( state.gradient < parameters_.gradient_tolerance &&
 	       state.error_reachable > parameters_.error_tolerance ) ||
-		 ( state.error_unreachable / state.error > 0.5 ) ||
-		 ( state.stalled_error_iter > 0 && state.damping >= parameters_.max_damping && state.step <= parameters_.min_step ) ||
+	     ( unreachable_ratio  > 0.75 ) ||
+	     ( unreachable_ratio  > 0.5 && reachable_ratio < 0.5 ) ||
+	     ( state.stalled_error_iter > 0 && state.damping >= parameters_.max_damping && state.step <= parameters_.min_step ) ||
 	     ( state.stalled_error_iter >= parameters_.max_stalle_iterations ) ||
-		 ( state.error > LargeError() && state.stalled_error_iter > 0 ) ||
+	     ( state.error > LargeError() && state.stalled_error_iter > 0 ) ||
 	     ( state.fk_failures >= 1 ) )
 	{
 		return NumericSolverState::Stalled;

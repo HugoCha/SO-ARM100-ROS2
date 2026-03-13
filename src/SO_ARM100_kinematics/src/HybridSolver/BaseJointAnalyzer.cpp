@@ -32,7 +32,7 @@ std::optional< BaseJointModel > BaseJointAnalyzer::Analyze(
 	{
 		auto wrist_joint = joint_chain.GetActiveJoint( wrist_model->active_joint_start );
 		auto previous_wrist_joint = joint_chain.GetPreviousJoint( wrist_joint );
-		
+
 		if ( !previous_wrist_joint )
 			return std::nullopt;
 

@@ -14,7 +14,7 @@ namespace SOArm100::Kinematics
 {
 class JointChain;
 
-class BaseJointSolver : 
+class BaseJointSolver :
 	public IKinematicsSolver,
 	public IKinematicsHeuristic
 {
@@ -44,15 +44,15 @@ std::shared_ptr< const Mat4d > home_configuration_;
 
 BaseJointModelUniqueConstPtr base_joint_model_;
 
-SolverResult SolverAnalytical(	
+SolverResult SolverAnalytical(
 	const Mat4d& wrist_center,
 	const std::span< const double >& seed_joints ) const;
 const Joint* GetBaseJoint() const;
 
-bool ValidateAndSelectJoint( 
-	const Joint* base_joint, 
-	double seed, 
-	double theta1, 
+bool ValidateAndSelectJoint(
+	const Joint* base_joint,
+	double seed,
+	double theta1,
 	double& selection ) const;
 };
 }

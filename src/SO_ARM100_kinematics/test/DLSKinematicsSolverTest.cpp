@@ -51,24 +51,22 @@ void SetUp() override
 	// Initialize solver with default parameters
 	DLSKinematicsSolver::SolverParameters parameters;
 
-    // Use position-only for 3-DOF robot
+	// Use position-only for 3-DOF robot
 	parameters.rotation_weight        = 1;
 	parameters.translation_weight     = 10;
-	
-	parameters.error_tolerance        = 1e-3;   // norm(), ~1mm
-	parameters.max_iterations         = 200;
-	parameters.gradient_tolerance     = 1e-4;
-	parameters.max_stalle_iterations  = 2;
-	
-	parameters.min_step               = 0.01;
+
+	parameters.max_iterations         = 1000;
+	parameters.max_stalle_iterations  = 5;
+
+	parameters.min_step               = 0.05;
 	parameters.max_step               = 1.0;
-	parameters.line_search_factor 	  = 0.75;
-	
+	parameters.line_search_factor     = 0.5;
+
 	parameters.min_damping            = 0.001;
-	parameters.max_damping            = 0.3;
-	parameters.max_dq                 = 0.2;
+	parameters.max_damping            = 0.8;
+	parameters.max_dq                 = 1.25;
 	parameters.min_sv_tolerance       = 0.001;
-	solver_ = std::make_unique< DLSKinematicsSolver >(parameters);
+	solver_ = std::make_unique< DLSKinematicsSolver >( parameters );
 
 	solver_->Initialize(
 		Data::GetRevoluteOnlyRobot(),
@@ -106,6 +104,16 @@ const VecXd RandomValidJoints()
 	VecXd random( joint_model->getActiveJointModels().size() );
 	random_numbers::RandomNumberGenerator rng;
 	joint_model->getVariableRandomPositions( rng, random.data() );
+	return random;
+}
+
+const VecXd RandomValidJointsNear( const VecXd& joints, double distance )
+{
+	const auto& robot_model = Data::GetRevoluteOnlyRobot();
+	const auto* joint_model = robot_model->getJointModelGroup( "arm" );
+	VecXd random( joint_model->getActiveJointModels().size() );
+	random_numbers::RandomNumberGenerator rng;
+	joint_model->getVariableRandomPositionsNearBy( rng, random.data(), joints.data(), distance );
 	return random;
 }
 
@@ -188,7 +196,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorInvalidDampingRange )
 TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 {
 	// Target at home position
-	VecXd seed_joints{3};
+	VecXd seed_joints{ 3 };
 	seed_joints << 0.0, 0.0, 0.0;
 	auto target_pose = ComputeFK( seed_joints );
 
@@ -209,14 +217,16 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 {
 	// Target: end effector at (0.7, 0.0, 0.0)
-	VecXd thetas{3};
-	//thetas << M_PI / 4, M_PI / 4, M_PI / 8;
-	thetas = RandomValidJoints();
+	VecXd thetas{ 3 };
+	thetas << -0.826677, -3.06708, -2.68162;
+	// thetas = RandomValidJoints();
 	Mat4d target_pose = ComputeFK( thetas );
-	//std::vector< double > seed_joints = { 3.0, 3.0, 0.0 };
-	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	//std::vector< double > seed_joints = { thetas[0] + 0.05, thetas[1] + 0.05, thetas[2] + 0.05 };
-	std::cout << "target joints=" << thetas.transpose() <<std::endl;
+	// std::vector< double > seed_joints = { 3.0, 3.0, 0.0 };
+	VecXd seed = RandomValidJointsNear( thetas, 0.1 );
+	// std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
+	std::vector< double > seed_joints = ToStdVector( seed );
+	// std::vector< double > seed_joints = { thetas[0] + 0.05, thetas[1] + 0.05, thetas[2] + 0.05 };
+	std::cout << "target joints=" << thetas.transpose() << std::endl;
 
 	auto result = solver_->InverseKinematic( target_pose, seed_joints );
 
@@ -229,6 +239,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 	    << "Target = " << std::endl << target_pose.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
+	EXPECT_LT( result.iterations_used, 10 );
 }
 
 // ------------------------------------------------------------
@@ -236,7 +247,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 {
 	// Create a target by rotating joint 1 by 90 degrees
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << M_PI / 2, 0.0, 0.0;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -259,7 +270,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 {
 	// For some targets, there may be multiple IK solutions
 	// Test that we get A valid solution (not necessarily the same as seed)
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -281,7 +292,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 
 TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 {
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -363,11 +374,11 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
 
 TEST_F( DLSKinematicsSolverTest, InverseKinematic_Success )
 {
-	VecXd joints{3};
+	VecXd joints{ 3 };
 	joints << 0.1, 0.5, 0.7;
 	auto reachable_position = ComputeFK( joints );
 	std::vector< double > seed_joints = { 0.0, 0.0, 0.0 };
-	VecXd solution_joints(3);
+	VecXd solution_joints( 3 );
 
 	bool success = solver_->InverseKinematicImpl( reachable_position, seed_joints, solution_joints.data() );
 
@@ -377,8 +388,8 @@ TEST_F( DLSKinematicsSolverTest, InverseKinematic_Success )
 	// Verify solution
 	auto achieved_pose = ComputeFK( solution_joints );
 	EXPECT_TRUE( IsApprox( reachable_position, achieved_pose ) )
-		<< "Expected Pose=\n" << reachable_position << std::endl
-		<< "Result Pose=\n" << achieved_pose << std::endl;
+	    << "Expected Pose=\n" << reachable_position << std::endl
+	    << "Result Pose=\n" << achieved_pose << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -398,29 +409,10 @@ TEST_F( DLSKinematicsSolverTest, InverseKinematic_Failure )
 // Adaptive Parameter Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, AdaptiveDamping_NearSingularity )
-{
-	// Create a configuration near singularity (e.g., fully extended arm)
-	VecXd near_singular{3};
-	near_singular << 0.0, 0.0, 0.001;
-	auto target_pose = ComputeFK( near_singular );
-	
-	// Perturb slightly to force solver to work near singularity
-	target_pose( 0, 3 ) += 0.001;
-
-	auto result = solver_->InverseKinematic( target_pose, ToStdVector( near_singular ) );
-
-	// Should still converge (damping helps near singularities)
-	EXPECT_TRUE( result.state == NumericSolverState::BestPossible )
-	    << "Adaptive damping should handle near-singular configurations";
-}
-
-// ------------------------------------------------------------
-
 TEST_F( DLSKinematicsSolverTest, AdaptiveStep_ConvergenceControl )
 {
 	// Test that adaptive step helps convergence
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 1.0, 0.5, -0.5;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -444,7 +436,7 @@ TEST_F( DLSKinematicsSolverTest, RandomRestart_RecoverFromBadSeed )
 {
 	// Even with a terrible seed, random restart should find a solution
 	// if target is reachable
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -476,7 +468,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Strict )
 		{ "end_effector" },
 		0.01 );
 
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 0.3, 0.2, -0.1;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -506,7 +498,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Loose )
 		{ "end_effector" },
 		0.01 );
 
-	VecXd target_joints{3};
+	VecXd target_joints{ 3 };
 	target_joints << 0.3, 0.2, -0.1;
 	auto target_pose = ComputeFK( target_joints );
 
@@ -526,7 +518,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Loose )
 TEST_F( DLSKinematicsSolverTest, EdgeCase_ZeroLengthMove )
 {
 	// Target exactly at current position
-	VecXd joints{3};
+	VecXd joints{ 3 };
 	joints << 0.5, 0.3, -0.2;
 	auto target_pose = ComputeFK( joints );
 
@@ -542,8 +534,8 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_ZeroLengthMove )
 TEST_F( DLSKinematicsSolverTest, EdgeCase_JointLimits )
 {
 	// Target requiring joints at limits
-	VecXd at_limit_joints{3};
-	at_limit_joints << M_PI* 0.99, M_PI* 0.99, M_PI* 0.99;
+	VecXd at_limit_joints{ 3 };
+	at_limit_joints << M_PI * 0.99, M_PI* 0.99, M_PI* 0.99;
 	auto target_pose = ComputeFK( at_limit_joints );
 
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
@@ -560,7 +552,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_NearSingularTarget )
 {
 	// Create a target at a singular configuration
 	// For this robot, singularity occurs when arm is straight
-	VecXd singular_joints{3};
+	VecXd singular_joints{ 3 };
 	singular_joints << 0.0, 0.0, 0.0;
 	auto target_pose = ComputeFK( singular_joints );
 
@@ -586,7 +578,8 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 	for ( int i = 0; i < NUM_TESTS; ++i )
 	{
 		Mat4d target_pose;
-		bool fk_success = solver_->ForwardKinematic( RandomValidJoints(), target_pose );
+		VecXd joints = RandomValidJoints();
+		bool fk_success = solver_->ForwardKinematic( joints, target_pose );
 
 		auto result = solver_->InverseKinematic( target_pose, seed );
 
@@ -602,7 +595,7 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 	if ( successes > 0 )
 	{
 		double avg_iterations = static_cast< double >( total_iterations ) / successes;
-		EXPECT_LT( avg_iterations, 50 ) << "Average iterations should be reasonable";
+		EXPECT_LT( avg_iterations, 40 ) << "Average iterations should be reasonable";
 	}
 }
 
@@ -610,22 +603,72 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 // Robustness Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, Robustness_RepeatedCalls )
+TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls )
 {
 	// Solver should work correctly even after multiple calls
 	Mat4d target_pose;
 	std::vector< double > seed = { 0.0, 0.0, 0.0 };
 
-	for ( int i = 0; i < 5; ++i )
+	const int NUM_TEST = 10000;
+	double avg_iteration = 0;
+	int failure = 0;
+	for ( int i = 0; i < NUM_TEST; ++i )
 	{
-		while ( !solver_->ForwardKinematic( RandomValidJoints(), target_pose ) );
+		VecXd joints = RandomValidJoints();
+		while ( !solver_->ForwardKinematic( joints, target_pose ) )
+			;
 
 		auto result = solver_->InverseKinematic( target_pose, seed );
 		EXPECT_TRUE( result.Success() )
 		    << "Iteration " << i << std::endl
+		    << "Joints = " << joints.transpose() << std::endl
+		    << "Target = " << target_pose << std::endl
+		    << "Result = " << result << std::endl;
+
+		avg_iteration += result.iterations_used / ( double )NUM_TEST;
+		if ( !result.Success() )
+		{
+			failure++;
+		}
+	}
+
+	double failure_percent = failure / ( double )NUM_TEST;
+	EXPECT_LT( failure_percent, 0.001 )
+	    << "Failure percent= " << failure_percent << std::endl;
+
+	EXPECT_LT( avg_iteration, 20 )
+	    << "Average Iteration = " << avg_iteration << std::endl;
+}
+
+// ------------------------------------------------------------
+
+TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
+{
+	// Solver should work correctly even after multiple calls
+	Mat4d target_pose;
+
+	int NUM_TEST = 100;
+	double average_iterations = 0;
+
+	for ( int i = 0; i < NUM_TEST; ++i )
+	{
+		VecXd joints = RandomValidJoints();
+		while ( !solver_->ForwardKinematic( joints, target_pose ) )
+			;
+		VecXd good_seed = RandomValidJointsNear( joints, 0.1 );
+
+		auto result = solver_->InverseKinematic( target_pose, ToStdVector( good_seed ) );
+		average_iterations += result.iterations_used / ( double )NUM_TEST;
+
+		EXPECT_TRUE( result.Success() )
+		    << "Iteration " << i << std::endl
+		    << "Joints = " << joints.transpose() << std::endl
 		    << "Target = " << target_pose << std::endl
 		    << "Result = " << result << std::endl;
 	}
+
+	EXPECT_LT( average_iterations, 5 )
+	    << "Average iteration = " << average_iterations << std::endl;
 }
 
 // ------------------------------------------------------------

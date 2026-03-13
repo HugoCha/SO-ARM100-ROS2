@@ -23,10 +23,10 @@ std::unique_ptr< IKinematicsSolver > HybridSolverFactory::Get(
 	std::shared_ptr< const Mat4d > home_configuration,
 	const HybridSolverConfiguration& configuration )
 {
-    if ( !joint_chain || !home_configuration )
-    {
-        throw std::invalid_argument("Arguments should not be null");
-    }
+	if ( !joint_chain || !home_configuration )
+	{
+		throw std::invalid_argument( "Arguments should not be null" );
+	}
 	switch ( configuration.solver_flags )
 	{
 	case HybridSolverFlags::Base:

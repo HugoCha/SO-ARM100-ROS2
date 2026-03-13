@@ -11,7 +11,7 @@ namespace SOArm100::Kinematics
 {
 enum class HybridSolverFlags : u_int8_t
 {
-    None    = 0,
+	None    = 0,
 	Base    = 1 << 0,
 	Wrist   = 1 << 1,
 	Numeric = 1 << 2,
@@ -46,6 +46,6 @@ struct HybridSolverConfiguration
 	std::optional< BaseJointModel > base_joint_model{ std::nullopt };
 	std::optional< NumericJointsModel > numeric_joints_model{ std::nullopt };
 	std::optional< WristModel > wrist_model{ std::nullopt };
-	HybridSolverFlags solver_flags{HybridSolverFlags::None};
+	HybridSolverFlags solver_flags{ HybridSolverFlags::None };
 };
 }

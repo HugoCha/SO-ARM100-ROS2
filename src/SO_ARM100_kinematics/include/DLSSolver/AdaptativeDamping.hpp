@@ -13,21 +13,21 @@ static double LinearDamping(
 	double min_damping,
 	double max_damping,
 	double alpha
-);
+	);
 
 static double ManipulabilityDeterminant(
 	const MatXd& jacobian,
 	double min_damping,
 	double max_damping,
 	double epsilon
-);
+	);
 
 static double ManipulabilityTrace(
 	const MatXd& jacobian,
 	double min_damping,
 	double max_damping,
 	double epsilon
-);
+	);
 
 static double ManipulabilityMinSV(
 	SolverType type,
@@ -47,15 +47,15 @@ static double ManipulabilityMinSV(
 	double min_sv_tolerance );
 
 static double ManipulabilityMinSVPosition(
-    const MatXd& jacobian,
+	const MatXd& jacobian,
 	double damping,
 	double min_damping,
 	double max_damping,
 	double min_sv_tolerance );
 
 static double ManipulabilityMinSVOrientation(
-    const MatXd& jacobian,
-    const VecXd& error,
+	const MatXd& jacobian,
+	const VecXd& error,
 	double damping,
 	double min_damping,
 	double max_damping,
