@@ -87,7 +87,6 @@ struct SolverBuffers {
 	MatXd jacobian_psi;
 	MatXd weighted_jacobian;
 	Eigen::JacobiSVD< MatXd > svd;
-	Vec6d error;
 	VecXd weighted_error;
 	VecXd weighted_error_reachable;
 	MatXd damped;
@@ -246,8 +245,6 @@ mutable random_numbers::RandomNumberGenerator rng_;
 	double distance,
 	double margin_percent ) const noexcept;
 
-
-
 void PerformIteration(
 	const Mat4d& target,
 	IterationState& state,
@@ -297,7 +294,7 @@ void UpdateDeltaQ(
 	const MatXd& jacobian_psi,
 	VecXd& dq ) const;
 
-void ClampDeltaQ( const VecXd& joints, VecXd& dq ) const;
+void ClampDeltaQ( VecXd& dq ) const;
 
 void UpdateErrorConvergence(
 	double last_error,
@@ -316,6 +313,7 @@ void UpdateSeedParameters(
 
 void PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const;
 void PrintState( const IterationState& state ) const;
+void PrintHistory( const SolverHistory& history ) const;
 void PrintBuffer( const SolverBuffers& buffers ) const;
 
 [[nodiscard]] double UnreachableError( double error, double error_reachable ) const noexcept {

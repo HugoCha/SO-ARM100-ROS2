@@ -141,12 +141,29 @@ void TearDown() override
 {
 }
 
+const VecXd RandomValidJoints( double margin_percent )
+{
+	VecXd random( joint_chain_->GetActiveJointCount() );
+	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
+		joint_chain_->GetActiveJointLimits( i ).Random( rng_, & random.data()[i], margin_percent );
+	return random;
+}
+
+const VecXd RandomValidJointsNear( const VecXd& joints, double distance, double margin_percent )
+{
+	VecXd random( joint_chain_->GetActiveJointCount() );
+	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
+		joint_chain_->GetActiveJointLimits( i ).RandomNear( rng_, joints[i], & random.data()[i], distance, margin_percent );
+	return random;
+}
+
 std::shared_ptr< JointChain > joint_chain_;
 std::shared_ptr< Mat4d > home_configuration_;
 BaseJointModel base_model_;
 NumericJointsModel numeric_model_;
 WristModel wrist_model_;
 std::unique_ptr< BaseNumericWristSolver > solver_;
+random_numbers::RandomNumberGenerator rng_;
 };
 
 // ------------------------------------------------------------
@@ -157,12 +174,13 @@ TEST_F( BaseNumericWristSolverTest, IK_Success )
 	// Create a target pose
 	Mat4d target_pose;
 	VecXd joints( 6 );
-	joints << M_PI / 4, M_PI / 2, M_PI / 2, M_PI / 8, M_PI / 8, 0;
-	// joints << 0,0,0, 0, 0, 0;
+	joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
+	//joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0, 0, 0;
+    //joints = RandomValidJoints( 0.05 );
 	POE( *joint_chain_, *home_configuration_, joints, target_pose );
 
 	// Seed joints
-	std::vector< double > seed_joints{ 0.1, 0.1, 0.1, 0, 0, 0 };
+	std::vector< double > seed_joints{ 0., 0., 0., 0, 0, 0 };
 
 	// Solve IK
 	SolverResult result = solver_->IK( target_pose, seed_joints, 0.01 );

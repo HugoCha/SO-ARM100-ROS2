@@ -6,7 +6,6 @@
 #include "HybridSolver/NumericJointsModel.hpp"
 #include "SolverType.hpp"
 
-#include <iostream>
 #include <memory>
 
 namespace SOArm100::Kinematics
@@ -70,15 +69,15 @@ DLSKinematicsSolver::SolverParameters NumericJointsSolver::InitializeParameters(
 		parameters.error_tolerance = rotation_tolerance;
 		parameters.rotation_weight = 1.0;
 		parameters.translation_weight = 0;
-		parameters.max_iterations = 200;
+		parameters.max_iterations = 50;
 		parameters.max_dq = n_joints * 20 * M_PI / 180;
 		break;
 	case SolverType::Position:
 		parameters.error_tolerance = translation_tolerance;
-		parameters.rotation_weight = 0;
+		parameters.rotation_weight = 0.0;
 		parameters.translation_weight = 1.0;
-		parameters.max_iterations = 200;
-		parameters.max_dq = n_joints * 20 * M_PI / 180;
+		parameters.max_iterations = 50;
+		parameters.max_dq = n_joints * 10 * M_PI / 180;
 		break;
 	case SolverType::Full:
 		parameters.error_tolerance = error_tolerance;

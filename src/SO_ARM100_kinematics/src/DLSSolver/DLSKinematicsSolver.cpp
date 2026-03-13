@@ -508,8 +508,7 @@ void DLSKinematicsSolver::LineSearch(
 	assert( parameters_.line_search_factor< 1.0 && parameters_.line_search_factor >0.0 );
 	double step = parameters_.max_step;
 
-	while ( buffers.weighted_error_reachable.norm() >= state.error_reachable &&
-	        step >= parameters_.min_step )
+	do
 	{
 		buffers.joints = state.joints + step * buffers.dq;
 		WrapJoints( buffers.joints );
@@ -523,6 +522,8 @@ void DLSKinematicsSolver::LineSearch(
 		if ( buffers.weighted_error_reachable.norm() >= state.error_reachable )
 			step *= parameters_.line_search_factor;
 	}
+	while ( buffers.weighted_error_reachable.norm() >= state.error_reachable &&
+	        step >= parameters_.min_step );
 
 	state.step = step;
 }
@@ -592,6 +593,15 @@ void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
 
 // ------------------------------------------------------------
 
+void DLSKinematicsSolver::PrintHistory( const SolverHistory& history ) const
+{
+	std::cout << "History: best error = " << history.best_error 
+			  << " restart idx = " << history.last_improvement_restart_index
+			  << " restart cnt = " << history.restart_counter << std::endl;
+}
+
+// ------------------------------------------------------------
+
 bool DLSKinematicsSolver::UpdateBuffer(
 	const Mat4d& target,
 	const VecXd& joints,
@@ -601,8 +611,7 @@ bool DLSKinematicsSolver::UpdateBuffer(
 		return false;
 
 	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
-	PoseError( target, buffers.fk, buffers.error );
-	WeightedPoseError( buffers.error, parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt(), buffers.weighted_error );
+	WeightedPoseError( target, buffers.fk, parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt(), buffers.weighted_error );
 	WeightedJacobian( buffers.jacobian, buffers.weights, buffers.weighted_jacobian );
 	JacobianSVD( buffers.weighted_jacobian, buffers.svd );
 	PseudoInverse( buffers.svd, parameters_.min_sv_tolerance, buffers.jacobian_psi );
@@ -661,7 +670,7 @@ void DLSKinematicsSolver::UpdateDeltaQSecondary(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::ClampDeltaQ( const VecXd& joints, VecXd& dq ) const
+void DLSKinematicsSolver::ClampDeltaQ( VecXd& dq ) const
 {
 	if ( dq.norm() >= parameters_.max_dq )
 		dq *= parameters_.max_dq / dq.norm();
@@ -684,7 +693,7 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 
 	dq.noalias() = dq_primary + dq_secondary;
 
-	ClampDeltaQ( joints, dq );
+	ClampDeltaQ( dq );
 }
 
 // ------------------------------------------------------------

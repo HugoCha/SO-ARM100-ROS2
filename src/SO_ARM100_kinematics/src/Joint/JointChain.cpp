@@ -85,10 +85,6 @@ bool JointChain::WithinLimits( const VecXd& joints ) const
 	{
 		if ( !active_joints[i]->GetLimits().Within( joints[i] ) )
 		{
-			auto limits = active_joints[i]->GetLimits();
-			std::cout
-			    << "Joint = " << joints[i] << std::endl
-			    << "Limits = " << limits.Min() << ", " << limits.Max() << std::endl;
 			return false;
 		}
 	}

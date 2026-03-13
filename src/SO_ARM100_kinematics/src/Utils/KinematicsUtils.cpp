@@ -164,24 +164,31 @@ void PoseError(
 // ------------------------------------------------------------
 
 void WeightedPoseError(
-	const Vec6d& error,
+	const Mat4d& target, 
+	const Mat4d& current,
 	double rotation_weight,
 	double translation_weight,
-	VecXd& weighted_error ) noexcept
+	VecXd& weighted_error )
 {
-	int weighted_error_size = 6;
-	if ( rotation_weight <= 0 )
-		weighted_error_size -= 3;
-	if ( translation_weight <= 0 )
-		weighted_error_size -= 3;
-	if ( weighted_error.size() != weighted_error_size )
-		weighted_error.resize( weighted_error_size );
+	assert( rotation_weight > 0 || translation_weight > 0 );
+	assert( weighted_error.size() >= 3 && ( rotation_weight <= 0 || translation_weight <= 0 ) ||
+			weighted_error.size() == 6 && rotation_weight > 0 && translation_weight > 0 );
+			
+	weighted_error.setZero();
 
+	Mat4d T_error = target * Inverse( current );
+	
 	if ( rotation_weight > 0 )
-		weighted_error.head( 3 ).noalias() = rotation_weight * error.head( 3 );
-
+	{
+		Eigen::AngleAxisd aa( Rotation( T_error ) );
+		weighted_error.head( 3 ).noalias() = 
+			rotation_weight * ( aa.axis() * aa.angle() );
+	}
 	if ( translation_weight > 0 )
-		weighted_error.tail( 3 ).noalias() = translation_weight * error.tail( 3 );
+	{
+		//weighted_error.tail( 3 ).noalias() = translation_weight * Translation( T_error );
+		weighted_error.tail( 3 ).noalias() = translation_weight * ( Translation( target ) - Translation( current ) );
+	}
 }
 
 // ------------------------------------------------------------
