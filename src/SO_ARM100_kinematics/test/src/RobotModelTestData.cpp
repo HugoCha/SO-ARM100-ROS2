@@ -5,6 +5,7 @@
 #include "Joint/Limits.hpp"
 #include "Joint/Link.hpp"
 #include "Joint/Twist.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
@@ -28,9 +29,6 @@ moveit::core::RobotModelConstPtr revolute_robot_model_;
 moveit::core::RobotModelPtr createRevoluteOnlyRobotModel();
 const std::string createRevoluteOnlySRDFString();
 const std::string createRevoluteOnlyRobotURDF();
-const Mat4d GetRevoluteOnlyRobotT01( double theta1 );
-const Mat4d GetRevoluteOnlyRobotT12( double theta2 );
-const Mat4d GetRevoluteOnlyRobotT23( double theta3 );
 
 // ------------------------------------------------------------
 
@@ -207,8 +205,10 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	Vec3d point1( 0, 0, 0 );          // Origine
 	Twist twist1( axis1, point1 );
 
-	Mat4d origin1 = Mat4d::Identity();
-	Link link1( origin1 );
+	Vec3d origin1 = Vec3d(0.0,0,0.0 );
+	Vec3d origin2 = Vec3d(0.5,0,0.0 );
+	Vec3d origin3 = Vec3d(1.0,0,0.0 );
+	Link link1( ToTransformMatrix( origin1 ), 0.5 );
 
 	Limits limits1( -M_PI, M_PI );
 
@@ -220,9 +220,7 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	Vec3d point2( 0.5, 0, 0 );        // Position à home
 	Twist twist2( axis2, point2 );
 
-	Mat4d origin2 = Mat4d::Identity();
-	origin2( 0, 3 ) = 0.5;
-	Link link2( origin2 );
+	Link link2( ToTransformMatrix( origin2 ), 0.5 );
 
 	Limits limits2( -M_PI, M_PI );
 
@@ -234,9 +232,7 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	Vec3d point3( 1.0, 0, 0 );        // Position à home
 	Twist twist3( axis3, point3 );
 
-	Mat4d origin3 = Mat4d::Identity();
-	origin3( 0, 3 ) = 1.0;
-	Link link3( origin3 );
+	Link link3( ToTransformMatrix( origin3 ), 0 );
 
 	Limits limits3( -M_PI, M_PI );
 
@@ -291,6 +287,68 @@ MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 
 	J.block< 3, 1 >( 3, 2 ) = z2.cross( pe - p2 );
 
 	return J;
+}
+
+// ------------------------------------------------------------
+
+JointChain Create5DofRobotJointChain()
+{
+	// Create a joint chain with 6 joints: 1 base joint + 2 numeric joints + 3 wrist joints
+	auto joint_chain = JointChain( 6 );
+
+	// Base joint (revolute around Z-axis)
+	Vec3d origin 	  = Vec3d( 0, 0, 0.0 );
+	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
+	Vec3d axis = Vec3d::UnitZ();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI, M_PI )
+		);
+
+	// Numeric joints (2 revolute joints)
+	origin = next_origin;
+	next_origin = Vec3d( 0, 0, 1.0 );
+	axis = Vec3d::UnitY();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI / 2, M_PI / 2 )
+		);
+
+	origin = next_origin;
+	next_origin = Vec3d( 0, 0, 1.5 );
+	axis = Vec3d::UnitY();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI / 2, M_PI / 2 )
+		);
+
+	// Wrist joints (3 revolute joints - spherical wrist)
+	origin = next_origin;
+	axis = Vec3d::UnitX();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI, M_PI )
+		);
+
+	axis = Vec3d::UnitY();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI, M_PI )
+		);
+
+	axis = Vec3d::UnitZ();
+	joint_chain.Add(
+		Twist( axis, origin ),
+		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Limits( -M_PI, M_PI )
+		);
+
+	return joint_chain;
 }
 
 // ------------------------------------------------------------

@@ -1,5 +1,6 @@
 #include "HybridSolver/HybridSolverFactory.hpp"
 
+#include "RobotModelTestData.hpp"
 #include "Joint/JointChain.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/BaseJointSolver.hpp"
@@ -19,54 +20,6 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
-// Helper function to create a test joint chain
-// ------------------------------------------------------------
-
-std::shared_ptr< JointChain > CreateTestJointChain()
-{
-	// Create a joint chain with 6 joints
-	auto joint_chain = std::make_shared< JointChain >( 6 );
-
-	// Base joint (revolute around Z-axis)
-	joint_chain->Add(
-		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-
-	// Numeric joints (3 joints)
-	joint_chain->Add(
-		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI / 2, M_PI / 2 )
-		);
-	joint_chain->Add(
-		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 1.0 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI / 2, M_PI / 2 )
-		);
-	joint_chain->Add(
-		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1.5 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-
-	// Wrist joints (2 joints)
-	joint_chain->Add(
-		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.5 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-	joint_chain->Add(
-		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 1.5 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-
-	return joint_chain;
-}
-
-// ------------------------------------------------------------
 // ------------------------------------------------------------
 
 class HybridSolverFactoryTest : public ::testing::Test
@@ -75,7 +28,7 @@ protected:
 void SetUp() override
 {
 	// Create a test joint chain
-	joint_chain_ = CreateTestJointChain();
+	joint_chain_ = std::make_shared< JointChain >( Data::Create5DofRobotJointChain() );
 
 	// Create a home configuration
 	home_configuration_ = std::make_shared< Mat4d >( Mat4d::Identity() );

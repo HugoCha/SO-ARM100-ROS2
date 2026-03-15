@@ -71,8 +71,7 @@ SolverResult BaseNumericWristSolver::IK(
 			buffer_.seed_joints,
 			discretization );
 	buffer_.seed_joints[0] = buffer_.base_result.joints[0];
-
-
+	
 	// Intermediate joint Heuristic for Full solver
 	Mat4d T_base;
 	base_joint_presolver_->FK( buffer_.base_result.joints, T_base );
@@ -84,7 +83,7 @@ SolverResult BaseNumericWristSolver::IK(
 	std::copy( buffer_.numeric_result.joints.begin(),
 			buffer_.numeric_result.joints.begin() + buffer_.numeric_result.joints.size(),
 			buffer_.seed_joints.begin() + numeric_presolver_->GetNumericJointsModel()->start_index );
-
+	
 	// Wrist joint Heuristic for Full solver
 	numeric_presolver_->FK( buffer_.numeric_result.joints, buffer_.T_num );
 	buffer_.wrist_target =  Inverse( buffer_.T_num ) * Inverse( T_base ) * target_pose;

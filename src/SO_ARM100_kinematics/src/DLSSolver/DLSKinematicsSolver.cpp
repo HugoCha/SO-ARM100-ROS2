@@ -91,7 +91,7 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
 	{
-		std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
+		// std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
 
 		auto solver_state = EvaluateConvergence( *state, iter );
 
@@ -200,9 +200,9 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 	state.damping = parameters_.min_damping;
 	state.fk_failures = 0;
 
-	std::cout << "Initial state" << std::endl;
-	PrintBuffer( buffers_ );
-	PrintState( state );
+	// std::cout << "Initial state" << std::endl;
+	// PrintBuffer( buffers_ );
+	// PrintState( state );
 
 	return state;
 }
@@ -465,7 +465,7 @@ void DLSKinematicsSolver::PerformIteration(
 	const double error = buffers.weighted_error_reachable.norm();
 	UpdateErrorConvergence( state.error_reachable, error, state );
 
-	PrintIteration( state, buffers );
+	// PrintIteration( state, buffers );
 
 	if ( state.error_reachable - error > parameters_.error_tolerance )
 	{
@@ -484,8 +484,8 @@ void DLSKinematicsSolver::PerformIteration(
 			parameters_.max_damping,
 			0.5 );
 
-		PrintBuffer( buffers );
-		PrintState( state );
+		// PrintBuffer( buffers );
+		// PrintState( state );
 	}
 	else
 	{

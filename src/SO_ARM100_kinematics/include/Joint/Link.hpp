@@ -1,28 +1,29 @@
 #pragma once
 
 #include "Global.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics
 {
 class Link
 {
 public:
-Link() :
-	Link( Mat4d::Zero() )
-{
-}
+Link( const Mat4d& origin, double length ) :
+	joint_origin_( origin ),
+	length_( length )
+{}
 
-Link( const Mat4d& joint_origin ) :
-	joint_origin_( joint_origin ),
-	length_( joint_origin_.norm() )
-{
-}
+Link() : 
+	Link( Mat4d::Identity(), 0 ) 
+{}
+
+Link( const Mat4d& origin, const Mat4d& child_origin ) :
+	Link( origin, ( Translation( child_origin ) - Translation( origin ) ).norm() )
+{}
 
 Link( const Link& link ) :
-	joint_origin_( link.joint_origin_ ),
-	length_( link.length_ )
-{
-}
+	Link( link.joint_origin_, link.length_ )
+{}
 
 [[nodiscard]] const Mat4d GetJointOrigin() const {
 	return joint_origin_;

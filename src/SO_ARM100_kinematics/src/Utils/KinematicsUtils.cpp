@@ -168,7 +168,7 @@ void WeightedPoseError(
 	const Mat4d& current,
 	double rotation_weight,
 	double translation_weight,
-	VecXd& weighted_error )
+	VecXd& weighted_error ) noexcept
 {
 	assert( rotation_weight > 0 || translation_weight > 0 );
 	assert( weighted_error.size() >= 3 && ( rotation_weight <= 0 || translation_weight <= 0 ) ||
@@ -186,8 +186,7 @@ void WeightedPoseError(
 	}
 	if ( translation_weight > 0 )
 	{
-		//weighted_error.tail( 3 ).noalias() = translation_weight * Translation( T_error );
-		weighted_error.tail( 3 ).noalias() = translation_weight * ( Translation( target ) - Translation( current ) );
+		weighted_error.tail( 3 ).noalias() = translation_weight * Translation( T_error );
 	}
 }
 
@@ -208,7 +207,9 @@ void ReachableError(
 	VecXd sigma = jacobian_svd.singularValues();
 	MatXd U = jacobian_svd.matrixU();
 	int rank = ( sigma.array() > min_sv_tolerance ).count();
-	reachable_error.noalias() = U.leftCols( rank ) * U.leftCols( rank ).transpose() * error;
+	MatXd U_proj = U.leftCols( rank );
+	VecXd e_proj = U_proj.transpose() * error;
+	reachable_error.noalias() = U_proj * e_proj;
 }
 
 // ------------------------------------------------------------

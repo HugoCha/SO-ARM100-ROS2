@@ -1,5 +1,6 @@
 #include "KinematicsSolver.hpp"
 
+#include "Global.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Twist.hpp"
 #include "Utils/Converter.hpp"
@@ -56,23 +57,28 @@ void KinematicsSolver::Initialize(
 
 	moveit::core::RobotState state( robot_model );
 	state.setToDefaultValues();
+
 	const auto* joint_model_group = robot_model->getJointModelGroup( group_name );
+	const auto& link_models = joint_model_group->getLinkModels();
+	const int n_joints = joint_model_group->getJointModels().size();
 
-	const auto& joint_models = joint_model_group->getJointModels();
+	auto joint_chain = std::make_shared< JointChain >( n_joints );
 
-	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
-	home_configuration_ = std::make_shared< const Mat4d >( home_configuration );
-
-	auto joint_chain = std::make_shared< JointChain >( joint_models.size() );
-
-	for ( const auto* joint_model : joint_models )
+	for ( const auto* link_model : link_models )
 	{
-		const auto& joint_transform =
-			state.getGlobalLinkTransform( joint_model->getChildLinkModel() );
-		Link link( joint_transform.matrix() );
+		const auto* parent_joint = link_model->getParentJointModel();
+		const auto& child_joints = link_model->getChildJointModels();
+	
+		const Iso3d& joint_transform = state.getGlobalLinkTransform( link_model );
+		Iso3d child_transform = joint_transform;
+		if ( !child_joints.empty() )
+		{
+			child_transform = state.getGlobalLinkTransform( child_joints[0]->getChildLinkModel() );
+		}
+		Link link( joint_transform.matrix(), child_transform.matrix() );
 
 		Limits limits;
-		const auto& bounds = joint_model->getVariableBounds();
+		const auto& bounds = parent_joint->getVariableBounds();
 		if ( !bounds.empty() )
 		{
 			const auto& lim = bounds[0];
@@ -80,20 +86,20 @@ void KinematicsSolver::Initialize(
 		}
 
 		Twist twist;
-		if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
+		if ( parent_joint->getType() == moveit::core::JointModel::REVOLUTE )
 		{
 			const auto* revolute_joint_model =
-				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
+				static_cast< const moveit::core::RevoluteJointModel* >( parent_joint );
 
 			const Vec3d axis_world = joint_transform.rotation() * revolute_joint_model->getAxis();
 			const Vec3d point_on_axis_world = joint_transform.translation();
 
 			twist = Twist( axis_world, point_on_axis_world );
 		}
-		else if ( joint_model->getType() == moveit::core::JointModel::PRISMATIC )
+		else if ( parent_joint->getType() == moveit::core::JointModel::PRISMATIC )
 		{
 			const auto* prismatic_joint_model =
-				static_cast< const moveit::core::PrismaticJointModel* >( joint_model );
+				static_cast< const moveit::core::PrismaticJointModel* >( parent_joint );
 
 			twist = Twist( prismatic_joint_model->getAxis() );
 		}
@@ -101,6 +107,10 @@ void KinematicsSolver::Initialize(
 		joint_chain->Add( twist, link, limits );
 	}
 	joint_chain_ = std::move( joint_chain );
+	
+	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
+	home_configuration_ = std::make_shared< const Mat4d >( home_configuration );
+
 	workspace_filter_ = std::make_unique< WorkspaceFilter >( *joint_chain_ );
 }
 
@@ -157,7 +167,7 @@ bool KinematicsSolver::ForwardKinematic(
 		return false;
 	}
 
-	POE( *joint_chain_, *home_configuration_, joints, pose );
+	joint_chain_->ComputeFK( joints, *home_configuration_, pose );
 
 	return true;
 }
@@ -216,14 +226,22 @@ bool KinematicsSolver::AreValidInitializeParameters(
 		              group_name.c_str() );
 		return false;
 	}
+
 	if ( !joint_model->isChain() )
 	{
 		RCLCPP_ERROR( get_logger(), "Joint model group %s is not a chain.", group_name.c_str() );
 		return false;
 	}
+
 	if ( !joint_model->isSingleDOFJoints() )
 	{
 		RCLCPP_ERROR( get_logger(), "Joint model group %s is not composed of single joints.", group_name.c_str() );
+		return false;
+	}
+
+	if ( tip_frames.size() != 1 )
+	{
+		RCLCPP_ERROR( get_logger(), "Joint model group %s is not composed of single tip.", group_name.c_str() );
 		return false;
 	}
 

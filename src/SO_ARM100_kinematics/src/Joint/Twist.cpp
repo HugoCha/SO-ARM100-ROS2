@@ -78,6 +78,13 @@ std::optional< Twist::Cache > Twist::ComputeCache( const Vec6d& twist )
 
 // ------------------------------------------------------------
 
+const Vec3d Twist::TransformAxis( const Mat4d& transform ) const 
+{
+	return Rotation( transform ) * axis_;
+}
+
+// ------------------------------------------------------------
+
 const Mat4d Twist::ExponentialMatrix( double thetha ) const
 {
 	Mat4d exponential = Mat4d::Identity();

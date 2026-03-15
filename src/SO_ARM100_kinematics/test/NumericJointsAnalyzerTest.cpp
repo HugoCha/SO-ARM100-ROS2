@@ -136,17 +136,17 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_NoNumericJoints )
 	JointChain wrist_only_chain( 3 );
 	wrist_only_chain.Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	wrist_only_chain.Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	wrist_only_chain.Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 

@@ -69,6 +69,44 @@ DummyKinematicsSolver solver_;
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
+TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
+{
+	DummyKinematicsSolver solver;
+	solver.Initialize(		
+		Data::GetRevoluteOnlyRobot(),
+		"arm",
+		"base_link",
+		{ "end_effector" },
+		0.01 );
+
+	JointChain initialized_chain = *solver.GetJointChain(); 
+	JointChain expected_chain 	 = Data::GetRevoluteOnlyRobotJointChain();
+
+	EXPECT_EQ( expected_chain.GetJointCount(), initialized_chain.GetJointCount() );
+	EXPECT_EQ( expected_chain.GetActiveJointCount(), initialized_chain.GetActiveJointCount() );
+
+	auto expected_joints    = expected_chain.GetJoints();
+	auto initialized_joints = initialized_chain.GetJoints();
+
+	for ( int i = 0; i < expected_chain.GetJointCount(); i++ )
+	{
+		auto expected_joint = expected_joints[i];
+		auto initialized_joint = initialized_joints[i];
+		EXPECT_EQ( expected_joint->GetType(), initialized_joint->GetType() );
+		
+		EXPECT_EQ( expected_joint->GetTwist().GetAxis(), initialized_joint->GetTwist().GetAxis() );
+		EXPECT_EQ( expected_joint->GetTwist().GetLinear(), initialized_joint->GetTwist().GetLinear() );
+
+		EXPECT_EQ( expected_joint->GetLink().GetJointOrigin(), initialized_joint->GetLink().GetJointOrigin() );
+		EXPECT_EQ( expected_joint->GetLink().GetLength(), initialized_joint->GetLink().GetLength() );
+
+		EXPECT_NEAR( expected_joint->GetLimits().Min(), initialized_joint->GetLimits().Min(), 1e-5 );
+		EXPECT_NEAR( expected_joint->GetLimits().Max(), initialized_joint->GetLimits().Max(), 1e-5 );
+	}
+}
+
+// ------------------------------------------------------------
+
 TEST_F( KinematicsSolverTest, ForwardKinematicsHomePosition )
 {
 	std::vector< double > joint_angles = { 0.0, 0.0, 0.0 };

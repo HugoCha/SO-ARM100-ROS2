@@ -32,6 +32,8 @@ Twist& operator = ( Twist&& ) = default;
 	return linear_;
 }
 
+[[nodiscard]] const Vec3d TransformAxis( const Mat4d& transform ) const;
+
 [[nodiscard]] inline bool IsRevolute() const {
 	return IsRevolute( twist_ );
 }

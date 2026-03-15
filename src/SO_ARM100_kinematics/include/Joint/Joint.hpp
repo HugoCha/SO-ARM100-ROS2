@@ -6,7 +6,6 @@
 #include "Limits.hpp"
 #include "Link.hpp"
 #include "Twist.hpp"
-#include "Utils/KinematicsUtils.hpp"
 
 #include <limits>
 #include <memory>
@@ -65,6 +64,10 @@ const Vec3d Origin() const {
 
 const Vec3d Axis() const {
 	return twist_->GetAxis();
+}
+
+const Vec3d TransformAxis( const Mat4d& transform ) const {
+	return twist_->TransformAxis( transform );
 }
 
 bool IsRevolute() const {

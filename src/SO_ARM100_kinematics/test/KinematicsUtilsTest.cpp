@@ -97,7 +97,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
 	JointChain joint_chain( 1 );
 	Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
-	Link link( Mat4d::Zero() );
+	Link link( Mat4d::Identity(), 0 );
 	Limits limits( -M_PI, M_PI );
 	joint_chain.Add( twist, link, limits ); // Pure rotation around z-axis
 
@@ -121,12 +121,12 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 
 	joint_chain.Add(
 		{ Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
-		{ Mat4d::Zero() },
+		{},
 		{ -M_PI, M_PI } );
 
 	joint_chain.Add(
 		{ Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) },
-		{ Mat4d::Zero() },
+		{},
 		{ -M_PI, M_PI } );
 
 	VecXd joint_angles( 2 );

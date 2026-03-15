@@ -37,6 +37,10 @@ virtual void Initialize(
 	std::shared_ptr< const Mat4d > home_configuration,
 	double search_discretization );
 
+[[nodiscard]] std::shared_ptr< const JointChain > GetJointChain() const {
+	return joint_chain_;
+}
+
 [[nodiscard]] bool ForwardKinematic(
 	const std::span< const double >& joints,
 	geometry_msgs::msg::Pose& pose ) const;

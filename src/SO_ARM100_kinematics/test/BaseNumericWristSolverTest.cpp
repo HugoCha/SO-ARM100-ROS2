@@ -6,10 +6,10 @@
 #include "HybridSolver/NumericJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
-#include "Joint/Twist.hpp"
-#include "Joint/Link.hpp"
 #include "Joint/Limits.hpp"
+#include "RobotModelTestData.hpp"
 #include "SolverResult.hpp"
+#include "Utils/KinematicsUtils.hpp"
 #include "Utils/Converter.hpp"
 
 #include <gtest/gtest.h>
@@ -20,81 +20,6 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
-// Helper function to create a test joint chain
-// ------------------------------------------------------------
-
-std::shared_ptr< JointChain > CreateTestJointChain()
-{
-	// Create a joint chain with 6 joints: 1 base joint + 2 numeric joints + 3 wrist joints
-	auto joint_chain = std::make_shared< JointChain >( 6 );
-
-	// Base joint (revolute around Z-axis)
-	Vec3d origin = Vec3d::Zero();
-	Mat4d origin_transform = ToTransformMatrix( origin );
-	// Vec3d axis = ( origin_transform * Vec3d(0,0,1).homogeneous() ).head( 3 );
-	Vec3d axis = Vec3d::UnitZ();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI, M_PI )
-		);
-
-	// Numeric joints (2 revolute joints)
-	origin = Vec3d( 0, 0, 0.5 );
-	origin_transform = ToTransformMatrix( origin );
-	// axis = ( origin_transform * Vec3d(0, 1, 0).homogeneous() ).head( 3 );
-	axis = Vec3d::UnitY();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI / 2, M_PI / 2 )
-		);
-
-	origin = Vec3d( 0, 0, 1.0 );
-	origin_transform = ToTransformMatrix( origin );
-	// axis = ( origin_transform * Vec3d(0, 1, 0).homogeneous() ).head( 3 );
-	axis = Vec3d::UnitY();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI / 2, M_PI / 2 )
-		);
-
-	// Wrist joints (3 revolute joints - spherical wrist)
-	origin = Vec3d( 0, 0, 1.5 );
-	origin_transform = ToTransformMatrix( origin );
-	// axis = ( origin_transform * Vec3d(1, 0, 0).homogeneous() ).head( 3 );
-	axis = Vec3d::UnitX();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI, M_PI )
-		);
-
-	origin = Vec3d( 0, 0, 1.5 );
-	origin_transform = ToTransformMatrix( origin );
-	// axis = ( origin_transform * Vec3d(0, 1, 0).homogeneous() ).head( 3 );
-	axis = Vec3d::UnitY();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI, M_PI )
-		);
-
-	origin = Vec3d( 0, 0, 1.5 );
-	origin_transform = ToTransformMatrix( origin );
-	// axis = ( origin_transform * Vec3d(0, 0, 1).homogeneous() ).head( 3 );
-	axis = Vec3d::UnitZ();
-	joint_chain->Add(
-		Twist( axis, origin ),
-		Link( origin_transform ),
-		Limits( -M_PI, M_PI )
-		);
-
-	return joint_chain;
-}
-
-// ------------------------------------------------------------
 // ------------------------------------------------------------
 
 class BaseNumericWristSolverTest : public ::testing::Test
@@ -103,7 +28,7 @@ protected:
 void SetUp() override
 {
 	// Create a test joint chain
-	joint_chain_ = CreateTestJointChain();
+	joint_chain_ = std::make_shared< JointChain >( Data::Create5DofRobotJointChain() );
 
 	// Create a home configuration
 	auto home_configuration = ToTransformMatrix( Vec3d( 0, 0, 1.5 ) );
@@ -174,13 +99,13 @@ TEST_F( BaseNumericWristSolverTest, IK_Success )
 	// Create a target pose
 	Mat4d target_pose;
 	VecXd joints( 6 );
-	joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
-	//joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0, 0, 0;
+	//joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
+	joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0, 0, 0;
     //joints = RandomValidJoints( 0.05 );
 	POE( *joint_chain_, *home_configuration_, joints, target_pose );
 
 	// Seed joints
-	std::vector< double > seed_joints{ 0., 0., 0., 0, 0, 0 };
+	std::vector< double > seed_joints{ 0.3, 0.4, 0.3, 0.5, 0.5, 0.7 };
 
 	// Solve IK
 	SolverResult result = solver_->IK( target_pose, seed_joints, 0.01 );

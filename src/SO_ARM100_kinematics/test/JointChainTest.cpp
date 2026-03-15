@@ -1,8 +1,13 @@
 #include "Joint/JointChain.hpp"
 
+#include "Global.hpp"
 #include "Joint/Joint.hpp"
+#include "Joint/Pose.hpp"
 #include "RobotModelTestData.hpp"
+#include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
+#include <Eigen/src/Geometry/AngleAxis.h>
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -19,19 +24,19 @@ void SetUp() override {
 	// Create joints
 	joint_chain_->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0.5 ),
 		Limits( -M_PI, M_PI )
 		);
 
 	joint_chain_->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-		Link( Mat4d::Identity() ),
+		Link( ToTransformMatrix( Vec3d(0,0,0.5)), 0.5 ),
 		Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	joint_chain_->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( ToTransformMatrix(Vec3d( 0, 0, 1.0 )), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	joint1_ = joint_chain_->GetJoints()[0];
@@ -214,7 +219,7 @@ TEST_F( JointChainTest, GetJointIndex_NonExistentJoint )
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Joint >(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -247,7 +252,7 @@ TEST_F( JointChainTest, GetNextJoint_NonExistentJoint )
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Joint >(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -291,7 +296,7 @@ TEST_F( JointChainTest, GetPreviousJoint_NonExistentJoint )
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Joint >(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -349,6 +354,103 @@ TEST_F( JointChainTest, EdgeCases_AllFunctions )
 	EXPECT_EQ( joint_chain_->GetJointIndex( joint3_ ), 2 ) << "Should return index 2 for last joint";
 	EXPECT_NE( joint_chain_->GetPreviousJoint( joint3_ ), nullptr ) << "Should return non-null for previous of last joint";
 	EXPECT_EQ( joint_chain_->GetNextJoint( joint3_ ), nullptr ) << "Should return nullptr for next of last joint";
+}
+
+// ------------------------------------------------------------
+
+TEST_F( JointChainTest, RobotRevoluteOnly_ComputeFK )
+{
+	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	auto home = Data::GetRevoluteOnlyRobotHome();
+
+	VecXd joints{3};
+	joints << M_PI / 8, M_PI / 2, 0.7;
+	
+	Mat4d expected = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
+	
+	Mat4d result;
+	joint_chain.ComputeFK( joints, home, result );
+
+	EXPECT_TRUE( IsApprox( expected, result, 1e-9 ) );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( JointChainTest, RobotRevoluteOnly_ComputeIntermediateFKWithMat4d )
+{
+	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	auto home = Data::GetRevoluteOnlyRobotHome();
+
+	VecXd joints{3};
+	joints << M_PI / 8, M_PI / 2, 0.7;
+	
+	Mat4d T01 = Data::GetRevoluteOnlyRobotT01( joints[0] );	
+	Mat4d T02 = T01 * Data::GetRevoluteOnlyRobotT12( joints[1] );	
+	Mat4d T03 = T02 * Data::GetRevoluteOnlyRobotT23( joints[2] );	
+
+	std::vector< Mat4d > expected_int_fk
+	{
+		T01, 
+		T02, 
+		T03
+	};
+
+	Mat4d expected_fk = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
+	
+	std::vector< Mat4d > result_int_fk;
+	Mat4d result;
+	joint_chain.ComputeIntermediateFK( joints, home, result_int_fk, result );
+
+	for ( int i = 0; i < 3; i++ )
+	{
+		EXPECT_TRUE( IsApprox( expected_int_fk[i], result_int_fk[i], 1e-9 ) )
+			<< "Expected Transform " << i << " = " << std::endl << expected_int_fk[i] << std::endl
+			<< "Result Transform   " << i << " = " << std::endl << result_int_fk[i] << std::endl;
+	}
+	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
+		<< "Expected fk = " << std::endl << expected_fk << std::endl
+		<< "Result fk   = " << std::endl << result << std::endl;
+}
+
+// ------------------------------------------------------------
+
+TEST_F( JointChainTest, RobotRevoluteOnly_ComputeIntermediateFKWithPose )
+{
+	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	auto home = Data::GetRevoluteOnlyRobotHome();
+
+	VecXd joints{3};
+	joints << M_PI / 8, M_PI / 2, 0.7;
+	
+	Mat4d T01 = Data::GetRevoluteOnlyRobotT01( joints[0] );	
+	Mat4d T02 = T01 * Data::GetRevoluteOnlyRobotT12( joints[1] );	
+	Mat4d T03 = T02 * Data::GetRevoluteOnlyRobotT23( joints[2] );	
+
+	std::vector< Pose > expected_int_fk
+	{
+		Pose::FromTransform( T01 ), 
+		Pose::FromTransform( T02 ), 
+		Pose::FromTransform( T03 ), 
+	};
+
+	Mat4d expected_fk = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
+	
+	std::vector< Pose > result_int_fk;
+	Mat4d result;
+	joint_chain.ComputeIntermediateFK( joints, home, result_int_fk, result );
+
+	for ( int i = 0; i < 3; i++ )
+	{
+		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].origin ).norm() < 1e-9 )
+			<< "Expected Origin " << i << " = " << std::endl << expected_int_fk[i].origin.transpose() << std::endl
+			<< "Result Origin   " << i << " = " << std::endl << result_int_fk[i].origin.transpose() << std::endl;
+		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].axis ).norm() < 1e-9 )
+			<< "Expected Axis " << i << " = " << std::endl << expected_int_fk[i].axis.transpose() << std::endl
+			<< "Result Axis   " << i << " = " << std::endl << result_int_fk[i].axis.transpose() << std::endl;;
+	}
+	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
+		<< "Expected fk = " << std::endl << expected_fk << std::endl
+		<< "Result fk   = " << std::endl << result << std::endl;
 }
 
 // ------------------------------------------------------------

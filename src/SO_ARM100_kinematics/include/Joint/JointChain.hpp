@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Global.hpp"
 #include "Joint.hpp"
 
 #include <cstddef>
@@ -9,6 +10,8 @@
 
 namespace SOArm100::Kinematics
 {
+struct Pose;
+
 class JointChain
 {
 public:
@@ -81,6 +84,70 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 	Add( std::make_shared< const Joint >( twist, link, limits ) );
 }
 
+void ComputeFK(
+	const std::span< const double >& thetas,
+	const Mat4d& home_configuration,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeFK( thetas.data(), home_configuration, fk );
+}
+
+void ComputeFK(
+	const VecXd& thetas,
+	const Mat4d& home_configuration,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeFK( thetas.data(), home_configuration, fk );
+}
+
+void ComputeIntermediateFK(
+	const std::span< const double >& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Pose >& joints_fk,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+}
+
+void ComputeIntermediateFK(
+	const VecXd& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Pose >& joints_fk,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+}
+
+void ComputeIntermediateFK(
+	const std::span< const double >& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+}
+
+void ComputeIntermediateFK(
+	const VecXd& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const 
+{
+	if ( thetas.size() != GetActiveJointCount() )
+		throw std::invalid_argument( "thetas size must match joint count" );
+	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+}
+
 [[nodiscard]] JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
 
 private:
@@ -89,6 +156,23 @@ std::vector< JointConstPtr > active_joints_;
 std::vector< double > active_joint_centers_;
 
 JointChain( const std::span< JointConstPtr const >& joints );
+
+void ComputeFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	Mat4d& fk ) const noexcept;
+
+void ComputeIntermediateFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	std::vector< Pose >& joints_fk,
+	Mat4d& fk ) const noexcept;
+
+void ComputeIntermediateFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const noexcept;
 
 void Add( JointConstPtr joint );
 };

@@ -70,7 +70,7 @@ TEST_F( WristSolverTest, SolveRevolute1 )
 	auto single_joint_chain = std::make_shared< JointChain >( 1 );
 	single_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -112,7 +112,7 @@ TEST_F( WristSolverTest, SolveRevolute1_Unreachable )
 	auto single_joint_chain = std::make_shared< JointChain >( 1 );
 	single_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -149,12 +149,12 @@ TEST_F( WristSolverTest, SolveRevolute2 )
 	auto two_joint_chain = std::make_shared< JointChain >( 2 );
 	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	two_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -203,12 +203,12 @@ TEST_F( WristSolverTest, SolveRevolute2_Unreachable )
 	auto two_joint_chain = std::make_shared< JointChain >( 2 );
 	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	two_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 1 ) ),  // Parallel to the first joint
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -246,17 +246,17 @@ TEST_F( WristSolverTest, SolveRevolute3 )
 	auto three_joint_chain = std::make_shared< JointChain >( 3 );
 	three_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	three_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	three_joint_chain->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
@@ -304,17 +304,17 @@ TEST_F( WristSolverTest, IK_FallbackToNumeric )
 	auto three_joint_chain = std::make_shared< JointChain >( 2 );
 	three_joint_chain->Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	three_joint_chain->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	three_joint_chain->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
+		Link( Mat4d::Identity(), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 

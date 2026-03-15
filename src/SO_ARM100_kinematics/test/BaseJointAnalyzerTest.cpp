@@ -119,18 +119,16 @@ TEST_F( BaseJointAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 	// Create a joint chain with a different base joint axis
 	JointChain joint_chain_y( 2 );
 	Vec3d origin = Vec3d::Zero();
-	Mat4d origin_transform = Mat4d::Identity();
 	Vec3d axis = Vec3d::UnitY(); // Rotation around Y-axis
 	Twist twist_y( axis, origin );
-	Link link_y( origin_transform );
+	Link link_y( Mat4d::Identity(), 1 );
 	Limits limits_y( -M_PI, M_PI );
 	joint_chain_y.Add( twist_y, link_y, limits_y );
 
-	origin << 0, 0, 1;
-	origin_transform = ToTransformMatrix( origin );
-	axis = ( origin_transform * Vec3d::UnitZ().homogeneous() ).head( 3 ); // Rotation around Z-axis
+	origin = Vec3d::UnitZ();
+	axis = Vec3d::UnitZ(); // Rotation around Z-axis
 	Twist twist_z( axis, origin );
-	Link link_z( origin_transform );
+	Link link_z( ToTransformMatrix( origin ), 0 );
 	Limits limits_z( -M_PI, M_PI );
 	joint_chain_y.Add( twist_z, link_z, limits_z );
 

@@ -1,9 +1,13 @@
 #include "Joint/JointChain.hpp"
 
+#include "Global.hpp"
 #include "Joint/Joint.hpp"
 #include "Joint/Limits.hpp"
+#include "Joint/Pose.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace SOArm100::Kinematics
 {
@@ -89,6 +93,81 @@ bool JointChain::WithinLimits( const VecXd& joints ) const
 		}
 	}
 	return true;
+}
+
+// ------------------------------------------------------------
+
+void JointChain::ComputeFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	Mat4d& fk ) const noexcept
+{
+	const int n_joints = GetActiveJointCount();
+
+	Mat4d T_cumul = Mat4d::Identity();
+
+	for ( size_t i = 0; i < n_joints; i++ )
+	{
+		const auto& twist = GetActiveJointTwist( i );
+		T_cumul *= twist.ExponentialMatrix( thetas[i] );
+	}
+
+	fk = T_cumul * home_configuration;
+}
+
+// ------------------------------------------------------------
+
+void JointChain::ComputeIntermediateFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	std::vector< Pose >& joint_poses,
+	Mat4d& fk ) const noexcept
+{
+	fk.setIdentity();
+	const int n_joints = GetActiveJointCount();
+
+	if ( n_joints <= 0 ) return;
+	if ( joint_poses.size() < n_joints ) joint_poses.resize( n_joints );
+
+	Mat4d T_cumul = Mat4d::Identity();
+
+	for ( size_t i = 0; i < n_joints; i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( thetas[i] );
+		joint_poses[i].origin.noalias() = ( T_cumul * joint->Origin().homogeneous() ).head(3);
+		joint_poses[i].axis.noalias()   = Rotation( T_cumul ) * joint->Axis();
+	}
+
+	fk.noalias() = T_cumul * home_configuration;
+}
+
+// ------------------------------------------------------------
+
+void JointChain::ComputeIntermediateFK(
+	const double* thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const noexcept
+{
+	fk.setIdentity();
+	const int n_joints = GetActiveJointCount();
+
+	if ( n_joints <= 0 ) return;
+	if ( joints_fk.size() < n_joints ) joints_fk.resize( n_joints );
+	
+	Mat4d T_cumul = Mat4d::Identity();
+	
+	for ( size_t i = 0; i < n_joints; i++ )
+	{
+		const auto& link = GetActiveJointLink( i );
+		const auto& twist = GetActiveJointTwist( i );
+		T_cumul *= twist.ExponentialMatrix( thetas[i] );
+		joints_fk[i].noalias() = T_cumul * link.GetJointOrigin();
+	}
+
+	fk.noalias() = T_cumul * home_configuration;
 }
 
 // ------------------------------------------------------------

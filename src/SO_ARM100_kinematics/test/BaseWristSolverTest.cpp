@@ -1,12 +1,11 @@
 #include "HybridSolver/BaseWristSolver.hpp"
 
+#include "RobotModelTestData.hpp"
+
 #include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
-#include "Joint/Twist.hpp"
-#include "Joint/Link.hpp"
-#include "Joint/Limits.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -19,37 +18,6 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
-// Helper function to create a test joint chain
-// ------------------------------------------------------------
-
-std::shared_ptr< const JointChain > CreateTestJointChain()
-{
-	// Create a joint chain with 6 joints: 1 base joint + 2 wrist joints
-	auto joint_chain = std::make_shared< JointChain >( 3 );
-
-	// Base joint (revolute around Z-axis)
-	joint_chain->Add(
-		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-
-	// Wrist joints (2 revolute joints)
-	joint_chain->Add(
-		Twist( Vec3d( 1, 0, 0 ), Vec3d( 1.5, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-	joint_chain->Add(
-		Twist( Vec3d( 0, 1, 0 ), Vec3d( 1.5, 0, 0 ) ),
-		Link( Mat4d::Identity() ),
-		Limits( -M_PI, M_PI )
-		);
-
-	return joint_chain;
-}
-
-// ------------------------------------------------------------
 // ------------------------------------------------------------
 
 class BaseWristSolverTest : public ::testing::Test
@@ -58,7 +26,7 @@ protected:
 void SetUp() override
 {
 	// Create a test joint chain
-	joint_chain_ = CreateTestJointChain();
+	joint_chain_ = std::make_shared< JointChain >( Data::Create5DofRobotJointChain() );
 
 	// Create a base joint model
 	base_model_.reference_direction = Vec3d( 1.0, 0.0, 0.0 );
