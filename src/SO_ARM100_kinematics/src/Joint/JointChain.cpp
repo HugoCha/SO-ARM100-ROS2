@@ -117,7 +117,7 @@ void JointChain::ComputeFK(
 
 // ------------------------------------------------------------
 
-void JointChain::ComputeIntermediateFK(
+void JointChain::ComputeJointPosesFK(
 	const double* thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joint_poses,
@@ -135,36 +135,9 @@ void JointChain::ComputeIntermediateFK(
 	{
 		const auto& joint = GetActiveJoint( i );
 		const auto& twist = joint->GetTwist();
-		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 		joint_poses[i].origin.noalias() = ( T_cumul * joint->Origin().homogeneous() ).head(3);
 		joint_poses[i].axis.noalias()   = Rotation( T_cumul ) * joint->Axis();
-	}
-
-	fk.noalias() = T_cumul * home_configuration;
-}
-
-// ------------------------------------------------------------
-
-void JointChain::ComputeIntermediateFK(
-	const double* thetas,
-	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
-	Mat4d& fk ) const noexcept
-{
-	fk.setIdentity();
-	const int n_joints = GetActiveJointCount();
-
-	if ( n_joints <= 0 ) return;
-	if ( joints_fk.size() < n_joints ) joints_fk.resize( n_joints );
-	
-	Mat4d T_cumul = Mat4d::Identity();
-	
-	for ( size_t i = 0; i < n_joints; i++ )
-	{
-		const auto& link = GetActiveJointLink( i );
-		const auto& twist = GetActiveJointTwist( i );
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
-		joints_fk[i].noalias() = T_cumul * link.GetJointOrigin();
 	}
 
 	fk.noalias() = T_cumul * home_configuration;

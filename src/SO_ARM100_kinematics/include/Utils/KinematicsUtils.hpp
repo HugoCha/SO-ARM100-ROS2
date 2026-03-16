@@ -6,6 +6,7 @@
 
 namespace SOArm100::Kinematics
 {
+class Joint;
 class JointChain;
 struct JointPose;
 struct SolverResult;
@@ -79,6 +80,11 @@ bool IsApprox(
 	const Mat4d& result,
 	double rotation_tol = rotation_tolerance,
 	double translation_tol = translation_tolerance ) noexcept;
+
+std::vector< double > EvaluateAngleCandidates(
+	const Joint& joint,
+	double seed,
+	double raw_angle ) noexcept;
 
 void CheckSolverResult(
 	const JointChain& joint_chain,

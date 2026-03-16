@@ -376,7 +376,7 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeFK )
 
 // ------------------------------------------------------------
 
-TEST_F( JointChainTest, RobotRevoluteOnly_ComputeIntermediateFKWithMat4d )
+TEST_F( JointChainTest, RobotRevoluteOnly_ComputeJointPoses )
 {
 	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
 	auto home = Data::GetRevoluteOnlyRobotHome();
@@ -384,60 +384,32 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeIntermediateFKWithMat4d )
 	VecXd joints{3};
 	joints << M_PI / 8, M_PI / 2, 0.7;
 	
-	Mat4d T01 = Data::GetRevoluteOnlyRobotT01( joints[0] );	
-	Mat4d T02 = T01 * Data::GetRevoluteOnlyRobotT12( joints[1] );	
-	Mat4d T03 = T02 * Data::GetRevoluteOnlyRobotT23( joints[2] );	
+    Mat4d T_cumul_0 = Data::GetRevoluteOnlyRobotT01( joints[0] );
+    Mat4d T_cumul_1 = T_cumul_0 * Data::GetRevoluteOnlyRobotT12( joints[1] );
+    Mat4d T_cumul_2 = T_cumul_1 * Data::GetRevoluteOnlyRobotT23( joints[2] );
 
-	std::vector< Mat4d > expected_int_fk
-	{
-		T01, 
-		T02, 
-		T03
-	};
-
-	Mat4d expected_fk = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
-	
-	std::vector< Mat4d > result_int_fk;
-	Mat4d result;
-	joint_chain.ComputeIntermediateFK( joints, home, result_int_fk, result );
-
-	for ( int i = 0; i < 3; i++ )
-	{
-		EXPECT_TRUE( IsApprox( expected_int_fk[i], result_int_fk[i], 1e-9 ) )
-			<< "Expected Transform " << i << " = " << std::endl << expected_int_fk[i] << std::endl
-			<< "Result Transform   " << i << " = " << std::endl << result_int_fk[i] << std::endl;
-	}
-	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
-		<< "Expected fk = " << std::endl << expected_fk << std::endl
-		<< "Result fk   = " << std::endl << result << std::endl;
-}
-
-// ------------------------------------------------------------
-
-TEST_F( JointChainTest, RobotRevoluteOnly_ComputeIntermediateFKWithPose )
-{
-	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
-	auto home = Data::GetRevoluteOnlyRobotHome();
-
-	VecXd joints{3};
-	joints << M_PI / 8, M_PI / 2, 0.7;
-	
-	Mat4d T01 = Data::GetRevoluteOnlyRobotT01( joints[0] );	
-	Mat4d T02 = T01 * Data::GetRevoluteOnlyRobotT12( joints[1] );	
-	Mat4d T03 = T02 * Data::GetRevoluteOnlyRobotT23( joints[2] );	
-
-	std::vector< Pose > expected_int_fk
-	{
-		Pose::FromTransform( T01 ), 
-		Pose::FromTransform( T02 ), 
-		Pose::FromTransform( T03 ), 
-	};
+    // World-frame axis = R(T_cumul_i) * local_axis
+    std::vector< Pose > expected_int_fk
+    {
+        Pose{
+            Translation( T_cumul_0 ),
+            Rotation( T_cumul_0 ) * joint_chain.GetActiveJoint(0)->Axis()
+        },
+        Pose{
+            Translation( T_cumul_1 ),
+            Rotation( T_cumul_1 ) * joint_chain.GetActiveJoint(1)->Axis()
+        },
+        Pose{
+            Translation( T_cumul_2 ),
+            Rotation( T_cumul_2 ) * joint_chain.GetActiveJoint(2)->Axis()
+        },
+    };
 
 	Mat4d expected_fk = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
 	
 	std::vector< Pose > result_int_fk;
 	Mat4d result;
-	joint_chain.ComputeIntermediateFK( joints, home, result_int_fk, result );
+	joint_chain.ComputeJointPosesFK( joints, home, result_int_fk, result );
 
 	for ( int i = 0; i < 3; i++ )
 	{

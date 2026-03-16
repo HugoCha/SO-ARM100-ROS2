@@ -295,6 +295,43 @@ bool IsApprox(
 
 // ------------------------------------------------------------
 
+std::vector< double > EvaluateAngleCandidates(
+	const Joint& joint,
+	double seed,
+	double raw_angle ) noexcept
+{
+	if ( std::isnan( raw_angle ) ) return {};
+
+	std::vector< double > candidates;
+	candidates.reserve( 2 );
+
+	const auto& limits = joint.GetLimits();
+
+    double mirror = raw_angle + M_PI;
+    if ( mirror >  M_PI ) mirror -= 2.0 * M_PI;
+    if ( mirror < -M_PI ) mirror += 2.0 * M_PI;
+
+	if ( limits.Within( raw_angle ) )
+		candidates.push_back( raw_angle );
+
+    if ( limits.Within( mirror ) )
+		candidates.push_back( mirror );
+
+    auto wrap_dist = []( double a, double b ) noexcept {
+        double d = std::abs( a - b );
+        return std::min( d, 2.0 * M_PI - d );
+    };
+
+    std::sort( candidates.begin(), candidates.end(),
+        [&]( double a, double b ) {
+            return wrap_dist( a, seed ) < wrap_dist( b, seed );
+        } );
+
+	return candidates;
+}
+
+// ------------------------------------------------------------
+
 void CheckSolverResult(
 	const JointChain& joint_chain,
 	const Mat4d& home_configuration,

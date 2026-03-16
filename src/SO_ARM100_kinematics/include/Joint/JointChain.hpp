@@ -104,7 +104,7 @@ void ComputeFK(
 	ComputeFK( thetas.data(), home_configuration, fk );
 }
 
-void ComputeIntermediateFK(
+void ComputeJointPosesFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
@@ -112,10 +112,10 @@ void ComputeIntermediateFK(
 {
 	if ( thetas.size() != GetActiveJointCount() )
 		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+	ComputeJointPosesFK( thetas.data(), home_configuration, joints_fk, fk );
 }
 
-void ComputeIntermediateFK(
+void ComputeJointPosesFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
@@ -123,29 +123,7 @@ void ComputeIntermediateFK(
 {
 	if ( thetas.size() != GetActiveJointCount() )
 		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
-}
-
-void ComputeIntermediateFK(
-	const std::span< const double >& thetas,
-	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
-	Mat4d& fk ) const 
-{
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
-}
-
-void ComputeIntermediateFK(
-	const VecXd& thetas,
-	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
-	Mat4d& fk ) const 
-{
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeIntermediateFK( thetas.data(), home_configuration, joints_fk, fk );
+	ComputeJointPosesFK( thetas.data(), home_configuration, joints_fk, fk );
 }
 
 [[nodiscard]] JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
@@ -162,16 +140,10 @@ void ComputeFK(
 	const Mat4d& home_configuration,
 	Mat4d& fk ) const noexcept;
 
-void ComputeIntermediateFK(
+void ComputeJointPosesFK(
 	const double* thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
-	Mat4d& fk ) const noexcept;
-
-void ComputeIntermediateFK(
-	const double* thetas,
-	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
 	Mat4d& fk ) const noexcept;
 
 void Add( JointConstPtr joint );

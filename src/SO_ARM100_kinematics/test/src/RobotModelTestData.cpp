@@ -153,7 +153,7 @@ const Mat4d GetRevoluteOnlyRobotT01( double theta1 )
 
 	T01.block< 3, 3 >( 0, 0 ) =
 		Eigen::AngleAxisd( theta1, Vec3d::UnitZ() ).toRotationMatrix();
-	T01.block< 3, 1 >( 0, 3 ) = Vec3d::Zero();
+	T01.block< 3, 1 >( 0, 3 ) = Vec3d( 0.0, 0, 0 );
 
 	return T01;
 }

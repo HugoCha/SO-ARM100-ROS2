@@ -11,12 +11,11 @@ struct Pose
     Vec3d origin{Vec3d::Zero()};
     Vec3d axis{Vec3d::Zero()};
 
-    static Pose FromTransform( const Mat4d& T )
+    static Pose FromTransform( const Mat4d& T, const Vec3d& local_axis )
     {
         Pose pose;
-        Eigen::AngleAxisd aa( Rotation( T ) );
 
-        pose.axis = aa.axis();
+        pose.axis   = Rotation( T ) * local_axis;
         pose.origin = Translation( T );
 
         return pose;
