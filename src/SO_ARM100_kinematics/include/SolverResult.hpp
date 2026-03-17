@@ -8,6 +8,7 @@ enum class SolverState
 {
 	None,
 	Success,
+	Fail,
 	Unreachable,
 	Singularity,
 };
@@ -39,6 +40,10 @@ struct SolverResult
 
 	inline bool Singularity() const {
 		return state == SolverState::Singularity;
+	}
+
+	inline bool Fail() const {
+		return state == SolverState::Fail;
 	}
 };
 

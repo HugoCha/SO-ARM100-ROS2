@@ -49,14 +49,14 @@ std::unique_ptr< IKinematicsSolver > HybridSolverFactory::Get(
 		return std::make_unique< NumericWristSolver >(
 			joint_chain,
 			home_configuration,
-			*configuration.numeric_joints_model,
+			*configuration.wrist_center_joints_model,
 			*configuration.wrist_model );
 	case HybridSolverFlags::BaseNumericWrist:
 		return std::make_unique< BaseNumericWristSolver >(
 			joint_chain,
 			home_configuration,
 			*configuration.base_joint_model,
-			*configuration.numeric_joints_model,
+			*configuration.wrist_center_joints_model,
 			*configuration.wrist_model );
 	default:
 	case HybridSolverFlags::Numeric:

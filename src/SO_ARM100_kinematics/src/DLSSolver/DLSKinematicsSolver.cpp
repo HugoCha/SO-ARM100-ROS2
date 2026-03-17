@@ -59,7 +59,7 @@ NumericSolverResult DLSKinematicsSolver::InverseKinematic(
 {
 	if ( KinematicsSolver::IsUnreachable( target ) )
 	{
-		return { NumericSolverState::Failed, {}, -1,  0 };
+		return { NumericSolverState::Unreachable, {}, -1,  0 };
 	}
 
 	if ( seed_joints.size() != static_cast< int >( joint_chain_->GetActiveJointCount() ) )
@@ -233,7 +233,7 @@ void DLSKinematicsSolver::UpdateHistory(
 	const IterationState& state,
 	SolverHistory& history ) const
 {
-	if ( state.error < history.best_error || state.joints.size() != history.best_joints.size() )
+	if ( state.error < history.best_error )
 	{
 		history.best_joints = state.joints;
 		history.best_error = state.error;

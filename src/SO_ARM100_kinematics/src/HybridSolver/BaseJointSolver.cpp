@@ -5,6 +5,7 @@
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <cassert>
 #include <cmath>
 #include <memory>
 
@@ -34,6 +35,7 @@ void BaseJointSolver::FK(
 	Mat4d& fk ) const
 {
 	assert( joint_chain_ );
+	assert( joints.size() == GetJointCount() );
 
 	const auto& base_twist = GetBaseJoint()->GetTwist();
 	fk.noalias() = base_twist.ExponentialMatrix( joints[0] );
@@ -66,6 +68,7 @@ SolverResult BaseJointSolver::SolverAnalytical(
 	const std::span< const double >& seed_joints ) const
 {
 	assert( joint_chain_ );
+	assert( seed_joints.size() == GetJointCount() );
 
 	SolverResult result( 1 );
 

@@ -209,7 +209,14 @@ void ReachableError(
 	int rank = ( sigma.array() > min_sv_tolerance ).count();
 	MatXd U_proj = U.leftCols( rank );
 	VecXd e_proj = U_proj.transpose() * error;
-	reachable_error.noalias() = U_proj * e_proj;
+	if ( rank == 0 )
+	{
+		reachable_error.noalias() = VecXd::Zero( error.size() );
+	}
+	else 
+	{
+		reachable_error.noalias() = U_proj * e_proj;
+	}
 }
 
 // ------------------------------------------------------------

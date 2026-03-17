@@ -3,8 +3,6 @@
 #include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
-#include "HybridSolver/NumericJointsModel.hpp"
-#include "SolverType.hpp"
 
 #include <memory>
 
@@ -15,79 +13,13 @@ namespace SOArm100::Kinematics
 
 NumericJointsSolver::NumericJointsSolver(
 	std::shared_ptr< const JointChain > joint_chain,
-	std::shared_ptr< const Mat4d > home_configuration,
-	const NumericJointsModel& numeric_joint_model,
-	SolverType type )
+	std::shared_ptr< const Mat4d > home_configuration )
 {
-	numeric_joints_model_ = std::make_unique< const NumericJointsModel >( numeric_joint_model );
-
-	const auto& active_joints = joint_chain->GetActiveJoints();
-	auto start = active_joints[numeric_joint_model.start_index];
-	auto end = active_joints[numeric_joint_model.start_index + numeric_joint_model.count - 1];
-
-	if ( start == active_joints.front() && end == active_joints.back() )
-	{
-		joint_chain_ = joint_chain;
-		home_configuration_ = home_configuration;
-	}
-	else
-	{
-		joint_chain_ = std::make_shared< const JointChain >( joint_chain->SubChain( start, end ) );
-		home_configuration_ = std::make_shared< const Mat4d >( numeric_joint_model.home_configuration );
-	}
-
-	dls_solver_ = std::make_unique< DLSKinematicsSolver >( InitializeParameters( type, joint_chain_->GetActiveJointCount() ) );
+	dls_solver_ = std::make_unique< DLSKinematicsSolver >();
 	dls_solver_->Initialize(
-		joint_chain_,
-		home_configuration_,
-		0.01 );
-}
-
-// ------------------------------------------------------------
-
-NumericJointsSolver::NumericJointsSolver(
-	std::shared_ptr< const JointChain > joint_chain,
-	std::shared_ptr< const Mat4d > home_configuration ) :
-	NumericJointsSolver(
 		joint_chain,
 		home_configuration,
-		{ 0, joint_chain->GetActiveJointCount(), *home_configuration },
-		SolverType::Full )
-{
-}
-
-// ------------------------------------------------------------
-
-DLSKinematicsSolver::SolverParameters NumericJointsSolver::InitializeParameters(
-	SolverType type,
-	int n_joints )
-{
-	DLSKinematicsSolver::SolverParameters parameters;
-	switch ( type )
-	{
-	case SolverType::Orientation:
-		parameters.error_tolerance = rotation_tolerance;
-		parameters.rotation_weight = 1.0;
-		parameters.translation_weight = 0;
-		parameters.max_iterations = 50;
-		parameters.max_dq = n_joints * 20 * M_PI / 180;
-		break;
-	case SolverType::Position:
-		parameters.error_tolerance = translation_tolerance;
-		parameters.rotation_weight = 0.0;
-		parameters.translation_weight = 1.0;
-		parameters.max_iterations = 50;
-		parameters.max_dq = n_joints * 10 * M_PI / 180;
-		break;
-	case SolverType::Full:
-		parameters.error_tolerance = error_tolerance;
-		parameters.rotation_weight = 1.0;
-		parameters.translation_weight = 10.0;
-		parameters.max_iterations = 400;
-		parameters.max_dq = n_joints * 15 * M_PI / 180;
-		break;
-	}
-	return parameters;
+		0.01 );
 }
 
 // ------------------------------------------------------------
@@ -104,10 +36,8 @@ SolverResult NumericJointsSolver::IK(
 	const std::span< const double >& seed_joints,
 	double search_discretization ) const
 {
-	auto result = dls_solver_->InverseKinematic(
-		target_pose,
-		seed_joints.subspan( numeric_joints_model_->start_index, numeric_joints_model_->count ) );
-	return ToSolverResult( result );
+	return  ToSolverResult( 
+		dls_solver_->InverseKinematic( target_pose, seed_joints ) );
 }
 
 // ------------------------------------------------------------

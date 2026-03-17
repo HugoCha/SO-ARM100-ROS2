@@ -2,7 +2,9 @@
 
 #include "BaseJointSolver.hpp"
 #include "Global.hpp"
+#include "HybridSolver/WristCenterSolver.hpp"
 #include "IKinematicsSolver.hpp"
+#include "WristCenterSolver.hpp"
 #include "NumericJointsSolver.hpp"
 #include "SolverResult.hpp"
 #include "WristSolver.hpp"
@@ -23,7 +25,7 @@ BaseNumericWristSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
 	const BaseJointModel& base_model,
-	const NumericJointsModel& numeric_model,
+	const WristCenterJointsModel& wrist_center_model,
 	const WristModel& wrist_model );
 
 BaseNumericWristSolver( const BaseNumericWristSolver& ) = delete;
@@ -40,44 +42,18 @@ virtual SolverResult IK(
 	double discretization ) const override;
 
 private:
-struct SolverBuffer
-{
-	Vec3d wrist_center{};
-	Mat4d wrist_center_target{};
-	Mat4d wrist_target{};
-
-	Mat4d T_num{};
-	Mat4d fk_result{};
-
-	SolverResult base_result;
-	SolverResult numeric_result;
-	SolverResult wrist_result;
-
-	std::vector< double > seed_joints;
-
-	SolverBuffer( int numeric, int wrist ) :
-		base_result( 1 ),
-		numeric_result( numeric ),
-		wrist_result( wrist ),
-		seed_joints( numeric + wrist )
-	{
-	}
-
-	int Size() const
-	{
-		return base_result.joints.size() + numeric_result.joints.size() + wrist_result.joints.size();
-	}
-};
-
-mutable SolverBuffer buffer_;
-
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 
 std::unique_ptr< BaseJointSolver > base_joint_presolver_;
-std::unique_ptr< NumericJointsSolver > numeric_presolver_;
+std::unique_ptr< WristCenterJointsSolver > wrist_center_presolver_;
 std::unique_ptr< WristSolver > wrist_presolver_;
 
 std::unique_ptr< NumericJointsSolver > full_solver_;
+
+std::vector< double > GetHeuristicJoints( 
+	const SolverResult& base_result,
+	const SolverResult& wrist_center_result,
+	const SolverResult& wrist_result ) const;
 };
 }

@@ -1,10 +1,7 @@
 #include "HybridSolver/WristSolver.hpp"
 
-#include "DLSSolver/DLSKinematicsSolver.hpp"
-#include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "IKinematicsSolver.hpp"
 #include "Joint/JointChain.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -37,11 +34,6 @@ WristSolver::WristSolver(
 
 	home_configuration_ = home_configuration;
 	wrist_model_ = std::make_unique< const WristModel >( wrist_model );
-	dls_wrist_solver_ = std::make_unique< DLSKinematicsSolver >();
-	dls_wrist_solver_->Initialize(
-		joint_chain_,
-		home_configuration_,
-		0.01 );
 }
 
 // ------------------------------------------------------------
@@ -59,8 +51,7 @@ SolverResult WristSolver::Heuristic(
 	const std::span< const double >& seed_joints,
 	double search_discreatization ) const
 {
-	const auto& R_target_in_wrist = Rotation( target_in_wrist );
-	return SolveAnalytical( *joint_chain_, R_target_in_wrist, seed_joints );
+	return IK(  target_in_wrist, seed_joints, search_discreatization );
 }
 
 // ------------------------------------------------------------
@@ -73,27 +64,10 @@ SolverResult WristSolver::IK(
 	assert( joint_chain_ );
 	assert( home_configuration_ );
 	assert( wrist_model_ );
-	assert( dls_wrist_solver_ );
+	assert( seed_joints.size() == GetJointCount() );
 
 	const auto& R_target_in_wrist = Rotation( target_in_wrist );
-
-	auto result = SolveAnalytical( *joint_chain_, R_target_in_wrist, seed_joints );
-
-	if ( !result.Success() && !result.Unreachable() )
-	{
-		std::vector< double > new_seed_joints( result.joints.begin(), result.joints.end() );
-		result = SolveNumeric( target_in_wrist, new_seed_joints );
-	}
-
-	Mat4d fk_result;
-	CheckSolverResult(
-		*joint_chain_,
-		*home_configuration_,
-		target_in_wrist,
-		fk_result,
-		result );
-
-	return result;
+	return SolveAnalytical( *joint_chain_, R_target_in_wrist, seed_joints );
 }
 
 // ------------------------------------------------------------
@@ -285,19 +259,6 @@ SolverResult WristSolver::SolveRevolute3(
 	result.joints << q1, q2, q3;
 	result.state = SolverState::Success;
 	return result;
-}
-
-// ------------------------------------------------------------
-
-SolverResult WristSolver::SolveNumeric(
-	const Mat4d& target_in_wrist,
-	const std::span< const double > seed_joints ) const
-{
-	SolverResult result { wrist_model_->active_joint_count };
-
-	return ToSolverResult( dls_wrist_solver_->InverseKinematic(
-							   target_in_wrist,
-							   seed_joints.subspan( wrist_model_->active_joint_start, wrist_model_->active_joint_count ) ) );
 }
 
 // ------------------------------------------------------------

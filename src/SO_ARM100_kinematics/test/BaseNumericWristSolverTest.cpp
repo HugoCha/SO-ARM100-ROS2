@@ -3,7 +3,8 @@
 #include "Global.hpp"
 #include "HybridSolver/BaseJointAnalyzer.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
-#include "HybridSolver/NumericJointsModel.hpp"
+#include "HybridSolver/WristCenterJointsModel.hpp"
+#include "HybridSolver/WristCenterJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Limits.hpp"
@@ -35,9 +36,9 @@ void SetUp() override
 	home_configuration_ = std::make_shared< Mat4d >( home_configuration );
 
 	// Create a numeric joints model
-	numeric_model_.start_index = 1;           // Two numeric joints
-	numeric_model_.count = 2;           // Two numeric joints
-	numeric_model_.home_configuration = *home_configuration_;
+	wrist_center_model_.start_index = 1;           // Two numeric joints
+	wrist_center_model_.count = 2;           // Two numeric joints
+	wrist_center_model_.home_configuration = *home_configuration_;
 
 	// Create a wrist model for the last 3 joints
 	wrist_model_.type = WristType::Revolute3;
@@ -57,7 +58,7 @@ void SetUp() override
 		joint_chain_,
 		home_configuration_,
 		base_model_,
-		numeric_model_,
+		wrist_center_model_,
 		wrist_model_
 		);
 }
@@ -66,7 +67,7 @@ void TearDown() override
 {
 }
 
-const VecXd RandomValidJoints( double margin_percent )
+const VecXd RandomValidJoints( double margin_percent = 0.05 )
 {
 	VecXd random( joint_chain_->GetActiveJointCount() );
 	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
@@ -74,7 +75,7 @@ const VecXd RandomValidJoints( double margin_percent )
 	return random;
 }
 
-const VecXd RandomValidJointsNear( const VecXd& joints, double distance, double margin_percent )
+const VecXd RandomValidJointsNear( const VecXd& joints, double distance = 0.1, double margin_percent = 0.05 )
 {
 	VecXd random( joint_chain_->GetActiveJointCount() );
 	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
@@ -85,7 +86,7 @@ const VecXd RandomValidJointsNear( const VecXd& joints, double distance, double 
 std::shared_ptr< JointChain > joint_chain_;
 std::shared_ptr< Mat4d > home_configuration_;
 BaseJointModel base_model_;
-NumericJointsModel numeric_model_;
+WristCenterJointsModel wrist_center_model_;
 WristModel wrist_model_;
 std::unique_ptr< BaseNumericWristSolver > solver_;
 random_numbers::RandomNumberGenerator rng_;
@@ -100,7 +101,14 @@ TEST_F( BaseNumericWristSolverTest, IK_Success )
 	Mat4d target_pose;
 	VecXd joints( 6 );
 	//joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
-	joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0, 0, 0;
+	joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0.3, 0.1, -0.5;
+	joints << -1.8657056532377956, 
+			  -1.1118263984505474,  
+			  -1.408794846897286,  
+			  2.0502418150456458, 
+			  -1.8924712710269254, 
+			  2.3880259767781009;
+
     //joints = RandomValidJoints( 0.05 );
 	POE( *joint_chain_, *home_configuration_, joints, target_pose );
 
@@ -181,7 +189,7 @@ TEST_F( BaseNumericWristSolverTest, IK_UnreachableWrist )
 	SolverResult result = solver_->IK( target_pose, seed_joints, 0.01 );
 
 	// Check that the solution is unreachable
-	EXPECT_TRUE( result.Unreachable() ) << "IK should fail for unreachable wrist orientation";
+	EXPECT_TRUE( result.Fail() ) << "IK should fail for unreachable wrist orientation";
 }
 
 // ------------------------------------------------------------
@@ -253,7 +261,7 @@ TEST_F( BaseNumericWristSolverTest, IK_WithNonIdentityHomeConfiguration )
 		joint_chain_,
 		std::make_shared< Mat4d >( non_identity_home ),
 		base_model_,
-		numeric_model_,
+		wrist_center_model_,
 		wrist_model_
 		);
 
@@ -271,6 +279,80 @@ TEST_F( BaseNumericWristSolverTest, IK_WithNonIdentityHomeConfiguration )
 	// Check that the solution is valid
 	EXPECT_TRUE( result.Success() )
 	    << "IK should either succeed or detect unreachable target with non-identity home configuration";
+}
+
+// ------------------------------------------------------------
+
+TEST_F( BaseNumericWristSolverTest, Robustness_GoodSeed_RepeatedCalls )
+{
+	int NUM_TEST = 1000;
+
+	VecXd joints;
+	Mat4d target;
+	VecXd good_seed;
+	Mat4d ik_result;
+	Vec6d error;
+
+	for ( int i = 0; i < NUM_TEST; ++i )
+	{
+		joints = RandomValidJoints();
+		POE( *joint_chain_, *home_configuration_, joints, target );
+		good_seed = RandomValidJointsNear( joints, 0.1 );
+
+		auto result = solver_->IK( target, ToStdVector( good_seed ), 0.01 );
+
+		Mat4d ik_result;
+		POE( *joint_chain_, *home_configuration_, result.joints, ik_result );
+
+		EXPECT_TRUE( result.Success() )
+		    << "Iteration " << i << std::endl
+			<< "State  = " << static_cast< int >( result.state ) << std::endl
+		    << "Joints = " << joints.transpose() << std::endl
+		    << "Target = " << std::endl << target << std::endl
+		    << "Result = " << std::endl << ik_result << std::endl;
+		
+		PoseError( target, ik_result, error );
+		EXPECT_LT( error.norm(), error_tolerance )
+			<< "error = " << error.transpose() << std::endl
+			<< "error norm = " << error.norm() << std::endl;
+	}
+}
+
+// ------------------------------------------------------------
+
+TEST_F( BaseNumericWristSolverTest, Robustness_RandomSeed_RepeatedCalls )
+{
+	int NUM_TEST = 10000;
+
+	VecXd joints;
+	Mat4d target;
+	VecXd random_seed;
+	Mat4d ik_result;
+	Vec6d error;
+
+	for ( int i = 0; i < NUM_TEST; ++i )
+	{
+		joints = RandomValidJoints();
+		POE( *joint_chain_, *home_configuration_, joints, target );
+		random_seed = RandomValidJoints();
+
+		auto result = solver_->IK( target, ToStdVector( random_seed ), 0.01 );
+
+		POE( *joint_chain_, *home_configuration_, joints, ik_result );
+		PoseError( target, ik_result, error );
+
+		EXPECT_TRUE( result.Success() )
+		    << "Iteration " << i << std::endl
+			<< "State  		  = " << static_cast< int >( result.state ) << std::endl
+		    << "Target Joints = " << joints.transpose() << std::endl
+		    << "Result Joints = " << result.joints.transpose() << std::endl
+		    << "Target 		  = " << std::endl << target << std::endl
+		    << "Result 		  = " << std::endl << ik_result << std::endl;
+
+		EXPECT_LT( error.norm(), error_tolerance )
+			<< "error = " << error.transpose() << std::endl
+			<< "error norm = " << error.norm() << std::endl;
+	}
 }
 
 // ------------------------------------------------------------

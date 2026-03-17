@@ -10,6 +10,7 @@ enum class NumericSolverState
 	Stalled,
 	MaxRestart,
 	MaxIterations,
-	Failed
+	Failed,
+	Unreachable
 };
 }

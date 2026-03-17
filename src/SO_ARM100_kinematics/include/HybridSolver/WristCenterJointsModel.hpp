@@ -6,12 +6,12 @@
 
 namespace SOArm100::Kinematics
 {
-struct NumericJointsModel
+struct WristCenterJointsModel
 {
 	int start_index{ 0 };
 	size_t count{ 0 };
 	Mat4d home_configuration{ Mat4d::Identity() };
 };
 
-using NumericJointsModelUniqueConstPtr = std::unique_ptr< const NumericJointsModel >;
+using WristCenterJointsModelUniqueConstPtr = std::unique_ptr< const WristCenterJointsModel >;
 }

@@ -38,6 +38,14 @@ void FK( const VecXd& base_joint, Mat4d& fk ) const;
 
 const BaseJointModel* GetBaseJointModel() const;
 
+int GetJointStartIndex() const {
+	return 0;
+}
+
+int GetJointCount() const {
+	return 1;
+}
+
 private:
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;

@@ -57,7 +57,7 @@ NumericSolverResult FABRIKKinematicsSolver::InverseKinematic(
 {
     if ( KinematicsSolver::IsUnreachable( target ) )
 	{
-		return { NumericSolverState::Failed, {}, -1,  0 };
+		return { NumericSolverState::Unreachable, {}, -1,  0 };
 	}
 
     const int n_joints = joint_chain_->GetActiveJointCount();

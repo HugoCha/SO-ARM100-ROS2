@@ -13,7 +13,8 @@ namespace SOArm100::Kinematics
 
 WorkspaceFilter::WorkspaceFilter( const JointChain& joint_chain )
 {
-	base_frame_ = joint_chain.GetJoints()[0]->GetTwist().GetLinear();
+	if ( joint_chain.Empty() ) return;
+	base_frame_ = joint_chain.GetJoints()[0]->Origin();
 	ComputeWorkspace( joint_chain );
 }
 

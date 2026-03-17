@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseJointModel.hpp"
-#include "NumericJointsModel.hpp"
+#include "WristCenterJointsModel.hpp"
 #include "WristModel.hpp"
 
 #include <optional>
@@ -44,7 +44,7 @@ inline bool IsFlagSet( HybridSolverFlags flags, HybridSolverFlags flagToCheck ){
 struct HybridSolverConfiguration
 {
 	std::optional< BaseJointModel > base_joint_model{ std::nullopt };
-	std::optional< NumericJointsModel > numeric_joints_model{ std::nullopt };
+	std::optional< WristCenterJointsModel > wrist_center_joints_model{ std::nullopt };
 	std::optional< WristModel > wrist_model{ std::nullopt };
 	HybridSolverFlags solver_flags{ HybridSolverFlags::None };
 };

@@ -8,13 +8,13 @@ namespace SOArm100::Kinematics
 {
 class BaseJointModel;
 class JointChain;
-class NumericJointsModel;
+class WristCenterJointsModel;
 class WristModel;
 
-class NumericJointsAnalyzer
+class WristCenterJointsAnalyzer
 {
 public:
-[[nodiscard]] static std::optional< NumericJointsModel > Analyze(
+[[nodiscard]] static std::optional< WristCenterJointsModel > Analyze(
 	const JointChain& joint_chain,
 	const Mat4d& home_configuration,
 	const std::optional< BaseJointModel >& base_joint,

@@ -1,7 +1,7 @@
-#include "HybridSolver/NumericJointsAnalyzer.hpp"
+#include "HybridSolver/WristCenterJointsAnalyzer.hpp"
 
 #include "HybridSolver/BaseJointModel.hpp"
-#include "HybridSolver/NumericJointsModel.hpp"
+#include "HybridSolver/WristCenterJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -20,7 +20,7 @@ const Mat4d ComputeReducedHome(
 
 // ------------------------------------------------------------
 
-std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
+std::optional< WristCenterJointsModel > WristCenterJointsAnalyzer::Analyze(
 	const JointChain& joint_chain,
 	const Mat4d& home_configuration,
 	const std::optional< BaseJointModel >& base_joint,
@@ -35,7 +35,7 @@ std::optional< NumericJointsModel > NumericJointsAnalyzer::Analyze(
 	if ( numeric_count <= 0 )
 		return std::nullopt;
 
-	NumericJointsModel numeric_joint_model;
+	WristCenterJointsModel numeric_joint_model;
 	numeric_joint_model.start_index = numeric_start;
 	numeric_joint_model.count = numeric_count;
 

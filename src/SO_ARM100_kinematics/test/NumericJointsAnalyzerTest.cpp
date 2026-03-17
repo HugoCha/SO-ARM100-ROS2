@@ -1,9 +1,9 @@
 #include "Global.hpp"
 
-#include "HybridSolver/NumericJointsAnalyzer.hpp"
+#include "HybridSolver/WristCenterJointsAnalyzer.hpp"
 
 #include "HybridSolver/BaseJointModel.hpp"
-#include "HybridSolver/NumericJointsModel.hpp"
+#include "HybridSolver/WristCenterJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Joint/JointChain.hpp"
 #include "Joint/Twist.hpp"
@@ -20,7 +20,7 @@ namespace SOArm100::Kinematics::Test
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class NumericJointsAnalyzerTest : public ::testing::Test
+class WristCenterJointsAnalyzerTest : public ::testing::Test
 {
 protected:
 void SetUp() override
@@ -53,9 +53,9 @@ WristModel wrist_model_{};
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_FullNumericChain )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_FullNumericChain )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Test with no base joint and no wrist model (all joints are numeric)
 	auto result = analyzer.Analyze( joint_chain_, home_configuration_, std::nullopt, std::nullopt );
@@ -71,9 +71,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_FullNumericChain )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJoint )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_WithBaseJoint )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Test with a base joint but no wrist model
 	auto result = analyzer.Analyze( joint_chain_, home_configuration_, base_joint_model_, std::nullopt );
@@ -90,9 +90,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJoint )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_WithWristModel )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_WithWristModel )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Test with no base joint but with a wrist model
 	auto result = analyzer.Analyze( joint_chain_, home_configuration_, std::nullopt, wrist_model_ );
@@ -109,9 +109,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithWristModel )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJointAndWristModel )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_WithBaseJointAndWristModel )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Test with both a base joint and a wrist model
 	auto result = analyzer.Analyze( joint_chain_, home_configuration_, base_joint_model_, wrist_model_ );
@@ -128,9 +128,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithBaseJointAndWristModel )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_NoNumericJoints )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_NoNumericJoints )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Create a joint chain with only 3 joints (all used by wrist)
 	JointChain wrist_only_chain( 3 );
@@ -168,9 +168,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_NoNumericJoints )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_WithNonIdentityHomeConfiguration )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_WithNonIdentityHomeConfiguration )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Create a non-identity home configuration
 	Mat4d non_identity_home = Mat4d::Identity();
@@ -190,9 +190,9 @@ TEST_F( NumericJointsAnalyzerTest, Analyze_WithNonIdentityHomeConfiguration )
 
 // ------------------------------------------------------------
 
-TEST_F( NumericJointsAnalyzerTest, Analyze_WithReducedHomeConfiguration )
+TEST_F( WristCenterJointsAnalyzerTest, Analyze_WithReducedHomeConfiguration )
 {
-	NumericJointsAnalyzer analyzer;
+	WristCenterJointsAnalyzer analyzer;
 
 	// Create a home configuration with translation
 	Mat4d full_home = Mat4d::Identity();

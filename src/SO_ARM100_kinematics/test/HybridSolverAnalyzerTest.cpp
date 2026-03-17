@@ -49,7 +49,7 @@ TEST_F( HybridSolverAnalyzerTest, AnalyzeConfiguration_WithBaseNumericWrist )
 
 	// Check that all components are detected
 	EXPECT_TRUE( config.base_joint_model.has_value() ) << "Should detect base joint";
-	EXPECT_TRUE( config.numeric_joints_model.has_value() ) << "Should detect numeric joints";
+	EXPECT_TRUE( config.wrist_center_joints_model.has_value() ) << "Should detect numeric joints";
 	EXPECT_TRUE( config.wrist_model.has_value() ) << "Should detect wrist";
 
 	// Check that all flags are set
@@ -91,7 +91,7 @@ TEST_F( HybridSolverAnalyzerTest, AnalyzeConfiguration_WithBaseWristOnly )
 
 	// Check that base and wrist components are detected
 	EXPECT_TRUE( config.base_joint_model.has_value() ) << "Should detect base joint";
-	EXPECT_FALSE( config.numeric_joints_model.has_value() ) << "Should not detect numeric joints";
+	EXPECT_FALSE( config.wrist_center_joints_model.has_value() ) << "Should not detect numeric joints";
 	EXPECT_TRUE( config.wrist_model.has_value() ) << "Should detect wrist";
 
 	// Check that the correct flags are set
@@ -119,7 +119,7 @@ TEST_F( HybridSolverAnalyzerTest, AnalyzeConfiguration_WithWristOnly )
 
 	// Check that only base components are detected
 	EXPECT_FALSE( config.base_joint_model.has_value() ) << "Should detect base joint";
-	EXPECT_FALSE( config.numeric_joints_model.has_value() ) << "Should not detect numeric joints";
+	EXPECT_FALSE( config.wrist_center_joints_model.has_value() ) << "Should not detect numeric joints";
 	EXPECT_TRUE( config.wrist_model.has_value() ) << "Should not detect wrist";
 
 	// Check that the correct flags are set
@@ -140,7 +140,7 @@ TEST_F( HybridSolverAnalyzerTest, AnalyzeConfiguration_EmptyChain )
 
 	// Check that no components are detected
 	EXPECT_FALSE( config.base_joint_model.has_value() ) << "Should not detect base joint";
-	EXPECT_FALSE( config.numeric_joints_model.has_value() ) << "Should not detect numeric joints";
+	EXPECT_FALSE( config.wrist_center_joints_model.has_value() ) << "Should not detect numeric joints";
 	EXPECT_FALSE( config.wrist_model.has_value() ) << "Should not detect wrist";
 
 	// Check that no flags are set
@@ -161,7 +161,7 @@ TEST_F( HybridSolverAnalyzerTest, AnalyzeConfiguration_WithNonIdentityHomeConfig
 
 	// Check that all components are detected
 	EXPECT_TRUE( config.base_joint_model.has_value() ) << "Should detect base joint";
-	EXPECT_TRUE( config.numeric_joints_model.has_value() ) << "Should detect numeric joints";
+	EXPECT_TRUE( config.wrist_center_joints_model.has_value() ) << "Should detect numeric joints";
 	EXPECT_TRUE( config.wrist_model.has_value() ) << "Should detect wrist";
 
 	// Check that all flags are set

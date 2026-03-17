@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DLSSolver/DLSKinematicsSolver.hpp"
 #include "Global.hpp"
 
 #include "IKinematicsHeuristic.hpp"
@@ -48,11 +47,18 @@ const WristModel* GetWristModel() const {
 	return wrist_model_.get();
 }
 
+int GetJointStartIndex() const {
+	return wrist_model_->active_joint_start;
+}
+
+int GetJointCount() const {
+	return wrist_model_->active_joint_count;
+}
+
 private:
 std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 WristModelUniqueConstPtr wrist_model_;
-std::unique_ptr< DLSKinematicsSolver > dls_wrist_solver_;
 
 SolverResult SolveAnalytical(
 	const JointChain& joint_chain,
@@ -70,8 +76,5 @@ SolverResult SolveRevolute3(
 	const JointChain& joint_chain,
 	const Mat3d& R_target,
 	const std::span< const double >& seed_joints ) const;
-SolverResult SolveNumeric(
-	const Mat4d& target,
-	const std::span< const double > seed_joints ) const;
 };
 }

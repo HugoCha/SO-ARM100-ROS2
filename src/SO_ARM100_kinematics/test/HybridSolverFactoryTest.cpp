@@ -7,7 +7,7 @@
 #include "HybridSolver/BaseNumericWristSolver.hpp"
 #include "HybridSolver/BaseWristSolver.hpp"
 #include "HybridSolver/HybridSolverConfiguration.hpp"
-#include "HybridSolver/NumericJointsModel.hpp"
+#include "HybridSolver/WristCenterJointsModel.hpp"
 #include "HybridSolver/NumericJointsSolver.hpp"
 #include "HybridSolver/NumericWristSolver.hpp"
 #include "HybridSolver/WristModel.hpp"
@@ -37,8 +37,8 @@ void SetUp() override
 	base_model_.reference_direction = Vec3d( 1.0, 0.0, 0.0 );
 
 	// Create a numeric joints model
-	numeric_model_.count = 3;           // Three numeric joints
-	numeric_model_.home_configuration = *home_configuration_;
+	wrist_center_model_.count = 3;           // Three numeric joints
+	wrist_center_model_.home_configuration = *home_configuration_;
 
 	// Create a wrist model for the last 2 joints
 	wrist_model_.type = WristType::Revolute2;
@@ -56,7 +56,7 @@ void TearDown() override
 std::shared_ptr< JointChain > joint_chain_;
 std::shared_ptr< Mat4d > home_configuration_;
 BaseJointModel base_model_;
-NumericJointsModel numeric_model_;
+WristCenterJointsModel wrist_center_model_;
 WristModel wrist_model_;
 };
 
@@ -127,7 +127,7 @@ TEST_F( HybridSolverFactoryTest, Get_BaseNumericWristSolver )
 	HybridSolverConfiguration config;
 	config.solver_flags = HybridSolverFlags::BaseNumericWrist;
 	config.base_joint_model = base_model_;
-	config.numeric_joints_model = numeric_model_;
+	config.wrist_center_joints_model = wrist_center_model_;
 	config.wrist_model = wrist_model_;
 
 	// Create the solver
@@ -147,7 +147,7 @@ TEST_F( HybridSolverFactoryTest, Get_NumericSolver )
 	// Create a configuration for numeric solver
 	HybridSolverConfiguration config;
 	config.solver_flags = HybridSolverFlags::Numeric;
-	config.numeric_joints_model = numeric_model_;
+	config.wrist_center_joints_model = wrist_center_model_;
 
 	// Create the solver
 	HybridSolverFactory factory;
@@ -166,7 +166,7 @@ TEST_F( HybridSolverFactoryTest, Get_DefaultSolver )
 	// Create a configuration with no specific flag
 	HybridSolverConfiguration config;
 	config.solver_flags = static_cast< HybridSolverFlags >( -1 );  // Invalid flag
-	config.numeric_joints_model = numeric_model_;  // Default to numeric solver
+	config.wrist_center_joints_model = wrist_center_model_;  // Default to numeric solver
 
 	// Create the solver
 	HybridSolverFactory factory;

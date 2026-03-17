@@ -54,6 +54,10 @@ static SolverResult ToSolverResult( NumericSolverResult numeric_result )
 	case NumericSolverState::MaxIterations:
 	case NumericSolverState::Failed:
 		return SolverResult(
+			SolverState::Fail,
+			numeric_result.joints );
+	case NumericSolverState::Unreachable:
+		return SolverResult(
 			SolverState::Unreachable,
 			numeric_result.joints );
 	case NumericSolverState::Improving:

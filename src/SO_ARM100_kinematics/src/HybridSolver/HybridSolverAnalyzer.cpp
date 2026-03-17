@@ -2,7 +2,7 @@
 
 #include "HybridSolver/BaseJointAnalyzer.hpp"
 #include "HybridSolver/HybridSolverConfiguration.hpp"
-#include "HybridSolver/NumericJointsAnalyzer.hpp"
+#include "HybridSolver/WristCenterJointsAnalyzer.hpp"
 #include "HybridSolver/WristAnalyzer.hpp"
 
 namespace SOArm100::Kinematics
@@ -29,7 +29,7 @@ const HybridSolverConfiguration HybridSolverAnalyzer::AnalyzeConfiguration(
 		configuration.solver_flags |= HybridSolverFlags::Base;
 	}
 
-	if ( ( configuration.numeric_joints_model = NumericJointsAnalyzer::Analyze(
+	if ( ( configuration.wrist_center_joints_model = WristCenterJointsAnalyzer::Analyze(
 			   joint_chain,
 			   home_configuration,
 			   configuration.base_joint_model,

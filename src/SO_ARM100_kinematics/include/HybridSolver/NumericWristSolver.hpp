@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HybridSolver/WristCenterSolver.hpp"
 #include "IKinematicsSolver.hpp"
 #include "NumericJointsSolver.hpp"
 #include "SolverResult.hpp"
@@ -10,7 +11,7 @@
 namespace SOArm100::Kinematics
 {
 class JointChain;
-class NumericJointsModel;
+class WristCenterJointsModel;
 class WristModel;
 
 class NumericWristSolver : public IKinematicsSolver
@@ -19,7 +20,7 @@ public:
 NumericWristSolver(
 	std::shared_ptr< const JointChain > joint_chain,
 	std::shared_ptr< const Mat4d > home_configuration,
-	const NumericJointsModel& numeric_model,
+	const WristCenterJointsModel& wrist_center_model,
 	const WristModel& wrist_model );
 
 virtual SolverResult IK(
@@ -58,6 +59,7 @@ std::shared_ptr< const JointChain > joint_chain_;
 std::shared_ptr< const Mat4d > home_configuration_;
 
 std::unique_ptr< NumericJointsSolver > numeric_solver_;
+std::unique_ptr< WristCenterJointsSolver > wrist_center_solver_;
 std::unique_ptr< WristSolver > wrist_solver_;
 };
 }
