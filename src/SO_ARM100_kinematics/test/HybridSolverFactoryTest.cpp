@@ -1,7 +1,7 @@
 #include "HybridSolver/HybridSolverFactory.hpp"
 
 #include "RobotModelTestData.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/BaseJointSolver.hpp"
 #include "HybridSolver/BaseNumericWristSolver.hpp"

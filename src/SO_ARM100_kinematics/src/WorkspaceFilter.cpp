@@ -1,6 +1,6 @@
 #include "WorkspaceFilter.hpp"
 
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

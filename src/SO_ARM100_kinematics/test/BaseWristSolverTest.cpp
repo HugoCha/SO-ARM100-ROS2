@@ -5,7 +5,7 @@
 #include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

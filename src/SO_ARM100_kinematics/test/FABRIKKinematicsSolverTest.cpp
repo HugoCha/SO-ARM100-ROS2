@@ -3,8 +3,8 @@
 #include "Global.hpp"
 
 #include "DLSSolver/NumericSolverResult.hpp"
-#include "Joint/JointChain.hpp"
-#include "Joint/Limits.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Limits.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"

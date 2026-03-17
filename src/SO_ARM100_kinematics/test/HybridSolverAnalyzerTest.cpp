@@ -2,9 +2,9 @@
 
 #include "RobotModelTestData.hpp"
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
-#include "Joint/Twist.hpp"
-#include "Joint/Limits.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Twist.hpp"
+#include "Model/Limits.hpp"
 #include "HybridSolver/HybridSolverConfiguration.hpp"
 #include "Utils/Converter.hpp"
 

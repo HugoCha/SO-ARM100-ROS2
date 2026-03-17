@@ -1,4 +1,4 @@
-#include "Joint/Limits.hpp"
+#include "Model/Limits.hpp"
 
 #include <gtest/gtest.h>
 #include <random_numbers/random_numbers.h>

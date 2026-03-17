@@ -3,7 +3,7 @@
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "Global.hpp"
 #include "HybridSolver/WristCenterJointsModel.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "FABRIKSolver/FabrikSolver.hpp"
 #include "SolverResult.hpp"
 

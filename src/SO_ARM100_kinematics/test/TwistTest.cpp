@@ -1,6 +1,6 @@
 #include "Global.hpp"
 
-#include "Joint/Twist.hpp"
+#include "Model/Twist.hpp"
 
 #include <gtest/gtest.h>
 #include <Eigen/Dense>

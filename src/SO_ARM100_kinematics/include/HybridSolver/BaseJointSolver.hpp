@@ -5,7 +5,7 @@
 #include "BaseJointModel.hpp"
 #include "IKinematicsHeuristic.hpp"
 #include "IKinematicsSolver.hpp"
-#include "Joint/Joint.hpp"
+#include "Model/Joint.hpp"
 #include "SolverResult.hpp"
 
 #include <span>

@@ -3,7 +3,7 @@
 #include "RobotModelTestData.hpp"
 
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>

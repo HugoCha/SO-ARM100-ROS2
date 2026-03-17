@@ -1,10 +1,10 @@
 #include "RobotModelTestData.hpp"
 
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
-#include "Joint/Limits.hpp"
-#include "Joint/Link.hpp"
-#include "Joint/Twist.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Limits.hpp"
+#include "Model/Link.hpp"
+#include "Model/Twist.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

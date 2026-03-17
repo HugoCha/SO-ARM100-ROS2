@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "WorkspaceFilter.hpp"
 
 #include <memory>

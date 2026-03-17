@@ -4,7 +4,7 @@
 
 #include "IKinematicsHeuristic.hpp"
 #include "IKinematicsSolver.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "WristModel.hpp"
 
 #include <memory>

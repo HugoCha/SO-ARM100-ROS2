@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Joint/Pose.hpp"
+#include "Model/Pose.hpp"
 #include "KinematicsSolver.hpp"
 
 #include <span>

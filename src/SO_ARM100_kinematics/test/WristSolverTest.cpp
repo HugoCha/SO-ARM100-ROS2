@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "SolverResult.hpp"

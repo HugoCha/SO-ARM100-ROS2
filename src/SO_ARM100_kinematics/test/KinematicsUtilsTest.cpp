@@ -1,8 +1,8 @@
 #include "Global.hpp"
 
-#include "Joint/JointChain.hpp"
-#include "Joint/Limits.hpp"
-#include "Joint/Twist.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Limits.hpp"
+#include "Model/Twist.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

@@ -1,7 +1,7 @@
 #include "HybridSolver/NumericJointsSolver.hpp"
 
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "RobotModelTestData.hpp"
 #include "SolverResult.hpp"
 #include "Utils/KinematicsUtils.hpp"

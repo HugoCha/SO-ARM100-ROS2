@@ -1,8 +1,8 @@
 #include "KinematicsSolver.hpp"
 
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
-#include "Joint/Twist.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Twist.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "WorkspaceFilter.hpp"

@@ -3,7 +3,7 @@
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristCenterJointsModel.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics

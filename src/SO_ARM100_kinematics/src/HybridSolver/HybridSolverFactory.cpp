@@ -8,7 +8,7 @@
 #include "HybridSolver/NumericWristSolver.hpp"
 #include "HybridSolver/WristSolver.hpp"
 #include "IKinematicsSolver.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 
 #include <memory>
 #include <stdexcept>

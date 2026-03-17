@@ -2,7 +2,7 @@
 #include "Global.hpp"
 
 #include "DLSSolver/NumericSolverResult.hpp"
-#include "Joint/Pose.hpp"
+#include "Model/Pose.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "FABRIKSolver/FabrikSolver.hpp"

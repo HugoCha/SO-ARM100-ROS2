@@ -4,7 +4,7 @@
 #include "DLSSolver/NumericSolverResult.hpp"
 #include "DLSSolver/NumericSolverState.hpp"
 #include "Global.hpp"
-#include "Joint/Limits.hpp"
+#include "Model/Limits.hpp"
 #include "KinematicsSolver.hpp"
 #include "SolverType.hpp"
 #include "Utils/Converter.hpp"

@@ -3,7 +3,7 @@
 #include "Global.hpp"
 #include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 
 #include <optional>
 

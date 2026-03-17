@@ -1,7 +1,7 @@
 #include "Utils/KinematicsUtils.hpp"
 
 #include "Global.hpp"
-#include "Joint/JointChain.hpp"
+#include "Model/JointChain.hpp"
 #include "SolverResult.hpp"
 
 #include <Eigen/Dense>

@@ -2,8 +2,8 @@
 
 #include "Global.hpp"
 #include "HybridSolver/WristModel.hpp"
-#include "Joint/JointChain.hpp"
-#include "Joint/Twist.hpp"
+#include "Model/JointChain.hpp"
+#include "Model/Twist.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
 
