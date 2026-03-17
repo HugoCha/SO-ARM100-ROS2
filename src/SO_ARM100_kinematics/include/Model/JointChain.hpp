@@ -148,4 +148,6 @@ void ComputeJointPosesFK(
 
 void Add( JointConstPtr joint );
 };
+
+using JointChainConstPtr = std::shared_ptr< const JointChain >;
 }
