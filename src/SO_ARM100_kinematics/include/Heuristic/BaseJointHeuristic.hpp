@@ -10,11 +10,11 @@ namespace SOArm100::Kinematics::Heuristic
 class BaseJointHeuristic : public IKHeuristic
 {
 public:
-BaseJointHeuristic( 
-    Model::KinematicModelConstPtr model, 
-    const Model::JointGroup& base_group );
+BaseJointHeuristic(
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup& base_group );
 
-virtual IKPresolution Presolve( const Solver::IKProblem& problem ) const override;
+virtual IKPresolution Presolve( const Solver::IKProblem& problem, const Solver::IKRunContext& context ) const override;
 
 private:
 Model::JointGroup base_group_;

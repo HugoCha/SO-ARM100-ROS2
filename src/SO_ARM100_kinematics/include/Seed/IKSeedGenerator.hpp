@@ -13,10 +13,10 @@ namespace Seed
 {
 class IKSeedGenerator
 {
-    public:
-    virtual ~IKSeedGenerator() = default;
-    
-    virtual VecXd Generate( const Solver::IKProblem& problem ) const = 0;
+public:
+virtual ~IKSeedGenerator() = default;
+
+virtual VecXd Generate( const Solver::IKProblem& problem ) const = 0;
 };
 }
 }

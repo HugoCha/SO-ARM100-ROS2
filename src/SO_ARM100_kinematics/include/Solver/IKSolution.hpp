@@ -9,19 +9,19 @@ namespace SOArm100::Kinematics::Solver
 {
 struct IKSolution
 {
-IKSolverState state;
-VecXd joints;
-double error = std::numeric_limits<double>::infinity();
-int iterations = 0;
-double score = std::numeric_limits<double>::infinity();
+	IKSolverState state;
+	VecXd joints;
+	double error = std::numeric_limits< double >::infinity();
+	int iterations = 0;
+	double score = std::numeric_limits< double >::infinity();
 
-[[nodiscard]] bool Success() const {
-    return state == IKSolverState::Converged;
-}
+	[[nodiscard]] bool Success() const {
+		return state == IKSolverState::Converged;
+	}
 
-operator Heuristic::IKPresolution() const
-{
-    return { joints, ToIKHeuristicState( state ) };
-}
+	operator Heuristic::IKPresolution() const
+	{
+		return { joints, ToIKHeuristicState( state ) };
+	}
 };
 }

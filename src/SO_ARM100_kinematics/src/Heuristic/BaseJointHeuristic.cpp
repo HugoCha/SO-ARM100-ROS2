@@ -12,10 +12,10 @@ namespace SOArm100::Kinematics::Heuristic
 
 // ------------------------------------------------------------
 
-BaseJointHeuristic::BaseJointHeuristic( 
+BaseJointHeuristic::BaseJointHeuristic(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& base_group ) :
-    IKHeuristic( model ),
+	IKHeuristic( model ),
 	base_group_( base_group )
 {
 	reference_direction_ = ComputeReferenceDirection();
@@ -25,7 +25,8 @@ BaseJointHeuristic::BaseJointHeuristic(
 
 const Joint* BaseJointHeuristic::GetBaseJoint() const
 {
-	if ( base_group_.indices.empty() ) return nullptr;
+	if ( base_group_.indices.empty() )
+		return nullptr;
 	return model_->GetChain()->GetActiveJoint( base_group_.indices[0] ).get();
 }
 
@@ -34,7 +35,8 @@ const Joint* BaseJointHeuristic::GetBaseJoint() const
 Vec3d BaseJointHeuristic::ComputeReferenceDirection() const
 {
 	auto base_joint = GetBaseJoint();
-	if ( !base_joint ) return Vec3d::Zero();
+	if ( !base_joint )
+		return Vec3d::Zero();
 
 	const auto& base_axis = base_joint->Axis();
 	const auto& base_origin = base_joint->Origin();
@@ -48,12 +50,14 @@ Vec3d BaseJointHeuristic::ComputeReferenceDirection() const
 	{
 		auto next_joint = model_->GetChain()->GetNextJoint( base_joint );
 
-		if ( !next_joint ) return p_tip_home;
+		if ( !next_joint )
+			return p_tip_home;
 
 		const auto& next_joint_axis = next_joint->Axis();
 		reference_direction = base_axis.cross( next_joint_axis );
 
-		if ( reference_direction.norm() < epsilon ) return Vec3d::Zero();
+		if ( reference_direction.norm() < epsilon )
+			return Vec3d::Zero();
 	}
 
 	return reference_direction.normalized();
@@ -75,12 +79,16 @@ Vec3d BaseJointHeuristic::ComputeTipPosition( const Mat4d& target ) const
 
 // ------------------------------------------------------------
 
-IKPresolution BaseJointHeuristic::Presolve( const Solver::IKProblem& problem ) const 
+IKPresolution BaseJointHeuristic::Presolve(
+	const Solver::IKProblem& problem,
+	const Solver::IKRunContext& context ) const
 {
-    IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
+	IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
 
 	auto base_joint = GetBaseJoint();
-    if ( !base_joint ) return { {}, IKHeuristicState::Fail };
+	if ( !base_joint )
+		return {{}, IKHeuristicState::Fail }
+	;
 
 	auto p_wrist_center = ComputeTipPosition( problem.target );
 
@@ -90,7 +98,7 @@ IKPresolution BaseJointHeuristic::Presolve( const Solver::IKProblem& problem ) c
 
 	if ( r_proj.norm() < epsilon )
 	{
-        presolution.joints = { problem.seed };
+		presolution.joints = { problem.seed };
 		presolution.state = IKHeuristicState::PartialSuccess;
 	}
 	else
@@ -102,18 +110,18 @@ IKPresolution BaseJointHeuristic::Presolve( const Solver::IKProblem& problem ) c
 		const auto& candidates = EvaluateAngleCandidates( *base_joint, problem.seed[0], theta );
 		if ( !candidates.empty() )
 		{
-            presolution.joints = problem.seed;
-            presolution.joints[0] = candidates[0];
+			presolution.joints = problem.seed;
+			presolution.joints[0] = candidates[0];
 			presolution.state = IKHeuristicState::Success;
 		}
 		else
 		{
-            presolution.joints = {};
+			presolution.joints = {};
 			presolution.state = IKHeuristicState::Fail;
 		}
 	}
 
-    return presolution;
+	return presolution;
 }
 
 // ------------------------------------------------------------

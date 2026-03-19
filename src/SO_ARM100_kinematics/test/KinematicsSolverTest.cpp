@@ -72,15 +72,15 @@ DummyKinematicsSolver solver_;
 TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
 {
 	DummyKinematicsSolver solver;
-	solver.Initialize(		
+	solver.Initialize(
 		Data::GetRevoluteOnlyRobot(),
 		"arm",
 		"base_link",
 		{ "end_effector" },
 		0.01 );
 
-	JointChain initialized_chain = *solver.GetJointChain(); 
-	JointChain expected_chain 	 = Data::GetRevoluteOnlyRobotJointChain();
+	JointChain initialized_chain = *solver.GetJointChain();
+	JointChain expected_chain    = Data::GetRevoluteOnlyRobotJointChain();
 
 	EXPECT_EQ( expected_chain.GetJointCount(), initialized_chain.GetJointCount() );
 	EXPECT_EQ( expected_chain.GetActiveJointCount(), initialized_chain.GetActiveJointCount() );
@@ -93,7 +93,7 @@ TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
 		auto expected_joint = expected_joints[i];
 		auto initialized_joint = initialized_joints[i];
 		EXPECT_EQ( expected_joint->GetType(), initialized_joint->GetType() );
-		
+
 		EXPECT_EQ( expected_joint->GetTwist().GetAxis(), initialized_joint->GetTwist().GetAxis() );
 		EXPECT_EQ( expected_joint->GetTwist().GetLinear(), initialized_joint->GetTwist().GetLinear() );
 

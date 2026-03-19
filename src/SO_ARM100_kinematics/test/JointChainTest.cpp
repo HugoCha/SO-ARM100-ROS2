@@ -30,13 +30,13 @@ void SetUp() override {
 
 	joint_chain_->Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-		Link( ToTransformMatrix( Vec3d(0,0,0.5)), 0.5 ),
+		Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
 		Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	joint_chain_->Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.0 ) ),
-		Link( ToTransformMatrix(Vec3d( 0, 0, 1.0 )), 0 ),
+		Link( ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 	joint1_ = joint_chain_->GetJoints()[0];
@@ -363,11 +363,11 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeFK )
 	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
 	auto home = Data::GetRevoluteOnlyRobotHome();
 
-	VecXd joints{3};
+	VecXd joints{ 3 };
 	joints << M_PI / 8, M_PI / 2, 0.7;
-	
+
 	Mat4d expected = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
-	
+
 	Mat4d result;
 	joint_chain.ComputeFK( joints, home, result );
 
@@ -381,32 +381,32 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeJointPoses )
 	auto joint_chain = Data::GetRevoluteOnlyRobotJointChain();
 	auto home = Data::GetRevoluteOnlyRobotHome();
 
-	VecXd joints{3};
+	VecXd joints{ 3 };
 	joints << M_PI / 8, M_PI / 2, 0.7;
-	
-    Mat4d T_cumul_0 = Data::GetRevoluteOnlyRobotT01( joints[0] );
-    Mat4d T_cumul_1 = T_cumul_0 * Data::GetRevoluteOnlyRobotT12( joints[1] );
-    Mat4d T_cumul_2 = T_cumul_1 * Data::GetRevoluteOnlyRobotT23( joints[2] );
 
-    // World-frame axis = R(T_cumul_i) * local_axis
-    std::vector< Pose > expected_int_fk
-    {
-        Pose{
-            Translation( T_cumul_0 ),
-            Rotation( T_cumul_0 ) * joint_chain.GetActiveJoint(0)->Axis()
-        },
-        Pose{
-            Translation( T_cumul_1 ),
-            Rotation( T_cumul_1 ) * joint_chain.GetActiveJoint(1)->Axis()
-        },
-        Pose{
-            Translation( T_cumul_2 ),
-            Rotation( T_cumul_2 ) * joint_chain.GetActiveJoint(2)->Axis()
-        },
-    };
+	Mat4d T_cumul_0 = Data::GetRevoluteOnlyRobotT01( joints[0] );
+	Mat4d T_cumul_1 = T_cumul_0 * Data::GetRevoluteOnlyRobotT12( joints[1] );
+	Mat4d T_cumul_2 = T_cumul_1 * Data::GetRevoluteOnlyRobotT23( joints[2] );
+
+	// World-frame axis = R(T_cumul_i) * local_axis
+	std::vector< Pose > expected_int_fk
+	{
+		Pose{
+			Translation( T_cumul_0 ),
+			Rotation( T_cumul_0 ) * joint_chain.GetActiveJoint( 0 )->Axis()
+		},
+		Pose{
+			Translation( T_cumul_1 ),
+			Rotation( T_cumul_1 ) * joint_chain.GetActiveJoint( 1 )->Axis()
+		},
+		Pose{
+			Translation( T_cumul_2 ),
+			Rotation( T_cumul_2 ) * joint_chain.GetActiveJoint( 2 )->Axis()
+		},
+	};
 
 	Mat4d expected_fk = Data::GetRevoluteOnlyRobotTransform( joints[0], joints[1], joints[2] );
-	
+
 	std::vector< Pose > result_int_fk;
 	Mat4d result;
 	joint_chain.ComputeJointPosesFK( joints, home, result_int_fk, result );
@@ -414,15 +414,15 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeJointPoses )
 	for ( int i = 0; i < 3; i++ )
 	{
 		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].origin ).norm() < 1e-9 )
-			<< "Expected Origin " << i << " = " << std::endl << expected_int_fk[i].origin.transpose() << std::endl
-			<< "Result Origin   " << i << " = " << std::endl << result_int_fk[i].origin.transpose() << std::endl;
+		    << "Expected Origin " << i << " = " << std::endl << expected_int_fk[i].origin.transpose() << std::endl
+		    << "Result Origin   " << i << " = " << std::endl << result_int_fk[i].origin.transpose() << std::endl;
 		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].axis ).norm() < 1e-9 )
-			<< "Expected Axis " << i << " = " << std::endl << expected_int_fk[i].axis.transpose() << std::endl
-			<< "Result Axis   " << i << " = " << std::endl << result_int_fk[i].axis.transpose() << std::endl;;
+		    << "Expected Axis " << i << " = " << std::endl << expected_int_fk[i].axis.transpose() << std::endl
+		    << "Result Axis   " << i << " = " << std::endl << result_int_fk[i].axis.transpose() << std::endl;;
 	}
 	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
-		<< "Expected fk = " << std::endl << expected_fk << std::endl
-		<< "Result fk   = " << std::endl << result << std::endl;
+	    << "Expected fk = " << std::endl << expected_fk << std::endl
+	    << "Result fk   = " << std::endl << result << std::endl;
 }
 
 // ------------------------------------------------------------

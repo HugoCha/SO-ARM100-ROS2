@@ -47,7 +47,7 @@ void Manipulability( const MatXd& jacobian, MatXd& manipulability ) noexcept;
 
 void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept;
 void WeightedPoseError(
-	const Mat4d& target, 
+	const Mat4d& target,
 	const Mat4d& current,
 	double rotation_weight,
 	double translation_weight,

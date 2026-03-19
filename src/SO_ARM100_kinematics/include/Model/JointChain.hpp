@@ -69,7 +69,7 @@ const Joint* GetPreviousJoint( const Joint* joint ) const;
 [[nodiscard]] bool WithinLimits( const VecXd& joints ) const {
 	if ( joints.size() > GetActiveJointCount() )
 		return false;
-	
+
 	return WithinLimits( joints.data(), joints.size() );
 }
 
@@ -123,7 +123,7 @@ bool ComputeJointPosesFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Mat4d >& joints_fk,
-	Mat4d& fk ) const 
+	Mat4d& fk ) const
 {
 	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
 }
@@ -132,19 +132,19 @@ bool ComputeJointPosesFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Mat4d >& joints_fk,
-	Mat4d& fk ) const 
+	Mat4d& fk ) const
 {
 	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
 }
 
-[[nodiscard]] VecXd RandomValidJoints( 
-	random_numbers::RandomNumberGenerator& rng, 
+[[nodiscard]] VecXd RandomValidJoints(
+	random_numbers::RandomNumberGenerator& rng,
 	double margin_percent = 0.05 ) const noexcept;
 
-[[nodiscard]] VecXd RandomValidJointsNear( 
-	random_numbers::RandomNumberGenerator& rng, 
+[[nodiscard]] VecXd RandomValidJointsNear(
+	random_numbers::RandomNumberGenerator& rng,
 	const VecXd& joints,
-	double distance = 0.1, 
+	double distance = 0.1,
 	double margin_percent = 0.05 ) const noexcept;
 
 [[nodiscard]] VecXd RandomValidJointsNearWrapped(

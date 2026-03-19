@@ -6,13 +6,13 @@ namespace SOArm100::Kinematics::Solver
 {
 struct IKProblem
 {
-Mat4d target;
+	Mat4d target;
 
-VecXd seed;
+	VecXd seed;
 
-double position_tolerance;
-double rotation_tolerance;
+	double position_tolerance;
+	double rotation_tolerance;
 
-double timeout;
+	double timeout;
 };
 }

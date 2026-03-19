@@ -46,11 +46,11 @@ std::optional< JointGroup > WristAnalyzer::Analyze(
 		return std::nullopt;
 
 	Mat4d wrist_tip = ComputeTCPinWrist( wrist_center, model.GetHomeConfiguration() );
-	
+
 	return JointGroup::CreateFromRange(
-		"wrist", 
-		wrist_start, 
-		wrist_count, 
+		"wrist",
+		wrist_start,
+		wrist_count,
 		wrist_tip );
 }
 

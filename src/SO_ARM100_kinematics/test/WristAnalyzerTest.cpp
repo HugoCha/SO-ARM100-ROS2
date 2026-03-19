@@ -294,21 +294,21 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisWrist_WithOffset )
 	// Joint 1: Rotation around Z-axis with offset
 	three_axis_chain.Add(
 		Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Link( ToTransformMatrix( Vec3d(0.1, 0.1, 0.1 ) ), 0 ),
+		Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
 	// Joint 2: Rotation around Y-axis with offset
 	three_axis_chain.Add(
 		Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Link( ToTransformMatrix( Vec3d(0.1, 0.1, 0.1 ) ), 0 ),
+		Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 
 	// Joint 3: Rotation around X-axis with offset
 	three_axis_chain.Add(
 		Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Link( ToTransformMatrix( Vec3d(0.1, 0.1, 0.1 ) ), 0 ),
+		Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
 		Limits( -M_PI, M_PI )
 		);
 

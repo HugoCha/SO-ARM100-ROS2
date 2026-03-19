@@ -10,20 +10,20 @@ enum class IKSolverState
 	BestPossible,
 	MaxRestart,
 	MaxIterations,
-    NotRun,
+	NotRun,
 	Unreachable
 };
 
 inline Heuristic::IKHeuristicState ToIKHeuristicState( const IKSolverState& state )
 {
-    switch ( state ) 
-    {
-        case IKSolverState::Converged:
-            return Heuristic::IKHeuristicState::Success;
-        case IKSolverState::BestPossible:
-            return Heuristic::IKHeuristicState::PartialSuccess;
-        default:
-            return Heuristic::IKHeuristicState::Fail;
-    }
+	switch ( state )
+	{
+	case IKSolverState::Converged:
+		return Heuristic::IKHeuristicState::Success;
+	case IKSolverState::BestPossible:
+		return Heuristic::IKHeuristicState::PartialSuccess;
+	default:
+		return Heuristic::IKHeuristicState::Fail;
+	}
 }
 }

@@ -40,9 +40,9 @@ int JointChain::GetJointIndex( const Joint* joint ) const
 		return -1;
 
 	auto it = std::find_if( joints_.begin(), joints_.end(),
-		[joint](const JointConstPtr& ptr) {
+	                        [joint]( const JointConstPtr& ptr ){
 			return ptr.get() == joint;
-	});
+		} );
 
 	if ( it != joints_.end() )
 	{
@@ -95,8 +95,8 @@ bool JointChain::WithinLimits( const double* joints, int n_joints ) const
 
 // ------------------------------------------------------------
 
-VecXd JointChain::RandomValidJoints( 
-	random_numbers::RandomNumberGenerator& rng, 
+VecXd JointChain::RandomValidJoints(
+	random_numbers::RandomNumberGenerator& rng,
 	double margin_percent ) const noexcept
 {
 	const int n_joints = GetActiveJointCount();
@@ -105,17 +105,17 @@ VecXd JointChain::RandomValidJoints(
 	{
 		auto joint = active_joints_[i];
 		const auto& limits = joint->GetLimits();
-		limits.Random( rng, &random.data()[i], margin_percent );
+		limits.Random( rng, & random.data()[i], margin_percent );
 	}
 	return random;
 }
 
 // ------------------------------------------------------------
 
-VecXd JointChain::RandomValidJointsNear( 
-	random_numbers::RandomNumberGenerator& rng, 
+VecXd JointChain::RandomValidJointsNear(
+	random_numbers::RandomNumberGenerator& rng,
 	const VecXd& joints,
-	double distance, 
+	double distance,
 	double margin_percent ) const noexcept
 {
 	const int n_joints = GetActiveJointCount();
@@ -124,11 +124,11 @@ VecXd JointChain::RandomValidJointsNear(
 	{
 		auto joint = active_joints_[i];
 		const auto& limits = joint->GetLimits();
-		limits.RandomNear( 
-			rng, 
-			joints[i], 
-			&random.data()[i], 
-			distance, 
+		limits.RandomNear(
+			rng,
+			joints[i],
+			& random.data()[i],
+			distance,
 			margin_percent );
 	}
 	return random;
@@ -194,7 +194,7 @@ VecXd JointChain::RandomValidJointsNearCentered(
 		limits.RandomNear(
 			rng,
 			target,
-			&random.data()[i],
+			& random.data()[i],
 			distance,
 			margin_percent );
 	}
@@ -236,12 +236,12 @@ bool JointChain::ComputeJointPosesFK(
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
-	n_joints = std::min( n_joints, (int)GetActiveJointCount() );
+	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
 
-	if ( !WithinLimits( thetas, n_joints ) ) 
+	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
-	if ( joint_poses.size() < n_joints ) 
+	if ( joint_poses.size() < n_joints )
 		joint_poses.resize( n_joints );
 
 	Mat4d T_cumul = Mat4d::Identity();
@@ -250,7 +250,7 @@ bool JointChain::ComputeJointPosesFK(
 	{
 		const auto& joint = GetActiveJoint( i );
 		const auto& twist = joint->GetTwist();
-		joint_poses[i].origin.noalias() = ( T_cumul * joint->Origin().homogeneous() ).head(3);
+		joint_poses[i].origin.noalias() = ( T_cumul * joint->Origin().homogeneous() ).head( 3 );
 		joint_poses[i].axis.noalias()   = Rotation( T_cumul ) * joint->Axis();
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 	}
@@ -269,12 +269,12 @@ bool JointChain::ComputeJointPosesFK(
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
-	n_joints = std::min( n_joints, (int)GetActiveJointCount() );
+	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
 
-	if ( !WithinLimits( thetas, n_joints ) ) 
+	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
-	if ( joint_poses.size() < n_joints ) 
+	if ( joint_poses.size() < n_joints )
 		joint_poses.resize( n_joints );
 
 	Mat4d T_cumul = Mat4d::Identity();

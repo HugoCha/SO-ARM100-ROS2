@@ -27,7 +27,7 @@ virtual void ComputeWorkspace( const JointChain& joint_chain );
 [[nodiscard]] const Vec3d GetBaseFrame() const;
 
 private:
-double min_reach_{0.0};
-double max_reach_{0.0};
+double min_reach_{ 0.0 };
+double max_reach_{ 0.0 };
 };
 }

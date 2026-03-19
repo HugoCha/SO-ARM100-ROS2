@@ -3,7 +3,7 @@
 #include "Heuristic/IKHeuristic.hpp"
 #include "Model/JointGroup.hpp"
 
-namespace SOArm100::Kinematics::Heuristic 
+namespace SOArm100::Kinematics::Heuristic
 {
 class FabrikHeuristic : public IKHeuristic
 {

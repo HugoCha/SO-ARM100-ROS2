@@ -100,10 +100,10 @@ TEST_F( BaseNumericWristSolverTest, IK_Success )
 	// Create a target pose
 	Mat4d target_pose;
 	VecXd joints( 6 );
-	//joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
+	// joints << 0, M_PI / 4, -M_PI / 4, 0, 0, 0;
 	joints << M_PI / 3, M_PI / 4, -M_PI / 4, 0.3, 0.1, -0.5;
 
-    //joints = RandomValidJoints( 0.05 );
+	// joints = RandomValidJoints( 0.05 );
 	POE( *joint_chain_, *home_configuration_, joints, target_pose );
 
 	// Seed joints
@@ -211,8 +211,8 @@ TEST_F( BaseNumericWristSolverTest, Robustness_GoodSeed_RepeatedCalls )
 		{
 			PoseError( target, ik_result, error );
 			EXPECT_LT( error.norm(), error_tolerance )
-				<< "error = " << error.transpose() << std::endl
-				<< "error norm = " << error.norm() << std::endl;
+			    << "error = " << error.transpose() << std::endl
+			    << "error norm = " << error.norm() << std::endl;
 			ik_sucess++;
 		}
 	}
@@ -247,8 +247,8 @@ TEST_F( BaseNumericWristSolverTest, Robustness_RandomSeed_RepeatedCalls )
 		{
 			PoseError( target, ik_result, error );
 			EXPECT_LT( error.norm(), error_tolerance )
-				<< "error = " << error.transpose() << std::endl
-				<< "error norm = " << error.norm() << std::endl;
+			    << "error = " << error.transpose() << std::endl
+			    << "error norm = " << error.norm() << std::endl;
 			ik_sucess++;
 		}
 	}

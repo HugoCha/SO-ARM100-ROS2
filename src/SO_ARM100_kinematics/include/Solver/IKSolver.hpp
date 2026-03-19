@@ -15,18 +15,19 @@ class IKSolver : public Heuristic::IKHeuristic
 public:
 virtual ~IKSolver() = default;
 
-IKSolver( Model::KinematicModelConstPtr model ) : 
-    Heuristic::IKHeuristic( model )
-{}
+IKSolver( Model::KinematicModelConstPtr model ) :
+	Heuristic::IKHeuristic( model )
+{
+}
 
-virtual IKSolution Solve( 
-    const IKProblem& problem, 
-    const IKRunContext& context ) const = 0;
+virtual IKSolution Solve(
+	const IKProblem& problem,
+	const IKRunContext& context ) const = 0;
 
-virtual Heuristic::IKPresolution Presolve( 
-    const IKProblem& problem, 
-    const IKRunContext& context ) const override {
-    return Solve( problem, context );
+virtual Heuristic::IKPresolution Presolve(
+	const IKProblem& problem,
+	const IKRunContext& context ) const override {
+	return Solve( problem, context );
 }
 };
 }

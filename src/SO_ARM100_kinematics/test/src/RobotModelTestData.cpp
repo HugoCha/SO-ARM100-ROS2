@@ -205,9 +205,9 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	Vec3d point1( 0, 0, 0 );          // Origine
 	Twist twist1( axis1, point1 );
 
-	Vec3d origin1 = Vec3d(0.0,0,0.0 );
-	Vec3d origin2 = Vec3d(0.5,0,0.0 );
-	Vec3d origin3 = Vec3d(1.0,0,0.0 );
+	Vec3d origin1 = Vec3d( 0.0, 0, 0.0 );
+	Vec3d origin2 = Vec3d( 0.5, 0, 0.0 );
+	Vec3d origin3 = Vec3d( 1.0, 0, 0.0 );
 	Link link1( ToTransformMatrix( origin1 ), 0.5 );
 
 	Limits limits1( -M_PI, M_PI );
@@ -297,7 +297,7 @@ JointChain Create5DofRobotJointChain()
 	auto joint_chain = JointChain( 6 );
 
 	// Base joint (revolute around Z-axis)
-	Vec3d origin 	  = Vec3d( 0, 0, 0.0 );
+	Vec3d origin      = Vec3d( 0, 0, 0.0 );
 	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
 	Vec3d axis = Vec3d::UnitZ();
 	joint_chain.Add(

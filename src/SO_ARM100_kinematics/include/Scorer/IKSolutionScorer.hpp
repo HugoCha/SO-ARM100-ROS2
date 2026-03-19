@@ -2,7 +2,7 @@
 
 namespace SOArm100::Kinematics
 {
-namespace Solver 
+namespace Solver
 {
 struct IKProblem;
 struct IKSolution;
@@ -14,9 +14,9 @@ class IKSolutionScorer
 public:
 virtual ~IKSolutionScorer() = default;
 
-virtual double Score( 
-    const Solver::IKProblem& problem, 
-    const Solver::IKSolution& solution ) const = 0;
+virtual double Score(
+	const Solver::IKProblem& problem,
+	const Solver::IKSolution& solution ) const = 0;
 };
 }
 }

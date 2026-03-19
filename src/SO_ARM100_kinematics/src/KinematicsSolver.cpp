@@ -68,7 +68,7 @@ void KinematicsSolver::Initialize(
 	{
 		const auto* parent_joint = link_model->getParentJointModel();
 		const auto& child_joints = link_model->getChildJointModels();
-	
+
 		const Iso3d& joint_transform = state.getGlobalLinkTransform( link_model );
 		Iso3d child_transform = joint_transform;
 		if ( !child_joints.empty() )
@@ -107,7 +107,7 @@ void KinematicsSolver::Initialize(
 		joint_chain->Add( twist, link, limits );
 	}
 	joint_chain_ = std::move( joint_chain );
-	
+
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
 	home_configuration_ = std::make_shared< const Mat4d >( home_configuration );
 

@@ -11,17 +11,17 @@ class IKRandomSeedGenerator : public IKSeedGenerator
 public:
 enum class RandomType
 {
-    Random,
-    Near,
-    NearWrapLimit,
-    NearCenterLimit
+	Random,
+	Near,
+	NearWrapLimit,
+	NearCenterLimit
 };
 
 struct RandomParameters
 {
-    double distance {0.1};
-    double margin_percent{0.05};
-    double min_limit_span{4 * M_PI / 5};
+	double distance { 0.1 };
+	double margin_percent{ 0.05 };
+	double min_limit_span{ 4 * M_PI / 5 };
 };
 
 RandomType type;
@@ -29,10 +29,10 @@ RandomParameters parameters;
 
 IKRandomSeedGenerator( Model::KinematicModelConstPtr model );
 
-IKRandomSeedGenerator( 
-    Model::KinematicModelConstPtr model,
-    RandomType type, 
-    RandomParameters parameters );
+IKRandomSeedGenerator(
+	Model::KinematicModelConstPtr model,
+	RandomType type,
+	RandomParameters parameters );
 
 virtual VecXd Generate( const Solver::IKProblem& problem ) const override;
 

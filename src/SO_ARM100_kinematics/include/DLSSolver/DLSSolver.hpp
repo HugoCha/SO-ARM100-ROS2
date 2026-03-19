@@ -53,8 +53,8 @@ struct SolverParameters
 
 public:
 explicit DLSSolver( Model::KinematicModelConstPtr model );
-explicit DLSSolver( 
-	Model::KinematicModelConstPtr model, 
+explicit DLSSolver(
+	Model::KinematicModelConstPtr model,
 	SolverParameters parameters );
 ~DLSSolver() = default;
 
@@ -69,9 +69,9 @@ void SetParameters( const SolverParameters& parameters ) noexcept {
 	return parameters_;
 }
 
-virtual IKSolution Solve( 
-    const IKProblem& problem, 
-    const IKRunContext& context ) const override;
+virtual IKSolution Solve(
+	const IKProblem& problem,
+	const IKRunContext& context ) const override;
 
 protected:
 virtual bool InverseKinematicImpl(

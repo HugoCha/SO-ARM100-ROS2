@@ -78,7 +78,7 @@ std::optional< Twist::Cache > Twist::ComputeCache( const Vec6d& twist )
 
 // ------------------------------------------------------------
 
-const Vec3d Twist::TransformAxis( const Mat4d& transform ) const 
+const Vec3d Twist::TransformAxis( const Mat4d& transform ) const
 {
 	return Rotation( transform ) * axis_;
 }

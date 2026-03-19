@@ -24,8 +24,8 @@ double total_length_;
 
 static Vec3d ChainOrigin( const JointChain& chain );
 
-static double ComputeTotalLength( 
-    const JointChain& chain, 
-    const Mat4d& home_configuration );
+static double ComputeTotalLength(
+	const JointChain& chain,
+	const Mat4d& home_configuration );
 };
 }

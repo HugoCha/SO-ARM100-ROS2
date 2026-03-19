@@ -164,7 +164,7 @@ void PoseError(
 // ------------------------------------------------------------
 
 void WeightedPoseError(
-	const Mat4d& target, 
+	const Mat4d& target,
 	const Mat4d& current,
 	double rotation_weight,
 	double translation_weight,
@@ -172,16 +172,16 @@ void WeightedPoseError(
 {
 	assert( rotation_weight > 0 || translation_weight > 0 );
 	assert( weighted_error.size() >= 3 && ( rotation_weight <= 0 || translation_weight <= 0 ) ||
-			weighted_error.size() == 6 && rotation_weight > 0 && translation_weight > 0 );
-			
+	        weighted_error.size() == 6 && rotation_weight > 0 && translation_weight > 0 );
+
 	weighted_error.setZero();
 
 	Mat4d T_error = target * Inverse( current );
-	
+
 	if ( rotation_weight > 0 )
 	{
 		Eigen::AngleAxisd aa( Rotation( T_error ) );
-		weighted_error.head( 3 ).noalias() = 
+		weighted_error.head( 3 ).noalias() =
 			rotation_weight * ( aa.axis() * aa.angle() );
 	}
 	if ( translation_weight > 0 )
@@ -213,7 +213,7 @@ void ReachableError(
 	{
 		reachable_error.noalias() = VecXd::Zero( error.size() );
 	}
-	else 
+	else
 	{
 		reachable_error.noalias() = U_proj * e_proj;
 	}
@@ -307,32 +307,36 @@ std::vector< double > EvaluateAngleCandidates(
 	double seed,
 	double raw_angle ) noexcept
 {
-	if ( std::isnan( raw_angle ) ) return {};
+	if ( std::isnan( raw_angle ) )
+		return {}
+	;
 
 	std::vector< double > candidates;
 	candidates.reserve( 2 );
 
 	const auto& limits = joint.GetLimits();
 
-    double mirror = raw_angle + M_PI;
-    if ( mirror >  M_PI ) mirror -= 2.0 * M_PI;
-    if ( mirror < -M_PI ) mirror += 2.0 * M_PI;
+	double mirror = raw_angle + M_PI;
+	if ( mirror >  M_PI )
+		mirror -= 2.0 * M_PI;
+	if ( mirror < -M_PI )
+		mirror += 2.0 * M_PI;
 
 	if ( limits.Within( raw_angle ) )
 		candidates.push_back( raw_angle );
 
-    if ( limits.Within( mirror ) )
+	if ( limits.Within( mirror ) )
 		candidates.push_back( mirror );
 
-    auto wrap_dist = []( double a, double b ) noexcept {
-        double d = std::abs( a - b );
-        return std::min( d, 2.0 * M_PI - d );
-    };
+	auto wrap_dist = []( double a, double b ) noexcept {
+						 double d = std::abs( a - b );
+						 return std::min( d, 2.0 * M_PI - d );
+					 };
 
-    std::sort( candidates.begin(), candidates.end(),
-        [&]( double a, double b ) {
-            return wrap_dist( a, seed ) < wrap_dist( b, seed );
-        } );
+	std::sort( candidates.begin(), candidates.end(),
+	           [&]( double a, double b ){
+			return wrap_dist( a, seed ) < wrap_dist( b, seed );
+		} );
 
 	return candidates;
 }

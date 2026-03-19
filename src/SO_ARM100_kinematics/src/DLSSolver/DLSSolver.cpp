@@ -44,8 +44,8 @@ DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
 
 // ------------------------------------------------------------
 
-DLSSolver::DLSSolver( 
-	Model::KinematicModelConstPtr model, 
+DLSSolver::DLSSolver(
+	Model::KinematicModelConstPtr model,
 	SolverParameters parameters ) :
 	IKSolver( model ),
 	parameters_( parameters )
@@ -59,12 +59,12 @@ DLSSolver::DLSSolver(
 // ------------------------------------------------------------
 
 IKSolution DLSSolver::Solve(
-	const IKProblem& problem, 
-    const IKRunContext& context ) const
+	const IKProblem& problem,
+	const IKRunContext& context ) const
 {
 	if ( model_->IsUnreachable( problem.target ) )
 	{
-		return { IKSolverState::Unreachable, {} };
+		return { IKSolverState::Unreachable, {}};
 	}
 
 	const int n_joints = GetChain()->GetActiveJointCount();
@@ -72,7 +72,7 @@ IKSolution DLSSolver::Solve(
 	if ( problem.seed.size() != n_joints )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
-		return { IKSolverState::NotRun, {} };
+		return { IKSolverState::NotRun, {}};
 	}
 
 	auto type = GetSolverType( parameters_ );
@@ -97,21 +97,21 @@ IKSolution DLSSolver::Solve(
 		// std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
 		if ( context.StopRequested() )
 		{
-			return { IKSolverState::NotRun, history.best_joints, 
-					 history.best_error, iter };
+			return { IKSolverState::NotRun, history.best_joints,
+			         history.best_error, iter };
 		}
 
 		auto solver_state = EvaluateConvergence( *state, iter );
 
 		if ( solver_state == DLSSolverState::Converged )
 		{
-			return { IKSolverState::Converged, state->joints, 
-					 state->error, iter };
+			return { IKSolverState::Converged, state->joints,
+			         state->error, iter };
 		}
 		if ( solver_state == DLSSolverState::BestPossible )
 		{
-			return { IKSolverState::BestPossible, state->joints, 
-					 state->error, iter };
+			return { IKSolverState::BestPossible, state->joints,
+			         state->error, iter };
 		}
 		if ( solver_state == DLSSolverState::Stalled )
 		{
@@ -125,8 +125,8 @@ IKSolution DLSSolver::Solve(
 		PerformIteration( problem.target, *state, buffers );
 	}
 
-	return { IKSolverState::MaxIterations, history.best_joints, 
-			 history.best_error, parameters_.max_iterations };
+	return { IKSolverState::MaxIterations, history.best_joints,
+	         history.best_error, parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------
@@ -241,8 +241,8 @@ Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
 	Seed::IKRandomSeedGenerator::RandomParameters random_parameters;
-	auto random_type = Seed::IKRandomSeedGenerator::RandomType::Near; 
-	
+	auto random_type = Seed::IKRandomSeedGenerator::RandomType::Near;
+
 	random_parameters.margin_percent = 0.1;
 	if ( !state )
 	{
@@ -292,7 +292,7 @@ Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
 void DLSSolver::UpdateSeedGenerator(
 	const IterationState& state,
 	const SolverHistory& history,
-	Seed::IKRandomSeedGenerator& seed_generator )const
+	Seed::IKRandomSeedGenerator& seed_generator ) const
 {
 	seed_generator.type = ChooseSeedRandomType( state, history );
 
@@ -480,9 +480,9 @@ void DLSSolver::PrintBuffer( const SolverBuffers& buffers ) const
 
 void DLSSolver::PrintHistory( const SolverHistory& history ) const
 {
-	std::cout << "History: best error = " << history.best_error 
-			  << " restart idx = " << history.last_improvement_restart_index
-			  << " restart cnt = " << history.restart_counter << std::endl;
+	std::cout << "History: best error = " << history.best_error
+	          << " restart idx = " << history.last_improvement_restart_index
+	          << " restart cnt = " << history.restart_counter << std::endl;
 }
 
 // ------------------------------------------------------------
