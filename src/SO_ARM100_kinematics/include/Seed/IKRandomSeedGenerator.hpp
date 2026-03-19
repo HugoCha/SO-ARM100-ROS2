@@ -8,6 +8,7 @@ namespace SOArm100::Kinematics::Seed
 {
 class IKRandomSeedGenerator : public IKSeedGenerator
 {
+public:
 enum class RandomType
 {
     Random,
@@ -23,7 +24,11 @@ struct RandomParameters
     double min_limit_span{4 * M_PI / 5};
 };
 
-public:
+RandomType type;
+RandomParameters parameters;
+
+IKRandomSeedGenerator( Model::KinematicModelConstPtr model );
+
 IKRandomSeedGenerator( 
     Model::KinematicModelConstPtr model,
     RandomType type, 
@@ -33,8 +38,6 @@ virtual VecXd Generate( const Solver::IKProblem& problem ) const override;
 
 private:
 Model::KinematicModelConstPtr model_;
-RandomType type_;
-RandomParameters parameters_;
 mutable random_numbers::RandomNumberGenerator rng_;
 };
 }

@@ -2,31 +2,42 @@
 
 #include "Global.hpp"
 
+#include "Model/JointGroup.hpp"
 #include "Model/Pose.hpp"
-#include "KinematicsSolver.hpp"
+#include "Solver/IKSolver.hpp"
 
 #include <span>
 #include <vector>
 
-namespace SOArm100::Kinematics 
+namespace SOArm100::Kinematics::Solver 
 {
-struct NumericSolverResult;
-
-class FABRIKKinematicsSolver : public KinematicsSolver
+class FABRIKSolver : public Solver::IKSolver
 {
 public:
 struct SolverParameters
 {
-    int max_iterations{20};
-    double error_tolerance {5e-3};
+    int max_iterations;
+    double error_tolerance;
+
+    SolverParameters( int max_iterations = 20, double error_tolerance = 5e-3 ) :
+        max_iterations( max_iterations ),
+        error_tolerance( error_tolerance )
+    {}
 };
 
-explicit FABRIKKinematicsSolver() : FABRIKKinematicsSolver( SolverParameters() ) {}
-explicit FABRIKKinematicsSolver( SolverParameters parameters );
-~FABRIKKinematicsSolver() = default;
+explicit FABRIKSolver( 
+    Model::KinematicModelConstPtr model,
+    SolverParameters parameters = SolverParameters() );
 
-FABRIKKinematicsSolver( const FABRIKKinematicsSolver& ) = delete;
-FABRIKKinematicsSolver& operator = ( const FABRIKKinematicsSolver& ) = delete;
+explicit FABRIKSolver( 
+    Model::KinematicModelConstPtr model, 
+    Model::JointGroup joint_group,
+    SolverParameters parameters = SolverParameters() );
+
+~FABRIKSolver() = default;
+
+FABRIKSolver( const FABRIKSolver& ) = delete;
+FABRIKSolver& operator = ( const FABRIKSolver& ) = delete;
 
 [[nodiscard]] SolverParameters GetParameters() const {
     return parameters_;
@@ -36,15 +47,9 @@ void SetParameters( const SolverParameters& parameters ) {
     parameters_ = parameters;
 }
 
-[[nodiscard]] NumericSolverResult InverseKinematic(
-    const Mat4d& target,
-    const std::span< const double >& seed_joints ) const;
-
-protected:
-virtual bool InverseKinematicImpl(
-	const Mat4d& target,
-	const std::span< const double >& seed_joints,
-	double* joints ) const override;
+[[nodiscard]] virtual Solver::IKSolution Solve(
+    const IKProblem& problem,
+    const IKRunContext& context ) const override;
 
 private:
 struct SolverBuffers
@@ -70,7 +75,7 @@ struct SolverBuffers
 };
 
 SolverParameters parameters_;
-mutable SolverBuffers buffers_;
+Model::JointGroup group_; 
 
 void PreSolveAzimuthJoints(
     const Vec3d& p_target,
@@ -80,11 +85,14 @@ void PreSolveAzimuthJoints(
 
 void ComputePoses( 
     const VecXd& joints, 
-    std::vector< Pose >& poses ) const;
+    std::vector< Pose >& poses,
+    Mat4d& fk ) const;
     
 void ComputeBoneLengths( 
     const std::span< const Pose >& poses,
     const std::span< double >& bone_lengths ) const;
+    
+double TotalBoneLength( const std::span< const double > bone_lengths ) const;
 
 void ForwardPass(
     const Vec3d& target,

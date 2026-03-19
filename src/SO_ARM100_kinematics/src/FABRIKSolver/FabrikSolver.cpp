@@ -1,20 +1,24 @@
-#include "DLSSolver/NumericSolverState.hpp"
+#include "FABRIKSolver/FabrikSolver.hpp"
+
 #include "Global.hpp"
 
-#include "DLSSolver/NumericSolverResult.hpp"
+#include "Model/JointGroup.hpp"
 #include "Model/Pose.hpp"
-#include "Utils/Converter.hpp"
+#include "Solver/IKProblem.hpp"
+#include "Solver/IKRunContext.hpp"
+#include "Solver/IKSolution.hpp"
+#include "Solver/IKSolver.hpp"
+#include "Solver/IKSolverState.hpp"
+#include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
-#include "FABRIKSolver/FabrikSolver.hpp"
 
 #include <ios>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
-#include <span>
 #include <sstream>
 #include <string>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Solver
 {
 // ------------------------------------------------------------
 
@@ -26,115 +30,112 @@ static rclcpp::Logger get_logger()
 
 // ------------------------------------------------------------
 
-FABRIKKinematicsSolver::FABRIKKinematicsSolver( SolverParameters parameters ) :
-    parameters_( parameters ),
-    buffers_( 6 )
+FABRIKSolver::FABRIKSolver( 
+    Model::KinematicModelConstPtr model, 
+    Model::JointGroup group,
+    SolverParameters parameters ) :
+    IKSolver( model ),
+    group_( group ),
+    parameters_( parameters )
 {}
 
 // ------------------------------------------------------------
 
-bool FABRIKKinematicsSolver::InverseKinematicImpl(
-	const Mat4d& target,
-	const std::span< const double >& seed_joints,
-	double* joints ) const
-{
-    auto result = InverseKinematic( target, seed_joints );
-
-	if ( result.Success() )
-	{
-		std::copy( result.joints.begin(), result.joints.end(), joints );
-		return true;
-	}
-
-	return false;
-}
+FABRIKSolver::FABRIKSolver(     
+    Model::KinematicModelConstPtr model, 
+    SolverParameters parameters ) :
+    FABRIKSolver( 
+        model, 
+        Model::JointGroup::CreateFromRange( "full", 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
+        parameters )
+{}
 
 // ------------------------------------------------------------
 
-NumericSolverResult FABRIKKinematicsSolver::InverseKinematic(
-    const Mat4d& target,
-    const std::span< const double >& seed_joints ) const 
+IKSolution FABRIKSolver::Solve(
+    const IKProblem& problem,
+    const IKRunContext& context ) const 
 {
-    if ( KinematicsSolver::IsUnreachable( target ) )
+    if ( model_->IsUnreachable( problem.target ) )
 	{
-		return { NumericSolverState::Unreachable, {}, -1,  0 };
+		return { IKSolverState::Unreachable, {} };
 	}
 
-    const int n_joints = joint_chain_->GetActiveJointCount();
+    const int n_joints = group_.Size();
 
-	if ( seed_joints.size() != n_joints )
+	if ( problem.seed.size() < n_joints )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
-		return { NumericSolverState::Failed, {}, -1, 0 };;
+		return { IKSolverState::NotRun, {} };
 	}
 
-    if ( buffers_.GetSize() != n_joints )
-    {
-        buffers_ = SolverBuffers( n_joints );
-    }
+    SolverBuffers buffers = SolverBuffers( n_joints );
 
-    const Vec3d p_target = Translation( target );
+    const Vec3d p_target = Translation( problem.target );
 
-    buffers_.joints = ToVecXd( seed_joints );
-    PreSolveAzimuthJoints( p_target, buffers_.fabrik_start_idx, buffers_.joints );
-    ComputePoses( buffers_.joints, buffers_.poses );
-    ComputeBoneLengths( buffers_.poses, buffers_.bone_lengths );
-    const Vec3d p_base = buffers_.poses[buffers_.fabrik_start_idx].origin;
+    VecXd solution = problem.seed;
+    buffers.joints = group_.GetGroupJoints( problem.seed );
+    PreSolveAzimuthJoints( p_target, buffers.fabrik_start_idx, buffers.joints );
+    ComputePoses( buffers.joints, buffers.poses, buffers.fk );
+    ComputeBoneLengths( buffers.poses, buffers.bone_lengths );
+    const Vec3d p_base = buffers.poses[buffers.fabrik_start_idx].origin;
     
-    /*
-    std::cout << "Azim joints   = " << buffers_.joints.transpose() << std::endl;
-    std::cout << "Base          = " << p_base.transpose() << std::endl;
-    std::cout << "Target        = " << p_target.transpose() << std::endl;
-    std::cout << "Bones         = ";
-    PrintBoneLengths( buffers_.bone_lengths );
-    */
+    if ( Utils::Distance( p_base, p_target ) > TotalBoneLength( buffers.bone_lengths ) )
+    {
+        return { IKSolverState::Unreachable, {} };
+    }
 
     double error;
     for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
     {
-        // std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
-        error = TranslationError( p_target, buffers_.poses[n_joints].origin );
-        // std::cout << "Error     = " << error << std::endl;
-        // std::cout << "Poses     = " << std::endl;
-        // PrintPoses( buffers_.poses );
+        error = Utils::Distance( p_target, buffers.poses[n_joints].origin );
+
         if ( error < parameters_.error_tolerance )
-            return { NumericSolverState::Converged, buffers_.joints, error, iter };
+        {
+            group_.SetGroupJoints( buffers.joints, solution );
+            return { IKSolverState::Converged, solution, 
+                     error, iter };
+        }
+
+        if ( context.StopRequested() )
+        {
+            group_.SetGroupJoints( buffers.joints, solution );
+            return { IKSolverState::NotRun, solution, 
+                     error, iter };
+        }
     
-        buffers_.old_poses = buffers_.poses;
+        buffers.old_poses = buffers.poses;
         
-        ForwardPass( p_target, buffers_.bone_lengths, buffers_.fabrik_start_idx, buffers_.poses );
-        // std::cout << "Fwd Poses = " << std::endl;
-        // PrintPoses( buffers_.poses );
-        BackwardPass( p_base, buffers_.bone_lengths, buffers_.fabrik_start_idx, buffers_.poses );
-        // std::cout << "Bwd Poses = " << std::endl;
-        // PrintPoses( buffers_.poses );
-        UpdateJointValues( buffers_.old_poses, buffers_.fabrik_start_idx, buffers_.poses, buffers_.joints );
-        // std::cout << "Joints    = " << buffers_.joints.transpose() << std::endl;
-        ComputePoses( buffers_.joints, buffers_.poses );
+        ForwardPass( p_target, buffers.bone_lengths, buffers.fabrik_start_idx, buffers.poses );
+        BackwardPass( p_base, buffers.bone_lengths, buffers.fabrik_start_idx, buffers.poses );
+        UpdateJointValues( buffers.old_poses, buffers.fabrik_start_idx, buffers.poses, buffers.joints );
+        ComputePoses( buffers.joints, buffers.poses, buffers.fk );
     }
 
-    return { NumericSolverState::MaxIterations, buffers_.joints, 
+    group_.SetGroupJoints( buffers.joints, solution );
+    return { IKSolverState::MaxIterations, solution, 
              error, parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::PreSolveAzimuthJoints(
+void FABRIKSolver::PreSolveAzimuthJoints(
     const Vec3d& p_target,
     int& fabrik_start_idx,
     VecXd& joints ) const
 {
-    const int n = joint_chain_->GetActiveJointCount();
+    const int n = group_.Size();
     fabrik_start_idx = 0;
 
     std::vector< Pose > zero_poses( n + 1 );
     VecXd zero = VecXd::Zero( n );
-    joint_chain_->ComputeJointPosesFK( zero, *home_configuration_, zero_poses, buffers_.fk );
-    zero_poses[n].origin = Translation( buffers_.fk );
+    Mat4d tip_home;
+    GetChain()->ComputeJointPosesFK( zero, group_.tip_home, zero_poses, tip_home );
+    zero_poses[n].origin = Translation( group_.tip_home );
 
     for ( int i = 0; i < n; i++ )
     {
-        const auto& joint = joint_chain_->GetActiveJoint( i );
+        const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
         if ( !joint->IsRevolute() ) continue;
 
         Vec3d bone = zero_poses[i+1].origin - zero_poses[i].origin;
@@ -175,38 +176,47 @@ void FABRIKKinematicsSolver::PreSolveAzimuthJoints(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::ComputePoses(
+void FABRIKSolver::ComputePoses(
     const VecXd& joints,
-    std::vector< Pose >& poses ) const
+    std::vector< Pose >& poses,
+    Mat4d& fk ) const
 {
     const int n = joints.size();
 
-    joint_chain_->ComputeJointPosesFK( 
+    GetChain()->ComputeJointPosesFK( 
         joints, 
-        *home_configuration_, 
+        group_.tip_home, 
         poses, 
-        buffers_.fk );
+        fk );
     
-    poses[ n ].origin.noalias() = Translation( buffers_.fk );
+    poses[ n ].origin.noalias() = Translation( fk );
     poses[ n ].axis.setZero();
 }
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::ComputeBoneLengths( 
+void FABRIKSolver::ComputeBoneLengths( 
     const std::span< const Pose >& poses,
     const std::span< double >& bone_lengths ) const
 {
     const int n_joints = poses.size();
     for ( int i = 0; i < n_joints - 1; i++ )
-    {
-        bone_lengths[i] = ( poses[i+1].origin - poses[i].origin ).norm();
-    }
+        bone_lengths[i] = Utils::Distance( poses[i].origin, poses[i+1].origin );
 }
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::ForwardPass(
+double FABRIKSolver::TotalBoneLength( const std::span< const double > bone_lengths ) const
+{
+    double total_length = 0.0;
+    for ( int i = 0; i < bone_lengths.size(); i++ )
+        total_length += bone_lengths[i];
+    return total_length;
+}
+
+// ------------------------------------------------------------
+
+void FABRIKSolver::ForwardPass(
     const Vec3d& target,
     const std::span< const double >& bone_lengths,
     int start_idx,
@@ -217,7 +227,7 @@ void FABRIKKinematicsSolver::ForwardPass(
 
     for ( int i = n - 1; i > start_idx; i-- )
     {
-        const auto& joint = joint_chain_->GetActiveJoint( i );
+        const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
         const Vec3d& axis = poses[i].axis;
         Vec3d dir = poses[i].origin - poses[i+1].origin;
 
@@ -244,7 +254,7 @@ void FABRIKKinematicsSolver::ForwardPass(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::BackwardPass(
+void FABRIKSolver::BackwardPass(
     const Vec3d& base,
     const std::span< const double >& bone_lengths,
     int start_idx,
@@ -255,7 +265,7 @@ void FABRIKKinematicsSolver::BackwardPass(
 
     for ( int i = start_idx + 1; i <= n; i++ )
     {
-        const auto& joint = joint_chain_->GetActiveJoint( i - 1 );
+        const auto& joint = GetChain()->GetActiveJoint( group_.indices[i - 1] );
         Vec3d dir = poses[i].origin - poses[i-1].origin;
 
         switch ( joint->GetType() ) 
@@ -280,17 +290,17 @@ void FABRIKKinematicsSolver::BackwardPass(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::UpdateJointValues( 
+void FABRIKSolver::UpdateJointValues( 
     const std::span< const Pose >& old_poses,
     int start_idx,
     const std::span< Pose >& poses,
     VecXd& joints ) const
 {
-    const int n = joint_chain_->GetActiveJointCount();
+    const int n = group_.Size();
 
     for ( int i = start_idx; i < n; i++ )
     {
-        const auto& joint = joint_chain_->GetActiveJoint( i );
+        const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
         const auto& limits = joint->GetLimits();
         switch ( joint->GetType() ) 
         {
@@ -326,7 +336,7 @@ void FABRIKKinematicsSolver::UpdateJointValues(
 
 // ------------------------------------------------------------
 
-double FABRIKKinematicsSolver::RevolutePositionToAngle(
+double FABRIKSolver::RevolutePositionToAngle(
     const Pose& parent_pose,
     const Pose& old_child_pose,
     const Pose& new_child_pose,
@@ -356,7 +366,7 @@ double FABRIKKinematicsSolver::RevolutePositionToAngle(
 
 // ------------------------------------------------------------
 
-double FABRIKKinematicsSolver::PrismaticPositionToDisplacement(
+double FABRIKSolver::PrismaticPositionToDisplacement(
     const Pose& old_joint_pose,
     const Pose& new_joint_pose,
     double current_displacement ) const
@@ -367,7 +377,7 @@ double FABRIKKinematicsSolver::PrismaticPositionToDisplacement(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::ApplyRevoluteJointLimit(
+void FABRIKSolver::ApplyRevoluteJointLimit(
     const Pose&  parent_pose,
     const Limits& limits,
     double& current_angle,
@@ -391,7 +401,7 @@ void FABRIKKinematicsSolver::ApplyRevoluteJointLimit(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::PrintBoneLengths( 
+void FABRIKSolver::PrintBoneLengths( 
     const std::span< const double > bone_lengths ) const
 {
     const int n_bones = bone_lengths.size();
@@ -407,7 +417,7 @@ void FABRIKKinematicsSolver::PrintBoneLengths(
 
 // ------------------------------------------------------------
 
-void FABRIKKinematicsSolver::PrintPoses( const std::span< const Pose >& poses ) const
+void FABRIKSolver::PrintPoses( const std::span< const Pose >& poses ) const
 {
     const int n_poses = poses.size();
     std::stringstream poses_ss;

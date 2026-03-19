@@ -1,17 +1,16 @@
 #pragma once
 
+#include "DLSSolver/DLSSolverState.hpp"
 #include "Global.hpp"
 
-#include "KinematicsSolver.hpp"
-#include "SolverType.hpp"
+#include "Seed/IKRandomSeedGenerator.hpp"
+#include "Solver/IKSolver.hpp"
+#include "Solver/SolverType.hpp"
 #include <Eigen/src/SVD/JacobiSVD.h>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Solver
 {
-struct NumericSolverResult;
-enum class NumericSolverState;
-
-class DLSKinematicsSolver : public KinematicsSolver
+class DLSSolver : public IKSolver
 {
 public:
 struct SolverParameters
@@ -53,12 +52,14 @@ struct SolverParameters
 };
 
 public:
-explicit DLSKinematicsSolver();
-explicit DLSKinematicsSolver( SolverParameters parameters );
-~DLSKinematicsSolver() = default;
+explicit DLSSolver( Model::KinematicModelConstPtr model );
+explicit DLSSolver( 
+	Model::KinematicModelConstPtr model, 
+	SolverParameters parameters );
+~DLSSolver() = default;
 
-DLSKinematicsSolver( const DLSKinematicsSolver& ) = delete;
-DLSKinematicsSolver& operator = ( const DLSKinematicsSolver& ) = delete;
+DLSSolver( const DLSSolver& ) = delete;
+DLSSolver& operator = ( const DLSSolver& ) = delete;
 
 void SetParameters( const SolverParameters& parameters ) noexcept {
 	parameters_ = parameters;
@@ -68,15 +69,15 @@ void SetParameters( const SolverParameters& parameters ) noexcept {
 	return parameters_;
 }
 
-[[nodiscard]] NumericSolverResult InverseKinematic(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints ) const;
+virtual IKSolution Solve( 
+    const IKProblem& problem, 
+    const IKRunContext& context ) const override;
 
 protected:
 virtual bool InverseKinematicImpl(
 	const Mat4d& target,
 	const std::span< const double >& seed_joints,
-	double* joints ) const override;
+	double* joints ) const;
 
 private:
 struct SolverBuffers {
@@ -96,11 +97,11 @@ struct SolverBuffers {
 	VecXd joints;
 	Eigen::LDLT< MatXd > ldlt_solver;
 
-	[[nodiscard]] inline size_t GetSize() const noexcept {
+	[[nodiscard]] inline int GetSize() const noexcept {
 		return joints.size();
 	}
 
-	explicit SolverBuffers( size_t n_joints, SolverType solver_type ) :
+	explicit SolverBuffers( int n_joints, SolverType solver_type ) :
 		type( solver_type )
 	{
 		jacobian.resize( 6, n_joints );
@@ -139,14 +140,6 @@ struct IterationState {
 	int stalled_error_iter;
 };
 
-enum class SeedStrategy
-{
-	NearCenter,
-	NearJoints,
-	NearJointsAvoidLimits,
-	Random,
-};
-
 struct SolverHistory
 {
 	int last_improvement_restart_index{ 0 };
@@ -155,16 +148,7 @@ struct SolverHistory
 	double best_error{ 0 };
 };
 
-struct SeedParameters
-{
-	SeedStrategy strategy{ SeedStrategy::NearJoints };
-	double distance{ 0.05 };
-	double margin_percent{ 0.1 };
-};
-
 SolverParameters parameters_;
-mutable SolverBuffers buffers_{ 6, SolverType::Full };
-mutable random_numbers::RandomNumberGenerator rng_;
 
 [[nodiscard]] static SolverType GetSolverType( SolverParameters parameters );
 [[nodiscard]] static const MatXd InitializeWeightMatrix(
@@ -172,78 +156,13 @@ mutable random_numbers::RandomNumberGenerator rng_;
 	double translation_weight );
 
 [[nodiscard]] std::optional< IterationState > InitializeState(
-	const Mat4d& target, const VecXd& initial_joints ) const;
+	const Mat4d& target, const VecXd& initial_joints, SolverBuffers& buffers ) const;
 
 [[nodiscard]] SolverHistory InitializeHistory(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const;
 
-[[nodiscard]] SeedParameters InitializeSeedParameters(
+[[nodiscard]] Seed::IKRandomSeedGenerator InitializeSeedGenerator(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const;
-
-[[nodiscard]] const VecXd RandomValidJoints( double margin_percent ) const noexcept;
-
-[[nodiscard]] const VecXd RandomValidJointsTargeted(
-	const VecXd& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsTargeted( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsTargeted(
-	const std::span< const double >& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsTargeted( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsTargeted(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept;
-
-[[nodiscard]] const VecXd RandomValidJointsNear(
-	const VecXd& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNear( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsNear(
-	const std::span< const double >& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNear( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsNear(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept;
-
-[[nodiscard]] const VecXd RandomValidJointsNearWrapped(
-	const VecXd& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNearWrapped( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsNearWrapped(
-	const std::span< const double >& joints,
-	double distance,
-	double margin_percent ) const noexcept {
-	assert( joints.size() == joint_chain_->GetActiveJointCount() );
-	return RandomValidJointsNearWrapped( joints.data(), distance, margin_percent );
-}
-
-[[nodiscard]] const VecXd RandomValidJointsNearWrapped(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept;
 
 void PerformIteration(
 	const Mat4d& target,
@@ -253,7 +172,7 @@ void PerformIteration(
 void WrapJoints( VecXd& joints ) const;
 
 void UpdateSeedJoints(
-	const SeedParameters& seed_parameters,
+	const Seed::IKRandomSeedGenerator::RandomParameters& seed_parameters,
 	const SolverHistory& history,
 	VecXd& seed_joints ) const;
 
@@ -271,11 +190,12 @@ void LineSearch(
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
-[[nodiscard]] NumericSolverState EvaluateConvergence(
+[[nodiscard]] DLSSolverState EvaluateConvergence(
 	const IterationState& state,
 	int iteration ) const noexcept;
 
 void UpdateDeltaQPrimary(
+	Eigen::LDLT< MatXd >& ldlt_solver,
 	const MatXd& damped,
 	const VecXd& gradient,
 	VecXd& dq_primary ) const;
@@ -287,6 +207,7 @@ void UpdateDeltaQSecondary(
 	VecXd& dq_secondary ) const;
 
 void UpdateDeltaQ(
+	Eigen::LDLT< MatXd >& ldlt_solver,
 	const MatXd& damped,
 	const VecXd& gradient,
 	const VecXd& joints,
@@ -301,15 +222,14 @@ void UpdateErrorConvergence(
 	double current_error,
 	IterationState& state ) const;
 
-[[nodiscard]] SeedStrategy ChooseSeedStategy(
+[[nodiscard]] Seed::IKRandomSeedGenerator::RandomType ChooseSeedRandomType(
 	const IterationState& state,
 	const SolverHistory& history ) const;
 
-void UpdateSeedParameters(
+void UpdateSeedGenerator(
 	const IterationState& state,
 	const SolverHistory& history,
-	SeedParameters& seed_parameters
-	) const;
+	Seed::IKRandomSeedGenerator& seed_generator ) const;
 
 void PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const;
 void PrintState( const IterationState& state ) const;

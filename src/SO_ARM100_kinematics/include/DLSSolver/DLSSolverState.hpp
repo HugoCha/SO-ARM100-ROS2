@@ -2,7 +2,7 @@
 
 namespace SOArm100::Kinematics
 {
-enum class NumericSolverState
+enum class DLSSolverState
 {
 	Converged,
 	Improving,

@@ -1,7 +1,6 @@
-#include "HybridSolver/BaseJointAnalyzer.hpp"
+#include "ModelAnalyzer/BaseJointAnalyzer.hpp"
 
 #include "Global.hpp"
-#include "HybridSolver/BaseJointModel.hpp"
 #include "HybridSolver/WristModel.hpp"
 #include "Model/JointChain.hpp"
 

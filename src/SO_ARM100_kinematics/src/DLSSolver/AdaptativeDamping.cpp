@@ -26,48 +26,6 @@ double AdaptativeDamping::LinearDamping(
 // ------------------------------------------------------------
 
 double AdaptativeDamping::ManipulabilityMinSV(
-	SolverType type,
-	const MatXd& jacobian,
-	const VecXd& error,
-	double damping,
-	double min_damping,
-	double max_damping,
-	double min_sv_tolerance )
-{
-	switch ( type )
-	{
-	case SolverType::Position:
-		return ManipulabilityMinSVPosition(
-			jacobian,
-			damping,
-			min_damping,
-			max_damping,
-			min_sv_tolerance
-			);
-	case SolverType::Orientation:
-		return ManipulabilityMinSVOrientation(
-			jacobian,
-			error,
-			damping,
-			min_damping,
-			max_damping,
-			min_sv_tolerance
-			);
-	default:
-	case SolverType::Full:
-		return ManipulabilityMinSV(
-			jacobian,
-			damping,
-			min_damping,
-			max_damping,
-			min_sv_tolerance
-			);
-	}
-}
-
-// ------------------------------------------------------------
-
-double AdaptativeDamping::ManipulabilityMinSV(
 	const MatXd& jacobian,
 	double damping,
 	double min_damping,
@@ -90,48 +48,6 @@ double AdaptativeDamping::ManipulabilityMinSV(
 
 	double ratio = min_sv / min_sv_tolerance;
 	return std::max( min_damping, max_damping * ( 1.0 - ratio * ratio ) );
-}
-
-// ------------------------------------------------------------
-
-double AdaptativeDamping::ManipulabilityMinSVPosition(
-	const MatXd& jacobian,
-	double damping,
-	double min_damping,
-	double max_damping,
-	double min_sv_tolerance )
-{
-	return ManipulabilityMinSV(
-		jacobian.bottomRows( 3 ),
-		damping,
-		min_damping,
-		max_damping,
-		min_sv_tolerance
-		);
-}
-
-// ------------------------------------------------------------
-
-double AdaptativeDamping::ManipulabilityMinSVOrientation(
-	const MatXd& jacobian,
-	const VecXd& error,
-	double damping,
-	double min_damping,
-	double max_damping,
-	double min_sv_tolerance )
-{
-	double angle_error = error.head< 3 >().norm();
-
-	double linearization_trust = cos( angle_error / 2.0 );
-	double lambda_angle_boost = max_damping * ( 1.0f - linearization_trust );
-	return std::max( min_damping,
-	                 ManipulabilityMinSV(
-						 jacobian.topRows( 3 ),
-						 damping,
-						 min_damping,
-						 max_damping,
-						 min_sv_tolerance ) +
-	                 lambda_angle_boost );
 }
 
 // ------------------------------------------------------------

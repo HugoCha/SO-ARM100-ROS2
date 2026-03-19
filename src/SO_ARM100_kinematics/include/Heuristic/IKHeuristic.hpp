@@ -1,6 +1,5 @@
 #pragma once
 
-#include "HybridSolver/BaseNumericWristSolver.hpp"
 #include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics
@@ -8,6 +7,7 @@ namespace SOArm100::Kinematics
 namespace Solver
 {
 class IKProblem;
+class IKRunContext;
 }
 
 namespace Heuristic
@@ -22,7 +22,9 @@ virtual ~IKHeuristic() = default;
 IKHeuristic( Model::KinematicModelConstPtr model ) : model_( model )
 {}
 
-virtual IKPresolution Presolve( const Solver::IKProblem& problem ) const = 0;
+virtual IKPresolution Presolve( 
+    const Solver::IKProblem& problem,
+    const Solver::IKRunContext& context ) const = 0;
 
 protected:
 Model::KinematicModelConstPtr model_;

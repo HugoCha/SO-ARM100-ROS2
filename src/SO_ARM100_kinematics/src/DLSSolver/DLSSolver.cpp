@@ -1,13 +1,16 @@
-#include "DLSSolver/DLSKinematicsSolver.hpp"
+#include "DLSSolver/DLSSolver.hpp"
 
 #include "DLSSolver/AdaptativeDamping.hpp"
-#include "DLSSolver/NumericSolverResult.hpp"
-#include "DLSSolver/NumericSolverState.hpp"
+#include "DLSSolver/DLSSolverState.hpp"
 #include "Global.hpp"
 #include "Model/Limits.hpp"
-#include "KinematicsSolver.hpp"
-#include "SolverType.hpp"
-#include "Utils/Converter.hpp"
+#include "Seed/IKRandomSeedGenerator.hpp"
+#include "Seed/IKSeedGenerator.hpp"
+#include "Solver/IKProblem.hpp"
+#include "Solver/IKRunContext.hpp"
+#include "Solver/IKSolution.hpp"
+#include "Solver/IKSolverState.hpp"
+#include "Solver/SolverType.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/Dense>
@@ -21,29 +24,31 @@
 #include <rclcpp/logging.hpp>
 #include <string>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Solver
 {
 
 // ------------------------------------------------------------
 
 static rclcpp::Logger get_logger()
 {
-	static rclcpp::Logger logger = rclcpp::get_logger( "DLSKinematicsSolver" );
+	static rclcpp::Logger logger = rclcpp::get_logger( "DLSSolver" );
 	return logger;
 }
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::DLSKinematicsSolver() :
-	DLSKinematicsSolver( SolverParameters{} )
+DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
+	DLSSolver( model, SolverParameters{} )
 {
 }
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
-	: parameters_( parameters ),
-	buffers_( 0, GetSolverType( parameters ) )
+DLSSolver::DLSSolver( 
+	Model::KinematicModelConstPtr model, 
+	SolverParameters parameters ) :
+	IKSolver( model ),
+	parameters_( parameters )
 {
 	if ( !parameters_.IsValid() )
 	{
@@ -53,93 +58,80 @@ DLSKinematicsSolver::DLSKinematicsSolver( SolverParameters parameters )
 
 // ------------------------------------------------------------
 
-NumericSolverResult DLSKinematicsSolver::InverseKinematic(
-	const Mat4d& target,
-	const std::span< const double >& seed_joints ) const
+IKSolution DLSSolver::Solve(
+	const IKProblem& problem, 
+    const IKRunContext& context ) const
 {
-	if ( KinematicsSolver::IsUnreachable( target ) )
+	if ( model_->IsUnreachable( problem.target ) )
 	{
-		return { NumericSolverState::Unreachable, {}, -1,  0 };
+		return { IKSolverState::Unreachable, {} };
 	}
 
-	if ( seed_joints.size() != static_cast< int >( joint_chain_->GetActiveJointCount() ) )
+	const int n_joints = GetChain()->GetActiveJointCount();
+
+	if ( problem.seed.size() != n_joints )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
-		return { NumericSolverState::Failed, {}, -1, 0 };;
+		return { IKSolverState::NotRun, {} };
 	}
 
 	auto type = GetSolverType( parameters_ );
-	if ( buffers_.GetSize() != static_cast< int >( joint_chain_->GetActiveJointCount() ) ||
-	     buffers_.type != type )
-	{
-		buffers_ = SolverBuffers{ joint_chain_->GetActiveJointCount(), type };
-		buffers_.weights = InitializeWeightMatrix( parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt() );
-	}
+	SolverBuffers buffers = SolverBuffers{ n_joints, type };
+	buffers.weights = InitializeWeightMatrix( parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt() );
 
-	auto seed = ToVecXd( seed_joints );
-	auto state = InitializeState( target, seed );
+	VecXd seed = problem.seed;
+	auto state = InitializeState( problem.target, seed, buffers );
 	auto history = InitializeHistory( state, seed );
-	auto seed_parameters = InitializeSeedParameters( state, seed );
+	auto seed_generator = InitializeSeedGenerator( state, seed );
 
 	if ( !state )
 	{
-		UpdateSeedJoints( seed_parameters, history, seed );
-		state = InitializeState( target, seed );
+		seed = seed_generator.Generate( problem );
+		state = InitializeState( problem.target, seed, buffers );
 		history = InitializeHistory( state, seed );
-		seed_parameters = InitializeSeedParameters( state, seed );
+		UpdateSeedGenerator( *state, history, seed_generator );
 	}
 
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
 	{
 		// std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
+		if ( context.StopRequested() )
+		{
+			return { IKSolverState::NotRun, history.best_joints, 
+					 history.best_error, iter };
+		}
 
 		auto solver_state = EvaluateConvergence( *state, iter );
 
-		if ( solver_state == NumericSolverState::Converged )
+		if ( solver_state == DLSSolverState::Converged )
 		{
-			return { NumericSolverState::Converged, state->joints, state->error, iter };
+			return { IKSolverState::Converged, state->joints, 
+					 state->error, iter };
 		}
-		if ( solver_state == NumericSolverState::BestPossible )
+		if ( solver_state == DLSSolverState::BestPossible )
 		{
-			return { NumericSolverState::BestPossible, state->joints, state->error, iter };
+			return { IKSolverState::BestPossible, state->joints, 
+					 state->error, iter };
 		}
-		if ( solver_state == NumericSolverState::Stalled )
+		if ( solver_state == DLSSolverState::Stalled )
 		{
-			UpdateSeedParameters( *state, history, seed_parameters );
+			UpdateSeedGenerator( *state, history, seed_generator );
 			UpdateHistory( *state, history );
-			UpdateSeedJoints( seed_parameters, history, seed );
-			state = InitializeState( target, seed );
+			seed = seed_generator.Generate( problem );
+			state = InitializeState( problem.target, seed, buffers );
 			continue;
 		}
 
-		PerformIteration( target, *state, buffers_ );
+		PerformIteration( problem.target, *state, buffers );
 	}
 
-	return { NumericSolverState::MaxIterations, history.best_joints, history.best_error,
-	         parameters_.max_iterations };
+	return { IKSolverState::MaxIterations, history.best_joints, 
+			 history.best_error, parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------
 
-bool DLSKinematicsSolver::InverseKinematicImpl(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints,
-	double* joints ) const
-{
-	auto result = InverseKinematic( target_pose, seed_joints );
-
-	if ( result.Success() )
-	{
-		std::copy( result.joints.begin(), result.joints.end(), joints );
-		return true;
-	}
-
-	return false;
-}
-
-// ------------------------------------------------------------
-
-SolverType DLSKinematicsSolver::GetSolverType( SolverParameters parameters )
+SolverType DLSSolver::GetSolverType( SolverParameters parameters )
 {
 	if ( parameters.rotation_weight > 0 && parameters.translation_weight == 0 )
 		return SolverType::Orientation;
@@ -150,7 +142,7 @@ SolverType DLSKinematicsSolver::GetSolverType( SolverParameters parameters )
 
 // ------------------------------------------------------------
 
-const MatXd DLSKinematicsSolver::InitializeWeightMatrix(
+const MatXd DLSSolver::InitializeWeightMatrix(
 	double rotation_weight,
 	double translation_weight )
 {
@@ -176,24 +168,25 @@ const MatXd DLSKinematicsSolver::InitializeWeightMatrix(
 
 // ------------------------------------------------------------
 
-std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::InitializeState(
+std::optional< DLSSolver::IterationState > DLSSolver::InitializeState(
 	const Mat4d& target,
-	const VecXd& initial_joints ) const
+	const VecXd& initial_joints,
+	SolverBuffers& buffers ) const
 {
 	IterationState state;
 	state.joints = initial_joints;
-	buffers_.joints = initial_joints;
+	buffers.joints = initial_joints;
 
-	if ( !UpdateBuffer( target, initial_joints, buffers_ ) )
+	if ( !UpdateBuffer( target, initial_joints, buffers ) )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Buffer update failed." );
 		return std::nullopt;
 	}
 
-	state.error = buffers_.weighted_error.norm();
-	state.error_reachable = buffers_.weighted_error_reachable.norm();
+	state.error = buffers.weighted_error.norm();
+	state.error_reachable = buffers.weighted_error_reachable.norm();
 	state.error_unreachable = UnreachableError( state.error, state.error_reachable );
-	state.gradient = buffers_.gradient.norm();
+	state.gradient = buffers.gradient.norm();
 
 	state.stalled_error_iter = 0;
 	state.step = parameters_.max_step;
@@ -209,7 +202,7 @@ std::optional< DLSKinematicsSolver::IterationState > DLSKinematicsSolver::Initia
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SolverHistory DLSKinematicsSolver::InitializeHistory(
+DLSSolver::SolverHistory DLSSolver::InitializeHistory(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
 	SolverHistory history;
@@ -229,7 +222,7 @@ DLSKinematicsSolver::SolverHistory DLSKinematicsSolver::InitializeHistory(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateHistory(
+void DLSSolver::UpdateHistory(
 	const IterationState& state,
 	SolverHistory& history ) const
 {
@@ -244,30 +237,29 @@ void DLSKinematicsSolver::UpdateHistory(
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SeedParameters DLSKinematicsSolver::InitializeSeedParameters(
+Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
-	SeedParameters seed_parameters;
-
-	seed_parameters.strategy = SeedStrategy::NearJoints;
-	seed_parameters.margin_percent = 0.1;
-
+	Seed::IKRandomSeedGenerator::RandomParameters random_parameters;
+	auto random_type = Seed::IKRandomSeedGenerator::RandomType::Near; 
+	
+	random_parameters.margin_percent = 0.1;
 	if ( !state )
 	{
-		seed_parameters.distance = 0.1;
+		random_parameters.distance = 0.1;
 	}
 	else
 	{
 		double ratio = state->error_unreachable / state->error;
-		seed_parameters.distance = std::clamp( ratio, 0.1, 0.3 );
+		random_parameters.distance = std::clamp( ratio, 0.1, 0.3 );
 	}
 
-	return seed_parameters;
+	return Seed::IKRandomSeedGenerator{ model_, random_type, random_parameters };
 }
 
 // ------------------------------------------------------------
 
-DLSKinematicsSolver::SeedStrategy DLSKinematicsSolver::ChooseSeedStategy(
+Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
 	const IterationState& state,
 	const SolverHistory& history ) const
 {
@@ -275,39 +267,39 @@ DLSKinematicsSolver::SeedStrategy DLSKinematicsSolver::ChooseSeedStategy(
 	     state.error_reachable / state.error < 0.5 &&
 	     state.error >= 0.9 * history.best_error )
 	{
-		return SeedStrategy::NearCenter;
+		return Seed::IKRandomSeedGenerator::RandomType::NearCenterLimit;
 	}
 
 	int no_improvement_span = history.restart_counter - history.last_improvement_restart_index;
 	if ( ( no_improvement_span <= 4 && history.best_error <= MediumError() ) ||
 	     ( no_improvement_span <= 8 && history.best_error <= SmallError() ) )
 	{
-		return SeedStrategy::NearJoints;
+		return Seed::IKRandomSeedGenerator::RandomType::Near;
 	}
 
 	if ( ( state.error_reachable / state.error > 0.35 && state.error < 0.9 * history.best_error ) ||
 	     state.error < 0.7 * history.best_error ||
 	     ( no_improvement_span <= 3 && history.best_error <= MediumError() && state.error <= LargeError() ) )
 	{
-		return SeedStrategy::NearJointsAvoidLimits;
+		return Seed::IKRandomSeedGenerator::RandomType::Near;
 	}
 
-	return SeedStrategy::Random;
+	return Seed::IKRandomSeedGenerator::RandomType::Random;
 }
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateSeedParameters(
+void DLSSolver::UpdateSeedGenerator(
 	const IterationState& state,
 	const SolverHistory& history,
-	SeedParameters& seed_parameters ) const
+	Seed::IKRandomSeedGenerator& seed_generator )const
 {
-	seed_parameters.strategy = ChooseSeedStategy( state, history );
+	seed_generator.type = ChooseSeedRandomType( state, history );
 
 	constexpr double min_distance = 0.05;
 	constexpr double max_distance = 0.3;
 	constexpr double avg_distance = ( min_distance + max_distance ) / 2.0;
-	double distance;
+	double distance = seed_generator.parameters.distance;
 
 	if ( state.error <= SmallError() || history.best_error <= SmallError() )
 	{
@@ -315,7 +307,7 @@ void DLSKinematicsSolver::UpdateSeedParameters(
 		     state.error < history.best_error )
 			distance = min_distance;
 		else
-			distance = std::clamp( 1.15 * seed_parameters.distance, min_distance, avg_distance );
+			distance = std::clamp( 1.15 * distance, min_distance, avg_distance );
 	}
 	else if ( state.error <= LargeError() )
 	{
@@ -332,120 +324,12 @@ void DLSKinematicsSolver::UpdateSeedParameters(
 			distance = max_distance;
 	}
 
-	seed_parameters.distance = std::clamp( distance, min_distance, max_distance );
+	seed_generator.parameters.distance = std::clamp( distance, min_distance, max_distance );
 }
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateSeedJoints(
-	const SeedParameters& seed_parameters,
-	const SolverHistory& history,
-	VecXd& seed_joints ) const
-{
-	switch ( seed_parameters.strategy )
-	{
-	case SeedStrategy::NearCenter:
-		seed_joints = RandomValidJointsNear( joint_chain_->ActiveJointCenters(), seed_parameters.distance, seed_parameters.margin_percent );
-		break;
-	case SeedStrategy::NearJointsAvoidLimits:
-		seed_joints = RandomValidJointsTargeted( history.best_joints, seed_parameters.distance, seed_parameters.margin_percent );
-		break;
-	case SeedStrategy::NearJoints:
-		seed_joints = RandomValidJointsNearWrapped( history.best_joints, seed_parameters.distance, 0 );
-		break;
-	case SeedStrategy::Random:
-		seed_joints = RandomValidJoints( seed_parameters.margin_percent );
-		break;
-	}
-}
-
-// ------------------------------------------------------------
-
-const VecXd DLSKinematicsSolver::RandomValidJointsTargeted(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept
-{
-	VecXd random( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-	{
-		const auto& joint_limits = joint_chain_->GetActiveJointLimits( i );
-		double target = joints[i];
-		double margin = margin_percent * joint_limits.Span();
-		double min_tol = joint_limits.Min() + margin;
-		double max_tol = joint_limits.Max() - margin;
-		if ( target < min_tol || target > max_tol )
-			target = joint_limits.Center();
-
-		joint_limits.RandomNear(
-			rng_,
-			target,
-			& random.data()[i],
-			distance,
-			margin_percent );
-	}
-	return random;
-}
-
-// ------------------------------------------------------------
-
-const VecXd DLSKinematicsSolver::RandomValidJointsNear(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept
-{
-	VecXd random( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		joint_chain_->GetActiveJointLimits( i ).RandomNear( rng_, joints[i], & random.data()[i], distance, margin_percent );
-	return random;
-}
-
-// ------------------------------------------------------------
-
-const VecXd DLSKinematicsSolver::RandomValidJointsNearWrapped(
-	const double* joints,
-	double distance,
-	double margin_percent ) const noexcept
-{
-	VecXd random( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-	{
-		auto joint = joint_chain_->GetActiveJoint( i );
-		const auto& limit = joint->GetLimits();
-		if ( joint->IsRevolute() && limit.Span() >= 3 * M_PI / 2 )
-		{
-			limit.RandomNearWrapped( rng_,
-			                         joints[i],
-			                         & random.data()[i],
-			                         distance );
-		}
-		else
-		{
-			limit.RandomNear( rng_,
-			                  joints[i],
-			                  & random.data()[i],
-			                  distance,
-			                  margin_percent );
-
-		}
-	}
-	return random;
-}
-
-// ------------------------------------------------------------
-
-const VecXd DLSKinematicsSolver::RandomValidJoints( double margin_percent ) const noexcept
-{
-	assert( joint_chain_ );
-	VecXd random( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		joint_chain_->GetActiveJointLimits( i ).Random( rng_, & random.data()[i], margin_percent );
-	return random;
-}
-
-// ------------------------------------------------------------
-
-void DLSKinematicsSolver::PerformIteration(
+void DLSSolver::PerformIteration(
 	const Mat4d& target,
 	IterationState& state,
 	SolverBuffers& buffers ) const
@@ -454,6 +338,7 @@ void DLSKinematicsSolver::PerformIteration(
 
 	Damped( buffers.weighted_jacobian, state.damping, buffers.damped );
 	UpdateDeltaQ(
+		buffers.ldlt_solver,
 		buffers.damped,
 		buffers.gradient,
 		state.joints,
@@ -500,7 +385,7 @@ void DLSKinematicsSolver::PerformIteration(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::LineSearch(
+void DLSSolver::LineSearch(
 	const Mat4d& target,
 	IterationState& state,
 	SolverBuffers& buffers ) const
@@ -530,9 +415,9 @@ void DLSKinematicsSolver::LineSearch(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::WrapJoints( VecXd& joints ) const
+void DLSSolver::WrapJoints( VecXd& joints ) const
 {
-	const auto& active_joints = joint_chain_->GetActiveJoints();
+	const auto& active_joints = GetChain()->GetActiveJoints();
 	for ( size_t i = 0; i < active_joints.size(); i++ )
 	{
 		const auto joint = active_joints[i];
@@ -553,7 +438,7 @@ void DLSKinematicsSolver::WrapJoints( VecXd& joints ) const
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const
+void DLSSolver::PrintIteration( const IterationState& state, const SolverBuffers& buffers ) const
 {
 	std::cout
 	    << "step      = " << state.step << std::endl
@@ -569,7 +454,7 @@ void DLSKinematicsSolver::PrintIteration( const IterationState& state, const Sol
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::PrintState( const IterationState& state ) const
+void DLSSolver::PrintState( const IterationState& state ) const
 {
 	std::cout
 	    << "State" << std::endl
@@ -581,7 +466,7 @@ void DLSKinematicsSolver::PrintState( const IterationState& state ) const
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
+void DLSSolver::PrintBuffer( const SolverBuffers& buffers ) const
 {
 	std::cout
 	    << "Buffer" << std::endl
@@ -593,7 +478,7 @@ void DLSKinematicsSolver::PrintBuffer( const SolverBuffers& buffers ) const
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::PrintHistory( const SolverHistory& history ) const
+void DLSSolver::PrintHistory( const SolverHistory& history ) const
 {
 	std::cout << "History: best error = " << history.best_error 
 			  << " restart idx = " << history.last_improvement_restart_index
@@ -602,15 +487,15 @@ void DLSKinematicsSolver::PrintHistory( const SolverHistory& history ) const
 
 // ------------------------------------------------------------
 
-bool DLSKinematicsSolver::UpdateBuffer(
+bool DLSSolver::UpdateBuffer(
 	const Mat4d& target,
 	const VecXd& joints,
 	SolverBuffers& buffers ) const
 {
-	if ( !ForwardKinematic( joints, buffers.fk ) )
+	if ( !model_->ComputeFK( joints, buffers.fk ) )
 		return false;
 
-	SpaceJacobian( *joint_chain_, joints, buffers.jacobian );
+	SpaceJacobian( *GetChain(), joints, buffers.jacobian );
 	WeightedPoseError( target, buffers.fk, parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt(), buffers.weighted_error );
 	WeightedJacobian( buffers.jacobian, buffers.weights, buffers.weighted_jacobian );
 	JacobianSVD( buffers.weighted_jacobian, buffers.svd );
@@ -623,7 +508,7 @@ bool DLSKinematicsSolver::UpdateBuffer(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateErrorConvergence(
+void DLSSolver::UpdateErrorConvergence(
 	double last_error,
 	double current_error,
 	IterationState& state ) const
@@ -640,18 +525,19 @@ void DLSKinematicsSolver::UpdateErrorConvergence(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateDeltaQPrimary(
+void DLSSolver::UpdateDeltaQPrimary(
+	Eigen::LDLT< MatXd >& ldlt_solver,
 	const MatXd& damped,
 	const VecXd& gradient,
 	VecXd& dq ) const
 {
-	buffers_.ldlt_solver.compute( damped );
-	dq.noalias() = buffers_.ldlt_solver.solve( gradient );
+	ldlt_solver.compute( damped );
+	dq.noalias() = ldlt_solver.solve( gradient );
 }
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateDeltaQSecondary(
+void DLSSolver::UpdateDeltaQSecondary(
 	const VecXd& joints,
 	const MatXd& jacobian,
 	const MatXd& jacobian_psi,
@@ -659,7 +545,7 @@ void DLSKinematicsSolver::UpdateDeltaQSecondary(
 {
 	MatXd N = MatXd::Identity( joints.size(), joints.size() ) - jacobian_psi * jacobian;
 	VecXd centering{ joints.size() };
-	const auto& active_joints = joint_chain_->GetActiveJoints();
+	const auto& active_joints = GetChain()->GetActiveJoints();
 	for ( int i = 0; i < joints.size(); i++ )
 	{
 		const auto& joint_limit = active_joints[i]->GetLimits();
@@ -670,7 +556,7 @@ void DLSKinematicsSolver::UpdateDeltaQSecondary(
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::ClampDeltaQ( VecXd& dq ) const
+void DLSSolver::ClampDeltaQ( VecXd& dq ) const
 {
 	if ( dq.norm() >= parameters_.max_dq )
 		dq *= parameters_.max_dq / dq.norm();
@@ -678,7 +564,8 @@ void DLSKinematicsSolver::ClampDeltaQ( VecXd& dq ) const
 
 // ------------------------------------------------------------
 
-void DLSKinematicsSolver::UpdateDeltaQ(
+void DLSSolver::UpdateDeltaQ(
+	Eigen::LDLT< MatXd >& ldlt_solver,
 	const MatXd& damped,
 	const VecXd& gradient,
 	const VecXd& joints,
@@ -688,7 +575,7 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 {
 	VecXd dq_primary = VecXd::Zero( joints.size() );
 	VecXd dq_secondary = VecXd::Zero( joints.size() );
-	UpdateDeltaQPrimary( damped, gradient, dq_primary );
+	UpdateDeltaQPrimary( ldlt_solver, damped, gradient, dq_primary );
 	UpdateDeltaQSecondary( joints, jacobian, jacobian_psi, dq_secondary );
 
 	dq.noalias() = dq_primary + dq_secondary;
@@ -698,13 +585,13 @@ void DLSKinematicsSolver::UpdateDeltaQ(
 
 // ------------------------------------------------------------
 
-NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
+DLSSolverState DLSSolver::EvaluateConvergence(
 	const IterationState& state,
 	int iteration ) const noexcept
 {
 	if ( state.error <= parameters_.error_tolerance )
 	{
-		return NumericSolverState::Converged;
+		return DLSSolverState::Converged;
 	}
 
 	if ( state.error_reachable < parameters_.error_tolerance &&
@@ -712,12 +599,12 @@ NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 	     state.gradient < parameters_.gradient_tolerance &&
 	     state.stalled_error_iter > 0 )
 	{
-		return NumericSolverState::BestPossible;
+		return DLSSolverState::BestPossible;
 	}
 
 	if ( iteration >= parameters_.max_iterations )
 	{
-		return NumericSolverState::MaxIterations;
+		return DLSSolverState::MaxIterations;
 	}
 
 	double unreachable_ratio = state.error_unreachable / state.error;
@@ -732,10 +619,10 @@ NumericSolverState DLSKinematicsSolver::EvaluateConvergence(
 	     ( state.error > LargeError() && state.stalled_error_iter > 0 ) ||
 	     ( state.fk_failures >= 1 ) )
 	{
-		return NumericSolverState::Stalled;
+		return DLSSolverState::Stalled;
 	}
 
-	return NumericSolverState::Improving;
+	return DLSSolverState::Improving;
 }
 
 // ------------------------------------------------------------

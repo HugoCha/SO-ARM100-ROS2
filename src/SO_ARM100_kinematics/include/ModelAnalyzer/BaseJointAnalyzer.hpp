@@ -1,17 +1,17 @@
 #pragma once
 
+#include "Model/JointGroup.hpp"
 #include <optional>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
-class BaseJointModel;
+class JointGroup;
 class JointChain;
-class WristModel;
 
 class BaseJointAnalyzer
 {
 public:
-[[nodiscard]] static std::optional< BaseJointModel > Analyze(
+[[nodiscard]] static std::optional< Model::JointGroup > Analyze(
 	const JointChain& joint_chain,
 	const std::optional< WristModel >& wrist_model );
 };

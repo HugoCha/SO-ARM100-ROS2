@@ -12,18 +12,14 @@ struct JointGroup
     std::vector<int> indices;
     Mat4d tip_home;
 
-    VecXd GetJoints( const VecXd& full_joints ) const {
-        VecXd group_joints( indices.size() );
-        for ( int i = 0; i < indices.size(); i++ )
-            group_joints[i] = full_joints[indices[i]];
-        return group_joints;
-    }
+    static JointGroup CreateFromRange( 
+        const std::string& name, 
+        int start, 
+        int count, 
+        const Mat4d& home );
 
-    void SetJoints( const VecXd& group_joints, VecXd& full_joints ) const
-    {
-        for ( int i = 0; i < indices.size(); i++ )
-            full_joints[indices[i]] = group_joints[i];
-    }
+    VecXd GetGroupJoints( const VecXd& full_joints ) const;
+    void SetGroupJoints( const VecXd& group_joints, VecXd& full_joints ) const;
 
     int Size() const {
         return indices.size();

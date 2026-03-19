@@ -8,6 +8,13 @@ namespace SOArm100::Kinematics::Seed
 // ------------------------------------------------------------
 
 IKRandomSeedGenerator::IKRandomSeedGenerator( 
+    Model::KinematicModelConstPtr model ) :
+    IKRandomSeedGenerator( model, RandomType::Random, RandomParameters() )
+{}
+
+// ------------------------------------------------------------
+
+IKRandomSeedGenerator::IKRandomSeedGenerator( 
     Model::KinematicModelConstPtr model,
     RandomType type, 
     RandomParameters parameters ) :

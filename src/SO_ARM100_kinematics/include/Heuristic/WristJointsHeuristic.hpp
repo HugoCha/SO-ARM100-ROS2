@@ -13,7 +13,9 @@ class WristJointsHeuristic : public IKHeuristic
 public:
 WristJointsHeuristic( Model::KinematicModelConstPtr model, Model::JointGroup wrist_group );
 
-virtual IKPresolution Presolve( const Solver::IKProblem& problem ) const override;
+virtual IKPresolution Presolve( 
+    const Solver::IKProblem& problem,
+    const Solver::IKRunContext& context ) const override;
 
 private:
 Model::JointGroup wristless_group_;

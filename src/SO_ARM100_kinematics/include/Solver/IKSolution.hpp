@@ -2,25 +2,26 @@
 
 #include "Global.hpp"
 
+#include "Heuristic/IKPresolution.hpp"
 #include "IKSolverState.hpp"
 
 namespace SOArm100::Kinematics::Solver
 {
 struct IKSolution
 {
-VecXd joints;
-
-double position_error = std::numeric_limits<double>::infinity();
-double orientation_error = std::numeric_limits<double>::infinity();
-
-double score = std::numeric_limits<double>::infinity();
-
-int iterations = 0;
-
 IKSolverState state;
+VecXd joints;
+double error = std::numeric_limits<double>::infinity();
+int iterations = 0;
+double score = std::numeric_limits<double>::infinity();
 
 [[nodiscard]] bool Success() const {
     return state == IKSolverState::Converged;
+}
+
+operator Heuristic::IKPresolution() const
+{
+    return { joints, ToIKHeuristicState( state ) };
 }
 };
 }

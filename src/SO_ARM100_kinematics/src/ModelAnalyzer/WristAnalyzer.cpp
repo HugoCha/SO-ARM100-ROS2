@@ -1,13 +1,15 @@
-#include "HybridSolver/WristAnalyzer.hpp"
+#include "ModelAnalyzer/WristAnalyzer.hpp"
 
-#include "HybridSolver/WristModel.hpp"
+#include "Global.hpp"
+#include "Model/JointGroup.hpp"
 #include "Model/JointChain.hpp"
+#include "Model/KinematicModel.hpp"
 #include "Model/Twist.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <optional>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------
@@ -18,13 +20,14 @@ const Mat4d ComputeTCPinWrist( const Vec3d& wrist_center, const Mat4d& home_conf
 
 // ------------------------------------------------------------
 
-std::optional< WristModel > WristAnalyzer::Analyze(
-	const JointChain& joint_chain,
-	const Mat4d& home_configuration )
+std::optional< JointGroup > WristAnalyzer::Analyze(
+	const KinematicModel& model )
 {
-	WristModel wrist;
+	int wrist_start = 0;
+	int wrist_count = 0;
+	Vec3d wrist_center = Vec3d::Zero();
 
-	const auto& active_joints = joint_chain.GetActiveJoints();
+	const auto& active_joints = model.GetChain()->GetActiveJoints();
 	for ( int k = 1; k <= 3 && k <= active_joints.size(); ++k )
 	{
 		auto maybe_center = ComputeIntersection( active_joints.last( k ) );
@@ -34,18 +37,21 @@ std::optional< WristModel > WristAnalyzer::Analyze(
 		if ( !AxesIndependent( active_joints.last( k ) ) )
 			break;
 
-		wrist.active_joint_start = active_joints.size() - k;
-		wrist.active_joint_count = k;
-		wrist.center_at_home = *maybe_center;
+		wrist_start = active_joints.size() - k;
+		wrist_count = k;
+		wrist_center = *maybe_center;
 	}
 
-	if ( wrist.active_joint_count == 0 )
+	if ( wrist_count == 0 )
 		return std::nullopt;
 
-	wrist.tcp_in_wrist_at_home = ComputeTCPinWrist( wrist.center_at_home, home_configuration );
-	wrist.tcp_in_wrist_at_home_inv = Inverse( wrist.tcp_in_wrist_at_home );
-	wrist.type = static_cast< WristType >( wrist.active_joint_count );
-	return wrist;
+	Mat4d wrist_tip = ComputeTCPinWrist( wrist_center, model.GetHomeConfiguration() );
+	
+	return JointGroup::CreateFromRange(
+		"wrist", 
+		wrist_start, 
+		wrist_count, 
+		wrist_tip );
 }
 
 // ------------------------------------------------------------

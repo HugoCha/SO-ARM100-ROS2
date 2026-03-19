@@ -3,6 +3,8 @@
 #include "Global.hpp"
 #include "JointChain.hpp"
 #include "Model/KinematicTopoly.hpp"
+#include "Model/ReachableSpace.hpp"
+
 #include <memory>
 
 namespace SOArm100::Kinematics::Model
@@ -10,18 +12,19 @@ namespace SOArm100::Kinematics::Model
 class KinematicModel
 {
 public:
-KinematicModel( JointChainConstPtr chain, const Mat4d& home, const KinematicTopology& topology ) :
+KinematicModel( 
+    JointChainConstPtr chain, 
+    const Mat4d& home, 
+    const KinematicTopology& topology,
+    std::unique_ptr< ReachableSpace > reachable_space ) :
     chain_( chain ),
     home_configuration_( home ),
-    topology_( topology )
-{}
-
-KinematicModel( const KinematicModel& model ) :
-    KinematicModel( model.chain_, model.home_configuration_, model.topology_ )
+    topology_( topology ),
+    reachable_space_( std::move( reachable_space ) )
 {}
 
 static KinematicModel Empty() {
-    return KinematicModel( nullptr, Mat4d::Zero(), {} );
+    return KinematicModel( nullptr, Mat4d::Zero(), {}, nullptr );
 }
 
 bool IsEmpty() const {
@@ -45,10 +48,16 @@ KinematicTopology GetTopology() const {
     return topology_;
 }
 
+bool IsUnreachable( const Mat4d& target ) const {
+    if ( IsEmpty() ) return true;
+    return  reachable_space_->IsUnreachable( target );
+}
+
 private:
 JointChainConstPtr chain_;
 Mat4d home_configuration_;
 KinematicTopology topology_;
+std::unique_ptr< ReachableSpace > reachable_space_;
 };
 
 using KinematicModelConstPtr = std::shared_ptr< const KinematicModel >;

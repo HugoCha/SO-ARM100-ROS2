@@ -32,7 +32,9 @@ WristType WristJointsHeuristic::GetWristType() const
 
 // ------------------------------------------------------------
 
-IKPresolution WristJointsHeuristic::Presolve( const Solver::IKProblem& problem ) const 
+IKPresolution WristJointsHeuristic::Presolve( 
+	const Solver::IKProblem& problem,
+	const Solver::IKRunContext& context ) const 
 {
 	Mat4d wrist_center = ComputeWristCenter( problem.seed,  problem.target );
 	Mat4d wrist_target = Inverse( wrist_center ) * problem.target;

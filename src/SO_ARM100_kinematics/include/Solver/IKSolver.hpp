@@ -1,26 +1,32 @@
 #pragma once
 
+#include "Heuristic/IKHeuristic.hpp"
+#include "Heuristic/IKPresolution.hpp"
+#include "IKSolution.hpp"
 #include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics::Solver
 {
 struct IKProblem;
 class IKRunContext;
-struct IKSolution;
 
-class IKSolver
+class IKSolver : public Heuristic::IKHeuristic
 {
 public:
 virtual ~IKSolver() = default;
 
-IKSolver( Model::KinematicModelConstPtr model ) : model_( model )
+IKSolver( Model::KinematicModelConstPtr model ) : 
+    Heuristic::IKHeuristic( model )
 {}
 
 virtual IKSolution Solve( 
     const IKProblem& problem, 
-    const IKRunContext context ) const = 0;
+    const IKRunContext& context ) const = 0;
 
-protected:
-Model::KinematicModelConstPtr model_;
+virtual Heuristic::IKPresolution Presolve( 
+    const IKProblem& problem, 
+    const IKRunContext& context ) const override {
+    return Solve( problem, context );
+}
 };
 }
