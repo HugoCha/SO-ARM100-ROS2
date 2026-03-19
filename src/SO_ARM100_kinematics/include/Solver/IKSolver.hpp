@@ -13,7 +13,7 @@ class IKSolver
 public:
 virtual ~IKSolver() = default;
 
-IKSolver( KinematicModelConstPtr model ) : model_( model )
+IKSolver( Model::KinematicModelConstPtr model ) : model_( model )
 {}
 
 virtual IKSolution Solve( 
@@ -21,6 +21,6 @@ virtual IKSolution Solve(
     const IKRunContext context ) const = 0;
 
 protected:
-KinematicModelConstPtr model_;
+Model::KinematicModelConstPtr model_;
 };
 }

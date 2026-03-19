@@ -31,7 +31,7 @@ std::optional< BaseJointModel > BaseJointAnalyzer::Analyze(
 	if ( reference_direction.norm() < epsilon )
 	{
 		auto wrist_joint = joint_chain.GetActiveJoint( wrist_model->active_joint_start );
-		auto previous_wrist_joint = joint_chain.GetPreviousJoint( wrist_joint );
+		auto previous_wrist_joint = joint_chain.GetPreviousJoint( wrist_joint.get() );
 
 		if ( !previous_wrist_joint )
 			return std::nullopt;

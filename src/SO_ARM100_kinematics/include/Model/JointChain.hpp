@@ -58,15 +58,20 @@ const Link& GetActiveJointLink( int i ) const {
 	return active_joints_[i]->GetLink();
 }
 
-int GetJointIndex( const JointConstPtr& joint ) const;
-const Joint* GetNextJoint( const JointConstPtr& joint ) const;
-const Joint* GetPreviousJoint( const JointConstPtr& joint ) const;
+int GetJointIndex( const Joint* joint ) const;
+const Joint* GetNextJoint( const Joint* joint ) const;
+const Joint* GetPreviousJoint( const Joint* joint ) const;
 
 [[nodiscard]] std::vector< double > ActiveJointCenters() const noexcept {
 	return active_joint_centers_;
 }
 
-[[nodiscard]] bool WithinLimits( const VecXd& joints ) const;
+[[nodiscard]] bool WithinLimits( const VecXd& joints ) const {
+	if ( joints.size() > GetActiveJointCount() )
+		return false;
+	
+	return WithinLimits( joints.data(), joints.size() );
+}
 
 [[nodiscard]] bool Empty() const {
 	return joints_.empty();
@@ -84,47 +89,76 @@ void Add( const Twist& twist, const Link& link, const Limits& limits ){
 	Add( std::make_shared< const Joint >( twist, link, limits ) );
 }
 
-void ComputeFK(
+bool ComputeFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
-	Mat4d& fk ) const 
-{
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeFK( thetas.data(), home_configuration, fk );
+	Mat4d& fk ) const {
+	return ComputeFK( thetas.data(), thetas.size(), home_configuration, fk );
 }
 
-void ComputeFK(
+bool ComputeFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
-	Mat4d& fk ) const 
-{
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeFK( thetas.data(), home_configuration, fk );
+	Mat4d& fk ) const {
+	return ComputeFK( thetas.data(), thetas.size(), home_configuration, fk );
 }
 
-void ComputeJointPosesFK(
+bool ComputeJointPosesFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
-	Mat4d& fk ) const 
-{
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeJointPosesFK( thetas.data(), home_configuration, joints_fk, fk );
+	Mat4d& fk ) const {
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
 }
 
-void ComputeJointPosesFK(
+bool ComputeJointPosesFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
+	Mat4d& fk ) const {
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+}
+
+bool ComputeJointPosesFK(
+	const std::span< const double >& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
 	Mat4d& fk ) const 
 {
-	if ( thetas.size() != GetActiveJointCount() )
-		throw std::invalid_argument( "thetas size must match joint count" );
-	ComputeJointPosesFK( thetas.data(), home_configuration, joints_fk, fk );
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
 }
+
+bool ComputeJointPosesFK(
+	const VecXd& thetas,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const 
+{
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+}
+
+[[nodiscard]] VecXd RandomValidJoints( 
+	random_numbers::RandomNumberGenerator& rng, 
+	double margin_percent = 0.05 ) const noexcept;
+
+[[nodiscard]] VecXd RandomValidJointsNear( 
+	random_numbers::RandomNumberGenerator& rng, 
+	const VecXd& joints,
+	double distance = 0.1, 
+	double margin_percent = 0.05 ) const noexcept;
+
+[[nodiscard]] VecXd RandomValidJointsNearWrapped(
+	random_numbers::RandomNumberGenerator& rng,
+	const VecXd& joints,
+	double min_limit_span,
+	double distance = 0.1,
+	double margin_percent = 0.05 ) const noexcept;
+
+[[nodiscard]] VecXd RandomValidJointsNearCentered(
+	random_numbers::RandomNumberGenerator& rng,
+	const VecXd& joints,
+	double distance = 0.1,
+	double margin_percent = 0.05 ) const noexcept;
 
 [[nodiscard]] JointChain SubChain( JointConstPtr start, JointConstPtr end ) const;
 
@@ -135,16 +169,27 @@ std::vector< double > active_joint_centers_;
 
 JointChain( const std::span< JointConstPtr const >& joints );
 
-void ComputeFK(
+bool ComputeFK(
 	const double* thetas,
+	int n_joints,
 	const Mat4d& home_configuration,
 	Mat4d& fk ) const noexcept;
 
-void ComputeJointPosesFK(
+bool ComputeJointPosesFK(
 	const double* thetas,
+	int n_joints,
 	const Mat4d& home_configuration,
 	std::vector< Pose >& joints_fk,
 	Mat4d& fk ) const noexcept;
+
+bool ComputeJointPosesFK(
+	const double* thetas,
+	int n_joints,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const noexcept;
+
+bool WithinLimits( const double* joints, int n_joints ) const;
 
 void Add( JointConstPtr joint );
 };

@@ -9,7 +9,7 @@ namespace Solver
 struct IKProblem;
 }
 
-namespace Heuristic
+namespace Seed
 {
 class IKSeedGenerator
 {

@@ -1,19 +1,28 @@
 #pragma once
 
-#include "HybridSolver/BaseJointModel.hpp"
-#include "IKHeuristic.hpp"
+#include "Global.hpp"
+#include "Model/JointGroup.hpp"
 #include "Model/KinematicModel.hpp"
+#include "Heuristic/IKHeuristic.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
 class BaseJointHeuristic : public IKHeuristic
 {
 public:
-BaseJointHeuristic( KinematicModelConstPtr model, const BaseJointModel& base_model );
+BaseJointHeuristic( 
+    Model::KinematicModelConstPtr model, 
+    const Model::JointGroup& base_group );
 
-virtual Solver::IKProblem Presolve( const Solver::IKProblem& problem ) const override;
+virtual IKPresolution Presolve( const Solver::IKProblem& problem ) const override;
 
 private:
-BaseJointModelUniqueConstPtr base_model_;
+Model::JointGroup base_group_;
+Vec3d reference_direction_;
+
+const Joint* GetBaseJoint() const;
+Vec3d ComputeReferenceDirection() const;
+Vec3d TipHomePosition() const;
+Vec3d ComputeTipPosition( const Mat4d& target ) const;
 };
 }

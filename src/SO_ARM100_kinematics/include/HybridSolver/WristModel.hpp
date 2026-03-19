@@ -8,10 +8,10 @@ namespace SOArm100::Kinematics
 {
 enum class WristType
 {
-	None,
-	Revolute1,
-	Revolute2,
-	Revolute3,
+	None = 0,
+	Revolute1 = 1,
+	Revolute2 = 2,
+	Revolute3 = 3,
 };
 
 struct WristModel
