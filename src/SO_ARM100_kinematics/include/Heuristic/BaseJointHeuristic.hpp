@@ -14,13 +14,15 @@ BaseJointHeuristic(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& base_group );
 
-virtual IKPresolution Presolve( const Solver::IKProblem& problem, const Solver::IKRunContext& context ) const override;
+virtual IKPresolution Presolve( 
+    const Solver::IKProblem& problem, 
+    const Solver::IKRunContext& context ) const override;
 
 private:
 Model::JointGroup base_group_;
 Vec3d reference_direction_;
 
-const Joint* GetBaseJoint() const;
+const Model::Joint* GetBaseJoint() const;
 Vec3d ComputeReferenceDirection() const;
 Vec3d TipHomePosition() const;
 Vec3d ComputeTipPosition( const Mat4d& target ) const;

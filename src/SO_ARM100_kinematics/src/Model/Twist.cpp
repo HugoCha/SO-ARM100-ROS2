@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <optional>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------

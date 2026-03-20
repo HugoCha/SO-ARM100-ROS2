@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Global.hpp"
+
 #include "JointChain.hpp"
-#include "Model/KinematicTopoly.hpp"
-#include "Model/ReachableSpace.hpp"
+#include "KinematicTopoly.hpp"
+#include "ReachableSpace.hpp"
 
 #include <memory>
 
@@ -16,7 +17,7 @@ KinematicModel(
 	JointChainConstPtr chain,
 	const Mat4d& home,
 	const KinematicTopology& topology,
-	std::unique_ptr< ReachableSpace > reachable_space ) :
+	ReachableSpaceUniqueConstPtr reachable_space ) :
 	chain_( chain ),
 	home_configuration_( home ),
 	topology_( topology ),
@@ -60,7 +61,7 @@ private:
 JointChainConstPtr chain_;
 Mat4d home_configuration_;
 KinematicTopology topology_;
-std::unique_ptr< ReachableSpace > reachable_space_;
+ReachableSpaceUniqueConstPtr reachable_space_;
 };
 
 using KinematicModelConstPtr = std::shared_ptr< const KinematicModel >;

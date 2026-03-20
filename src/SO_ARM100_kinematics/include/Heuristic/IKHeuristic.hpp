@@ -31,13 +31,13 @@ virtual IKPresolution Presolve(
 protected:
 Model::KinematicModelConstPtr model_;
 
-const JointChain* GetChain() const {
+const Model::JointChain* GetChain() const {
 	if ( !model_ )
 		return nullptr;
 	return model_->GetChain();
 }
 
-const Joint* GetActiveJoint( int index ) const {
+const Model::Joint* GetActiveJoint( int index ) const {
 	if ( !model_ )
 		return nullptr;
 	return model_->GetChain()->GetActiveJoint( index ).get();

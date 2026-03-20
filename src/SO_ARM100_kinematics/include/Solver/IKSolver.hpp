@@ -3,7 +3,6 @@
 #include "Heuristic/IKHeuristic.hpp"
 #include "Heuristic/IKPresolution.hpp"
 #include "IKSolution.hpp"
-#include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics::Solver
 {

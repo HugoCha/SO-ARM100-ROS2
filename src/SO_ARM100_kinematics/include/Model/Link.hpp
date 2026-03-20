@@ -3,7 +3,7 @@
 #include "Global.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 class Link
 {

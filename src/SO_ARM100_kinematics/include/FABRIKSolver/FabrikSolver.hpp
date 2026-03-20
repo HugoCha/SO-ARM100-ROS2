@@ -57,8 +57,8 @@ struct SolverBuffers
 {
 	int fabrik_start_idx { 0 };
 	std::vector< double > bone_lengths;
-	std::vector< Pose > old_poses;
-	std::vector< Pose > poses;
+	std::vector< Model::Pose > old_poses;
+	std::vector< Model::Pose > poses;
 	VecXd joints;
 	Mat4d fk;
 
@@ -86,11 +86,11 @@ void PreSolveAzimuthJoints(
 
 void ComputePoses(
 	const VecXd& joints,
-	std::vector< Pose >& poses,
+	std::vector< Model::Pose >& poses,
 	Mat4d& fk ) const;
 
 void ComputeBoneLengths(
-	const std::span< const Pose >& poses,
+	const std::span< const Model::Pose >& poses,
 	const std::span< double >& bone_lengths ) const;
 
 double TotalBoneLength( const std::span< const double > bone_lengths ) const;
@@ -99,38 +99,38 @@ void ForwardPass(
 	const Vec3d& target,
 	const std::span< const double >& bone_lengths,
 	int start_idx,
-	const std::span< Pose >& poses ) const;
+	const std::span< Model::Pose >& poses ) const;
 
 void BackwardPass(
 	const Vec3d& base,
 	const std::span< const double >& bone_lengths,
 	int start_idx,
-	const std::span< Pose >& poses ) const;
+	const std::span< Model::Pose >& poses ) const;
 
 double RevolutePositionToAngle(
-	const Pose& parent_pose,
-	const Pose& old_child_pose,
-	const Pose& new_child_pose,
+	const Model::Pose& parent_pose,
+	const Model::Pose& old_child_pose,
+	const Model::Pose& new_child_pose,
 	double current_angle ) const;
 
 void ApplyRevoluteJointLimit(
-	const Pose&  parent_pose,
-	const Limits& limits,
+	const Model::Pose&  parent_pose,
+	const Model::Limits& limits,
 	double& current_angle,
-	const std::span< Pose >& child_poses ) const;
+	const std::span< Model::Pose >& child_poses ) const;
 
 double PrismaticPositionToDisplacement(
-	const Pose& old_pose,
-	const Pose& new_pose,
+	const Model::Pose& old_pose,
+	const Model::Pose& new_pose,
 	double current_displacement ) const;
 
 void UpdateJointValues(
-	const std::span< const Pose >& old_poses,
+	const std::span< const Model::Pose >& old_poses,
 	int start_idx,
-	const std::span< Pose >& poses,
+	const std::span< Model::Pose >& poses,
 	VecXd& joints ) const;
 
 void PrintBoneLengths( const std::span< const double > bone_lengths ) const;
-void PrintPoses( const std::span< const Pose >& poses ) const;
+void PrintPoses( const std::span< const Model::Pose >& poses ) const;
 };
 }

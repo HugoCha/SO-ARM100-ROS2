@@ -5,7 +5,7 @@
 #include <memory>
 #include <optional>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 class Twist
 {

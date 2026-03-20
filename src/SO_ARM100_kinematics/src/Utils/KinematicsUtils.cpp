@@ -2,7 +2,6 @@
 
 #include "Global.hpp"
 #include "Model/JointChain.hpp"
-#include "SolverResult.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -40,7 +39,7 @@ void Adjoint( const Mat4d& transform, Mat6d& adjoint ) noexcept
 // ------------------------------------------------------------
 
 void SpaceJacobian(
-	const JointChain& joint_chain,
+	const Model::JointChain& joint_chain,
 	const VecXd& joint_angles,
 	MatXd& jacobian ) noexcept
 {
@@ -222,7 +221,7 @@ void ReachableError(
 // ------------------------------------------------------------
 
 void POE(
-	const JointChain& joint_chain,
+	const Model::JointChain& joint_chain,
 	const Mat4d& M,
 	const std::span< const double >& thetas,
 	Mat4d& poe ) noexcept
@@ -242,7 +241,7 @@ void POE(
 // ------------------------------------------------------------
 
 void POE(
-	const JointChain& joint_chain,
+	const Model::JointChain& joint_chain,
 	const Mat4d& M,
 	const VecXd& thetas,
 	Mat4d& poe ) noexcept
@@ -303,13 +302,12 @@ bool IsApprox(
 // ------------------------------------------------------------
 
 std::vector< double > EvaluateAngleCandidates(
-	const Joint& joint,
+	const Model::Joint& joint,
 	double seed,
 	double raw_angle ) noexcept
 {
 	if ( std::isnan( raw_angle ) )
-		return {}
-	;
+		return {};
 
 	std::vector< double > candidates;
 	candidates.reserve( 2 );
@@ -339,26 +337,6 @@ std::vector< double > EvaluateAngleCandidates(
 		} );
 
 	return candidates;
-}
-
-// ------------------------------------------------------------
-
-void CheckSolverResult(
-	const JointChain& joint_chain,
-	const Mat4d& home_configuration,
-	const Mat4d& target,
-	Mat4d& result_pose,
-	SolverResult& solver_result,
-	double rot_tolerance,
-	double trans_tolerance ) noexcept
-{
-	if ( solver_result.Unreachable() )
-		return;
-
-	POE( joint_chain, home_configuration, solver_result.joints, result_pose );
-
-	if ( !IsApprox( target, result_pose, rot_tolerance, trans_tolerance ) )
-		solver_result.state = SolverState::Unreachable;
 }
 
 // ------------------------------------------------------------

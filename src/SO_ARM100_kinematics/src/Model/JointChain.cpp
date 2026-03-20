@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------

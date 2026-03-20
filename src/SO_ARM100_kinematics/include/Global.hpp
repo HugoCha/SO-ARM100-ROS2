@@ -32,4 +32,6 @@ constexpr double error_tolerance = 1e-3;
 constexpr double rotation_tolerance = 1e-2;
 constexpr double translation_tolerance = 1e-3;
 constexpr double gradient_tolerance = 1e-6;
+
+constexpr double timeout = 100; // ms
 }

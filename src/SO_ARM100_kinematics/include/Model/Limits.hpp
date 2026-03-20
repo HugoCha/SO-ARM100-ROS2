@@ -5,7 +5,7 @@
 #include <limits>
 #include <random_numbers/random_numbers.h>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 class Limits {
 public:

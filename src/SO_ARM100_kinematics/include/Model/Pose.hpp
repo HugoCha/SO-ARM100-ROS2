@@ -4,7 +4,7 @@
 
 #include "Utils/KinematicsUtils.hpp"
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 struct Pose
 {

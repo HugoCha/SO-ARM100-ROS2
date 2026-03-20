@@ -129,7 +129,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 	const int n = group_.Size();
 	fabrik_start_idx = 0;
 
-	std::vector< Pose > zero_poses( n + 1 );
+	std::vector< Model::Pose > zero_poses( n + 1 );
 	VecXd zero = VecXd::Zero( n );
 	Mat4d tip_home;
 	GetChain()->ComputeJointPosesFK( zero, group_.tip_home, zero_poses, tip_home );
@@ -186,7 +186,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 
 void FABRIKSolver::ComputePoses(
 	const VecXd& joints,
-	std::vector< Pose >& poses,
+	std::vector< Model::Pose >& poses,
 	Mat4d& fk ) const
 {
 	const int n = joints.size();
@@ -204,7 +204,7 @@ void FABRIKSolver::ComputePoses(
 // ------------------------------------------------------------
 
 void FABRIKSolver::ComputeBoneLengths(
-	const std::span< const Pose >& poses,
+	const std::span< const Model::Pose >& poses,
 	const std::span< double >& bone_lengths ) const
 {
 	const int n_joints = poses.size();
@@ -228,7 +228,7 @@ void FABRIKSolver::ForwardPass(
 	const Vec3d& target,
 	const std::span< const double >& bone_lengths,
 	int start_idx,
-	const std::span< Pose >& poses ) const
+	const std::span< Model::Pose >& poses ) const
 {
 	const int n = poses.size() - 1;
 	poses[n].origin = target;
@@ -266,7 +266,7 @@ void FABRIKSolver::BackwardPass(
 	const Vec3d& base,
 	const std::span< const double >& bone_lengths,
 	int start_idx,
-	const std::span< Pose >& poses ) const
+	const std::span< Model::Pose >& poses ) const
 {
 	const int n = poses.size() - 1;
 	poses[start_idx].origin = base;
@@ -299,9 +299,9 @@ void FABRIKSolver::BackwardPass(
 // ------------------------------------------------------------
 
 void FABRIKSolver::UpdateJointValues(
-	const std::span< const Pose >& old_poses,
+	const std::span< const Model::Pose >& old_poses,
 	int start_idx,
-	const std::span< Pose >& poses,
+	const std::span< Model::Pose >& poses,
 	VecXd& joints ) const
 {
 	const int n = group_.Size();
@@ -345,9 +345,9 @@ void FABRIKSolver::UpdateJointValues(
 // ------------------------------------------------------------
 
 double FABRIKSolver::RevolutePositionToAngle(
-	const Pose& parent_pose,
-	const Pose& old_child_pose,
-	const Pose& new_child_pose,
+	const Model::Pose& parent_pose,
+	const Model::Pose& old_child_pose,
+	const Model::Pose& new_child_pose,
 	double current_angle ) const
 {
 	Vec3d v_old = old_child_pose.origin - parent_pose.origin;
@@ -375,8 +375,8 @@ double FABRIKSolver::RevolutePositionToAngle(
 // ------------------------------------------------------------
 
 double FABRIKSolver::PrismaticPositionToDisplacement(
-	const Pose& old_joint_pose,
-	const Pose& new_joint_pose,
+	const Model::Pose& old_joint_pose,
+	const Model::Pose& new_joint_pose,
 	double current_displacement ) const
 {
 	Vec3d delta = new_joint_pose.origin - old_joint_pose.origin;
@@ -386,10 +386,10 @@ double FABRIKSolver::PrismaticPositionToDisplacement(
 // ------------------------------------------------------------
 
 void FABRIKSolver::ApplyRevoluteJointLimit(
-	const Pose&  parent_pose,
-	const Limits& limits,
+	const Model::Pose&  parent_pose,
+	const Model::Limits& limits,
 	double& current_angle,
-	const std::span< Pose >& child_poses ) const
+	const std::span< Model::Pose >& child_poses ) const
 {
 	if ( !limits.Within( current_angle ) )
 	{
@@ -425,7 +425,7 @@ void FABRIKSolver::PrintBoneLengths(
 
 // ------------------------------------------------------------
 
-void FABRIKSolver::PrintPoses( const std::span< const Pose >& poses ) const
+void FABRIKSolver::PrintPoses( const std::span< const Model::Pose >& poses ) const
 {
 	const int n_poses = poses.size();
 	std::stringstream poses_ss;

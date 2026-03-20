@@ -4,7 +4,7 @@
 
 #include "Model/ReachableSpace.hpp"
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 class JointChain;
 }

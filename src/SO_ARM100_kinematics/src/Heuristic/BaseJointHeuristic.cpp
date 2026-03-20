@@ -23,7 +23,7 @@ BaseJointHeuristic::BaseJointHeuristic(
 
 // ------------------------------------------------------------
 
-const Joint* BaseJointHeuristic::GetBaseJoint() const
+const Model::Joint* BaseJointHeuristic::GetBaseJoint() const
 {
 	if ( base_group_.indices.empty() )
 		return nullptr;

@@ -8,7 +8,7 @@
 #include <span>
 #include <vector>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 struct Pose;
 

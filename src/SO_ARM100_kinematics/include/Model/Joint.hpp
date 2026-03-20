@@ -10,7 +10,7 @@
 #include <limits>
 #include <memory>
 
-namespace SOArm100::Kinematics
+namespace SOArm100::Kinematics::Model
 {
 class Joint
 {

@@ -2,9 +2,10 @@
 
 #include "Global.hpp"
 
-#include "Model/JointChain.hpp"
-#include "WorkspaceFilter.hpp"
+#include "HybridSolver/HybridSolver.hpp"
+#include "Model/KinematicModel.hpp"
 
+#include <geometry_msgs/geometry_msgs/msg/pose.hpp>
 #include <memory>
 #include <moveit/macros/class_forward.hpp>
 #include <span>
@@ -33,13 +34,9 @@ virtual void Initialize(
 	double search_discretization );
 
 virtual void Initialize(
-	std::shared_ptr< const JointChain > joint_chain,
-	std::shared_ptr< const Mat4d > home_configuration,
+	Model::KinematicModelConstPtr model,
+	const Solver::HybridSolver& solver,
 	double search_discretization );
-
-[[nodiscard]] std::shared_ptr< const JointChain > GetJointChain() const {
-	return joint_chain_;
-}
 
 [[nodiscard]] bool ForwardKinematic(
 	const std::span< const double >& joints,
@@ -55,14 +52,19 @@ virtual void Initialize(
 	std::vector< double >& joints ) const;
 
 [[nodiscard]] bool InverseKinematic(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints,
+	const Mat4d& target,
+	const VecXd& seed,
 	VecXd& joints ) const;
 
-protected:
-std::shared_ptr< const JointChain > joint_chain_;
-std::shared_ptr< const Mat4d > home_configuration_;
-std::unique_ptr< WorkspaceFilter > workspace_filter_;
+private:
+Model::KinematicModelConstPtr model_;
+std::unique_ptr< const Solver::HybridSolver > solver_;
+
+[[nodiscard]] bool InverseKinematic(
+	const Mat4d& target,
+	const VecXd& seed,
+	double* joints,
+	int n_joints ) const;
 
 [[nodiscard]] bool AreValidInitializeParameters(
 	const moveit::core::RobotModelConstPtr& robot_model,
@@ -70,14 +72,5 @@ std::unique_ptr< WorkspaceFilter > workspace_filter_;
 	const std::string& base_frame,
 	const std::vector< std::string >& tip_frames,
 	double search_discretization ) const noexcept;
-
-[[nodiscard]] virtual bool InverseKinematicImpl(
-	const Mat4d& target,
-	const std::span< const double >& seed_joints,
-	double* joints ) const = 0;
-
-[[nodiscard]] bool IsUnreachable( const Mat4d& target ) const;
-
-[[nodiscard]] bool CheckLimits( const std::span< const double >& joints ) const;
 };
 }

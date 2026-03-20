@@ -1,11 +1,17 @@
 #include "KinematicsSolver.hpp"
 
 #include "Global.hpp"
+#include "HybridSolver/HybridSolver.hpp"
 #include "Model/JointChain.hpp"
+#include "Model/KinematicModel.hpp"
+#include "Model/KinematicTopoly.hpp"
+#include "Model/ReachableSpace.hpp"
+#include "Model/TotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"
+#include "Solver/IKProblem.hpp"
+#include "Solver/IKRunContext.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
-#include "WorkspaceFilter.hpp"
 
 #include <cassert>
 #include <memory>
@@ -33,8 +39,7 @@ static rclcpp::Logger get_logger()
 // ------------------------------------------------------------
 
 KinematicsSolver::KinematicsSolver() :
-	joint_chain_( nullptr ),
-	home_configuration_( std::make_unique< const Mat4d >( Mat4d::Identity() ) )
+	model_( nullptr )
 {
 }
 
@@ -62,7 +67,7 @@ void KinematicsSolver::Initialize(
 	const auto& link_models = joint_model_group->getLinkModels();
 	const int n_joints = joint_model_group->getJointModels().size();
 
-	auto joint_chain = std::make_shared< JointChain >( n_joints );
+	auto joint_chain = std::make_shared< Model::JointChain >( n_joints );
 
 	for ( const auto* link_model : link_models )
 	{
@@ -75,17 +80,17 @@ void KinematicsSolver::Initialize(
 		{
 			child_transform = state.getGlobalLinkTransform( child_joints[0]->getChildLinkModel() );
 		}
-		Link link( joint_transform.matrix(), child_transform.matrix() );
+		Model::Link link( joint_transform.matrix(), child_transform.matrix() );
 
-		Limits limits;
+		Model::Limits limits;
 		const auto& bounds = parent_joint->getVariableBounds();
 		if ( !bounds.empty() )
 		{
 			const auto& lim = bounds[0];
-			limits = Limits( lim.min_position_, lim.max_position_ );
+			limits = Model::Limits( lim.min_position_, lim.max_position_ );
 		}
 
-		Twist twist;
+		Model::Twist twist;
 		if ( parent_joint->getType() == moveit::core::JointModel::REVOLUTE )
 		{
 			const auto* revolute_joint_model =
@@ -94,36 +99,41 @@ void KinematicsSolver::Initialize(
 			const Vec3d axis_world = joint_transform.rotation() * revolute_joint_model->getAxis();
 			const Vec3d point_on_axis_world = joint_transform.translation();
 
-			twist = Twist( axis_world, point_on_axis_world );
+			twist = Model::Twist( axis_world, point_on_axis_world );
 		}
 		else if ( parent_joint->getType() == moveit::core::JointModel::PRISMATIC )
 		{
 			const auto* prismatic_joint_model =
 				static_cast< const moveit::core::PrismaticJointModel* >( parent_joint );
 
-			twist = Twist( prismatic_joint_model->getAxis() );
+			twist = Model::Twist( prismatic_joint_model->getAxis() );
 		}
 
 		joint_chain->Add( twist, link, limits );
 	}
-	joint_chain_ = std::move( joint_chain );
 
+	auto joint_chain_const = std::make_shared< const Model::JointChain >( *joint_chain );
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
-	home_configuration_ = std::make_shared< const Mat4d >( home_configuration );
-
-	workspace_filter_ = std::make_unique< WorkspaceFilter >( *joint_chain_ );
+	std::unique_ptr< const Model::ReachableSpace > reachable_space = 
+		std::make_unique< const Model::TotalLengthReachableSpace >( *joint_chain, home_configuration );
+	
+	Model::KinematicTopology topology;
+	
+	model_ = std::make_shared< const Model::KinematicModel >( 
+		joint_chain_const, 
+		home_configuration, 
+		topology,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
 
 void KinematicsSolver::Initialize(
-	std::shared_ptr< const JointChain > joint_chain,
-	std::shared_ptr< const Mat4d > home_configuration,
+	Model::KinematicModelConstPtr model,
+	const Solver::HybridSolver& solver,
 	double search_discretization )
 {
-	joint_chain_ = joint_chain;
-	home_configuration_ = home_configuration;
-	workspace_filter_ = std::make_unique< WorkspaceFilter >( *joint_chain );
+	model_ = model;
 }
 
 // ------------------------------------------------------------
@@ -147,29 +157,13 @@ bool KinematicsSolver::ForwardKinematic(
 	const VecXd& joints,
 	Mat4d& pose ) const
 {
-	if ( !joint_chain_  )
+	if ( !model_  )
 	{
 		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
 
-	if ( joints.size() != joint_chain_->GetActiveJointCount() )
-	{
-		RCLCPP_ERROR(
-			get_logger(),
-			"Joint angles size (%zu) does not match number of twists (%zu).",
-			joints.size(), joint_chain_->GetActiveJointCount() );
-		return false;
-	}
-
-	if ( !joint_chain_->WithinLimits( joints ) )
-	{
-		return false;
-	}
-
-	joint_chain_->ComputeFK( joints, *home_configuration_, pose );
-
-	return true;
+	return model_->ComputeFK( joints, pose );
 }
 
 // ------------------------------------------------------------
@@ -179,29 +173,74 @@ bool KinematicsSolver::InverseKinematic(
 	const std::span< const double >& seed_joints,
 	std::vector< double >& joints ) const
 {
-	if ( joints.size() != joint_chain_->GetActiveJointCount() )
-		joints.resize( joint_chain_->GetActiveJointCount() );
+	if ( !model_ || !solver_ )
+	{
+		RCLCPP_ERROR( get_logger(), "Solver or Joint model not initialized." );
+		return false;
+	}
 
-	return InverseKinematicImpl(
+	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	if ( joints.size() != n_joints )
+		joints.resize( n_joints );
+
+	return InverseKinematic(
 		ToTransformMatrix( target_pose ),
-		seed_joints,
-		joints.data() );
+		ToVecXd( seed_joints ),
+		joints.data(),
+		n_joints );
 }
 
 // ------------------------------------------------------------
 
 bool KinematicsSolver::InverseKinematic(
-	const Mat4d& target_pose,
-	const std::span< const double >& seed_joints,
+	const Mat4d& target,
+	const VecXd& seed,
 	VecXd& joints ) const
 {
-	if ( joints.size() != joint_chain_->GetActiveJointCount() )
-		joints.resize( joint_chain_->GetActiveJointCount() );
+	if ( !model_ || !solver_ )
+	{
+		RCLCPP_ERROR( get_logger(), "Solver or Joint model not initialized." );
+		return false;
+	}
 
-	return InverseKinematicImpl(
-		target_pose,
-		seed_joints,
-		joints.data() );
+	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	if ( joints.size() != n_joints )
+		joints.resize( n_joints );
+
+	return InverseKinematic( 
+		target, 
+		seed, 
+		joints.data(), 
+		n_joints );
+}
+
+// ------------------------------------------------------------
+
+bool KinematicsSolver::InverseKinematic(
+	const Mat4d& target,
+	const VecXd& seed,
+	double* joints,
+	int n_joints ) const
+{
+	if ( seed.size() != n_joints )
+	{
+		RCLCPP_ERROR( get_logger(), "Wrong seed size." );
+		return false;
+	}
+
+	Solver::IKProblem problem {
+		target, 
+		seed, 
+		translation_tolerance, 
+		rotation_tolerance, 
+		timeout };
+
+	Solver::IKRunContext context;
+
+	auto solution = solver_->Solve( problem, context );
+	joints = solution.joints.data();
+
+	return solution.Success();
 }
 
 // ------------------------------------------------------------
@@ -250,25 +289,4 @@ bool KinematicsSolver::AreValidInitializeParameters(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::IsUnreachable( const Mat4d& target ) const
-{
-	assert( workspace_filter_ );
-	return workspace_filter_->IsUnreachable( target );
 }
-
-// ------------------------------------------------------------
-
-bool KinematicsSolver::CheckLimits( const std::span< const double >& joints ) const
-{
-	assert( joint_chain_->GetActiveJointCount() == joints.size() );
-
-	const auto& active_joints = joint_chain_->GetActiveJoints();
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		if ( !active_joints[i]->GetLimits().Within( joints[i] ) )
-			return false;
-	return true;
-}
-
-// ------------------------------------------------------------
-
-} // namespace SOArm100::Kinematics
