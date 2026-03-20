@@ -3,7 +3,6 @@
 #include "Global.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/JointChain.hpp"
-#include "Model/KinematicModel.hpp"
 #include "Model/Twist.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -21,13 +20,14 @@ const Mat4d ComputeTCPinWrist( const Vec3d& wrist_center, const Mat4d& home_conf
 // ------------------------------------------------------------
 
 std::optional< JointGroup > WristAnalyzer::Analyze(
-	const KinematicModel& model )
+	const JointChain& chain,
+	const Mat4d& home )
 {
 	int wrist_start = 0;
 	int wrist_count = 0;
 	Vec3d wrist_center = Vec3d::Zero();
 
-	const auto& active_joints = model.GetChain()->GetActiveJoints();
+	const auto& active_joints = chain.GetActiveJoints();
 	for ( int k = 1; k <= 3 && k <= active_joints.size(); ++k )
 	{
 		auto maybe_center = ComputeIntersection( active_joints.last( k ) );
@@ -45,10 +45,11 @@ std::optional< JointGroup > WristAnalyzer::Analyze(
 	if ( wrist_count == 0 )
 		return std::nullopt;
 
-	Mat4d wrist_tip = ComputeTCPinWrist( wrist_center, model.GetHomeConfiguration() );
+	Mat4d wrist_tip = ComputeTCPinWrist( wrist_center, home );
 
 	return JointGroup::CreateFromRange(
 		"wrist",
+		JointGroupType::Wrist,
 		wrist_start,
 		wrist_count,
 		wrist_tip );

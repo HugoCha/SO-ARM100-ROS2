@@ -196,21 +196,21 @@ Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3
 
 // ------------------------------------------------------------
 
-JointChain GetRevoluteOnlyRobotJointChain()
+Model::JointChain GetRevoluteOnlyRobotJointChain()
 {
-	JointChain joint_chain( 3 );
+	Model::JointChain joint_chain( 3 );
 	// // Configuration HOME (tous les angles à 0)
 	// Joint 1: Axe Z à l'origine
 	Vec3d axis1( 0, 0, 1 );           // Axe Z
 	Vec3d point1( 0, 0, 0 );          // Origine
-	Twist twist1( axis1, point1 );
+	Model::Twist twist1( axis1, point1 );
 
 	Vec3d origin1 = Vec3d( 0.0, 0, 0.0 );
 	Vec3d origin2 = Vec3d( 0.5, 0, 0.0 );
 	Vec3d origin3 = Vec3d( 1.0, 0, 0.0 );
-	Link link1( ToTransformMatrix( origin1 ), 0.5 );
+	Model::Link link1( ToTransformMatrix( origin1 ), 0.5 );
 
-	Limits limits1( -M_PI, M_PI );
+	Model::Limits limits1( -M_PI, M_PI );
 
 	joint_chain.Add( twist1, link1, limits1 );
 
@@ -218,11 +218,11 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
 	Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
 	Vec3d point2( 0.5, 0, 0 );        // Position à home
-	Twist twist2( axis2, point2 );
+	Model::Twist twist2( axis2, point2 );
 
-	Link link2( ToTransformMatrix( origin2 ), 0.5 );
+	Model::Link link2( ToTransformMatrix( origin2 ), 0.5 );
 
-	Limits limits2( -M_PI, M_PI );
+	Model::Limits limits2( -M_PI, M_PI );
 
 	joint_chain.Add( twist2, link2, limits2 );
 
@@ -230,11 +230,11 @@ JointChain GetRevoluteOnlyRobotJointChain()
 	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
 	Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
 	Vec3d point3( 1.0, 0, 0 );        // Position à home
-	Twist twist3( axis3, point3 );
+	Model::Twist twist3( axis3, point3 );
 
-	Link link3( ToTransformMatrix( origin3 ), 0 );
+	Model::Link link3( ToTransformMatrix( origin3 ), 0 );
 
-	Limits limits3( -M_PI, M_PI );
+	Model::Limits limits3( -M_PI, M_PI );
 
 	joint_chain.Add( twist3, link3, limits3 );
 
@@ -291,19 +291,19 @@ MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 
 
 // ------------------------------------------------------------
 
-JointChain Create5DofRobotJointChain()
+Model::JointChain Create5DofRobotJointChain()
 {
 	// Create a joint chain with 6 joints: 1 base joint + 2 numeric joints + 3 wrist joints
-	auto joint_chain = JointChain( 6 );
+	auto joint_chain = Model::JointChain( 6 );
 
 	// Base joint (revolute around Z-axis)
 	Vec3d origin      = Vec3d( 0, 0, 0.0 );
 	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
 	Vec3d axis = Vec3d::UnitZ();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI, M_PI )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	// Numeric joints (2 revolute joints)
@@ -311,41 +311,41 @@ JointChain Create5DofRobotJointChain()
 	next_origin = Vec3d( 0, 0, 1.0 );
 	axis = Vec3d::UnitY();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI / 2, M_PI / 2 )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	origin = next_origin;
 	next_origin = Vec3d( 0, 0, 1.5 );
 	axis = Vec3d::UnitY();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI / 2, M_PI / 2 )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	// Wrist joints (3 revolute joints - spherical wrist)
 	origin = next_origin;
 	axis = Vec3d::UnitX();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI, M_PI )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitY();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI, M_PI )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitZ();
 	joint_chain.Add(
-		Twist( axis, origin ),
-		Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Limits( -M_PI, M_PI )
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	return joint_chain;

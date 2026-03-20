@@ -1,4 +1,4 @@
-#include "Heuristic/BaseJointHeuristic.hpp"
+#include "Heuristic/ShoulderPanHeuristic.hpp"
 
 #include "Global.hpp"
 #include "Heuristic/IKHeuristic.hpp"
@@ -12,38 +12,36 @@ namespace SOArm100::Kinematics::Heuristic
 
 // ------------------------------------------------------------
 
-BaseJointHeuristic::BaseJointHeuristic(
+ShoulderPanHeuristic::ShoulderPanHeuristic(
 	Model::KinematicModelConstPtr model,
-	const Model::JointGroup& base_group ) :
+	const Model::JointGroup& shoulder_pan_group ) :
 	IKHeuristic( model ),
-	base_group_( base_group )
+	shoulder_pan_group_( shoulder_pan_group )
 {
 	reference_direction_ = ComputeReferenceDirection();
 }
 
 // ------------------------------------------------------------
 
-const Model::Joint* BaseJointHeuristic::GetBaseJoint() const
+const Model::Joint* ShoulderPanHeuristic::GetShoulderPanJoint() const
 {
-	if ( base_group_.indices.empty() )
+	if ( shoulder_pan_group_.indices.empty() )
 		return nullptr;
-	return model_->GetChain()->GetActiveJoint( base_group_.indices[0] ).get();
+	return model_->GetChain()->GetActiveJoint( shoulder_pan_group_.indices[0] ).get();
 }
 
 // ------------------------------------------------------------
 
-Vec3d BaseJointHeuristic::ComputeReferenceDirection() const
+Vec3d ShoulderPanHeuristic::ComputeReferenceDirection() const
 {
-	auto base_joint = GetBaseJoint();
+	auto base_joint = GetShoulderPanJoint();
 	if ( !base_joint )
 		return Vec3d::Zero();
 
-	const auto& base_axis = base_joint->Axis();
 	const auto& base_origin = base_joint->Origin();
-
 	const auto& p_tip_home = TipHomePosition();
-
-	const Vec3d r = p_tip_home - base_origin;
+	const Vec3d& r = p_tip_home - base_origin;
+	const auto& base_axis = base_joint->Axis();
 	Vec3d reference_direction = r - r.dot( base_axis ) * base_axis;
 
 	if ( reference_direction.norm() < epsilon )
@@ -51,7 +49,7 @@ Vec3d BaseJointHeuristic::ComputeReferenceDirection() const
 		auto next_joint = model_->GetChain()->GetNextJoint( base_joint );
 
 		if ( !next_joint )
-			return p_tip_home;
+			return Vec3d::Zero();
 
 		const auto& next_joint_axis = next_joint->Axis();
 		reference_direction = base_axis.cross( next_joint_axis );
@@ -65,27 +63,27 @@ Vec3d BaseJointHeuristic::ComputeReferenceDirection() const
 
 // ------------------------------------------------------------
 
-Vec3d BaseJointHeuristic::TipHomePosition() const
+Vec3d ShoulderPanHeuristic::TipHomePosition() const
 {
-	return Translation( base_group_.tip_home );
+	return Translation( shoulder_pan_group_.tip_home );
 }
 
 // ------------------------------------------------------------
 
-Vec3d BaseJointHeuristic::ComputeTipPosition( const Mat4d& target ) const
+Vec3d ShoulderPanHeuristic::ComputeTipPosition( const Mat4d& target ) const
 {
 	return Translation( target ) - Rotation( target ) * TipHomePosition();
 }
 
 // ------------------------------------------------------------
 
-IKPresolution BaseJointHeuristic::Presolve(
+IKPresolution ShoulderPanHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
 	IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
 
-	auto base_joint = GetBaseJoint();
+	auto base_joint = GetShoulderPanJoint();
 	if ( !base_joint )
 		return {{}, IKHeuristicState::Fail }
 	;

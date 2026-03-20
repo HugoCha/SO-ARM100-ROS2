@@ -47,7 +47,7 @@ FABRIKSolver::FABRIKSolver(
 	SolverParameters parameters ) :
 	FABRIKSolver(
 		model,
-		Model::JointGroup::CreateFromRange( "full", 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
+		Model::JointGroup::CreateFromRange( "full", Model::JointGroupType::Custom, 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
 		parameters )
 {
 }

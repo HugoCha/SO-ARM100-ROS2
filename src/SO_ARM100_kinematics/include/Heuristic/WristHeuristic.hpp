@@ -12,10 +12,10 @@ enum class WristTopology;
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class WristJointsHeuristic : public IKHeuristic
+class WristHeuristic : public IKHeuristic
 {
 public:
-WristJointsHeuristic( Model::KinematicModelConstPtr model, Model::JointGroup wrist_group );
+WristHeuristic( Model::KinematicModelConstPtr model, Model::JointGroup wrist_group );
 
 virtual IKPresolution Presolve(
 	const Solver::IKProblem& problem,

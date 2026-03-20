@@ -7,6 +7,7 @@ namespace SOArm100::Kinematics::Model
 
 JointGroup CreateFromRange(
 	const std::string& name,
+	JointGroupType type,
 	int start,
 	int count,
 	const Mat4d& home )
@@ -14,7 +15,7 @@ JointGroup CreateFromRange(
 	std::vector< int > range_indices( count );
 	for ( int i = 0; i < count; i++ )
 		range_indices[i] = start + i;
-	return { name, range_indices, home };
+	return { name, range_indices, home, type };
 }
 
 // ------------------------------------------------------------
@@ -33,9 +34,6 @@ void JointGroup::SetGroupJoints( const VecXd& group_joints, VecXd& full_joints )
 	for ( int i = 0; i < indices.size(); i++ )
 		full_joints[indices[i]] = group_joints[i];
 }
-
-// ------------------------------------------------------------
-
 
 // ------------------------------------------------------------
 

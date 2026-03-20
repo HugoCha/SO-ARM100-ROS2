@@ -26,7 +26,7 @@ KinematicModel(
 }
 
 static KinematicModel Empty(){
-	return KinematicModel( nullptr, Mat4d::Zero(), {}, nullptr );
+	return KinematicModel( nullptr, Mat4d::Zero(), KinematicTopology(), nullptr );
 }
 
 bool IsEmpty() const {

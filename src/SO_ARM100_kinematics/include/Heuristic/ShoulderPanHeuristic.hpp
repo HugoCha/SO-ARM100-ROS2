@@ -7,22 +7,22 @@
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class BaseJointHeuristic : public IKHeuristic
+class ShoulderPanHeuristic : public IKHeuristic
 {
 public:
-BaseJointHeuristic(
+ShoulderPanHeuristic(
 	Model::KinematicModelConstPtr model,
-	const Model::JointGroup& base_group );
+	const Model::JointGroup& shoulder_pan_group );
 
 virtual IKPresolution Presolve( 
     const Solver::IKProblem& problem, 
     const Solver::IKRunContext& context ) const override;
 
 private:
-Model::JointGroup base_group_;
+Model::JointGroup shoulder_pan_group_;
 Vec3d reference_direction_;
 
-const Model::Joint* GetBaseJoint() const;
+const Model::Joint* GetShoulderPanJoint() const;
 Vec3d ComputeReferenceDirection() const;
 Vec3d TipHomePosition() const;
 Vec3d ComputeTipPosition( const Mat4d& target ) const;

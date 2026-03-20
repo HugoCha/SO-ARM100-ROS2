@@ -1,4 +1,4 @@
-#include "Heuristic/WristJointsHeuristic.hpp"
+#include "Heuristic/WristHeuristic.hpp"
 
 #include "Global.hpp"
 
@@ -15,7 +15,7 @@ namespace SOArm100::Kinematics::Heuristic
 
 // ------------------------------------------------------------
 
-WristJointsHeuristic::WristJointsHeuristic(
+WristHeuristic::WristHeuristic(
 	Model::KinematicModelConstPtr model,
 	Model::JointGroup wrist_group ) :
 	IKHeuristic( model ),
@@ -26,7 +26,7 @@ WristJointsHeuristic::WristJointsHeuristic(
 
 // ------------------------------------------------------------
 
-Model::WristTopology WristJointsHeuristic::GetWristTopology() const
+Model::WristTopology WristHeuristic::GetWristTopology() const
 {
 	if ( wrist_group_.indices.size() > 3 )
 		return Model::WristTopology::None;
@@ -35,7 +35,7 @@ Model::WristTopology WristJointsHeuristic::GetWristTopology() const
 
 // ------------------------------------------------------------
 
-IKPresolution WristJointsHeuristic::Presolve(
+IKPresolution WristHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
@@ -60,7 +60,7 @@ IKPresolution WristJointsHeuristic::Presolve(
 
 // ------------------------------------------------------------
 
-Model::JointGroup WristJointsHeuristic::ComputeWristlessGroup(
+Model::JointGroup WristHeuristic::ComputeWristlessGroup(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup wrist_group )
 {
@@ -87,7 +87,7 @@ Model::JointGroup WristJointsHeuristic::ComputeWristlessGroup(
 
 // ------------------------------------------------------------
 
-Mat4d WristJointsHeuristic::ComputeWristCenter(
+Mat4d WristHeuristic::ComputeWristCenter(
 	const VecXd& seed,
 	const Mat4d& target ) const
 {
@@ -104,7 +104,7 @@ Mat4d WristJointsHeuristic::ComputeWristCenter(
 
 // ------------------------------------------------------------
 
-IKPresolution WristJointsHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_target ) const
+IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
@@ -130,7 +130,7 @@ IKPresolution WristJointsHeuristic::SolveRevolute1( const VecXd& seed, const Mat
 
 // ------------------------------------------------------------
 
-IKPresolution WristJointsHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_target ) const
+IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
@@ -191,7 +191,7 @@ IKPresolution WristJointsHeuristic::SolveRevolute2( const VecXd& seed, const Mat
 
 // ------------------------------------------------------------
 
-IKPresolution WristJointsHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_target ) const
+IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
