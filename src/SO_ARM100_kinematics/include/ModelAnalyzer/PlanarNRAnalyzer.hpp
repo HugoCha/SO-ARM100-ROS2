@@ -20,5 +20,9 @@ static std::vector< JointGroup > Analyze(
 static std::vector< JointGroup > Analyze( 
     const JointChain& chain, 
     const Mat4d& home );
+
+static bool CheckConsistency(
+    const JointChain& chain, 
+    const JointGroup& planar_group );
 };
 }

@@ -5,6 +5,7 @@
 #include "Heuristic/IKHeuristic.hpp"
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
+#include "Heuristic/JointGroupHeuristic.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/WristTopology.hpp"
 #include "Solver/IKProblem.hpp"
@@ -17,10 +18,8 @@ namespace SOArm100::Kinematics::Heuristic
 
 WristHeuristic::WristHeuristic(
 	Model::KinematicModelConstPtr model,
-	Model::JointGroup wrist_group ) :
-	IKHeuristic( model ),
-	wrist_group_( wrist_group ),
-	wristless_group_( ComputeWristlessGroup( model, wrist_group ) )
+	Model::WristJointGroup wrist_group ) :
+	JointGroupHeuristic( model, wrist_group )
 {
 }
 
@@ -28,9 +27,9 @@ WristHeuristic::WristHeuristic(
 
 Model::WristTopology WristHeuristic::GetWristTopology() const
 {
-	if ( wrist_group_.indices.size() > 3 )
+	if ( GetGroup().indices.size() > 3 )
 		return Model::WristTopology::None;
-	return static_cast< Model::WristTopology >( wrist_group_.indices.size() );
+	return static_cast< Model::WristTopology >( GetGroup().indices.size() );
 }
 
 // ------------------------------------------------------------
@@ -60,44 +59,27 @@ IKPresolution WristHeuristic::Presolve(
 
 // ------------------------------------------------------------
 
-Model::JointGroup WristHeuristic::ComputeWristlessGroup(
-	Model::KinematicModelConstPtr model,
-	const Model::JointGroup wrist_group )
-{
-	int wristless_count;
-	Mat4d wristless_tip;
-
-	if ( wrist_group.indices.empty() )
-	{
-		wristless_count = model->GetChain()->GetActiveJointCount();
-		wristless_tip   = model->GetHomeConfiguration();
-	}
-	else
-	{
-		wristless_count = wrist_group.indices[0];
-		wristless_tip   = model->GetHomeConfiguration() * Inverse( wrist_group.tip_home );
-	}
-
-	std::vector< int > wristless_indices( wristless_count );
-	for ( int i = 0; i < wristless_count; i++ )
-		wristless_indices[i] = i;
-
-	return { "wristless", wristless_indices, wristless_tip };
-}
-
-// ------------------------------------------------------------
-
 Mat4d WristHeuristic::ComputeWristCenter(
 	const VecXd& seed,
 	const Mat4d& target ) const
 {
 	Mat4d wrist_center;
-	VecXd wristless_joints = wristless_group_.GetGroupJoints( seed );
 
-	model_->GetChain()->ComputeFK(
-		wristless_joints,
-		wristless_group_.tip_home,
-		wrist_center );
+	Mat4d wrist_center_home = 
+		model_->GetHomeConfiguration() * Inverse( GetGroup().tip_home );
+
+	if ( GetAncestor() )
+	{
+		VecXd ancestor_joints = GetAncestor()->GetGroupJoints( seed );
+		model_->GetChain()->ComputeFK(
+			ancestor_joints,
+			wrist_center_home,
+			wrist_center );
+	}
+	else
+	{
+		wrist_center = wrist_center_home;
+	}
 
 	return wrist_center;
 }
@@ -107,9 +89,9 @@ Mat4d WristHeuristic::ComputeWristCenter(
 IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
-	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
+	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& axis = GetActiveJoint( wrist_group_.indices[0] )->Axis();
+	const Vec3d& axis = GetActiveJoint( GetGroup().Index(0) )->Axis();
 	Eigen::AngleAxisd aa( R_target );
 	double proj = aa.axis().dot( axis );
 
@@ -124,7 +106,7 @@ IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_
 		presolution.state = IKHeuristicState::Success;
 	}
 
-	wrist_group_.SetGroupJoints( wrist_solution, presolution.joints );
+	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
 	return presolution;
 }
 
@@ -133,10 +115,10 @@ IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_
 IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
-	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
+	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& e1 = GetActiveJoint( wrist_group_.indices[0] )->Axis();
-	const Vec3d& e2 = GetActiveJoint( wrist_group_.indices[1] )->Axis();
+	const Vec3d& e1 = GetActiveJoint( GetGroup().Index(0)  )->Axis();
+	const Vec3d& e2 = GetActiveJoint( GetGroup().Index(1)  )->Axis();
 
 	Vec3d v  = e2;
 	Vec3d vp = R_target * e2;
@@ -185,7 +167,7 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 		presolution.state = IKHeuristicState::Success;
 	}
 
-	wrist_group_.SetGroupJoints( wrist_solution, presolution.joints );
+	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
 	return presolution;
 }
 
@@ -194,11 +176,11 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_target ) const
 {
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
-	VecXd wrist_solution = wrist_group_.GetGroupJoints( seed );
+	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& e1 = GetActiveJoint( wrist_group_.indices[0] )->Axis();
-	const Vec3d& e2 = GetActiveJoint( wrist_group_.indices[1] )->Axis();
-	const Vec3d& e3 = GetActiveJoint( wrist_group_.indices[2] )->Axis();
+	const Vec3d& e1 = GetActiveJoint( GetGroup().Index(0) )->Axis();
+	const Vec3d& e2 = GetActiveJoint( GetGroup().Index(1) )->Axis();
+	const Vec3d& e3 = GetActiveJoint( GetGroup().Index(2) )->Axis();
 
 	Mat3d R = R_target;
 
@@ -231,7 +213,7 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 	{
 		wrist_solution << q1;
 		presolution.state = IKHeuristicState::PartialSuccess;
-		wrist_group_.SetGroupJoints( wrist_solution, presolution.joints );
+		GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
 		return presolution;
 	}
 
@@ -264,7 +246,7 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 		presolution.state = IKHeuristicState::Success;
 	}
 
-	wrist_group_.SetGroupJoints( wrist_solution, presolution.joints );
+	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
 	return presolution;
 }
 

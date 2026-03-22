@@ -47,7 +47,7 @@ FABRIKSolver::FABRIKSolver(
 	SolverParameters parameters ) :
 	FABRIKSolver(
 		model,
-		Model::JointGroup::CreateFromRange( "full", Model::JointGroupType::Custom, 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
+		Model::JointGroup::CreateFromRange( "full", 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
 		parameters )
 {
 }
@@ -137,7 +137,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 
 	for ( int i = 0; i < n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
+		const auto& joint = GetChain()->GetActiveJoint( group_.Index(i) );
 		if ( !joint->IsRevolute() )
 			continue;
 
@@ -235,7 +235,7 @@ void FABRIKSolver::ForwardPass(
 
 	for ( int i = n - 1; i > start_idx; i-- )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
+		const auto& joint = GetChain()->GetActiveJoint( group_.Index(i) );
 		const Vec3d& axis = poses[i].axis;
 		Vec3d dir = poses[i].origin - poses[i + 1].origin;
 
@@ -273,7 +273,7 @@ void FABRIKSolver::BackwardPass(
 
 	for ( int i = start_idx + 1; i <= n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.indices[i - 1] );
+		const auto& joint = GetChain()->GetActiveJoint( group_.Index( i-1 ) );
 		Vec3d dir = poses[i].origin - poses[i - 1].origin;
 
 		switch ( joint->GetType() )
@@ -308,7 +308,7 @@ void FABRIKSolver::UpdateJointValues(
 
 	for ( int i = start_idx; i < n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.indices[i] );
+		const auto& joint = GetChain()->GetActiveJoint( group_.Index(i) );
 		const auto& limits = joint->GetLimits();
 		switch ( joint->GetType() )
 		{

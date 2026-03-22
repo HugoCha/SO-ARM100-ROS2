@@ -15,5 +15,9 @@ public:
 static std::optional< JointGroup > Analyze(
 	const JointChain& chain,
 	const Mat4d& home );
+	
+static bool CheckConsistency(
+	const JointChain& joint_chain,
+	const JointGroup& wrist_group );
 };
 }

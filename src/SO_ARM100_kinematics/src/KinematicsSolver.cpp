@@ -4,7 +4,7 @@
 #include "HybridSolver/HybridSolver.hpp"
 #include "Model/JointChain.hpp"
 #include "Model/KinematicModel.hpp"
-#include "Model/KinematicTopoly.hpp"
+#include "Model/KinematicTopology.hpp"
 #include "Model/ReachableSpace.hpp"
 #include "Model/TotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"

@@ -38,6 +38,10 @@ virtual void Initialize(
 	const Solver::HybridSolver& solver,
 	double search_discretization );
 
+Model::KinematicModelConstPtr GetModel() const {
+	return model_;
+}
+
 [[nodiscard]] bool ForwardKinematic(
 	const std::span< const double >& joints,
 	geometry_msgs::msg::Pose& pose ) const;

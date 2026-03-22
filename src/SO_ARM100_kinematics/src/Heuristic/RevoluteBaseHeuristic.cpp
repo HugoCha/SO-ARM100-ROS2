@@ -1,9 +1,11 @@
-#include "Heuristic/ShoulderPanHeuristic.hpp"
+#include "Heuristic/RevoluteBaseHeuristic.hpp"
 
 #include "Global.hpp"
 #include "Heuristic/IKHeuristic.hpp"
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
+#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Model/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -12,34 +14,31 @@ namespace SOArm100::Kinematics::Heuristic
 
 // ------------------------------------------------------------
 
-ShoulderPanHeuristic::ShoulderPanHeuristic(
+RevoluteBaseHeuristic::RevoluteBaseHeuristic(
 	Model::KinematicModelConstPtr model,
-	const Model::JointGroup& shoulder_pan_group ) :
-	IKHeuristic( model ),
-	shoulder_pan_group_( shoulder_pan_group )
+	const Model::RevoluteBaseJointGroup& revolute_base_group ) :
+	JointGroupHeuristic( model, revolute_base_group )
 {
 	reference_direction_ = ComputeReferenceDirection();
 }
 
 // ------------------------------------------------------------
 
-const Model::Joint* ShoulderPanHeuristic::GetShoulderPanJoint() const
+const Model::Joint* RevoluteBaseHeuristic::GetBaseJoint() const
 {
-	if ( shoulder_pan_group_.indices.empty() )
-		return nullptr;
-	return model_->GetChain()->GetActiveJoint( shoulder_pan_group_.indices[0] ).get();
+	return model_->GetChain()->GetActiveJoint( GetGroup().FirstIndex() ).get();
 }
 
 // ------------------------------------------------------------
 
-Vec3d ShoulderPanHeuristic::ComputeReferenceDirection() const
+Vec3d RevoluteBaseHeuristic::ComputeReferenceDirection() const
 {
-	auto base_joint = GetShoulderPanJoint();
+	auto base_joint = GetBaseJoint();
 	if ( !base_joint )
 		return Vec3d::Zero();
 
 	const auto& base_origin = base_joint->Origin();
-	const auto& p_tip_home = TipHomePosition();
+	const auto& p_tip_home = Translation( GetGroup().tip_home );
 	const Vec3d& r = p_tip_home - base_origin;
 	const auto& base_axis = base_joint->Axis();
 	Vec3d reference_direction = r - r.dot( base_axis ) * base_axis;
@@ -63,32 +62,15 @@ Vec3d ShoulderPanHeuristic::ComputeReferenceDirection() const
 
 // ------------------------------------------------------------
 
-Vec3d ShoulderPanHeuristic::TipHomePosition() const
-{
-	return Translation( shoulder_pan_group_.tip_home );
-}
-
-// ------------------------------------------------------------
-
-Vec3d ShoulderPanHeuristic::ComputeTipPosition( const Mat4d& target ) const
-{
-	return Translation( target ) - Rotation( target ) * TipHomePosition();
-}
-
-// ------------------------------------------------------------
-
-IKPresolution ShoulderPanHeuristic::Presolve(
+IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
 	IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
 
-	auto base_joint = GetShoulderPanJoint();
-	if ( !base_joint )
-		return {{}, IKHeuristicState::Fail }
-	;
+	auto base_joint = GetBaseJoint();
 
-	auto p_wrist_center = ComputeTipPosition( problem.target );
+	auto p_wrist_center = ComputeGroupTarget( problem.seed, problem.target );
 
 	const Vec3d& omega = base_joint->Axis();
 	const Vec3d& r = p_wrist_center - base_joint->Origin();

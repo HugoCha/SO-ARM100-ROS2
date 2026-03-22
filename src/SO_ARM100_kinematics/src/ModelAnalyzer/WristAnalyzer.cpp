@@ -6,6 +6,7 @@
 #include "Model/Twist.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <algorithm>
 #include <optional>
 
 namespace SOArm100::Kinematics::Model
@@ -47,12 +48,37 @@ std::optional< JointGroup > WristAnalyzer::Analyze(
 
 	Mat4d wrist_tip = ComputeTCPinWrist( wrist_center, home );
 
-	return JointGroup::CreateFromRange(
-		"wrist",
-		JointGroupType::Wrist,
+	return WristJointGroup(
 		wrist_start,
 		wrist_count,
 		wrist_tip );
+}
+
+// ------------------------------------------------------------
+
+bool WristAnalyzer::CheckConsistency(
+	const JointChain& joint_chain,
+	const JointGroup& wrist_group )
+{
+	if ( !JointGroup::IsConsistent( joint_chain, wrist_group ) )
+		return false;
+
+	const int n_joints = joint_chain.GetActiveJointCount();
+	const int n_joints_group = wrist_group.Size();
+
+	if ( n_joints_group > std::min( 3, n_joints ) ||
+		 wrist_group.name !=  wrist_name )
+		return false;
+
+	if ( !JointGroup::IsDense( wrist_group ) ||
+		 wrist_group.LastIndex() != n_joints - 1 )
+		return false;
+
+	for ( int i = 0; i < n_joints_group; i++ )
+		if ( !joint_chain.GetActiveJoint( wrist_group.Index(i) )->IsRevolute() )
+			return false;
+
+	return true;
 }
 
 // ------------------------------------------------------------

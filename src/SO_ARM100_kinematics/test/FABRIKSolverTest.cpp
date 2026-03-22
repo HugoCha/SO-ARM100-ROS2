@@ -1,12 +1,12 @@
 #include "FABRIKSolver/FabrikSolver.hpp"
 
 #include "Global.hpp"
-
-#include "DLSSolver/NumericSolverResult.hpp"
-#include "Model/JointChain.hpp"
-#include "Model/Limits.hpp"
 #include "RobotModelTestData.hpp"
-#include "Utils/Converter.hpp"
+
+#include "Solver/IKProblem.hpp"
+#include "Model/KinematicModel.hpp"
+#include "Solver/IKRunContext.hpp"
+#include "Solver/IKSolverState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
@@ -26,45 +26,37 @@ class FABRIKKinematicsSolverTest : public ::testing::Test
 protected:
 void SetUp() override
 {
-	auto robot_joint_chain = Data::Create5DofRobotJointChain();
-	auto base_joint = robot_joint_chain.GetActiveJoint( 0 );
-	auto elbow_joint = robot_joint_chain.GetActiveJoint( 2 );
-	auto robot_without_wrist = robot_joint_chain.SubChain( base_joint, elbow_joint );
-	joint_chain_ = std::make_shared< JointChain >( robot_without_wrist );
-
-	Mat4d home = ToTransformMatrix( Vec3d( 0, 0, 1.5 ) );
-	home_configuration_ = std::make_shared< Mat4d >( home );
-
-	solver_ = std::make_unique< FABRIKKinematicsSolver >();
-	solver_->Initialize( joint_chain_, home_configuration_, 0.01 );
+	model_ = Data::GetPlanar3RRobot();
+	solver_ = std::make_unique< Solver::FABRIKSolver >( model_ );
 }
 
-// Random joints within limits with optional margin
-VecXd RandomValidJoints( double margin_percent = 0.05 ) const
+Mat4d ComputeFK( const VecXd& joints )
 {
-	VecXd q( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		joint_chain_->GetActiveJointLimits( i ).Random(
-			rng_, & q.data()[i], margin_percent );
-	return q;
+	Mat4d fk;
+	model_->ComputeFK( joints, fk );
+	return fk;
 }
 
-VecXd RandomValidJointsNear(
-	const VecXd& joints,
-	double distance,
-	double margin_percent = 0.05 ) const
+Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
 {
-	VecXd q( joint_chain_->GetActiveJointCount() );
-	for ( size_t i = 0; i < joint_chain_->GetActiveJointCount(); i++ )
-		joint_chain_->GetActiveJointLimits( i ).RandomNear(
-			rng_, joints[i], & q.data()[i], distance, margin_percent );
-	return q;
+	return CreateProblem( seed, ComputeFK( joints ) );
 }
 
-std::shared_ptr< JointChain >           joint_chain_;
-std::shared_ptr< Mat4d >                home_configuration_;
-std::unique_ptr< FABRIKKinematicsSolver > solver_;
-mutable random_numbers::RandomNumberGenerator rng_;
+Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
+{
+	return { 
+		target, 
+		seed, 
+		translation_tolerance, 
+		rotation_tolerance, 
+		100 };
+}
+
+protected:
+Model::KinematicModelConstPtr model_;
+random_numbers::RandomNumberGenerator rng_;
+std::unique_ptr< Solver::FABRIKSolver > solver_;
+static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 };
 
 // ------------------------------------------------------------
@@ -75,32 +67,27 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
 {
 	VecXd joints( 3 );
 	joints << 0.4, 0.3, 0.25;
-	std::vector< double > seed {
+	VecXd seed {
 		joints[0] + 0.03,
 		joints[1] + 0.04,
 		joints[2] - 0.04
 	};
 
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
-
-	auto result = solver_->InverseKinematic(
-		target,
-		seed );
-
+	auto problem = CreateProblem( seed, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
-	POE( *joint_chain_, *home_configuration_, result.joints, result_pose );
+	ComputeFK( result.joints );
 
 	EXPECT_TRUE( result.Success() )
 	    << "State   = " << static_cast< int >( result.state ) << "\n"
-	    << "Error   = " << result.final_error << "\n"
+	    << "Error   = " << result.error << "\n"
 	    << "Joints  = " << result.joints.transpose() << "\n"
-	    << "Target  =\n" << Translation( target ).transpose() << "\n"
+	    << "Target  =\n" << Translation( problem.target ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
 
-	EXPECT_TRUE( TranslationError( target, result_pose ) < solver_->GetParameters().error_tolerance )
+	EXPECT_TRUE( TranslationError( problem.target , result_pose ) < solver_->GetParameters().error_tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
-	    << "Target  =\n" << Translation( target ).transpose() << "\n"
+	    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
 }
 
@@ -112,15 +99,15 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
 {
 	VecXd joints( 3 );
 	joints << 0, M_PI / 4, -M_PI / 4;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
 
-	std::vector< double > seed_vec( joints.data(), joints.data() + joints.size() );
-	auto result = solver_->InverseKinematic( target, seed_vec );
-
+	auto problem = CreateProblem( joints, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
+	
 	EXPECT_TRUE( result.Success() )
 	    << "Exact seed should converge immediately. "
-	    << "Error = " << result.final_error;
+	    << "Error = " << result.error;
+		
+	EXPECT_EQ( result.iterations, 0 );
 }
 
 // ------------------------------------------------------------
@@ -130,18 +117,17 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
 TEST_F( FABRIKKinematicsSolverTest, IK_ZeroConfiguration )
 {
 	VecXd joints = VecXd::Zero( 3 );
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	VecXd seed = { 0.1, 0.1, 0.1 };
 
-	std::vector< double > seed{ 0.1, 0.1, 0.1 };
-	auto result = solver_->InverseKinematic( target, seed );
+	auto problem = CreateProblem( seed, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_TRUE( result.Success() )
 	    << "Zero configuration should be reachable. "
 	    << "State   = " << static_cast< int >( result.state ) << "\n"
-	    << "Error   = " << result.final_error << "\n"
+	    << "Error   = " << result.error << "\n"
 	    << "Joints  = " << result.joints.transpose() << "\n"
-	    << "Target  =\n" << Translation( target ).transpose() << "\n";
+	    << "Target  =\n" << Translation( problem.target ).transpose() << "\n";
 }
 
 // ------------------------------------------------------------
@@ -155,8 +141,8 @@ TEST_F( FABRIKKinematicsSolverTest, IK_UnreachableFarTarget )
 	target( 1, 3 )   = 0.0;
 	target( 2, 3 )   = 0.0;
 
-	std::vector< double > seed{ 0, 0, 0 };
-	auto result = solver_->InverseKinematic( target, seed );
+	auto problem = CreateProblem( VecXd::Zero( 3 ), target );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_FALSE( result.Success() )
 	    << "Target at (100,0,0) is outside workspace, IK should not succeed.";
@@ -170,11 +156,9 @@ TEST_F( FABRIKKinematicsSolverTest, IK_MultipleSeedsConverge )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 5;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	Mat4d target = ComputeFK( joints );
 
-
-	std::vector< std::vector< double >> seeds = {
+	std::vector< VecXd > seeds = {
 		{ 0, 0, 0 },
 		{ 0.3, 0.4, -0.2 },
 		{ -0.3, -0.4, 0.2 },
@@ -183,10 +167,12 @@ TEST_F( FABRIKKinematicsSolverTest, IK_MultipleSeedsConverge )
 
 	for ( size_t s = 0; s < seeds.size(); s++ )
 	{
-		auto result = solver_->InverseKinematic( target, seeds[s] );
+		auto problem = CreateProblem( seeds[s], target );
+		auto result = solver_->Solve( problem, Solver::IKRunContext() );
+
 		EXPECT_TRUE( result.Success() )
 		    << "Seed index " << s << " failed. "
-		    << "Error = " << result.final_error;
+		    << "Error = " << result.error;
 	}
 }
 
@@ -198,23 +184,21 @@ TEST_F( FABRIKKinematicsSolverTest, IK_PositionAccuracy )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 4;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	VecXd seed{ 0., -0.7, 0.8 };
 
-	std::vector< double > seed{ 0., -0.7, 0.8 };
-	auto result = solver_->InverseKinematic( target, seed );
+	auto problem = CreateProblem( seed, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	ASSERT_TRUE( result.Success() ) << "IK must succeed before checking accuracy.";
 
-	Mat4d result_pose;
-	POE( *joint_chain_, *home_configuration_, result.joints, result_pose );
+	Mat4d result_pose = ComputeFK( result.joints );
 
-	double pos_error  = TranslationError( target, result_pose );
+	double pos_error  = TranslationError( problem.target, result_pose );
 
 	EXPECT_LT( pos_error, solver_->GetParameters().error_tolerance )
 	    << "Position error = " << pos_error << std::endl
 	    << "Result joints = " << result.joints.transpose() << std::endl
-	    << "Target = " << Translation( target ).transpose() << std::endl
+	    << "Target = " << Translation( problem.target ).transpose() << std::endl
 	    << "Result = " << Translation( result_pose ).transpose() << std::endl;
 }
 
@@ -226,22 +210,13 @@ TEST_F( FABRIKKinematicsSolverTest, IK_JointLimitsRespected )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, 3 * M_PI / 2, M_PI / 4;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	VecXd seed{ 0, 0, 0 };
 
-
-	std::vector< double > seed{ 0, 0, 0 };
-	auto result = solver_->InverseKinematic( target, seed );
+	auto problem = CreateProblem( seed, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	ASSERT_TRUE( result.Success() );
-
-	for ( size_t i = 0; i < result.joints.size(); i++ )
-	{
-		const auto& limits = joint_chain_->GetActiveJointLimits( i );
-		EXPECT_TRUE( limits.Within( result.joints[i] ) )
-		    << "Joint " << i << " = " << result.joints[i]
-		    << " violates limits [" << limits.Min() << ", " << limits.Max() << "]";
-	}
+	ASSERT_TRUE( model_->GetChain()->WithinLimits( result.joints ) );
 }
 
 // ------------------------------------------------------------
@@ -255,19 +230,15 @@ TEST_F( FABRIKKinematicsSolverTest, IK_RandomConfigurations )
 	double avg_iter = 0.0;
 	for ( int t = 0; t < kTrials; t++ )
 	{
-		VecXd joints = RandomValidJoints( 0.05 );
-		Mat4d target;
-		POE( *joint_chain_, *home_configuration_, joints, target );
+		VecXd joints = model_->GetChain()->RandomValidJoints( rng_, 0.05 );
+		VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_,joints, 0.3, 0 );
 
-
-		VecXd seed_joints = RandomValidJointsNear( joints, 0.3, 0.05 );
-		std::vector< double > seed( seed_joints.data(),
-		                            seed_joints.data() + seed_joints.size() );
-
-		auto result = solver_->InverseKinematic( target, seed );
+		auto problem = CreateProblem( seed, joints );
+		auto result = solver_->Solve( problem, Solver::IKRunContext() );
+	
 		if ( result.Success() )
 			successes++;
-		avg_iter += result.iterations_used / ( double )kTrials;
+		avg_iter += result.iterations / ( double )kTrials;
 	}
 
 	// Expect at least 80% success rate on reachable random targets
@@ -286,15 +257,13 @@ TEST_F( FABRIKKinematicsSolverTest, IK_IterationCountReasonable )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	VecXd seed{ 0.3, 0.4, 0.5 };
 
+	auto problem = CreateProblem( seed, joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
-	std::vector< double > seed{ 0.3, 0.4, 0.5 };
-	auto result = solver_->InverseKinematic( target, seed );
-
-	EXPECT_GE( result.iterations_used, 0 );
-	EXPECT_LE( result.iterations_used, solver_->GetParameters().max_iterations );
+	EXPECT_GE( result.iterations, 0 );
+	EXPECT_LE( result.iterations, solver_->GetParameters().max_iterations );
 }
 
 // ------------------------------------------------------------
@@ -305,27 +274,24 @@ TEST_F( FABRIKKinematicsSolverTest, IK_TighterToleranceImproves )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	VecXd seed{ 0, 0, 0 };
 
-	std::vector< double > seed{ 0, 0, 0 };
+	auto problem = CreateProblem( seed, joints );
 
 	// Default tolerance
-	auto result_default = solver_->InverseKinematic( target, seed );
+	auto result_default = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Tighter tolerance, more iterations
-	FABRIKKinematicsSolver::SolverParameters tight_params;
-	tight_params.max_iterations  = 100;
-	tight_params.error_tolerance = 1e-6;
+	Solver::FABRIKSolver::SolverParameters tight_params( 100, 1e-6 );
 	solver_->SetParameters( tight_params );
-	auto result_tight = solver_->InverseKinematic( target, seed );
+	auto result_tight = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Reset
-	solver_->SetParameters( FABRIKKinematicsSolver::SolverParameters{} );
+	solver_->SetParameters( Solver::FABRIKSolver::SolverParameters{} );
 
 	if ( result_default.Success() && result_tight.Success() )
 	{
-		EXPECT_LE( result_tight.final_error, result_default.final_error + 1e-9 )
+		EXPECT_LE( result_tight.error, result_default.error + 1e-9 )
 		    << "Tighter tolerance should not produce worse error.";
 	}
 }
@@ -342,17 +308,11 @@ TEST_F( FABRIKKinematicsSolverTest, IK_NearJointLimits )
 	    M_PI / 2 * 0.9,             // near ±π/2
 	    M_PI / 2 * 0.9;            // near ±π/2
 
-	Mat4d target;
-	POE( *joint_chain_, *home_configuration_, joints, target );
+	auto problem = CreateProblem( VecXd::Zero( 3 ), joints );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
-
-	std::vector< double > seed{ 0, 0, 0 };
-	auto result = solver_->InverseKinematic( target, seed );
-
-	Mat4d result_pose;
-	POE( *joint_chain_, *home_configuration_, result.joints, result_pose );
-
-	double pos_error  = TranslationError( target, result_pose );
+	Mat4d result_pose = ComputeFK( result.joints );
+	double pos_error  = TranslationError( problem.target, result_pose );
 
 	// Near-limit targets may not converge to full tolerance,
 	// but position error should still be small
@@ -371,10 +331,10 @@ TEST_F( FABRIKKinematicsSolverTest, IK_SeedSizeMismatchFails )
 {
 	Mat4d target = Mat4d::Identity();
 
-	std::vector< double > wrong_seed{ 0, 0, 0, 0 }; // only 3 joints, need 6
-	auto result = solver_->InverseKinematic( target, wrong_seed );
+	auto problem = CreateProblem( VecXd::Zero( 4 ), target );
+	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
-	EXPECT_EQ( result.state, NumericSolverState::Failed )
+	EXPECT_EQ( result.state, Solver::IKSolverState::NotRun )
 	    << "Mismatched seed size should return Failed state.";
 }
 

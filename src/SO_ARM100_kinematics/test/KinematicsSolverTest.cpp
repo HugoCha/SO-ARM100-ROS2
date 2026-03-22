@@ -1,7 +1,9 @@
 #include "KinematicsSolver.hpp"
 
-#include "Utils/KinematicsUtils.hpp"
 #include "RobotModelTestData.hpp"
+
+#include "Model/JointChain.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
 #include <gtest/gtest.h>
@@ -13,27 +15,6 @@
 namespace SOArm100::Kinematics::Test
 {
 
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-
-class DummyKinematicsSolver : public KinematicsSolver
-{
-public:
-bool InverseKinematicImpl(
-	const Mat4d& target_pose,
-	const std::span< const double >& initial_joints,
-	double* joint_angles ) const override
-{
-	return false;
-}
-
-bool CheckLimitsExposed( const std::vector< double >& joint_angles )
-{
-	return CheckLimits( joint_angles );
-}
-};
-
-// ------------------------------------------------------------
 // ------------------------------------------------------------
 
 class KinematicsSolverTest : public ::testing::Test
@@ -51,7 +32,7 @@ void SetUp() override
 
 	// Initialize solver with the robot model
 	solver_.Initialize(
-		Data::GetRevoluteOnlyRobot(),
+		Data::GetZYZRevoluteRobotMoveitModel(),
 		"arm",
 		"base_link",
 		{ "end_effector" },
@@ -63,7 +44,7 @@ void TearDown() override
 }
 
 protected:
-DummyKinematicsSolver solver_;
+KinematicsSolver solver_;
 };
 
 // ------------------------------------------------------------
@@ -71,16 +52,16 @@ DummyKinematicsSolver solver_;
 
 TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
 {
-	DummyKinematicsSolver solver;
+	KinematicsSolver solver;
 	solver.Initialize(
-		Data::GetRevoluteOnlyRobot(),
+		Data::GetZYZRevoluteRobotMoveitModel(),
 		"arm",
 		"base_link",
 		{ "end_effector" },
 		0.01 );
 
-	JointChain initialized_chain = *solver.GetJointChain();
-	JointChain expected_chain    = Data::GetRevoluteOnlyRobotJointChain();
+	Model::JointChain initialized_chain = *solver.GetModel()->GetChain();
+	Model::JointChain expected_chain    = Data::GetZYZRevoluteRobotJointChain();
 
 	EXPECT_EQ( expected_chain.GetJointCount(), initialized_chain.GetJointCount() );
 	EXPECT_EQ( expected_chain.GetActiveJointCount(), initialized_chain.GetActiveJointCount() );
@@ -142,7 +123,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with z-axis rotation";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
 	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
@@ -169,7 +150,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with y-axis rotation";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
 	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
@@ -196,7 +177,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithCombinedMovements )
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with combined movements";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
 	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
@@ -223,7 +204,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 
 	ASSERT_TRUE( result ) << "ForwardKinematic should succeed with all joints in motion";
 
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
 	Eigen::Quaterniond quaternion( Rotation( transform ) );
 
@@ -237,53 +218,6 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 	EXPECT_NEAR( end_effector_pose.orientation.x, quaternion.x(), 1e-3 );
 	EXPECT_NEAR( end_effector_pose.orientation.y, quaternion.y(), 1e-3 );
 	EXPECT_NEAR( end_effector_pose.orientation.z, quaternion.z(), 1e-3 );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( KinematicsSolverTest, CheckLimitsValid )
-{
-	// All joints within [-pi, pi]
-	std::vector< double > joint_angles = { 0.0, 0.5, -1.0 };
-
-	bool result = solver_.CheckLimitsExposed( joint_angles );
-
-	EXPECT_TRUE( result ) << "Joint angles within limits should be valid";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( KinematicsSolverTest, CheckLimitsBelowLowerLimit )
-{
-	// joint_1 lower limit is approx -pi
-	std::vector< double > joint_angles = { -4.0, 0.0, 0.0 };
-
-	bool result = solver_.CheckLimitsExposed( joint_angles );
-
-	EXPECT_FALSE( result ) << "Joint angle below lower limit should be invalid";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( KinematicsSolverTest, CheckLimitsAboveUpperLimit )
-{
-	// joint_2 upper limit is approx +pi
-	std::vector< double > joint_angles = { 0.0, 4.0, 0.0 };
-
-	bool result = solver_.CheckLimitsExposed( joint_angles );
-
-	EXPECT_FALSE( result ) << "Joint angle above upper limit should be invalid";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( KinematicsSolverTest, CheckLimitsOneJointInvalid )
-{
-	std::vector< double > joint_angles = { 0.0, 0.0, 10.0 };
-
-	bool result = solver_.CheckLimitsExposed( joint_angles );
-
-	EXPECT_FALSE( result ) << "Single joint violation should invalidate the whole configuration";
 }
 
 // ------------------------------------------------------------

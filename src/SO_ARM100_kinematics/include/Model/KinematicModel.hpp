@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "JointChain.hpp"
-#include "KinematicTopoly.hpp"
+#include "KinematicTopology.hpp"
 #include "ReachableSpace.hpp"
 
 #include <memory>

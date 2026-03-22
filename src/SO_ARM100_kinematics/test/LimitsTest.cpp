@@ -24,7 +24,7 @@ void TearDown() override {
 
 TEST_F( LimitsTest, DefaultConstructor )
 {
-	Limits limits;
+	Model::Limits limits;
 	ASSERT_EQ( limits.Min(), -std::numeric_limits< double >::infinity() );
 	ASSERT_EQ( limits.Max(), std::numeric_limits< double >::infinity() );
 }
@@ -35,7 +35,7 @@ TEST_F( LimitsTest, ConstructorWithMinMax )
 {
 	double min = -10.0;
 	double max = 10.0;
-	Limits limits( min, max );
+	Model::Limits limits( min, max );
 	ASSERT_EQ( limits.Min(), min );
 	ASSERT_EQ( limits.Max(), max );
 }
@@ -44,14 +44,14 @@ TEST_F( LimitsTest, ConstructorWithMinMax )
 
 TEST_F( LimitsTest, ConstructorWithInvalidMinMax )
 {
-	ASSERT_THROW( Limits limits( 10.0, -10.0 ), std::invalid_argument ); // Should assert and die
+	ASSERT_THROW( Model::Limits limits( 10.0, -10.0 ), std::invalid_argument ); // Should assert and die
 }
 
 // ------------------------------------------------------------
 
 TEST_F( LimitsTest, WithinFunction )
 {
-	Limits limits( -10.0, 10.0 );
+	Model::Limits limits( -10.0, 10.0 );
 
 	// Test within range
 	ASSERT_TRUE( limits.Within( 0.0 ) );
@@ -67,7 +67,7 @@ TEST_F( LimitsTest, WithinFunction )
 
 TEST_F( LimitsTest, ClampFunction )
 {
-	Limits limits( -10.0, 10.0 );
+	Model::Limits limits( -10.0, 10.0 );
 
 	// Test within range
 	ASSERT_EQ( limits.Clamp( 0.0 ), 0.0 );
@@ -83,7 +83,7 @@ TEST_F( LimitsTest, ClampFunction )
 
 TEST_F( LimitsTest, RandomFunctionWithNullPointer )
 {
-	Limits limits( -10.0, 10.0 );
+	Model::Limits limits( -10.0, 10.0 );
 	random_numbers::RandomNumberGenerator rng;
 	ASSERT_THROW( limits.Random( rng, nullptr ), std::invalid_argument );
 }
@@ -92,7 +92,7 @@ TEST_F( LimitsTest, RandomFunctionWithNullPointer )
 
 TEST_F( LimitsTest, RandomFunction )
 {
-	Limits limits( -10.0, 10.0 );
+	Model::Limits limits( -10.0, 10.0 );
 	random_numbers::RandomNumberGenerator rng;
 	double random;
 

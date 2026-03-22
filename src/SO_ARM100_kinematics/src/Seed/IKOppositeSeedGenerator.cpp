@@ -2,9 +2,6 @@
 
 #include "Solver/IKProblem.hpp"
 
-#include <unordered_set>
-#include <vector>
-
 namespace SOArm100::Kinematics::Seed
 {
 
@@ -12,9 +9,18 @@ namespace SOArm100::Kinematics::Seed
 
 IKOppositeSeedGenerator::IKOppositeSeedGenerator(
 	Model::KinematicModelConstPtr model,
-	const std::span< const int >& joint_indexes ) :
+	const std::set< int >& joint_indexes ) :
 	model_( model ),
-	joint_indexes_( UniqueValidJointIndexes( model, joint_indexes ) )
+	joint_indexes_( joint_indexes )
+{
+}
+
+// ------------------------------------------------------------
+
+IKOppositeSeedGenerator::IKOppositeSeedGenerator( 
+	Model::KinematicModelConstPtr model, 
+	Model::JointGroup group ) :
+	IKOppositeSeedGenerator( model, group.indices )
 {
 }
 
@@ -32,11 +38,13 @@ VecXd IKOppositeSeedGenerator::Generate( const Solver::IKProblem& problem ) cons
 {
 	VecXd seed = problem.seed;
 
-	for ( int i = 0; i < joint_indexes_.size(); i++ )
+	int i = 0;
+	for ( auto it = joint_indexes_.begin(); it != joint_indexes_.end(); ++it )
 	{
-		int joint_index = joint_indexes_[i];
+		int joint_index = *it;
 		auto limits = model_->GetChain()->GetActiveJointLimits( joint_index );
 		seed[joint_index] = limits.Center() - seed[joint_index];
+		i++;
 	}
 
 	return seed;
@@ -44,30 +52,14 @@ VecXd IKOppositeSeedGenerator::Generate( const Solver::IKProblem& problem ) cons
 
 // ------------------------------------------------------------
 
-std::vector< int > IKOppositeSeedGenerator::EnumerateAllJointIndexes(
+std::set< int > IKOppositeSeedGenerator::EnumerateAllJointIndexes(
 	Model::KinematicModelConstPtr model )
 {
 	const int n_joints = model->GetChain()->GetActiveJointCount();
-	std::vector< int > joint_indexes( n_joints );
+	std::set< int > joint_indexes;
 	for ( int i = 0; i < n_joints; i++ )
-		joint_indexes[i] = i;
+		joint_indexes.insert( i );
 	return joint_indexes;
-}
-
-// ------------------------------------------------------------
-
-std::vector< int > IKOppositeSeedGenerator::UniqueValidJointIndexes(
-	Model::KinematicModelConstPtr model,
-	const std::span< const int > joint_indexes )
-{
-	std::unordered_set< int > joint_indexes_set;
-	const int max_index = model->GetChain()->GetActiveJointCount() - 1;
-
-	for ( int i = 0; i < joint_indexes.size(); i++ )
-		if ( joint_indexes[i] >= 0 && joint_indexes[i] <= max_index )
-			joint_indexes_set.insert( joint_indexes[i] );
-
-	return std::vector< int >( joint_indexes_set.begin(), joint_indexes_set.end() );
 }
 
 // ------------------------------------------------------------

@@ -2,8 +2,13 @@
 
 #include "Global.hpp"
 #include "Model/JointChain.hpp"
+#include "Model/JointGroup.hpp"
+#include "Model/KinematicModel.hpp"
+#include "Model/KinematicTopology.hpp"
 #include "Model/Limits.hpp"
 #include "Model/Link.hpp"
+#include "Model/ReachableSpace.hpp"
+#include "Model/TotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -20,27 +25,38 @@
 #include <srdfdom/model.h>
 #include <urdf_parser/urdf_parser.h>
 
-namespace SOArm100::Kinematics::Test::Data
+namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
 
-moveit::core::RobotModelConstPtr revolute_robot_model_;
-moveit::core::RobotModelPtr createRevoluteOnlyRobotModel();
-const std::string createRevoluteOnlySRDFString();
-const std::string createRevoluteOnlyRobotURDF();
+std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
+	const Model::JointChain& chain,
+	const Mat4d home );
+
+// ------------------------------------------------------------
+// ZYZ Revolute Robot
+// ------------------------------------------------------------
+
+moveit::core::RobotModelPtr createZYZRevoluteRobotModel();
+const std::string createZYZRevoluteSRDFString();
+const std::string createZYZRevoluteRobotURDF();
+// Model::JointChain createZYZRevoluteRobotJointChain();
+// Mat4d createZYZRevoluteRobotHome();
+// Model::KinematicTopology createZYZRevoluteRobotTopology();
+// Model::KinematicModelConstPtr createZYZRevoluteRobot();
 
 // ------------------------------------------------------------
 
-moveit::core::RobotModelPtr createRevoluteOnlyRobotModel()
+moveit::core::RobotModelPtr createZYZRevoluteRobotModel()
 {
 	// Create URDF string for a simple robot with revolute joints only
-	auto urdf_model = urdf::parseURDF( createRevoluteOnlyRobotURDF() );
+	auto urdf_model = urdf::parseURDF( createZYZRevoluteRobotURDF() );
 	assert( urdf_model != nullptr );
 
 	// Create SRDF model with arm group
 	auto srdf_model = std::make_shared< srdf::Model >();
-	srdf_model->initString( *urdf_model, createRevoluteOnlySRDFString() );
+	srdf_model->initString( *urdf_model, createZYZRevoluteSRDFString() );
 
 	// Create RobotModel from URDF and SRDF
 	auto robot_model = std::make_shared< moveit::core::RobotModel >(
@@ -52,7 +68,7 @@ moveit::core::RobotModelPtr createRevoluteOnlyRobotModel()
 
 // ------------------------------------------------------------
 
-const std::string createRevoluteOnlySRDFString()
+const std::string createZYZRevoluteSRDFString()
 {
 	return
 	    R"(
@@ -69,7 +85,7 @@ const std::string createRevoluteOnlySRDFString()
 
 // ------------------------------------------------------------
 
-const std::string createRevoluteOnlyRobotURDF()
+const std::string createZYZRevoluteRobotURDF()
 {
 	return
 	    R"(
@@ -136,18 +152,18 @@ const std::string createRevoluteOnlyRobotURDF()
 
 // ------------------------------------------------------------
 
-moveit::core::RobotModelConstPtr GetRevoluteOnlyRobot()
+moveit::core::RobotModelConstPtr Data::GetZYZRevoluteRobotMoveitModel()
 {
-	if ( !revolute_robot_model_ )
+	if ( !ZYZRevolute_moveit_robot_ )
 	{
-		revolute_robot_model_ = createRevoluteOnlyRobotModel();
+		ZYZRevolute_moveit_robot_ = createZYZRevoluteRobotModel();
 	}
-	return revolute_robot_model_;
+	return ZYZRevolute_moveit_robot_;
 }
 
 // ------------------------------------------------------------
 
-const Mat4d GetRevoluteOnlyRobotT01( double theta1 )
+const Mat4d Data::GetZYZRevoluteRobotT01( double theta1 )
 {
 	Mat4d T01 = Mat4d::Identity();
 
@@ -160,7 +176,7 @@ const Mat4d GetRevoluteOnlyRobotT01( double theta1 )
 
 // ------------------------------------------------------------
 
-const Mat4d GetRevoluteOnlyRobotT12( double theta2 )
+const Mat4d Data::GetZYZRevoluteRobotT12( double theta2 )
 {
 	Mat4d T12 = Mat4d::Identity();
 
@@ -173,7 +189,7 @@ const Mat4d GetRevoluteOnlyRobotT12( double theta2 )
 
 // ------------------------------------------------------------
 
-const Mat4d GetRevoluteOnlyRobotT23( double theta3 )
+const Mat4d Data::GetZYZRevoluteRobotT23( double theta3 )
 {
 	Mat4d T23 = Mat4d::Identity();
 
@@ -186,17 +202,17 @@ const Mat4d GetRevoluteOnlyRobotT23( double theta3 )
 
 // ------------------------------------------------------------
 
-Mat4d GetRevoluteOnlyRobotTransform( double theta1, double theta2, double theta3 )
+Mat4d Data::GetZYZRevoluteRobotTransform( double theta1, double theta2, double theta3 )
 {
-	Mat4d T01 = GetRevoluteOnlyRobotT01( theta1 );
-	Mat4d T12 = GetRevoluteOnlyRobotT12( theta2 );
-	Mat4d T23 = GetRevoluteOnlyRobotT23( theta3 );
+	Mat4d T01 = Data::GetZYZRevoluteRobotT01( theta1 );
+	Mat4d T12 = Data::GetZYZRevoluteRobotT12( theta2 );
+	Mat4d T23 = Data::GetZYZRevoluteRobotT23( theta3 );
 	return T01 * T12 * T23;
 }
 
 // ------------------------------------------------------------
 
-Model::JointChain GetRevoluteOnlyRobotJointChain()
+Model::JointChain createZYZRevoluteRobotJointChain()
 {
 	Model::JointChain joint_chain( 3 );
 	// // Configuration HOME (tous les angles à 0)
@@ -243,25 +259,97 @@ Model::JointChain GetRevoluteOnlyRobotJointChain()
 
 // ------------------------------------------------------------
 
-Mat4d GetRevoluteOnlyRobotHome()
+Mat4d createZYZRevoluteRobotHome()
 {
 	Mat4d home;
 	home << 1, 0, 0, 1,
-	    0, 1, 0, 0,
-	    0, 0, 1, 0,
-	    0, 0, 0, 1;
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1;
 	return home;
 }
 
 // ------------------------------------------------------------
 
-MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 )
+Model::KinematicTopology createZYZRevoluteRobotTopology()
+{
+	Model::KinematicTopology topology;
+	Mat4d home = createZYZRevoluteRobotHome();
+
+	Model::RevoluteBaseJointGroup base_group( home );
+	Model::WristJointGroup wrist_group( 2, 1, home );
+
+	topology.Add( base_group );
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
+	const Model::JointChain& chain,
+	const Mat4d home )
+{
+	return std::make_unique< Model::TotalLengthReachableSpace >( chain, home );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createZYZRevoluteRobot()
+{
+	auto joint_chain = std::make_unique< const Model::JointChain >( createZYZRevoluteRobotJointChain() );
+	auto home = createZYZRevoluteRobotHome();
+	auto topology = createZYZRevoluteRobotTopology();
+	auto reachable_space = createReachableSpacePtr( *joint_chain, home );
+	return std::make_shared< const Model::KinematicModel >( 
+		std::move( joint_chain ), 
+		home, 
+		topology,
+		std::move( reachable_space ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetZYZRevoluteRobot()
+{
+	if ( !ZYZRevolute_robot_ )
+	{
+		ZYZRevolute_robot_ = createZYZRevoluteRobot();
+	}
+	return ZYZRevolute_robot_;
+}
+
+// ------------------------------------------------------------
+
+Model::JointChain Data::GetZYZRevoluteRobotJointChain()
+{
+	return *GetZYZRevoluteRobot()->GetChain();
+}
+
+// ------------------------------------------------------------
+
+Mat4d Data::GetZYZRevoluteRobotHome()
+{
+	return GetZYZRevoluteRobot()->GetHomeConfiguration();
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology Data::GetZYZRevoluteRobotTopology()
+{
+	return GetZYZRevoluteRobot()->GetTopology();
+}
+
+// ------------------------------------------------------------
+
+MatXd Data::GetZYZRevoluteRobotJacobian( double theta1, double theta2, double theta3 )
 {
 	MatXd J( 6, 3 );
 
-	const Mat4d& T01 = GetRevoluteOnlyRobotT01( theta1 );
-	const Mat4d& T12 = GetRevoluteOnlyRobotT12( theta2 );
-	const Mat4d& T23 = GetRevoluteOnlyRobotT23( theta3 );
+	const Mat4d& T01 = Data::GetZYZRevoluteRobotT01( theta1 );
+	const Mat4d& T12 = Data::GetZYZRevoluteRobotT12( theta2 );
+	const Mat4d& T23 = Data::GetZYZRevoluteRobotT23( theta3 );
 	const Mat4d& T02 = T01 * T12;
 	const Mat4d& T03 = T02 * T23;
 
@@ -290,17 +378,615 @@ MatXd GetRevoluteOnlyRobotJacobian( double theta1, double theta2, double theta3 
 }
 
 // ------------------------------------------------------------
+// Revolute Base Robot
+// ------------------------------------------------------------
 
-Model::JointChain Create5DofRobotJointChain()
+std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 {
-	// Create a joint chain with 6 joints: 1 base joint + 2 numeric joints + 3 wrist joints
-	auto joint_chain = Model::JointChain( 6 );
+	auto chain = std::make_unique< Model::JointChain >( 1 );
+
+	chain->Add(
+		{ Vec3d::UnitZ(), Vec3d::Zero() },
+		{ Mat4d::Identity(), 1 },
+		{ -M_PI, M_PI }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createRevoluteBaseHome()
+{
+	return ToTransformMatrix( Vec3d( 1, 0, 0 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::RevoluteBaseJointGroup base_group( home );
+
+	topology.Add( base_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createRevoluteBaseRobot()
+{
+	auto chain = createRevoluteBaseJointChain();
+	auto home = createRevoluteBaseHome();
+	auto topology = createRevoluteBaseTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetRevoluteBaseRobot()
+{
+	if ( !RevoluteBase_robot_ )
+	{
+		RevoluteBase_robot_ = createRevoluteBaseRobot();
+	}
+	return RevoluteBase_robot_;
+}
+
+// ------------------------------------------------------------
+// Prismatic Base Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 1 );
+
+	chain->Add(
+		{ Vec3d::UnitX() },
+		{ Mat4d::Identity(), 0 },
+		{ 0, 1 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createPrismaticBaseHome()
+{
+	return ToTransformMatrix( Vec3d( 0, 0, 0.5 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createPrismaticBaseTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::PrismaticBaseJointGroup base_group( home );
+
+	topology.Add( base_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createPrismaticBaseRobot()
+{
+	auto chain = createPrismaticBaseJointChain();
+	auto home = createPrismaticBaseHome();
+	auto topology = createPrismaticBaseTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetPrismaticBaseRobot()
+{
+	if ( !PrismaticBase_robot_ )
+	{
+		PrismaticBase_robot_ = createPrismaticBaseRobot();
+	}
+	return PrismaticBase_robot_;
+}
+
+// ------------------------------------------------------------
+// Planar 2R Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createPlanar2RJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 2 );
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d::Zero() },
+		{ Mat4d::Identity(), 0.5 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 0.5 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createPlanar2RHome()
+{
+	return ToTransformMatrix( Vec3d( 0, 0, 1 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createPlanar2RTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::PlanarNRJointGroup planar_group( 0, 2, home );
+
+	topology.Add( planar_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createPlanar2RRobot()
+{
+	auto chain = createPlanar2RJointChain();
+	auto home = createPlanar2RHome();
+	auto topology = createPlanar2RTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetPlanar2RRobot()
+{
+	if ( !Planar2R_robot_ )
+	{
+		Planar2R_robot_ = createPlanar2RRobot();
+	}
+	return Planar2R_robot_;
+}
+
+// ------------------------------------------------------------
+// Planar 3R Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createPlanar3RJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 3 );
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d::Zero() },
+		{ Mat4d::Identity(), 0.5 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 0.5 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0.1 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createPlanar3RHome()
+{
+	return ToTransformMatrix( Vec3d( 0.1, 0, 1 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createPlanar3RTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::PlanarNRJointGroup planar_group( 0, 3, home );
+
+	topology.Add( planar_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createPlanar3RRobot()
+{
+	auto chain = createPlanar3RJointChain();
+	auto home = createPlanar3RHome();
+	auto topology = createPlanar3RTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetPlanar3RRobot()
+{
+	if ( !Planar3R_robot_ )
+	{
+		Planar3R_robot_ = createPlanar3RRobot();
+	}
+	return Planar3R_robot_;
+}
+
+// ------------------------------------------------------------
+// 1 Dof Wrist Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createWrist1RJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 1 );
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createWrist1RHome()
+{
+	return ToTransformMatrix( Vec3d( 0.0, 0, 1 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createWrist1RTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::WristJointGroup wrist_group( 0, 1, home );
+
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createWrist1RRobot()
+{
+	auto chain = createWrist1RJointChain();
+	auto home = createWrist1RHome();
+	auto topology = createWrist1RTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetWrist1RRobot()
+{
+	if ( !Wrist1R_robot_ )
+	{
+		Wrist1R_robot_ = createWrist1RRobot();
+	}
+	return Wrist1R_robot_;
+}
+
+// ------------------------------------------------------------
+// 2 Dof Wrist Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createWrist2RJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 2 );
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createWrist2RHome()
+{
+	return ToTransformMatrix( Vec3d( 0.0, 0, 1 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createWrist2RTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::WristJointGroup wrist_group( 0, 2, home );
+
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createWrist2RRobot()
+{
+	auto chain = createWrist2RJointChain();
+	auto home = createWrist2RHome();
+	auto topology = createWrist2RTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetWrist2RRobot()
+{
+	if ( !Wrist2R_robot_ )
+	{
+		Wrist2R_robot_ = createWrist2RRobot();
+	}
+	return Wrist2R_robot_;
+}
+
+
+// ------------------------------------------------------------
+// Spherical Wrist Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createSphericalWristJointChain()
+{
+	auto chain = std::make_unique< Model::JointChain >( 3 );
+
+	chain->Add(
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	chain->Add(
+		{ Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) },
+		 { ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.1 },
+		{ -M_PI / 2, M_PI / 2 }
+	);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createSphericalWristHome()
+{
+	return ToTransformMatrix( Vec3d( 0.1, 0, 1 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createSphericalWristTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::WristJointGroup wrist_group( 0, 3, home );
+
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createSphericalWristRobot()
+{
+	auto chain = createSphericalWristJointChain();
+	auto home = createSphericalWristHome();
+	auto topology = createSphericalWristTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetSphericalWristRobot()
+{
+	if ( !SphericalWrist_robot_ )
+	{
+		SphericalWrist_robot_ = createSphericalWristRobot();
+	}
+	return SphericalWrist_robot_;
+}
+
+// ------------------------------------------------------------
+// Revolute Base - Planar 2R - 2DOFs Wrist / 5DOFs Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFsJointChain()
+{
+	// Create a joint chain with 5 joints: 1 base joint + 2 planar joints + 2 wrist joints
+	auto chain = std::make_unique< Model::JointChain >( 5 );
 
 	// Base joint (revolute around Z-axis)
 	Vec3d origin      = Vec3d( 0, 0, 0.0 );
 	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
 	Vec3d axis = Vec3d::UnitZ();
-	joint_chain.Add(
+	chain->Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
+		);
+
+	// Planar joints (2 revolute joints)
+	origin = next_origin;
+	next_origin = Vec3d( 0, 0, 1.0 );
+	axis = Vec3d::UnitY();
+	chain->Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI / 2, M_PI / 2 )
+		);
+
+	origin = next_origin;
+	next_origin = Vec3d( 0, 0, 1.5 );
+	axis = Vec3d::UnitY();
+	chain->Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI / 2, M_PI / 2 )
+		);
+
+	// Wrist joints (2 revolute joints - 2R wrist)
+	origin = next_origin;
+	axis = Vec3d::UnitX();
+	chain->Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
+		);
+	
+	origin.x() += 0.1;
+	axis = Vec3d::UnitZ();
+	chain->Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), 0.1 ),
+		Model::Limits( -M_PI, M_PI )
+		);
+
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createRevolute_Planar2R_Wrist2R_5DOFsHome()
+{
+	return ToTransformMatrix( Vec3d( 0.1, 0, 1.4 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createRevolute_Planar2R_Wrist2R_5DOFsTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0.1, 0, 1.5 ) );
+
+	Model::RevoluteBaseJointGroup base_group( wrist_center );
+	Model::PlanarNRJointGroup planar_group( 0, 2, wrist_center );
+	Model::WristJointGroup wrist_group( 0, 2, home );
+
+	topology.Add( base_group );
+	topology.Add( planar_group );
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createRevolute_Planar2R_Wrist2R_5DOFsRobot()
+{
+	auto chain = createRevolute_Planar2R_Wrist2R_5DOFsJointChain();
+	auto home = createRevolute_Planar2R_Wrist2R_5DOFsHome();
+	auto topology = createRevolute_Planar2R_Wrist2R_5DOFsTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobot()
+{
+	if ( !Revolute_Planar2R_Wrist2R_5DOFs_robot_ )
+	{
+		Revolute_Planar2R_Wrist2R_5DOFs_robot_ = createRevolute_Planar2R_Wrist2R_5DOFsRobot();
+	}
+	return Revolute_Planar2R_Wrist2R_5DOFs_robot_;
+}
+
+// ------------------------------------------------------------
+// Revolute Base - Planar 2R - Spherical Wrist / 6DOFs Robot
+// ------------------------------------------------------------
+
+std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist3R_6DOFsJointChain()
+{
+	// Create a joint chain with 6 joints: 1 base joint + 2 numeric joints + 3 wrist joints
+	auto chain = std::make_unique< Model::JointChain >( 6 );
+
+	// Base joint (revolute around Z-axis)
+	Vec3d origin      = Vec3d( 0, 0, 0.0 );
+	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
+	Vec3d axis = Vec3d::UnitZ();
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
@@ -310,7 +996,7 @@ Model::JointChain Create5DofRobotJointChain()
 	origin = next_origin;
 	next_origin = Vec3d( 0, 0, 1.0 );
 	axis = Vec3d::UnitY();
-	joint_chain.Add(
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI / 2, M_PI / 2 )
@@ -319,7 +1005,7 @@ Model::JointChain Create5DofRobotJointChain()
 	origin = next_origin;
 	next_origin = Vec3d( 0, 0, 1.5 );
 	axis = Vec3d::UnitY();
-	joint_chain.Add(
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI / 2, M_PI / 2 )
@@ -328,27 +1014,78 @@ Model::JointChain Create5DofRobotJointChain()
 	// Wrist joints (3 revolute joints - spherical wrist)
 	origin = next_origin;
 	axis = Vec3d::UnitX();
-	joint_chain.Add(
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitY();
-	joint_chain.Add(
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitZ();
-	joint_chain.Add(
+	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
-	return joint_chain;
+	return chain;
+}
+
+// ------------------------------------------------------------
+
+Mat4d createRevolute_Planar2R_Wrist3R_6DOFsHome()
+{
+	return ToTransformMatrix( Vec3d( 0.0, 0, 1.5 ) );
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicTopology createRevolute_Planar2R_Wrist3R_6DOFsTopology( const Mat4d& home )
+{
+	Model::KinematicTopology topology;
+
+	Model::RevoluteBaseJointGroup base_group( home );
+	Model::PlanarNRJointGroup planar_group( 0, 2, home );
+	Model::WristJointGroup wrist_group( 0, 3, home );
+
+	topology.Add( base_group );
+	topology.Add( planar_group );
+	topology.Add( wrist_group );
+
+	return topology;
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr createRevolute_Planar2R_Wrist3R_6DOFsRobot()
+{
+	auto chain = createRevolute_Planar2R_Wrist3R_6DOFsJointChain();
+	auto home = createRevolute_Planar2R_Wrist3R_6DOFsHome();
+	auto topology = createRevolute_Planar2R_Wrist3R_6DOFsTopology( home );
+	auto reachable_space = createReachableSpacePtr( *chain, home );
+	return std::make_shared< const Model::KinematicModel >(
+		std::move( chain ),
+		home,
+		topology,
+		std::move( reachable_space )
+	);
+}
+
+// ------------------------------------------------------------
+
+Model::KinematicModelConstPtr Data::GetRevolute_Planar2R_Wrist3R_6DOFsRobot()
+{
+	if ( !Revolute_Planar2R_Wrist3R_6DOFs_robot_ )
+	{
+		Revolute_Planar2R_Wrist3R_6DOFs_robot_ = createRevolute_Planar2R_Wrist3R_6DOFsRobot();
+	}
+	return Revolute_Planar2R_Wrist3R_6DOFs_robot_;
 }
 
 // ------------------------------------------------------------

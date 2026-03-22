@@ -283,7 +283,7 @@ bool JointChain::ComputeJointPosesFK(
 	{
 		const auto& joint = GetActiveJoint( i );
 		const auto& twist = joint->GetTwist();
-		joint_poses[i].noalias() = T_cumul * joint->GetLink().GetJointOrigin();
+		joint_poses[i].noalias() = T_cumul * joint->OriginTransform();
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 	}
 

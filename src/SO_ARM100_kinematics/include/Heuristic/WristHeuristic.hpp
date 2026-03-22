@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Heuristic/IKHeuristic.hpp"
+#include "Heuristic/JointGroupHeuristic.hpp"
 #include "Model/JointGroup.hpp"
 
 namespace SOArm100::Kinematics::Model
@@ -12,23 +12,16 @@ enum class WristTopology;
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class WristHeuristic : public IKHeuristic
+class WristHeuristic : public JointGroupHeuristic
 {
 public:
-WristHeuristic( Model::KinematicModelConstPtr model, Model::JointGroup wrist_group );
+WristHeuristic( Model::KinematicModelConstPtr model, Model::WristJointGroup wrist_group );
 
 virtual IKPresolution Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const override;
 
 private:
-Model::JointGroup wristless_group_;
-Model::JointGroup wrist_group_;
-
-static Model::JointGroup ComputeWristlessGroup(
-	Model::KinematicModelConstPtr model,
-	const Model::JointGroup wrist_group );
-
 Mat4d ComputeWristCenter(
 	const VecXd& seed,
 	const Mat4d& target ) const;

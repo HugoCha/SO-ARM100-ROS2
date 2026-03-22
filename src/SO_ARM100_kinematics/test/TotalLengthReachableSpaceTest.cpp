@@ -1,7 +1,9 @@
-#include "WorkspaceFilter.hpp"
+#include "Model/TotalLengthReachableSpace.hpp"
+
+#include "Global.hpp"
+#include "RobotModelTestData.hpp"
 
 #include "Model/JointChain.hpp"
-#include "RobotModelTestData.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -13,7 +15,7 @@ namespace SOArm100::Kinematics::Test
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class WorkspaceFilterTest : public ::testing::Test
+class TotalLengthReachableSpaceTest : public ::testing::Test
 {
 protected:
 void SetUp() override
@@ -27,8 +29,9 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
-	const JointChain& joint_chain = Data::GetRevoluteOnlyRobotJointChain();     // Replace with your robot model creation logic
-	workspace_filter_.reset( new WorkspaceFilter( joint_chain ) );
+ 	Model::JointChain joint_chain = Data::GetZYZRevoluteRobotJointChain();
+	Mat4d home = Data::GetZYZRevoluteRobotHome();
+	reachable_space_.reset( new Model::TotalLengthReachableSpace( joint_chain, home ) );
 }
 
 void TearDown() override
@@ -37,37 +40,37 @@ void TearDown() override
 }
 
 protected:
-std::unique_ptr< WorkspaceFilter > workspace_filter_;
+std::unique_ptr< Model::TotalLengthReachableSpace > reachable_space_;
 };
 
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-TEST_F( WorkspaceFilterTest, IsUnreachable )
+TEST_F( TotalLengthReachableSpaceTest, IsUnreachable )
 {
-	geometry_msgs::msg::Pose target_pose;
+	Mat4d target_pose;
 
 	// Set a target pose that is unreachable
-	target_pose.position.x = 100.0;
-	target_pose.position.y = 100.0;
-	target_pose.position.z = 100.0;
+	target_pose.x() = 100.0;
+	target_pose.y() = 100.0;
+	target_pose.z() = 100.0;
 
-	bool is_unreachable = workspace_filter_->IsUnreachable( target_pose );
+	bool is_unreachable = reachable_space_->IsUnreachable( target_pose );
 	EXPECT_TRUE( is_unreachable ) << "Target pose should be unreachable";
 }
 
 // ------------------------------------------------------------
 
-TEST_F( WorkspaceFilterTest, IsReachable )
+TEST_F( TotalLengthReachableSpaceTest, IsReachable )
 {
-	geometry_msgs::msg::Pose target_pose;
+	Mat4d target_pose;
 
 	// Set a target pose that is reachable
-	target_pose.position.x = 0.5;
-	target_pose.position.y = 0.0;
-	target_pose.position.z = 0.0;
+	target_pose.x() = 0.5;
+	target_pose.y() = 0.0;
+	target_pose.z() = 0.0;
 
-	bool is_unreachable = workspace_filter_->IsUnreachable( target_pose );
+	bool is_unreachable = reachable_space_->IsUnreachable( target_pose );
 	EXPECT_FALSE( is_unreachable ) << "Target pose should be reachable";
 }
 

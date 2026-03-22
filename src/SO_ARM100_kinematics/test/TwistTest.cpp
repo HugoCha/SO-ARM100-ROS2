@@ -27,7 +27,7 @@ void TearDown() override
 
 TEST_F( TwistTest, DefaultConstructor )
 {
-	Twist twist;
+	Model::Twist twist;
 	ASSERT_TRUE( static_cast< Vec6d >( twist ).isApprox( Vec6d::Zero() ) );
 	ASSERT_TRUE( twist.GetAxis().isApprox( Vec3d::Zero() ) );
 	ASSERT_TRUE( twist.GetLinear().isApprox( Vec3d::Zero() ) );
@@ -38,7 +38,7 @@ TEST_F( TwistTest, DefaultConstructor )
 TEST_F( TwistTest, ConstructorWithLinear )
 {
 	Vec3d linear( 1.0, 2.0, 3.0 );
-	Twist twist( linear );
+	Model::Twist twist( linear );
 
 	Vec6d expected_twist;
 	expected_twist << 0.0, 0.0, 0.0, 1.0, 2.0, 3.0;
@@ -55,7 +55,7 @@ TEST_F( TwistTest, ConstructorWithPointOnAxis )
 	Vec3d axis( 0.0, 0.0, 1.0 );
 	Vec3d point_on_axis( 0.5, 0.5, 1.5 );
 
-	Twist twist( axis, point_on_axis );
+	Model::Twist twist( axis, point_on_axis );
 
 	Vec3d expected_linear = -axis.normalized().cross( point_on_axis );
 	Vec3d expected_axis = axis.normalized();
@@ -70,7 +70,7 @@ TEST_F( TwistTest, ConstructorWithPointOnAxis )
 
 TEST_F( TwistTest, ExponentialMatrixWithFixed )
 {
-	Twist twist;
+	Model::Twist twist;
 
 	double theta = 1000;
 	Mat4d exponential = twist.ExponentialMatrix( theta );
@@ -95,7 +95,7 @@ TEST_F( TwistTest, ExponentialMatrixWithRevolute )
 {
 	Vec3d axis( 0.0, 0.0, 1.0 );
 	Vec3d point_on_axis( 0.5, 0.5, 1.5 );
-	Twist twist( axis, point_on_axis );
+	Model::Twist twist( axis, point_on_axis );
 
 	double theta = M_PI / 2.0; // 90 degrees
 	Mat4d exponential = twist.ExponentialMatrix( theta );
@@ -123,7 +123,7 @@ TEST_F( TwistTest, ExponentialMatrixWithRevolute )
 TEST_F( TwistTest, ExponentialMatrixWithPrismatic )
 {
 	Vec3d axis( 0.0, 0.0, 1.0 );
-	Twist twist( axis );
+	Model::Twist twist( axis );
 
 	double theta = 0.1; // 0.1 m
 	Mat4d exponential = twist.ExponentialMatrix( theta );

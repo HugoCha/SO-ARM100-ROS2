@@ -58,6 +58,10 @@ const Limits& GetLimits() const {
 	return *limits_;
 }
 
+const Mat4d OriginTransform() const {
+	return link_->GetJointOrigin();
+}
+
 const Vec3d Origin() const {
 	return Translation( link_->GetJointOrigin() );
 }

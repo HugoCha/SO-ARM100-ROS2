@@ -73,12 +73,6 @@ virtual IKSolution Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const override;
 
-protected:
-virtual bool InverseKinematicImpl(
-	const Mat4d& target,
-	const std::span< const double >& seed_joints,
-	double* joints ) const;
-
 private:
 struct SolverBuffers {
 	SolverType type;
