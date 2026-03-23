@@ -2,8 +2,10 @@
 
 #include "DLSSolver/DLSSolver.hpp"
 
-#include "Model/KinematicModel.hpp"
 #include "RobotModelTestData.hpp"
+#include "KinematicTestBase.hpp"
+
+#include "Model/KinematicModel.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolverState.hpp"
@@ -28,7 +30,7 @@ namespace SOArm100::Kinematics::Test
 // Test Fixture
 // ------------------------------------------------------------
 
-class DLSKinematicsSolverTest : public ::testing::Test
+class DLSKinematicsSolverTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -71,30 +73,6 @@ void TearDown() override
 	solver_.reset();
 }
 
-Mat4d ComputeFK( const VecXd& joints )
-{
-	Mat4d fk;
-	model_->ComputeFK( joints, fk );
-	return fk;
-}
-
-Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
-{
-	return CreateProblem( seed, ComputeFK( joints ) );
-}
-
-Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
-{
-	return {
-	    target,
-	    seed,
-	    translation_tolerance,
-	    rotation_tolerance,
-	    100 };
-}
-
-protected:
-Model::KinematicModelConstPtr model_;
 random_numbers::RandomNumberGenerator rng_;
 std::unique_ptr< Solver::DLSSolver > solver_;
 static constexpr double DEFAULT_TOLERANCE = error_tolerance;
@@ -156,8 +134,8 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 	// Target at home position
 	VecXd seed_joints{ 3 };
 	seed_joints << 0.0, 0.0, 0.0;
-	auto problem = CreateProblem( seed_joints, seed_joints );
 
+	auto problem = CreateProblem( seed_joints, seed_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::Converged );
@@ -245,11 +223,13 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 
 	// Test 1: Bad seed
 	Vec3d bad_seed = { -1.0, -1.0, -1.0 };
+
 	auto problem = CreateProblem( bad_seed, target_joints );
 	auto result_bad = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Test 2: Good seed (close to target)
 	Vec3d good_seed = { 0.6, 0.4, -0.1 };
+
 	problem = CreateProblem( good_seed, target_joints );
 	auto result_good = solver_->Solve( problem, Solver::IKRunContext() );
 
@@ -323,7 +303,7 @@ TEST_F( DLSKinematicsSolverTest, RandomRestart_RecoverFromBadSeed )
 	target_joints << 0.5, 0.3, -0.2;
 
 	// Very bad seed (near joint limits)
-	VecXd terrible_seed = { 3.0, 3.0, 3.0 };  // Out of bounds
+	Vec3d terrible_seed = { 3.0, 3.0, 3.0 };  // Out of bounds
 
 	auto problem = CreateProblem( terrible_seed, target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -345,7 +325,8 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Strict )
 
 	Solver::DLSSolver solver( model_, params );
 
-	VecXd target_joints = { 0.3, 0.2, -0.1 };
+	VecXd target_joints( 3 );
+	target_joints << 0.3, 0.2, -0.1;
 
 	auto problem = CreateProblem( VecXd::Zero( 3 ), target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -419,7 +400,8 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_NearSingularTarget )
 	// For this robot, singularity occurs when arm is straight
 	VecXd singular_joints{ 3 };
 	singular_joints << 0.0, 0.0, 0.0;
-	VecXd seed = { 0.5, 0.5, 0.5 };
+	VecXd seed(3);
+	seed << 0.5, 0.5, 0.5;
 
 	auto problem = CreateProblem( seed, singular_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -438,7 +420,8 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 	const int NUM_TESTS = 10;
 	int total_iterations = 0;
 	int successes = 0;
-	VecXd seed { 0.0, 0.0, 0.0 };
+	VecXd seed = VecXd::Zero( 3 );
+
 	for ( int i = 0; i < NUM_TESTS; ++i )
 	{
 		VecXd joints = model_->GetChain()->RandomValidJoints( rng_ );
@@ -470,7 +453,8 @@ TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls
 {
 	// Solver should work correctly even after multiple calls
 	Mat4d target_pose;
-	VecXd seed = { 0.0, 0.0, 0.0 };
+	Mat4d result_pose;
+	VecXd seed = VecXd::Zero( 3 );
 
 	const int NUM_TEST = 10000;
 	double avg_iteration = 0;
@@ -482,11 +466,16 @@ TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls
 		auto problem = CreateProblem( seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
+		if ( !result.Success() )
+		{
+			result_pose = ComputeFK( result.joints );
+		}
+
 		EXPECT_TRUE( result.Success() )
 		    << "Iteration " << i << std::endl
 		    << "Joints = " << joints.transpose() << std::endl
-		    << "Target = " << target_pose << std::endl
-		    << "Result = " << result << std::endl;
+		    << "Target = "  << std::endl << target_pose << std::endl
+		    << "Result = "  << std::endl << result_pose << std::endl;
 
 		avg_iteration += result.iterations / ( double )NUM_TEST;
 		if ( !result.Success() )
@@ -509,6 +498,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
 {
 	// Solver should work correctly even after multiple calls
 	Mat4d target_pose;
+	Mat4d result_pose;
 
 	int NUM_TEST = 100;
 	double average_iterations = 0;
@@ -523,11 +513,16 @@ TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
 
 		average_iterations += result.iterations / ( double )NUM_TEST;
 
+		if ( !result.Success() )
+		{
+			result_pose = ComputeFK( result.joints );
+		}
+
 		EXPECT_TRUE( result.Success() )
 		    << "Iteration " << i << std::endl
 		    << "Joints = " << joints.transpose() << std::endl
-		    << "Target = " << target_pose << std::endl
-		    << "Result = " << result << std::endl;
+		    << "Target = " << std::endl << target_pose << std::endl
+		    << "Result = " << std::endl << result_pose << std::endl;
 	}
 
 	EXPECT_LT( average_iterations, 5 )

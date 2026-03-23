@@ -37,8 +37,8 @@ if(BUILD_TESTING)
   find_package(code_style REQUIRED)
 
   file(GLOB_RECURSE INCLUDE_FILES include/*.hpp)
-  file(GLOB TEST_FILES test/*Test.cpp)
-  file(GLOB TEST_INCLUDE_FILES test/include/*.hpp)
+  file(GLOB_RECURSE TEST_FILES test/*Test.cpp)
+  file(GLOB_RECURSE TEST_INCLUDE_FILES test/include/*.hpp)
 
   set(ALL_LINT_FILES
     ${INCLUDE_FILES}
@@ -51,11 +51,11 @@ if(BUILD_TESTING)
   # ------------------------------------------------------------
 
   add_library(${PROJECT_NAME}_test_utils STATIC
-    test/src/RobotModelTestData.cpp
+    test/Data/src/RobotModelTestData.cpp
   )
 
   target_include_directories(${PROJECT_NAME}_test_utils PUBLIC
-    test/include
+    test/Data/include
   )
   
   target_link_libraries(${PROJECT_NAME}_test_utils

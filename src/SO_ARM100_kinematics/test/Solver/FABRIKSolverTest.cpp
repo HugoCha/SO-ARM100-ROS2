@@ -1,7 +1,9 @@
 #include "FABRIKSolver/FabrikSolver.hpp"
 
 #include "Global.hpp"
+
 #include "RobotModelTestData.hpp"
+#include "KinematicTestBase.hpp"
 
 #include "Solver/IKProblem.hpp"
 #include "Model/KinematicModel.hpp"
@@ -9,6 +11,7 @@
 #include "Solver/IKSolverState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <Eigen/src/Core/Matrix.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <random_numbers/random_numbers.h>
@@ -21,7 +24,7 @@ namespace SOArm100::Kinematics::Test
 // Fixture
 // ------------------------------------------------------------
 
-class FABRIKKinematicsSolverTest : public ::testing::Test
+class FABRIKKinematicsSolverTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -30,30 +33,7 @@ void SetUp() override
 	solver_ = std::make_unique< Solver::FABRIKSolver >( model_ );
 }
 
-Mat4d ComputeFK( const VecXd& joints )
-{
-	Mat4d fk;
-	model_->ComputeFK( joints, fk );
-	return fk;
-}
-
-Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
-{
-	return CreateProblem( seed, ComputeFK( joints ) );
-}
-
-Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
-{
-	return {
-	    target,
-	    seed,
-	    translation_tolerance,
-	    rotation_tolerance,
-	    100 };
-}
-
 protected:
-Model::KinematicModelConstPtr model_;
 random_numbers::RandomNumberGenerator rng_;
 std::unique_ptr< Solver::FABRIKSolver > solver_;
 static constexpr double DEFAULT_TOLERANCE = error_tolerance;
@@ -67,11 +47,10 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
 {
 	VecXd joints( 3 );
 	joints << 0.4, 0.3, 0.25;
-	VecXd seed {
-		joints[0] + 0.03,
-		joints[1] + 0.04,
-		joints[2] - 0.04
-	};
+	VecXd seed( 3 );
+	seed << joints[0] + 0.03,
+			joints[1] + 0.04,
+			joints[2] - 0.04;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -117,7 +96,8 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
 TEST_F( FABRIKKinematicsSolverTest, IK_ZeroConfiguration )
 {
 	VecXd joints = VecXd::Zero( 3 );
-	VecXd seed = { 0.1, 0.1, 0.1 };
+	VecXd seed(3);
+	seed << 0.1, 0.1, 0.1;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -158,7 +138,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_MultipleSeedsConverge )
 	joints << M_PI / 4, 0, M_PI / 5;
 	Mat4d target = ComputeFK( joints );
 
-	std::vector< VecXd > seeds = {
+	std::vector< Eigen::Vector< double, 3 > > seeds = {
 		{ 0, 0, 0 },
 		{ 0.3, 0.4, -0.2 },
 		{ -0.3, -0.4, 0.2 },
@@ -184,7 +164,8 @@ TEST_F( FABRIKKinematicsSolverTest, IK_PositionAccuracy )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 4;
-	VecXd seed{ 0., -0.7, 0.8 };
+	VecXd seed(3);
+	seed << 0., -0.7, 0.8;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -210,7 +191,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_JointLimitsRespected )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, 3 * M_PI / 2, M_PI / 4;
-	VecXd seed{ 0, 0, 0 };
+	VecXd seed = VecXd::Zero(3);
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -257,7 +238,8 @@ TEST_F( FABRIKKinematicsSolverTest, IK_IterationCountReasonable )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	VecXd seed{ 0.3, 0.4, 0.5 };
+	VecXd seed(3);
+	seed << 0.3, 0.4, 0.5;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -274,7 +256,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_TighterToleranceImproves )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	VecXd seed{ 0, 0, 0 };
+	VecXd seed = VecXd::Zero(3);
 
 	auto problem = CreateProblem( seed, joints );
 

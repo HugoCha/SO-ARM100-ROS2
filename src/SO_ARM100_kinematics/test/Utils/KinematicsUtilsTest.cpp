@@ -95,10 +95,10 @@ TEST_F( KinematicsUtilsTest, AdjointNonIdentityTransform )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
-	JointChain joint_chain( 1 );
-	Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
-	Link link( Mat4d::Identity(), 0 );
-	Limits limits( -M_PI, M_PI );
+	Model::JointChain joint_chain( 1 );
+	Model::Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
+	Model::Link link( Mat4d::Identity(), 0 );
+	Model::Limits limits( -M_PI, M_PI );
 	joint_chain.Add( twist, link, limits ); // Pure rotation around z-axis
 
 	VecXd joint_angles( 1 );
@@ -117,7 +117,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
-	JointChain joint_chain( 2 );
+	Model::JointChain joint_chain( 2 );
 
 	joint_chain.Add(
 		{ Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
@@ -145,17 +145,17 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 
 // ------------------------------------------------------------
 
-TEST_F( KinematicsUtilsTest, SpaceJacobianRevoluteOnlyRobotTwist )
+TEST_F( KinematicsUtilsTest, SpaceJacobianZYZRevoluteRobotTwist )
 {
-	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
+	const auto& joint_chain = Data::GetZYZRevoluteRobotJointChain();
 	VecXd joint_angles( 3 );
 	joint_angles << 1.5708, 0.7854, 0.3927;
 
-	MatXd geom_jacobian = Data::GetRevoluteOnlyRobotJacobian(
+	MatXd geom_jacobian = Data::GetZYZRevoluteRobotJacobian(
 		joint_angles[0],
 		joint_angles[1],
 		joint_angles[2] );
-	Mat4d T0e = Data::GetRevoluteOnlyRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
+	Mat4d T0e = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	Mat6d adjoint_T0e;
 	Mat4d Tee = Mat4d::Identity();
 	Tee.block< 3, 1 >( 0, 3 ) = Translation( T0e );
@@ -251,12 +251,12 @@ TEST_F( KinematicsUtilsTest, PoseErrorNonIdentityPose )
 
 TEST_F( KinematicsUtilsTest, POEWithSpan )
 {
-	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
-	Mat4d M = Data::GetRevoluteOnlyRobotHome();
+	const auto& joint_chain = Data::GetZYZRevoluteRobotJointChain();
+	Mat4d M = Data::GetZYZRevoluteRobotHome();
 
 	std::vector< double > thetas = { 1.5708, 0.7854, 0.3927 };
 	std::span< const double > thetas_span( thetas );
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( thetas[0], thetas[1], thetas[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( thetas[0], thetas[1], thetas[2] );
 	Mat4d poe;
 	POE( joint_chain, M, thetas_span, poe );
 
@@ -269,12 +269,12 @@ TEST_F( KinematicsUtilsTest, POEWithSpan )
 
 TEST_F( KinematicsUtilsTest, POEWithVecXd )
 {
-	const auto& joint_chain = Data::GetRevoluteOnlyRobotJointChain();
-	Mat4d M = Data::GetRevoluteOnlyRobotHome();
+	const auto& joint_chain = Data::GetZYZRevoluteRobotJointChain();
+	Mat4d M = Data::GetZYZRevoluteRobotHome();
 
 	VecXd thetas( 3 );
 	thetas << 1.5708, 0.7854, 0.3927;
-	auto transform  = Data::GetRevoluteOnlyRobotTransform( thetas[0], thetas[1], thetas[2] );
+	auto transform  = Data::GetZYZRevoluteRobotTransform( thetas[0], thetas[1], thetas[2] );
 	Mat4d poe;
 	POE( joint_chain, M, thetas, poe );
 

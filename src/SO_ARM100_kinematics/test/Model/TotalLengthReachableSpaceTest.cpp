@@ -51,9 +51,9 @@ TEST_F( TotalLengthReachableSpaceTest, IsUnreachable )
 	Mat4d target_pose;
 
 	// Set a target pose that is unreachable
-	target_pose.x() = 100.0;
-	target_pose.y() = 100.0;
-	target_pose.z() = 100.0;
+	target_pose( 0, 3 ) = 100.0;
+	target_pose( 1, 3 ) = 100.0;
+	target_pose( 2, 3 ) = 100.0;
 
 	bool is_unreachable = reachable_space_->IsUnreachable( target_pose );
 	EXPECT_TRUE( is_unreachable ) << "Target pose should be unreachable";
@@ -66,9 +66,9 @@ TEST_F( TotalLengthReachableSpaceTest, IsReachable )
 	Mat4d target_pose;
 
 	// Set a target pose that is reachable
-	target_pose.x() = 0.5;
-	target_pose.y() = 0.0;
-	target_pose.z() = 0.0;
+	target_pose( 0, 3 ) = 0.5;
+	target_pose( 1, 3 ) = 0.0;
+	target_pose( 2, 3 ) = 0.0;
 
 	bool is_unreachable = reachable_space_->IsUnreachable( target_pose );
 	EXPECT_FALSE( is_unreachable ) << "Target pose should be reachable";

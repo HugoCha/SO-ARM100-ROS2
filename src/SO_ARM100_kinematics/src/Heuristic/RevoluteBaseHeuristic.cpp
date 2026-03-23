@@ -70,7 +70,8 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 
 	auto base_joint = GetBaseJoint();
 
-	auto p_wrist_center = ComputeGroupTarget( problem.seed, problem.target );
+	auto wrist_center = ComputeGroupTarget( problem.seed, problem.target );
+	auto p_wrist_center = Translation( wrist_center );
 
 	const Vec3d& omega = base_joint->Axis();
 	const Vec3d& r = p_wrist_center - base_joint->Origin();

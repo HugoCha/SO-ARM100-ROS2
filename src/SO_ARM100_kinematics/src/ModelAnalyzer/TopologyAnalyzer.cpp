@@ -1,5 +1,3 @@
-#pragma once
-
 #include "ModelAnalyzer/TopologyAnalyzer.hpp"
 
 #include "Model/JointChain.hpp"

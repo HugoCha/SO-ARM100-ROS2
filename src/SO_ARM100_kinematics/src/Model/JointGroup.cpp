@@ -37,7 +37,7 @@ bool JointGroup::IsConsistent(
 
 // ------------------------------------------------------------
 
-bool IsDense( const JointGroup& group )
+bool JointGroup::IsDense( const JointGroup& group )
 {
 	return group.LastIndex() - group.FirstIndex() == group.Size() - 1;
 }

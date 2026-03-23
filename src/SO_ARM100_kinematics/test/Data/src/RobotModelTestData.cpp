@@ -29,6 +29,19 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ------------------------------------------------------------
+// ------------------------------------------------------------
+
+moveit::core::RobotModelPtr ZYZRevolute_moveit_robot_ = nullptr;
+Model::KinematicModelConstPtr ZYZRevolute_robot_ = nullptr;
+Model::KinematicModelConstPtr Planar2R_robot_ = nullptr;
+Model::KinematicModelConstPtr Planar3R_robot_ = nullptr;
+Model::KinematicModelConstPtr Wrist1R_robot_ = nullptr;
+Model::KinematicModelConstPtr Wrist2R_robot_ = nullptr;
+Model::KinematicModelConstPtr SphericalWrist_robot_ = nullptr;
+Model::KinematicModelConstPtr RevoluteBase_robot_ = nullptr;
+Model::KinematicModelConstPtr PrismaticBase_robot_ = nullptr;
+Model::KinematicModelConstPtr Revolute_Planar2R_Wrist2R_5DOFs_robot_ = nullptr;
+Model::KinematicModelConstPtr Revolute_Planar2R_Wrist3R_6DOFs_robot_ = nullptr;
 
 std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
 	const Model::JointChain& chain,
@@ -383,11 +396,17 @@ MatXd Data::GetZYZRevoluteRobotJacobian( double theta1, double theta2, double th
 
 std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 {
-	auto chain = std::make_unique< Model::JointChain >( 1 );
+	auto chain = std::make_unique< Model::JointChain >( 3 );
 
 	chain->Add(
 		{ Vec3d::UnitZ(), Vec3d::Zero() },
 		{ Mat4d::Identity(), 1 },
+		{ -M_PI, M_PI }
+		);
+
+	chain->Add(
+		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
 		{ -M_PI, M_PI }
 		);
 
@@ -398,7 +417,7 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 
 Mat4d createRevoluteBaseHome()
 {
-	return ToTransformMatrix( Vec3d( 1, 0, 0 ) );
+	return ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 }
 
 // ------------------------------------------------------------

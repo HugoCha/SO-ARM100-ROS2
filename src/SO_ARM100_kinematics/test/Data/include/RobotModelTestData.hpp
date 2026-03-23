@@ -59,18 +59,5 @@ static Model::KinematicModelConstPtr GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
 
 // Revolute Base - Planar2R - Spherical Wrist / 6 DOFs
 static Model::KinematicModelConstPtr GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
-
-private:
-static moveit::core::RobotModelPtr ZYZRevolute_moveit_robot_;
-static Model::KinematicModelConstPtr ZYZRevolute_robot_;
-static Model::KinematicModelConstPtr Planar2R_robot_;
-static Model::KinematicModelConstPtr Planar3R_robot_;
-static Model::KinematicModelConstPtr Wrist1R_robot_;
-static Model::KinematicModelConstPtr Wrist2R_robot_;
-static Model::KinematicModelConstPtr SphericalWrist_robot_;
-static Model::KinematicModelConstPtr RevoluteBase_robot_;
-static Model::KinematicModelConstPtr PrismaticBase_robot_;
-static Model::KinematicModelConstPtr Revolute_Planar2R_Wrist2R_5DOFs_robot_;
-static Model::KinematicModelConstPtr Revolute_Planar2R_Wrist3R_6DOFs_robot_;
 };
 }
