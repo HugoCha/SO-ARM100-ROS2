@@ -26,15 +26,15 @@ struct JointGroup
 		int count,
 		const Mat4d& home );
 
-	static bool IsConsistent( 
-		const JointChain& chain, 
+	static bool IsConsistent(
+		const JointChain& chain,
 		const JointGroup& group );
 
 	static bool IsDense( const JointGroup& group );
 
 	VecXd GetGroupJoints( const VecXd& full_joints ) const;
 	void SetGroupJoints( const VecXd& group_joints, VecXd& full_joints ) const;
-	
+
 	int FirstIndex() const {
 		return !indices.empty() ? *indices.begin() : -1;
 	}

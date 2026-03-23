@@ -18,18 +18,18 @@ JointGroup JointGroup::CreateFromRange(
 
 // ------------------------------------------------------------
 
-bool JointGroup::IsConsistent( 
-	const JointChain& chain, 
+bool JointGroup::IsConsistent(
+	const JointChain& chain,
 	const JointGroup& group )
 {
 	const int n_joints = chain.GetActiveJointCount();
 	const int n_group_joints = group.Size();
-	
+
 	if ( group.name.empty() ||
-		 n_group_joints > n_joints || 
-		 n_group_joints <= 0 ||
-		 group.FirstIndex() < 0 ||
-		 group.LastIndex() >= n_joints )
+	     n_group_joints > n_joints ||
+	     n_group_joints <= 0 ||
+	     group.FirstIndex() < 0 ||
+	     group.LastIndex() >= n_joints )
 		return false;
 
 	return true;
@@ -64,14 +64,14 @@ int JointGroup::Index( int i ) const
 		std::advance( it, i );
 		return *it;
 	}
-	return -1; 
+	return -1;
 }
 
 // ------------------------------------------------------------
 
 VecXd JointGroup::GetGroupJoints( const VecXd& full_joints ) const {
 	VecXd group_joints( indices.size() );
-	
+
 	for ( int i = 0; i < indices.size(); i++ )
 		group_joints[i] = full_joints[Index( i )];
 

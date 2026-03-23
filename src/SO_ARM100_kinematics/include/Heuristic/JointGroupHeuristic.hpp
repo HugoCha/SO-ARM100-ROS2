@@ -14,20 +14,20 @@ class JointGroupHeuristic : public IKHeuristic
 public:
 virtual ~JointGroupHeuristic() = default;
 
-JointGroupHeuristic( 
-    Model::KinematicModelConstPtr model, 
-    const Model::JointGroup& group );
+JointGroupHeuristic(
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup& group );
 
 Model::JointGroup GetGroup() const {
-    return group_;
+	return group_;
 }
 
 std::optional< Model::JointGroup > GetAncestor() const {
-    return ancestor_;
+	return ancestor_;
 }
 
 std::optional< Model::JointGroup > GetSuccessor() const {
-    return successor_;
+	return successor_;
 }
 
 protected:
@@ -39,12 +39,12 @@ std::optional< Model::JointGroup > ancestor_;
 Model::JointGroup group_;
 std::optional< Model::JointGroup > successor_;
 
-static std::optional< Model::JointGroup > ComputeAncestorJointGroup( 
-    Model::KinematicModelConstPtr model, 
-    const Model::JointGroup& group );
+static std::optional< Model::JointGroup > ComputeAncestorJointGroup(
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup& group );
 
-static std::optional< Model::JointGroup > ComputeSuccessorJointGroup( 
-    Model::KinematicModelConstPtr model, 
-    const Model::JointGroup& group );
+static std::optional< Model::JointGroup > ComputeSuccessorJointGroup(
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup& group );
 };
 }

@@ -43,7 +43,7 @@ TEST_F( JointGroupTest, CreateFromRange )
 
 TEST_F( JointGroupTest, IsConsistent )
 {
-    auto chain = Data::GetZYZRevoluteRobotJointChain();
+	auto chain = Data::GetZYZRevoluteRobotJointChain();
 
 	// Valid group
 	Model::JointGroup valid_group = Model::JointGroup::CreateFromRange( "valid_group", 1, 2, Mat4d::Identity() );

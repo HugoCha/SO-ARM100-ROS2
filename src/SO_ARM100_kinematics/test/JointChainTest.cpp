@@ -353,7 +353,7 @@ TEST_F( JointChainTest, EdgeCases_AllFunctions )
 	// Test with last joint
 	EXPECT_EQ( joint_chain_->GetJointIndex( joint3_.get() ), 2 ) << "Should return index 2 for last joint";
 	EXPECT_NE( joint_chain_->GetPreviousJoint( joint3_.get() ), nullptr ) << "Should return non-null for previous of last joint";
-	EXPECT_EQ( joint_chain_->GetNextJoint( joint3_ .get()), nullptr ) << "Should return nullptr for next of last joint";
+	EXPECT_EQ( joint_chain_->GetNextJoint( joint3_.get() ), nullptr ) << "Should return nullptr for next of last joint";
 }
 
 // ------------------------------------------------------------

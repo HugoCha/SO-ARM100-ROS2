@@ -14,9 +14,9 @@ RevoluteBaseHeuristic(
 	Model::KinematicModelConstPtr model,
 	const Model::RevoluteBaseJointGroup& revolute_base_group );
 
-virtual IKPresolution Presolve( 
-    const Solver::IKProblem& problem, 
-    const Solver::IKRunContext& context ) const override;
+virtual IKPresolution Presolve(
+	const Solver::IKProblem& problem,
+	const Solver::IKRunContext& context ) const override;
 
 private:
 Vec3d reference_direction_;

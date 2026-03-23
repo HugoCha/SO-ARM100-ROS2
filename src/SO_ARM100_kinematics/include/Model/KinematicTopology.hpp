@@ -10,15 +10,15 @@ namespace SOArm100::Kinematics::Model
 class KinematicTopology
 {
 public:
-bool Add( JointGroup group ) {
+bool Add( JointGroup group ){
 	return groups_.insert( { group.name, group } ).second;
 }
 
 std::optional< const JointGroup > Get( const std::string& name ) const {
-	auto it = groups_.find(name);
-	return (it != groups_.end())
-		? std::optional<const JointGroup>(it->second)
-		: std::nullopt;
+	auto it = groups_.find( name );
+	return ( it != groups_.end() )
+	    ? std::optional< const JointGroup >( it->second )
+	    : std::nullopt;
 }
 
 private:

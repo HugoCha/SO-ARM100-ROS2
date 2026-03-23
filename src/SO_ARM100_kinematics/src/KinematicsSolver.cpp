@@ -114,14 +114,14 @@ void KinematicsSolver::Initialize(
 
 	auto joint_chain_const = std::make_shared< const Model::JointChain >( *joint_chain );
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
-	std::unique_ptr< const Model::ReachableSpace > reachable_space = 
+	std::unique_ptr< const Model::ReachableSpace > reachable_space =
 		std::make_unique< const Model::TotalLengthReachableSpace >( *joint_chain, home_configuration );
-	
+
 	Model::KinematicTopology topology;
-	
-	model_ = std::make_shared< const Model::KinematicModel >( 
-		joint_chain_const, 
-		home_configuration, 
+
+	model_ = std::make_shared< const Model::KinematicModel >(
+		joint_chain_const,
+		home_configuration,
 		topology,
 		std::move( reachable_space ) );
 }
@@ -207,10 +207,10 @@ bool KinematicsSolver::InverseKinematic(
 	if ( joints.size() != n_joints )
 		joints.resize( n_joints );
 
-	return InverseKinematic( 
-		target, 
-		seed, 
-		joints.data(), 
+	return InverseKinematic(
+		target,
+		seed,
+		joints.data(),
 		n_joints );
 }
 
@@ -229,10 +229,10 @@ bool KinematicsSolver::InverseKinematic(
 	}
 
 	Solver::IKProblem problem {
-		target, 
-		seed, 
-		translation_tolerance, 
-		rotation_tolerance, 
+		target,
+		seed,
+		translation_tolerance,
+		rotation_tolerance,
 		timeout };
 
 	Solver::IKRunContext context;

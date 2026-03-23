@@ -65,7 +65,7 @@ Mat4d WristHeuristic::ComputeWristCenter(
 {
 	Mat4d wrist_center;
 
-	Mat4d wrist_center_home = 
+	Mat4d wrist_center_home =
 		model_->GetHomeConfiguration() * Inverse( GetGroup().tip_home );
 
 	if ( GetAncestor() )
@@ -91,7 +91,7 @@ IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& axis = GetActiveJoint( GetGroup().Index(0) )->Axis();
+	const Vec3d& axis = GetActiveJoint( GetGroup().Index( 0 ) )->Axis();
 	Eigen::AngleAxisd aa( R_target );
 	double proj = aa.axis().dot( axis );
 
@@ -117,8 +117,8 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& e1 = GetActiveJoint( GetGroup().Index(0)  )->Axis();
-	const Vec3d& e2 = GetActiveJoint( GetGroup().Index(1)  )->Axis();
+	const Vec3d& e1 = GetActiveJoint( GetGroup().Index( 0 )  )->Axis();
+	const Vec3d& e2 = GetActiveJoint( GetGroup().Index( 1 )  )->Axis();
 
 	Vec3d v  = e2;
 	Vec3d vp = R_target * e2;
@@ -178,9 +178,9 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 	IKPresolution presolution { seed, IKHeuristicState::Fail };
 	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
-	const Vec3d& e1 = GetActiveJoint( GetGroup().Index(0) )->Axis();
-	const Vec3d& e2 = GetActiveJoint( GetGroup().Index(1) )->Axis();
-	const Vec3d& e3 = GetActiveJoint( GetGroup().Index(2) )->Axis();
+	const Vec3d& e1 = GetActiveJoint( GetGroup().Index( 0 ) )->Axis();
+	const Vec3d& e2 = GetActiveJoint( GetGroup().Index( 1 ) )->Axis();
+	const Vec3d& e3 = GetActiveJoint( GetGroup().Index( 2 ) )->Axis();
 
 	Mat3d R = R_target;
 

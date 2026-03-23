@@ -17,8 +17,8 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 	const Mat4d& home,
 	const std::optional< JointGroup >& wrist_group  )
 {
-	if ( !wrist_group || 
-		 joint_chain.GetActiveJointCount() <= 1 )
+	if ( !wrist_group ||
+	     joint_chain.GetActiveJointCount() <= 1 )
 		return std::nullopt;
 
 	auto base_joint = joint_chain.GetActiveJoint( 0 );
@@ -42,7 +42,7 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 
 // ------------------------------------------------------------
 
-bool BaseAnalyzer::CheckConsistency( 	
+bool BaseAnalyzer::CheckConsistency(
 	const JointChain& joint_chain,
 	const JointGroup& base_group )
 {
@@ -50,7 +50,7 @@ bool BaseAnalyzer::CheckConsistency(
 		return false;
 
 	bool is_consistent = true;
-	
+
 	is_consistent |= base_group.name == revolute_base_name && joint_chain.GetActiveJoint( 0 )->IsRevolute();
 	is_consistent |= base_group.name == prismatic_base_name && joint_chain.GetActiveJoint( 0 )->IsPrismatic();
 	is_consistent &= base_group.Size() == 1 && base_group.Index( 0 ) == 0;

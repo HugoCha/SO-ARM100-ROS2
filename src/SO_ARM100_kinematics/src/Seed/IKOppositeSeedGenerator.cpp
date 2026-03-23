@@ -17,8 +17,8 @@ IKOppositeSeedGenerator::IKOppositeSeedGenerator(
 
 // ------------------------------------------------------------
 
-IKOppositeSeedGenerator::IKOppositeSeedGenerator( 
-	Model::KinematicModelConstPtr model, 
+IKOppositeSeedGenerator::IKOppositeSeedGenerator(
+	Model::KinematicModelConstPtr model,
 	Model::JointGroup group ) :
 	IKOppositeSeedGenerator( model, group.indices )
 {

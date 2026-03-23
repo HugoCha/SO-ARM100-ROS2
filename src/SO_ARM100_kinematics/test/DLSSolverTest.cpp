@@ -85,12 +85,12 @@ Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
 
 Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
 {
-	return { 
-		target, 
-		seed, 
-		translation_tolerance, 
-		rotation_tolerance, 
-		100 };
+	return {
+	    target,
+	    seed,
+	    translation_tolerance,
+	    rotation_tolerance,
+	    100 };
 }
 
 protected:
@@ -269,7 +269,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
 {
 	// Target far outside workspace (robot arm length is ~1.0m)
-	auto target_pose = ToTransformMatrix( Vec3d{ 10, 10, 10 });
+	auto target_pose = ToTransformMatrix( Vec3d{ 10, 10, 10 } );
 
 	auto problem = CreateProblem( Vec3d::Zero(), target_pose );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -445,7 +445,7 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 
 		auto problem = CreateProblem( seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	
+
 		if ( result.Success() )
 		{
 			successes++;
@@ -481,7 +481,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls
 
 		auto problem = CreateProblem( seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	
+
 		EXPECT_TRUE( result.Success() )
 		    << "Iteration " << i << std::endl
 		    << "Joints = " << joints.transpose() << std::endl
@@ -520,7 +520,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
 
 		auto problem = CreateProblem( good_seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	
+
 		average_iterations += result.iterations / ( double )NUM_TEST;
 
 		EXPECT_TRUE( result.Success() )

@@ -44,12 +44,12 @@ Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
 
 Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
 {
-	return { 
-		target, 
-		seed, 
-		translation_tolerance, 
-		rotation_tolerance, 
-		100 };
+	return {
+	    target,
+	    seed,
+	    translation_tolerance,
+	    rotation_tolerance,
+	    100 };
 }
 
 protected:
@@ -85,7 +85,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
 	    << "Target  =\n" << Translation( problem.target ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
 
-	EXPECT_TRUE( TranslationError( problem.target , result_pose ) < solver_->GetParameters().error_tolerance )
+	EXPECT_TRUE( TranslationError( problem.target, result_pose ) < solver_->GetParameters().error_tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
 	    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
@@ -102,11 +102,11 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
 
 	auto problem = CreateProblem( joints, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	
+
 	EXPECT_TRUE( result.Success() )
 	    << "Exact seed should converge immediately. "
 	    << "Error = " << result.error;
-		
+
 	EXPECT_EQ( result.iterations, 0 );
 }
 
@@ -231,11 +231,11 @@ TEST_F( FABRIKKinematicsSolverTest, IK_RandomConfigurations )
 	for ( int t = 0; t < kTrials; t++ )
 	{
 		VecXd joints = model_->GetChain()->RandomValidJoints( rng_, 0.05 );
-		VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_,joints, 0.3, 0 );
+		VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.3, 0 );
 
 		auto problem = CreateProblem( seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	
+
 		if ( result.Success() )
 			successes++;
 		avg_iter += result.iterations / ( double )kTrials;

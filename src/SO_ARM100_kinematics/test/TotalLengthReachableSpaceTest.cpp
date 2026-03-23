@@ -29,7 +29,7 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
- 	Model::JointChain joint_chain = Data::GetZYZRevoluteRobotJointChain();
+	Model::JointChain joint_chain = Data::GetZYZRevoluteRobotJointChain();
 	Mat4d home = Data::GetZYZRevoluteRobotHome();
 	reachable_space_.reset( new Model::TotalLengthReachableSpace( joint_chain, home ) );
 }

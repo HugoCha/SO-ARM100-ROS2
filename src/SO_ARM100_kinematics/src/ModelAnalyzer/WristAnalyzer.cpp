@@ -67,15 +67,15 @@ bool WristAnalyzer::CheckConsistency(
 	const int n_joints_group = wrist_group.Size();
 
 	if ( n_joints_group > std::min( 3, n_joints ) ||
-		 wrist_group.name !=  wrist_name )
+	     wrist_group.name !=  wrist_name )
 		return false;
 
 	if ( !JointGroup::IsDense( wrist_group ) ||
-		 wrist_group.LastIndex() != n_joints - 1 )
+	     wrist_group.LastIndex() != n_joints - 1 )
 		return false;
 
 	for ( int i = 0; i < n_joints_group; i++ )
-		if ( !joint_chain.GetActiveJoint( wrist_group.Index(i) )->IsRevolute() )
+		if ( !joint_chain.GetActiveJoint( wrist_group.Index( i ) )->IsRevolute() )
 			return false;
 
 	return true;

@@ -14,5 +14,5 @@ virtual ~ReachableSpace() = default;
 virtual bool IsUnreachable( const Mat4d& target ) const = 0;
 };
 
-using ReachableSpaceUniqueConstPtr = std::unique_ptr< const ReachableSpace >; 
+using ReachableSpaceUniqueConstPtr = std::unique_ptr< const ReachableSpace >;
 }

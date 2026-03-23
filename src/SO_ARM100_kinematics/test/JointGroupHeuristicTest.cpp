@@ -20,14 +20,15 @@ class DummyJointGroupHeuristic : public Heuristic::JointGroupHeuristic
 {
 public:
 DummyJointGroupHeuristic( Model::KinematicModelConstPtr model, Model::JointGroup group ) :
-    Heuristic::JointGroupHeuristic( model, group )
-{}
-
-virtual Heuristic::IKPresolution Presolve( 
-    const Solver::IKProblem& problem, 
-    const Solver::IKRunContext& context ) const override
+	Heuristic::JointGroupHeuristic( model, group )
 {
-    return Heuristic::IKPresolution{};
+}
+
+virtual Heuristic::IKPresolution Presolve(
+	const Solver::IKProblem& problem,
+	const Solver::IKRunContext& context ) const override
+{
+	return Heuristic::IKPresolution{};
 }
 };
 
@@ -37,55 +38,55 @@ virtual Heuristic::IKPresolution Presolve(
 class JointGroupHeuristicTest : public ::testing::Test
 {
 protected:
-    void SetUp() override {
-        model_ = Data::GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
-        group_ = Model::PlanarNRJointGroup( 1, 2, Mat4d::Identity() );
-    }
+void SetUp() override {
+	model_ = Data::GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
+	group_ = Model::PlanarNRJointGroup( 1, 2, Mat4d::Identity() );
+}
 
-    void TearDown() override {
-        // Clean up if needed
-    }
+void TearDown() override {
+	// Clean up if needed
+}
 
-    Model::KinematicModelConstPtr model_;
-    Model::JointGroup group_;
+Model::KinematicModelConstPtr model_;
+Model::JointGroup group_;
 };
 
 // ------------------------------------------------------------
 
-TEST_F(JointGroupHeuristicTest, Constructor) 
+TEST_F( JointGroupHeuristicTest, Constructor )
 {
-    DummyJointGroupHeuristic heuristic(model_, group_);
+	DummyJointGroupHeuristic heuristic( model_, group_ );
 
-    // Check if the group is correctly set
-    ASSERT_EQ(heuristic.GetGroup().name, "planar");
-    ASSERT_EQ(heuristic.GetGroup().Size(), 2 );
+	// Check if the group is correctly set
+	ASSERT_EQ( heuristic.GetGroup().name, "planar" );
+	ASSERT_EQ( heuristic.GetGroup().Size(), 2 );
 }
 
 // ------------------------------------------------------------
 
-TEST_F(JointGroupHeuristicTest, GetAncestor) 
+TEST_F( JointGroupHeuristicTest, GetAncestor )
 {
-    DummyJointGroupHeuristic heuristic(model_, group_);
+	DummyJointGroupHeuristic heuristic( model_, group_ );
 
-    auto ancestor = heuristic.GetAncestor();
-    ASSERT_TRUE(ancestor.has_value());
-    ASSERT_EQ(ancestor->name, "ancestor");
-    ASSERT_EQ(ancestor->FirstIndex(), 0); 
-    ASSERT_EQ(ancestor->Size(), 1);
+	auto ancestor = heuristic.GetAncestor();
+	ASSERT_TRUE( ancestor.has_value() );
+	ASSERT_EQ( ancestor->name, "ancestor" );
+	ASSERT_EQ( ancestor->FirstIndex(), 0 );
+	ASSERT_EQ( ancestor->Size(), 1 );
 }
 
 // ------------------------------------------------------------
 
-TEST_F(JointGroupHeuristicTest, GetSuccessor) 
+TEST_F( JointGroupHeuristicTest, GetSuccessor )
 {
-    DummyJointGroupHeuristic heuristic(model_, group_);
+	DummyJointGroupHeuristic heuristic( model_, group_ );
 
-    auto successor = heuristic.GetSuccessor();
-    ASSERT_TRUE(successor.has_value());
-    ASSERT_EQ(successor->name, "successor");
-    ASSERT_EQ(successor->FirstIndex(), 3);
-    ASSERT_EQ(successor->LastIndex(), 5);
-    ASSERT_EQ(successor->Size(), 3); 
+	auto successor = heuristic.GetSuccessor();
+	ASSERT_TRUE( successor.has_value() );
+	ASSERT_EQ( successor->name, "successor" );
+	ASSERT_EQ( successor->FirstIndex(), 3 );
+	ASSERT_EQ( successor->LastIndex(), 5 );
+	ASSERT_EQ( successor->Size(), 3 );
 }
 
 // ------------------------------------------------------------

@@ -17,7 +17,7 @@ public:
 	const Mat4d& home,
 	const std::optional< JointGroup >& wrist_group );
 
-[[nodiscard]] static bool CheckConsistency( 	
+[[nodiscard]] static bool CheckConsistency(
 	const JointChain& joint_chain,
 	const JointGroup& base_group );
 };

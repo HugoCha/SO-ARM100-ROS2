@@ -4,7 +4,7 @@ namespace SOArm100::Kinematics::Model
 {
 enum class ElbowConfiguration
 {
-UP,
-DOWN
+	UP,
+	DOWN
 };
 }

@@ -10,8 +10,8 @@ class KinematicTopology;
 class TopologyAnalyzer
 {
 public:
-static KinematicTopology Analyze( 
-    const Model::JointChain& chain, 
-    const Mat4d& home );
+static KinematicTopology Analyze(
+	const Model::JointChain& chain,
+	const Mat4d& home );
 };
 }
