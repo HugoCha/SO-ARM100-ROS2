@@ -2,16 +2,17 @@
 
 #include "Global.hpp"
 
-#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Heuristic/IIKHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class Planar2RHeuristic : public JointGroupHeuristic
+class Planar2RHeuristic : public Model::IKJointGroupModelBase, IIKHeuristic
 {
 public:
 Planar2RHeuristic(
 	Model::KinematicModelConstPtr model,
-	Model::PlanarNRJointGroup planar_group );
+	Model::JointGroup planar_group );
 
 virtual IKPresolution Presolve(
 	const Solver::IKProblem& problem,

@@ -2,16 +2,19 @@
 
 #include "Global.hpp"
 
+#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/Pose.hpp"
-#include "Solver/IKSolver.hpp"
+#include "Solver/IKSolverBase.hpp"
 
 #include <span>
 #include <vector>
 
 namespace SOArm100::Kinematics::Solver
 {
-class FABRIKSolver : public Solver::IKSolver
+class FABRIKSolver : 
+	public Model::IKJointGroupModelBase, 
+	public IKSolverBase
 {
 public:
 struct SolverParameters
@@ -76,7 +79,6 @@ struct SolverBuffers
 };
 
 SolverParameters parameters_;
-Model::JointGroup group_;
 
 void PreSolveAzimuthJoints(
 	const Vec3d& p_target,

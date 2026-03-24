@@ -1,16 +1,17 @@
 #pragma once
 
-#include "DLSSolver/DLSSolverState.hpp"
 #include "Global.hpp"
 
+#include "DLSSolver/DLSSolverState.hpp"
+#include "Model/IKModelBase.hpp"
 #include "Seed/IKRandomSeedGenerator.hpp"
-#include "Solver/IKSolver.hpp"
+#include "Solver/IKSolverBase.hpp"
 #include "Solver/SolverType.hpp"
 #include <Eigen/src/SVD/JacobiSVD.h>
 
 namespace SOArm100::Kinematics::Solver
 {
-class DLSSolver : public IKSolver
+class DLSSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
 struct SolverParameters

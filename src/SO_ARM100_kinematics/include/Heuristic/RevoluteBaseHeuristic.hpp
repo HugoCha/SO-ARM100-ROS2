@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Global.hpp"
-#include "Heuristic/JointGroupHeuristic.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/KinematicModel.hpp"
+
+#include "Heuristic/IIKHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class RevoluteBaseHeuristic : public JointGroupHeuristic
+class RevoluteBaseHeuristic : public Model::IKJointGroupModelBase, IIKHeuristic
 {
 public:
 RevoluteBaseHeuristic(
 	Model::KinematicModelConstPtr model,
-	const Model::RevoluteBaseJointGroup& revolute_base_group );
+	const Model::JointGroup& revolute_base_group );
 
 virtual IKPresolution Presolve(
 	const Solver::IKProblem& problem,
@@ -23,5 +23,6 @@ Vec3d reference_direction_;
 
 const Model::Joint* GetBaseJoint() const;
 Vec3d ComputeReferenceDirection() const;
+Vec3d ComputeDirection( const Mat4d& T_tip ) const;
 };
 }

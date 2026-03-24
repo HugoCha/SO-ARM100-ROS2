@@ -24,7 +24,7 @@ namespace SOArm100::Kinematics::Test
 // Fixture
 // ------------------------------------------------------------
 
-class FABRIKKinematicsSolverTest : public KinematicTestBase
+class FABRIKSolverTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -43,7 +43,7 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 // Basic convergence with known joint configuration
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
+TEST_F( FABRIKSolverTest, IK_ConvergesFromNearSeed )
 {
 	VecXd joints( 3 );
 	joints << 0.4, 0.3, 0.25;
@@ -54,8 +54,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
-	Mat4d result_pose;
-	ComputeFK( result.joints );
+	Mat4d result_pose = ComputeFK( result.joints );
 
 	EXPECT_TRUE( result.Success() )
 	    << "State   = " << static_cast< int >( result.state ) << "\n"
@@ -74,7 +73,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromNearSeed )
 // Zero-config: seed = solution, should converge in very few iterations
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
+TEST_F( FABRIKSolverTest, IK_ConvergesFromExactSeed )
 {
 	VecXd joints( 3 );
 	joints << 0, M_PI / 4, -M_PI / 4;
@@ -93,7 +92,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ConvergesFromExactSeed )
 // Straight-up configuration (all zeros)
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_ZeroConfiguration )
+TEST_F( FABRIKSolverTest, IK_ZeroConfiguration )
 {
 	VecXd joints = VecXd::Zero( 3 );
 	VecXd seed(3);
@@ -114,7 +113,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_ZeroConfiguration )
 // Unreachable: target far outside workspace
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_UnreachableFarTarget )
+TEST_F( FABRIKSolverTest, IK_UnreachableFarTarget )
 {
 	Mat4d target     = Mat4d::Identity();
 	target( 0, 3 )   = 100.0;
@@ -132,7 +131,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_UnreachableFarTarget )
 // Multiple seeds: solution is seed-independent
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_MultipleSeedsConverge )
+TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 5;
@@ -160,7 +159,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_MultipleSeedsConverge )
 // Position accuracy: FK( result ) ≈ target position
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_PositionAccuracy )
+TEST_F( FABRIKSolverTest, IK_PositionAccuracy )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 4;
@@ -187,7 +186,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_PositionAccuracy )
 // Joint limits: result joints must stay within limits
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_JointLimitsRespected )
+TEST_F( FABRIKSolverTest, IK_JointLimitsRespected )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, 3 * M_PI / 2, M_PI / 4;
@@ -204,7 +203,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_JointLimitsRespected )
 // Randomised sweep: N random configurations
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_RandomConfigurations )
+TEST_F( FABRIKSolverTest, IK_RandomConfigurations )
 {
 	constexpr int kTrials = 100;
 	int successes         = 0;
@@ -234,7 +233,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_RandomConfigurations )
 // Iteration budget: convergence reported iteration count is plausible
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_IterationCountReasonable )
+TEST_F( FABRIKSolverTest, IK_IterationCountReasonable )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
@@ -252,7 +251,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_IterationCountReasonable )
 // Custom parameters: tighter tolerance converges to better solution
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_TighterToleranceImproves )
+TEST_F( FABRIKSolverTest, IK_TighterToleranceImproves )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
@@ -282,7 +281,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_TighterToleranceImproves )
 // Boundary joints: solution near joint limits should still converge
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_NearJointLimits )
+TEST_F( FABRIKSolverTest, IK_NearJointLimits )
 {
 	// Push joints close to their limits
 	VecXd joints( 6 );
@@ -309,7 +308,7 @@ TEST_F( FABRIKKinematicsSolverTest, IK_NearJointLimits )
 // Size mismatch: wrong seed size returns Failed
 // ------------------------------------------------------------
 
-TEST_F( FABRIKKinematicsSolverTest, IK_SeedSizeMismatchFails )
+TEST_F( FABRIKSolverTest, IK_SeedSizeMismatchFails )
 {
 	Mat4d target = Mat4d::Identity();
 

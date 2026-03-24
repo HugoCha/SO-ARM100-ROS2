@@ -8,6 +8,7 @@
 #include "Model/JointGroup.hpp"
 #include "Model/Twist.hpp"
 #include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -136,28 +137,28 @@ TEST_F( WristAnalyzerTest, Analyze_FourAxisChain_ThreeAxisRevoluteWrist )
 	// Joint 1: Rotation around Z-axis
 	four_axis_chain.Add(
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( Mat4d::Identity(), 0.5 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	// Joint 2: Rotation around Y-axis (orthogonal to joint 1)
 	four_axis_chain.Add(
 		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	// Joint 3: Rotation around X-axis (orthogonal to joints 1 and 2)
 	four_axis_chain.Add(
 		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	// Joint 4: Rotation around Z-axis
 	four_axis_chain.Add(
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -169,7 +170,7 @@ TEST_F( WristAnalyzerTest, Analyze_FourAxisChain_ThreeAxisRevoluteWrist )
 	EXPECT_EQ( 1, wrist_group->FirstIndex() );
 	EXPECT_EQ( 3, wrist_group->LastIndex() );
 	EXPECT_EQ( 3, wrist_group->Size() );
-	EXPECT_EQ( home_config, wrist_group->tip_home );
+	EXPECT_TRUE( IsApprox( Mat4d::Identity(), wrist_group->tip_home ) );
 }
 
 // ------------------------------------------------------------
@@ -200,7 +201,7 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisWrist_WithOffset )
 		Model::Limits( -M_PI, M_PI )
 		);
 
-	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
+	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.1, 0.1 ) );
 
 	auto wrist_group = Model::WristAnalyzer::Analyze( three_axis_chain, home_config );
 
@@ -208,7 +209,7 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisWrist_WithOffset )
 	EXPECT_EQ( 0, wrist_group->FirstIndex() );
 	EXPECT_EQ( 2, wrist_group->LastIndex() );
 	EXPECT_EQ( 3, wrist_group->Size() );
-	EXPECT_EQ( home_config, wrist_group->tip_home );
+	EXPECT_TRUE( IsApprox( ToTransformMatrix( Vec3d( 0.4, 0, 0 ) ), wrist_group->tip_home ) );
 }
 
 // ------------------------------------------------------------

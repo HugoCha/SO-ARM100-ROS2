@@ -1,16 +1,20 @@
-#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
+
+#include "Global.hpp"
+#include "Model/IKModelBase.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <stdexcept>
 
-namespace SOArm100::Kinematics::Heuristic
+namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------
 
-JointGroupHeuristic::JointGroupHeuristic(
+IKJointGroupModelBase::IKJointGroupModelBase(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group ) :
-	IKHeuristic( model ),
+	IKModelBase( model ),
 	group_( group ),
 	ancestor_( std::nullopt ),
 	successor_( std::nullopt )
@@ -19,6 +23,8 @@ JointGroupHeuristic::JointGroupHeuristic(
 	{
 		ancestor_ = ComputeAncestorJointGroup( model, group );
 		successor_ = ComputeSuccessorJointGroup( model, group );
+		auto home_in_tip = ComputeHomeInTipTransform( model, group );
+		home_in_tip_inv_ = Inverse( home_in_tip );
 	}
 	else
 	{
@@ -28,7 +34,7 @@ JointGroupHeuristic::JointGroupHeuristic(
 
 // ------------------------------------------------------------
 
-Mat4d JointGroupHeuristic::ComputeGroupFirstJointPose( const VecXd& seed ) const
+Mat4d IKJointGroupModelBase::ComputeGroupFirstJointPose( const VecXd& seed ) const
 {
 	const auto& first_joint_origin =
 		GetChain()->GetActiveJoint( group_.FirstIndex() )->OriginTransform();
@@ -49,31 +55,43 @@ Mat4d JointGroupHeuristic::ComputeGroupFirstJointPose( const VecXd& seed ) const
 
 // ------------------------------------------------------------
 
-Mat4d JointGroupHeuristic::ComputeGroupTarget(
+Mat4d IKJointGroupModelBase::ComputeGroupTarget(
 	const VecXd& seed,
 	const Mat4d& target ) const
 {
-	Mat4d T_tip;
+	if ( !ancestor_ && !successor_ )
+		return target;
 
+	Mat4d T_ancestor_inv;
+	
 	if ( ancestor_ )
 	{
+		Mat4d T_ancestor;
+
 		VecXd ancestor_joints = ancestor_->GetGroupJoints( seed );
 		GetChain()->ComputeFK(
 			ancestor_joints,
 			group_.tip_home,
-			T_tip );
-	}
-	else
-	{
-		T_tip = group_.tip_home;
+			T_ancestor );
+
+		T_ancestor_inv = Inverse( T_ancestor );
+
+		if ( !successor_ )
+			return T_ancestor_inv * target;
 	}
 
-	return target * Inverse( T_tip );
+	Mat4d T_successor_inv;
+	T_successor_inv = home_in_tip_inv_;
+
+	if ( !ancestor_ )
+		return target * T_successor_inv;
+
+	return T_ancestor_inv * target * T_successor_inv;
 }
 
 // ------------------------------------------------------------
 
-std::optional< Model::JointGroup > JointGroupHeuristic::ComputeAncestorJointGroup(
+std::optional< Model::JointGroup > IKJointGroupModelBase::ComputeAncestorJointGroup(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group )
 {
@@ -93,11 +111,11 @@ std::optional< Model::JointGroup > JointGroupHeuristic::ComputeAncestorJointGrou
 
 // ------------------------------------------------------------
 
-std::optional< Model::JointGroup > JointGroupHeuristic::ComputeSuccessorJointGroup(
+std::optional< Model::JointGroup > IKJointGroupModelBase::ComputeSuccessorJointGroup(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group )
 {
-	int sucessor_start = group.LastIndex();
+	int sucessor_start = group.LastIndex() + 1;
 	int sucessor_count = model->GetChain()->GetActiveJointCount() - sucessor_start;
 
 	if ( sucessor_count == 0 )
@@ -110,6 +128,15 @@ std::optional< Model::JointGroup > JointGroupHeuristic::ComputeSuccessorJointGro
 		sucessor_start,
 		sucessor_count,
 		successor_tip );
+}
+
+// ------------------------------------------------------------
+
+Mat4d IKJointGroupModelBase::ComputeHomeInTipTransform( 
+	Model::KinematicModelConstPtr model, 
+	const Model::JointGroup& group )
+{
+	return model->GetHomeConfiguration() * Inverse( group.tip_home );
 }
 
 // ------------------------------------------------------------

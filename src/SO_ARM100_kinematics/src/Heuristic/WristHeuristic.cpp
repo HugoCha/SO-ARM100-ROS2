@@ -2,10 +2,9 @@
 
 #include "Global.hpp"
 
-#include "Heuristic/IKHeuristic.hpp"
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
-#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/WristTopology.hpp"
 #include "Solver/IKProblem.hpp"
@@ -18,8 +17,8 @@ namespace SOArm100::Kinematics::Heuristic
 
 WristHeuristic::WristHeuristic(
 	Model::KinematicModelConstPtr model,
-	Model::WristJointGroup wrist_group ) :
-	JointGroupHeuristic( model, wrist_group )
+	Model::JointGroup wrist_group ) :
+	Model::IKJointGroupModelBase( model, wrist_group )
 {
 }
 

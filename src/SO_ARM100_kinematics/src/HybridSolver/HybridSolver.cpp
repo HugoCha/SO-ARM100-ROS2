@@ -2,7 +2,6 @@
 
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
-#include "Solver/IKSolver.hpp"
 #include "Solver/IKSolution.hpp"
 
 namespace SOArm100::Kinematics::Solver
@@ -11,7 +10,7 @@ namespace SOArm100::Kinematics::Solver
 // ------------------------------------------------------------
 
 HybridSolver::HybridSolver( Model::KinematicModelConstPtr model ) :
-	IKSolver( model )
+	Model::IKModelBase( model )
 {
 }
 

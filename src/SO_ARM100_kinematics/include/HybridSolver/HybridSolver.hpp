@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Solver/IKSolver.hpp"
+#include "Model/IKModelBase.hpp"
+#include "Solver/IKSolverBase.hpp"
 
 namespace SOArm100::Kinematics::Solver
 {
@@ -8,7 +9,7 @@ struct IKProblem;
 struct IKSolution;
 class IKRunContext;
 
-class HybridSolver : public IKSolver
+class HybridSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
 HybridSolver( Model::KinematicModelConstPtr model );

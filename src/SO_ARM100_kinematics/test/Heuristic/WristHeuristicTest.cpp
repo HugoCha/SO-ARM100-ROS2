@@ -14,6 +14,7 @@
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <Eigen/src/Geometry/AngleAxis.h>
 #include <gtest/gtest.h>
 #include <ostream>
 
@@ -56,14 +57,14 @@ TEST_F( WristHeuristicTest, SolveRobotWrist )
 	VecXd joints( 6 );
 	joints << seed[0], seed[1], seed[2], M_PI / 4, M_PI / 4, M_PI / 4;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
 
 	EXPECT_TRUE( result.Sucess() );
-	EXPECT_EQ( 3, result.joints.size() );
+	EXPECT_EQ( 6, result.joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) )
 		<< "target = " << std::endl << problem.target << std::endl
 		<< "result = " << std::endl << result_pose << std::endl
@@ -94,7 +95,7 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 	VecXd joints( 1 );
 	joints << M_PI / 4;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	Mat4d result_pose;
@@ -125,15 +126,19 @@ TEST_F( WristHeuristicTest, SolveRevolute1_Unreachable )
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
 	
 	VecXd seed = VecXd::Zero( 1 );
-	Mat4d target = Mat4d::Identity();
-	target( 0, 3 ) = 10;
+	Mat4d target;
+	target << 0, 0, -1, 0,
+			  0, 1,  0, 0,
+			  1, 0,  0, 0,
+			  0, 0,  0, 1;
+
 
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	EXPECT_FALSE( result.Sucess() );
-	EXPECT_EQ( 0, result.joints.size() );
-	EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
+	EXPECT_EQ( 1, result.joints.size() );
+	EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
 }
 
 // ------------------------------------------------------------
@@ -166,7 +171,7 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 	VecXd joints( 2 );
 	joints << M_PI / 4, M_PI / 4;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	Mat4d result_pose;
@@ -206,7 +211,9 @@ TEST_F( WristHeuristicTest, SolveRevolute3 )
 
 	EXPECT_TRUE( result.Sucess() );
 	EXPECT_EQ( 3, result.joints.size() );
-	EXPECT_TRUE( IsApprox( problem.target, result_pose ) );
+	EXPECT_TRUE( Rotation( problem.target ).isApprox( Rotation( result_pose ), rotation_tolerance ) )
+		<< "target = " << std::endl << problem.target << std::endl
+		<< "result = " << std::endl << result_pose << std::endl;
 }
 
 // ------------------------------------------------------------

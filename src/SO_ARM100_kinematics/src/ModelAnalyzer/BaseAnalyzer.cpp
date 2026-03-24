@@ -22,19 +22,15 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 		return std::nullopt;
 
 	auto base_joint = joint_chain.GetActiveJoint( 0 );
-
-	std::string base_name;
-
-	const auto& wrist_home = wrist_group->tip_home;
-	const auto& wrist_center = home * Inverse( wrist_home );
+	Mat4d tip_home = home * Inverse( wrist_group->tip_home );
 
 	if ( base_joint->IsRevolute() )
 	{
-		return RevoluteBaseJointGroup( wrist_center );
+		return RevoluteBaseJointGroup( tip_home );
 	}
 	else if ( base_joint->IsPrismatic() )
 	{
-		return PrismaticBaseJointGroup( wrist_center );
+		return PrismaticBaseJointGroup( tip_home );
 	}
 
 	return std::nullopt;
@@ -49,7 +45,7 @@ bool BaseAnalyzer::CheckConsistency(
 	if ( !JointGroup::IsConsistent( joint_chain, base_group ) )
 		return false;
 
-	bool is_consistent = true;
+	bool is_consistent = false;
 
 	is_consistent |= base_group.name == revolute_base_name && joint_chain.GetActiveJoint( 0 )->IsRevolute();
 	is_consistent |= base_group.name == prismatic_base_name && joint_chain.GetActiveJoint( 0 )->IsPrismatic();

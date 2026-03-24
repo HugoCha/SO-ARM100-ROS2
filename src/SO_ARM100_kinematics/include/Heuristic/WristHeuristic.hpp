@@ -2,8 +2,8 @@
 
 #include "Global.hpp"
 
-#include "Heuristic/JointGroupHeuristic.hpp"
-#include "Model/JointGroup.hpp"
+#include "Heuristic/IIKHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -12,10 +12,12 @@ enum class WristTopology;
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class WristHeuristic : public JointGroupHeuristic
+class WristHeuristic : public Model::IKJointGroupModelBase, IIKHeuristic
 {
 public:
-WristHeuristic( Model::KinematicModelConstPtr model, Model::WristJointGroup wrist_group );
+WristHeuristic( 
+	Model::KinematicModelConstPtr model, 
+	Model::JointGroup wrist_group );
 
 virtual IKPresolution Presolve(
 	const Solver::IKProblem& problem,

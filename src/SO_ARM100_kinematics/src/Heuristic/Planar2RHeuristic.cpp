@@ -4,7 +4,7 @@
 
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
-#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
@@ -19,8 +19,8 @@ namespace SOArm100::Kinematics::Heuristic
 
 Planar2RHeuristic::Planar2RHeuristic(
 	Model::KinematicModelConstPtr model,
-	Model::PlanarNRJointGroup planar_group ) :
-	JointGroupHeuristic( model, planar_group ),
+	Model::JointGroup planar_group ) :
+	Model::IKJointGroupModelBase( model, planar_group ),
 	reference_direction_( ComputeReferenceDirection( model, planar_group ) ),
 	up_direction_( ComputeUpDirection( reference_direction_, model, planar_group ) )
 {

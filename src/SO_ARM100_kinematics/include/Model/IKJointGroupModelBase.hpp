@@ -1,20 +1,13 @@
 #pragma once
 
-#include "Global.hpp"
+#include "Model/IKModelBase.hpp"
 
-#include "Heuristic/IKHeuristic.hpp"
-#include "Model/JointGroup.hpp"
-
-#include <optional>
-
-namespace SOArm100::Kinematics::Heuristic
+namespace SOArm100::Kinematics::Model
 {
-class JointGroupHeuristic : public IKHeuristic
+class IKJointGroupModelBase : public IKModelBase
 {
 public:
-virtual ~JointGroupHeuristic() = default;
-
-JointGroupHeuristic(
+IKJointGroupModelBase(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group );
 
@@ -38,12 +31,17 @@ private:
 std::optional< Model::JointGroup > ancestor_;
 Model::JointGroup group_;
 std::optional< Model::JointGroup > successor_;
+Mat4d home_in_tip_inv_;
 
 static std::optional< Model::JointGroup > ComputeAncestorJointGroup(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group );
 
 static std::optional< Model::JointGroup > ComputeSuccessorJointGroup(
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup& group );
+
+static Mat4d ComputeHomeInTipTransform(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group );
 };

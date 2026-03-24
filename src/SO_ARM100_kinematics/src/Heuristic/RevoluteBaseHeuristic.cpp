@@ -1,13 +1,14 @@
 #include "Heuristic/RevoluteBaseHeuristic.hpp"
 
 #include "Global.hpp"
-#include "Heuristic/IKHeuristic.hpp"
+
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
-#include "Heuristic/JointGroupHeuristic.hpp"
+#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/MathUtils.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -16,8 +17,8 @@ namespace SOArm100::Kinematics::Heuristic
 
 RevoluteBaseHeuristic::RevoluteBaseHeuristic(
 	Model::KinematicModelConstPtr model,
-	const Model::RevoluteBaseJointGroup& revolute_base_group ) :
-	JointGroupHeuristic( model, revolute_base_group )
+	const Model::JointGroup& revolute_base_group ) :
+	Model::IKJointGroupModelBase( model, revolute_base_group )
 {
 	reference_direction_ = ComputeReferenceDirection();
 }
@@ -37,27 +38,30 @@ Vec3d RevoluteBaseHeuristic::ComputeReferenceDirection() const
 	if ( !base_joint )
 		return Vec3d::Zero();
 
-	const auto& base_origin = base_joint->Origin();
-	const auto& p_tip_home = Translation( GetGroup().tip_home );
-	const Vec3d& r = p_tip_home - base_origin;
-	const auto& base_axis = base_joint->Axis();
-	Vec3d reference_direction = r - r.dot( base_axis ) * base_axis;
+	Mat4d tip_home = GetGroup().tip_home;
+	Vec3d reference_direction = ComputeDirection( tip_home );
 
 	if ( reference_direction.norm() < epsilon )
 	{
-		auto next_joint = model_->GetChain()->GetNextJoint( base_joint );
-
-		if ( !next_joint )
-			return Vec3d::Zero();
-
-		const auto& next_joint_axis = next_joint->Axis();
-		reference_direction = base_axis.cross( next_joint_axis );
-
-		if ( reference_direction.norm() < epsilon )
-			return Vec3d::Zero();
+		return Vec3d::Zero();
 	}
 
 	return reference_direction.normalized();
+}
+
+// ------------------------------------------------------------
+
+Vec3d RevoluteBaseHeuristic::ComputeDirection( const Mat4d& T_tip ) const
+{
+	const auto& p_tip = Translation( T_tip );
+	const auto& base_origin =  GetBaseJoint()->Origin();
+	const auto& base_axis = GetBaseJoint()->Axis();
+	Vec3d direction = ProjectOnPlane( p_tip, base_origin, base_axis );
+
+	if ( direction.norm() < epsilon )
+		return Vec3d::Zero();
+
+	return direction.normalized();
 }
 
 // ------------------------------------------------------------
@@ -67,22 +71,17 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
+	if ( reference_direction_.norm() < epsilon )
+		return presolution;
 
 	auto base_joint = GetBaseJoint();
 
 	auto wrist_center = ComputeGroupTarget( problem.seed, problem.target );
-	auto p_wrist_center = Translation( wrist_center );
 
 	const Vec3d& omega = base_joint->Axis();
-	const Vec3d& r = p_wrist_center - base_joint->Origin();
-	const Vec3d& r_proj = ( r - r.dot( omega ) * omega ).normalized();
+	const Vec3d& r_proj = ComputeDirection( wrist_center );
 
-	if ( r_proj.norm() < epsilon )
-	{
-		presolution.joints = { problem.seed };
-		presolution.state = IKHeuristicState::PartialSuccess;
-	}
-	else
+	if ( r_proj.norm() > epsilon )
 	{
 		double s_theta = omega.dot( reference_direction_.cross( r_proj ) );
 		double c_theta = reference_direction_.dot( r_proj );

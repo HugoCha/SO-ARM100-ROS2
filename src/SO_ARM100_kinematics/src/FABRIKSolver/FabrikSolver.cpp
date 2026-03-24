@@ -2,12 +2,12 @@
 
 #include "Global.hpp"
 
+#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/Pose.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
-#include "Solver/IKSolver.hpp"
 #include "Solver/IKSolverState.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -34,8 +34,7 @@ FABRIKSolver::FABRIKSolver(
 	Model::KinematicModelConstPtr model,
 	Model::JointGroup group,
 	SolverParameters parameters ) :
-	IKSolver( model ),
-	group_( group ),
+	Model::IKJointGroupModelBase( model, group ),
 	parameters_( parameters )
 {
 }
@@ -63,7 +62,7 @@ IKSolution FABRIKSolver::Solve(
 		return { IKSolverState::Unreachable, {}};
 	}
 
-	const int n_joints = group_.Size();
+	const int n_joints = GetGroup().Size();
 
 	if ( problem.seed.size() < n_joints )
 	{
@@ -73,10 +72,11 @@ IKSolution FABRIKSolver::Solve(
 
 	SolverBuffers buffers = SolverBuffers( n_joints );
 
-	const Vec3d p_target = Translation( problem.target );
+	Mat4d group_target = ComputeGroupTarget( problem.seed, problem.target );
+	const Vec3d p_target = Translation( group_target );
 
 	VecXd solution = problem.seed;
-	buffers.joints = group_.GetGroupJoints( problem.seed );
+	buffers.joints = GetGroup().GetGroupJoints( problem.seed );
 	PreSolveAzimuthJoints( p_target, buffers.fabrik_start_idx, buffers.joints );
 	ComputePoses( buffers.joints, buffers.poses, buffers.fk );
 	ComputeBoneLengths( buffers.poses, buffers.bone_lengths );
@@ -94,14 +94,14 @@ IKSolution FABRIKSolver::Solve(
 
 		if ( error < parameters_.error_tolerance )
 		{
-			group_.SetGroupJoints( buffers.joints, solution );
+			GetGroup().SetGroupJoints( buffers.joints, solution );
 			return { IKSolverState::Converged, solution,
 			         error, iter };
 		}
 
 		if ( context.StopRequested() )
 		{
-			group_.SetGroupJoints( buffers.joints, solution );
+			GetGroup().SetGroupJoints( buffers.joints, solution );
 			return { IKSolverState::NotRun, solution,
 			         error, iter };
 		}
@@ -114,7 +114,7 @@ IKSolution FABRIKSolver::Solve(
 		ComputePoses( buffers.joints, buffers.poses, buffers.fk );
 	}
 
-	group_.SetGroupJoints( buffers.joints, solution );
+	GetGroup().SetGroupJoints( buffers.joints, solution );
 	return { IKSolverState::MaxIterations, solution,
 	         error, parameters_.max_iterations };
 }
@@ -126,18 +126,18 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 	int& fabrik_start_idx,
 	VecXd& joints ) const
 {
-	const int n = group_.Size();
+	const int n = GetGroup().Size();
 	fabrik_start_idx = 0;
 
 	std::vector< Model::Pose > zero_poses( n + 1 );
 	VecXd zero = VecXd::Zero( n );
 	Mat4d tip_home;
-	GetChain()->ComputeJointPosesFK( zero, group_.tip_home, zero_poses, tip_home );
-	zero_poses[n].origin = Translation( group_.tip_home );
+	GetChain()->ComputeJointPosesFK( zero, GetGroup().tip_home, zero_poses, tip_home );
+	zero_poses[n].origin = Translation( GetGroup().tip_home );
 
 	for ( int i = 0; i < n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.Index( i ) );
+		const auto& joint = GetChain()->GetActiveJoint( GetGroup().Index( i ) );
 		if ( !joint->IsRevolute() )
 			continue;
 
@@ -193,7 +193,7 @@ void FABRIKSolver::ComputePoses(
 
 	GetChain()->ComputeJointPosesFK(
 		joints,
-		group_.tip_home,
+		GetGroup().tip_home,
 		poses,
 		fk );
 
@@ -235,7 +235,7 @@ void FABRIKSolver::ForwardPass(
 
 	for ( int i = n - 1; i > start_idx; i-- )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.Index( i ) );
+		const auto& joint = GetChain()->GetActiveJoint( GetGroup().Index( i ) );
 		const Vec3d& axis = poses[i].axis;
 		Vec3d dir = poses[i].origin - poses[i + 1].origin;
 
@@ -273,7 +273,7 @@ void FABRIKSolver::BackwardPass(
 
 	for ( int i = start_idx + 1; i <= n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.Index( i - 1 ) );
+		const auto& joint = GetChain()->GetActiveJoint( GetGroup().Index( i - 1 ) );
 		Vec3d dir = poses[i].origin - poses[i - 1].origin;
 
 		switch ( joint->GetType() )
@@ -304,11 +304,11 @@ void FABRIKSolver::UpdateJointValues(
 	const std::span< Model::Pose >& poses,
 	VecXd& joints ) const
 {
-	const int n = group_.Size();
+	const int n = GetGroup().Size();
 
 	for ( int i = start_idx; i < n; i++ )
 	{
-		const auto& joint = GetChain()->GetActiveJoint( group_.Index( i ) );
+		const auto& joint = GetChain()->GetActiveJoint( GetGroup().Index( i ) );
 		const auto& limits = joint->GetLimits();
 		switch ( joint->GetType() )
 		{

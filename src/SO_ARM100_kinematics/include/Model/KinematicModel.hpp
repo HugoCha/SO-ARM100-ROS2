@@ -23,6 +23,7 @@ KinematicModel(
 	topology_( topology ),
 	reachable_space_( std::move( reachable_space ) )
 {
+	is_empty_ = !chain_ || home_configuration_.isZero();
 }
 
 static KinematicModel Empty(){
@@ -30,7 +31,7 @@ static KinematicModel Empty(){
 }
 
 bool IsEmpty() const {
-	return !chain_ || home_configuration_.isZero();
+	return is_empty_;
 }
 
 bool ComputeFK( const VecXd& joints, Mat4d& fk ) const {
@@ -62,6 +63,7 @@ JointChainConstPtr chain_;
 Mat4d home_configuration_;
 KinematicTopology topology_;
 ReachableSpaceUniqueConstPtr reachable_space_;
+bool is_empty_;
 };
 
 using KinematicModelConstPtr = std::shared_ptr< const KinematicModel >;

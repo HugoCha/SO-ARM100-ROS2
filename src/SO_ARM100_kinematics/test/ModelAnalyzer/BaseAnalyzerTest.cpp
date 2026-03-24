@@ -33,9 +33,34 @@ void TearDown() override
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-TEST_F( BaseAnalyzerTest, Analyze_ValidInput )
+TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_ValidInput )
 {
 	auto model = Data::GetRevoluteBaseRobot();
+	Model::WristJointGroup wrist( 
+		1, 
+		2, 
+		ToTransformMatrix( Vec3d( 0, 0, -0.1 ) ) );
+
+	auto base_group = Model::BaseAnalyzer::Analyze( 
+		*model->GetChain(), 
+		model->GetHomeConfiguration(), 
+		wrist );
+
+	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	
+	EXPECT_TRUE( base_group.has_value() );
+	EXPECT_EQ( 0, base_group->FirstIndex() );
+	EXPECT_EQ( 0, base_group->LastIndex() );
+	EXPECT_EQ( 1, base_group->Size() );
+	EXPECT_EQ( Model::revolute_base_name, base_group->name );
+	EXPECT_EQ( expected_tip_home, base_group->tip_home );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( BaseAnalyzerTest, AnalyzePrismaticBase_ValidInput )
+{
+	auto model = Data::GetPrismaticBaseRobot();
 	Model::WristJointGroup wrist( 
 		1, 
 		1, 
@@ -52,13 +77,13 @@ TEST_F( BaseAnalyzerTest, Analyze_ValidInput )
 	EXPECT_EQ( 0, base_group->FirstIndex() );
 	EXPECT_EQ( 0, base_group->LastIndex() );
 	EXPECT_EQ( 1, base_group->Size() );
-	EXPECT_EQ( Model::revolute_base_name, base_group->name );
+	EXPECT_EQ( Model::prismatic_base_name, base_group->name );
 	EXPECT_EQ( expected_tip_home, base_group->tip_home );
 }
 
 // ------------------------------------------------------------
 
-TEST_F( BaseAnalyzerTest, Analyze_NoWristModel )
+TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_NoWristModel )
 {
 	auto model = Data::GetRevoluteBaseRobot();
 
@@ -87,7 +112,7 @@ TEST_F( BaseAnalyzerTest, Analyze_EmptyJointChain )
 
 // ------------------------------------------------------------
 
-TEST_F( BaseAnalyzerTest, Analyze_WithDifferentWristPositions )
+TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 {
 	auto model = Data::GetRevoluteBaseRobot();
 	
@@ -124,7 +149,7 @@ TEST_F( BaseAnalyzerTest, Analyze_WithDifferentWristPositions )
 
 // ------------------------------------------------------------
 
-TEST_F( BaseAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
+TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 {
 	// Create a joint chain with a different base joint axis
 	Model::JointChain joint_chain_y( 2 );
@@ -142,18 +167,19 @@ TEST_F( BaseAnalyzerTest, Analyze_WithDifferentBaseJointAxis )
 	Model::Limits limits_z( -M_PI, M_PI );
 	joint_chain_y.Add( twist_z, link_z, limits_z );
 
-	Mat4d home = ToTransformMatrix( Vec3d( 1, 0, 0 ) );
+	Mat4d home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	
 	Model::WristJointGroup wrist( 
 		1, 
 		1, 
-		home );
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze( 
 		joint_chain_y, 
 		home, 
 		wrist );
 
-	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 1, 0 ) );
+	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
 	
 	EXPECT_TRUE( base_group.has_value() );
 	EXPECT_EQ( 0, base_group->FirstIndex() );
@@ -213,35 +239,35 @@ TEST_F( BaseAnalyzerTest, IsConsistent_Invalid )
 	auto prismatic_model = Data::GetPrismaticBaseRobot();
 	
 	Model::RevoluteBaseJointGroup revolute_base( Mat4d::Identity() );
-	ASSERT_FALSE( 
+	EXPECT_FALSE( 
 		Model::BaseAnalyzer::CheckConsistency( 
 			*prismatic_model->GetChain(), 
 			revolute_base ) );
 
 	// Prismatic
 	Model::PrismaticBaseJointGroup prismatic_base( Mat4d::Identity() );
-	ASSERT_FALSE( 
+	EXPECT_FALSE( 
 		Model::BaseAnalyzer::CheckConsistency( 
 			*revolute_model->GetChain(), 
 			prismatic_base ) );
 
 	Model::JointGroup invalid = revolute_base;
 	invalid.indices = {0, 1 };
-	ASSERT_FALSE( 
+	EXPECT_FALSE( 
 		Model::BaseAnalyzer::CheckConsistency( 
 			*revolute_model->GetChain(), 
 			invalid ) );
 
 	invalid = revolute_base;
 	invalid.indices = { 1 };
-	ASSERT_FALSE( 
+	EXPECT_FALSE( 
 		Model::BaseAnalyzer::CheckConsistency( 
 			*revolute_model->GetChain(), 
 			invalid ) );
 	
 	invalid = revolute_base;
 	invalid.name = "";
-	ASSERT_FALSE( 
+	EXPECT_FALSE( 
 		Model::BaseAnalyzer::CheckConsistency( 
 			*revolute_model->GetChain(), 
 			invalid ) );

@@ -3,6 +3,7 @@
 #include "DLSSolver/AdaptativeDamping.hpp"
 #include "DLSSolver/DLSSolverState.hpp"
 #include "Global.hpp"
+#include "Model/IKModelBase.hpp"
 #include "Model/Limits.hpp"
 #include "Seed/IKRandomSeedGenerator.hpp"
 #include "Seed/IKSeedGenerator.hpp"
@@ -47,7 +48,7 @@ DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
 DLSSolver::DLSSolver(
 	Model::KinematicModelConstPtr model,
 	SolverParameters parameters ) :
-	IKSolver( model ),
+	Model::IKModelBase( model ),
 	parameters_( parameters )
 {
 	if ( !parameters_.IsValid() )

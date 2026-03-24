@@ -410,6 +410,12 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 		{ -M_PI, M_PI }
 		);
 
+	chain->Add(
+		{ Vec3d::UnitZ(), Vec3d( 1, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 1, 0, 1 ) ), 0.1 },
+		{ -M_PI, M_PI }
+		);
+
 	return chain;
 }
 
@@ -417,7 +423,7 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 
 Mat4d createRevoluteBaseHome()
 {
-	return ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	return ToTransformMatrix( Vec3d( 1, 0, 0.9 ) );
 }
 
 // ------------------------------------------------------------
@@ -426,10 +432,17 @@ Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::RevoluteBaseJointGroup base_group( home );
+	Model::RevoluteBaseJointGroup base_group( 
+		ToTransformMatrix( Vec3d( 1, 0, 1 ) ) );
+
+	Model::WristJointGroup wrist_group( 
+		1, 
+		2, 
+		ToTransformMatrix( Vec3d( 0, 0, 0.1 ) ) );
 
 	topology.Add( base_group );
-
+	topology.Add( wrist_group );
+	
 	return topology;
 }
 
@@ -470,8 +483,14 @@ std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
 
 	chain->Add(
 		{ Vec3d::UnitX() },
-		{ Mat4d::Identity(), 0 },
+		{ Mat4d::Identity(), 1 },
 		{ 0, 1 }
+		);
+
+	chain->Add(
+		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
+		{ -M_PI, M_PI }
 		);
 
 	return chain;
@@ -481,7 +500,7 @@ std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
 
 Mat4d createPrismaticBaseHome()
 {
-	return ToTransformMatrix( Vec3d( 0, 0, 0.5 ) );
+	return ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 }
 
 // ------------------------------------------------------------
@@ -636,7 +655,7 @@ Model::KinematicTopology createPlanar3RTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::PlanarNRJointGroup planar_group( 0, 3, home );
+	Model::PlanarNRJointGroup planar_group( 0, 3, Mat4d::Identity() );
 
 	topology.Add( planar_group );
 

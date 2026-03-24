@@ -30,7 +30,7 @@ namespace SOArm100::Kinematics::Test
 // Test Fixture
 // ------------------------------------------------------------
 
-class DLSKinematicsSolverTest : public KinematicTestBase
+class DLSSolverTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -82,7 +82,7 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 // Construction and Initialization Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConstructorWithValidParameters )
+TEST_F( DLSSolverTest, ConstructorWithValidParameters )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.max_iterations = 200;
@@ -95,7 +95,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorWithValidParameters )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConstructorWithInvalidParameters )
+TEST_F( DLSSolverTest, ConstructorWithInvalidParameters )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.max_iterations = -1;  // Invalid
@@ -106,7 +106,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorWithInvalidParameters )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConstructorInvalidNegativeTolerance )
+TEST_F( DLSSolverTest, ConstructorInvalidNegativeTolerance )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.error_tolerance = -0.01;  // Invalid
@@ -116,7 +116,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorInvalidNegativeTolerance )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConstructorInvalidDampingRange )
+TEST_F( DLSSolverTest, ConstructorInvalidDampingRange )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.min_damping = 1.0;
@@ -129,7 +129,7 @@ TEST_F( DLSKinematicsSolverTest, ConstructorInvalidDampingRange )
 // InverseKinematic - Success Cases
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
+TEST_F( DLSSolverTest, SolveIK_HomePosition )
 {
 	// Target at home position
 	VecXd seed_joints{ 3 };
@@ -150,7 +150,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_HomePosition )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
+TEST_F( DLSSolverTest, SolveIK_SimpleReachableTarget )
 {
 	VecXd thetas{ 3 };
 	thetas << -0.826677, -3.06708, -2.68162;
@@ -173,7 +173,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_SimpleReachableTarget )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
+TEST_F( DLSSolverTest, SolveIK_RotatedConfiguration )
 {
 	// Create a target by rotating joint 1 by 90 degrees
 	VecXd target_joints{ 3 };
@@ -193,7 +193,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_RotatedConfiguration )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
+TEST_F( DLSSolverTest, SolveIK_MultipleSolutions )
 {
 	// For some targets, there may be multiple IK solutions
 	// Test that we get A valid solution (not necessarily the same as seed)
@@ -215,7 +215,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MultipleSolutions )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
+TEST_F( DLSSolverTest, SolveIK_GoodSeedConvergesFaster )
 {
 	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
@@ -246,7 +246,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_GoodSeedConvergesFaster )
 // InverseKinematic - Failure Cases
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
+TEST_F( DLSSolverTest, SolveIK_UnreachableTarget )
 {
 	// Target far outside workspace (robot arm length is ~1.0m)
 	auto target_pose = ToTransformMatrix( Vec3d{ 10, 10, 10 } );
@@ -260,7 +260,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_UnreachableTarget )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_MaxIterationsReached )
+TEST_F( DLSSolverTest, SolveIK_MaxIterationsReached )
 {
 	// Use very strict parameters to force max iterations
 	Solver::DLSSolver::SolverParameters params;
@@ -273,15 +273,20 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_MaxIterationsReached )
 	target_joints << 0.5, 0.3, -0.2;
 
 	auto problem = CreateProblem( Vec3d::Zero(), target_joints );
-	auto result = solver_->Solve( problem, Solver::IKRunContext() );
+	auto result = solver.Solve( problem, Solver::IKRunContext() );
 
+	std::cout << "target = " << std::endl << problem.target << std::endl;
+	std::cout << "seed = " << std::endl << problem.seed.transpose() << std::endl;
+	std::cout << "result = " << std::endl << ComputeFK( result.joints ) << std::endl;
+
+	EXPECT_GE( result.error, params.error_tolerance );
 	EXPECT_EQ( result.state, Solver::IKSolverState::MaxIterations );
 	EXPECT_EQ( result.iterations, params.max_iterations );
 }
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
+TEST_F( DLSSolverTest, SolveIK_InvalidSeedSize )
 {
 	Mat4d target = Mat4d::Identity();
 	auto problem = CreateProblem( VecXd::Zero( 2 ), target );
@@ -295,7 +300,7 @@ TEST_F( DLSKinematicsSolverTest, SolveIK_InvalidSeedSize )
 // Random Restart Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, RandomRestart_RecoverFromBadSeed )
+TEST_F( DLSSolverTest, RandomRestart_RecoverFromBadSeed )
 {
 	// Even with a terrible seed, random restart should find a solution
 	// if target is reachable
@@ -317,7 +322,7 @@ TEST_F( DLSKinematicsSolverTest, RandomRestart_RecoverFromBadSeed )
 // Convergence Criteria Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Strict )
+TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.error_tolerance = 1e-6;  // Very strict
@@ -339,7 +344,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Strict )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Loose )
+TEST_F( DLSSolverTest, ConvergenceTolerance_Loose )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.error_tolerance = 1e-2;  // Loose
@@ -362,7 +367,7 @@ TEST_F( DLSKinematicsSolverTest, ConvergenceTolerance_Loose )
 // Edge Cases
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, EdgeCase_ZeroLengthMove )
+TEST_F( DLSSolverTest, EdgeCase_ZeroLengthMove )
 {
 	// Target exactly at current position
 	VecXd joints{ 3 };
@@ -378,7 +383,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_ZeroLengthMove )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, EdgeCase_JointLimits )
+TEST_F( DLSSolverTest, EdgeCase_JointLimits )
 {
 	// Target requiring joints at limits
 	VecXd at_limit_joints{ 3 };
@@ -394,7 +399,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_JointLimits )
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, EdgeCase_NearSingularTarget )
+TEST_F( DLSSolverTest, EdgeCase_NearSingularTarget )
 {
 	// Create a target at a singular configuration
 	// For this robot, singularity occurs when arm is straight
@@ -414,7 +419,7 @@ TEST_F( DLSKinematicsSolverTest, EdgeCase_NearSingularTarget )
 // Performance Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
+TEST_F( DLSSolverTest, Performance_AverageIterations )
 {
 	// Test average convergence speed over multiple random targets
 	const int NUM_TESTS = 10;
@@ -449,7 +454,7 @@ TEST_F( DLSKinematicsSolverTest, Performance_AverageIterations )
 // Robustness Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls )
+TEST_F( DLSSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls )
 {
 	// Solver should work correctly even after multiple calls
 	Mat4d target_pose;
@@ -494,7 +499,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls
 
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
+TEST_F( DLSSolverTest, Robustness_GoodSeed_RepeatedCalls )
 {
 	// Solver should work correctly even after multiple calls
 	Mat4d target_pose;
@@ -533,7 +538,7 @@ TEST_F( DLSKinematicsSolverTest, Robustness_GoodSeed_RepeatedCalls )
 // Configuration Tests
 // ------------------------------------------------------------
 
-TEST_F( DLSKinematicsSolverTest, Configuration_GetAndSet )
+TEST_F( DLSSolverTest, Configuration_GetAndSet )
 {
 	Solver::DLSSolver::SolverParameters new_params;
 	new_params.max_iterations = 150;
