@@ -1,10 +1,9 @@
-#include "DLSSolver/DLSSolver.hpp"
+#include "DLS/DLSSolver.hpp"
 
-#include "DLSSolver/AdaptativeDamping.hpp"
-#include "DLSSolver/DLSSolverState.hpp"
+#include "DLS/AdaptativeDamping.hpp"
+#include "DLS/DLSSolverState.hpp"
 #include "Global.hpp"
 #include "Model/IKModelBase.hpp"
-#include "Model/Limits.hpp"
 #include "Seed/IKRandomSeedGenerator.hpp"
 #include "Seed/IKSeedGenerator.hpp"
 #include "Solver/IKProblem.hpp"

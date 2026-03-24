@@ -1,9 +1,11 @@
 #include "ModelAnalyzer/PlanarNRAnalyzer.hpp"
 
 #include "Global.hpp"
+
 #include "Model/JointChain.hpp"
 #include "Model/JointGroup.hpp"
-#include <vector>
+
+#include <optional>
 
 namespace SOArm100::Kinematics::Model
 {
@@ -15,72 +17,37 @@ Mat4d GetJointOriginTransform( JointChain chain, int index );
 
 // ------------------------------------------------------------
 
-std::vector< JointGroup > PlanarNRAnalyzer::Analyze(
+std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
 	const JointChain& chain,
 	const Mat4d& home,
 	int start_idx,
-	int count )
+	int N )
 {
 	const int n_joints = chain.GetActiveJointCount();
 
-	if ( start_idx < 0 || count <= 1 || start_idx + count > n_joints )
-		return {}
-	;
-
-	std::vector< JointGroup > planar_groups;
-	auto active_joints = chain.GetActiveJoints();
-
-	int sub_planar_start = start_idx;
-	int sub_planar_count = 1;
+	if ( start_idx < 0 || start_idx + N > n_joints )
+		return std::nullopt;
+	
 	auto axis = GetJointAxis( chain, start_idx );
 
-	while ( sub_planar_start < count )
+	for ( int i = start_idx + 1; i < N; i++ )
 	{
-		if ( sub_planar_start + sub_planar_count < count &&
-		     axis == GetJointAxis( chain, sub_planar_start + sub_planar_count ) )
-		{
-			sub_planar_count++;
-		}
-		else
-		{
-			if ( sub_planar_count >= 2 )
-			{
-				Mat4d planar_group_home;
-				if ( start_idx + count >= n_joints )
-				{
-					planar_group_home = home;
-				}
-				else
-				{
-					planar_group_home = GetJointOriginTransform( chain, sub_planar_start + sub_planar_count );
-				}
-
-				auto sub_planar_group = PlanarNRJointGroup(
-					planar_groups.size(),
-					sub_planar_start,
-					sub_planar_count -  1,
-					planar_group_home );
-
-				planar_groups.emplace_back( sub_planar_group );
-			}
-
-			sub_planar_start += sub_planar_count;
-			sub_planar_count = 1;
-			if ( sub_planar_start < n_joints )
-				axis = GetJointAxis( chain, sub_planar_start );
-		}
+		if ( axis != GetJointAxis( chain, i ) )
+			return std::nullopt;
 	}
 
-	return planar_groups;
-}
+	Mat4d planar_home;
 
-// ------------------------------------------------------------
+	if ( start_idx + N >= n_joints )
+	{
+		planar_home = home;
+	}
+	else
+	{
+		planar_home = GetJointOriginTransform( chain, start_idx + N );
+	}
 
-std::vector< JointGroup > PlanarNRAnalyzer::Analyze(
-	const JointChain& chain,
-	const Mat4d& home )
-{
-	return Analyze( chain, home, 0, chain.GetActiveJointCount() );
+	return PlanarNRJointGroup( start_idx, N, planar_home );
 }
 
 // ------------------------------------------------------------

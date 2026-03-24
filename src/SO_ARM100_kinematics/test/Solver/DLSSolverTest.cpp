@@ -1,6 +1,6 @@
 #include "Global.hpp"
 
-#include "DLSSolver/DLSSolver.hpp"
+#include "DLS/DLSSolver.hpp"
 
 #include "RobotModelTestData.hpp"
 #include "KinematicTestBase.hpp"

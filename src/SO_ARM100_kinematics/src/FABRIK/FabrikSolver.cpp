@@ -1,4 +1,4 @@
-#include "FABRIKSolver/FabrikSolver.hpp"
+#include "FABRIK/FabrikSolver.hpp"
 
 #include "Global.hpp"
 
@@ -34,7 +34,7 @@ FABRIKSolver::FABRIKSolver(
 	Model::KinematicModelConstPtr model,
 	Model::JointGroup group,
 	SolverParameters parameters ) :
-	Model::IKJointGroupModelBase( model, group ),
+	Model::IKJointGroupModelBase( model, ComputeFabrikGroup( model, group ) ),
 	parameters_( parameters )
 {
 }
@@ -46,9 +46,74 @@ FABRIKSolver::FABRIKSolver(
 	SolverParameters parameters ) :
 	FABRIKSolver(
 		model,
-		Model::JointGroup::CreateFromRange( "full", 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
+		ComputeFabrikGroup( model, std::nullopt ),
 		parameters )
 {
+}
+
+// ------------------------------------------------------------
+
+Model::JointGroup FABRIKSolver::ComputeFabrikGroup( 
+	Model::KinematicModelConstPtr model, 
+	std::optional< Model::JointGroup > sub_group )
+{
+	const int n_joints = model->GetChain()->GetActiveJointCount();
+	Model::JointGroup group_to_evaluate;
+	if ( !sub_group )
+	{
+		group_to_evaluate = Model::JointGroup::CreateFromRange( 
+			"full", 
+			0, 
+			n_joints, 
+			model->GetHomeConfiguration() );
+	}
+	else
+	{
+		group_to_evaluate = *sub_group;
+	}
+
+	if ( group_to_evaluate.Size() == 0 )
+		return group_to_evaluate;
+
+	std::set< int > fabrik_indices;
+	Mat4d fabrik_tip_home;
+
+	auto previous_joint_index = group_to_evaluate.FirstIndex();
+	auto it = ++group_to_evaluate.indices.begin();
+	for (; it != group_to_evaluate.indices.end(); ++it )
+	{
+		auto joint = model->GetChain()->GetActiveJoint( previous_joint_index ); 
+		if ( joint->IsRevolute() )
+		{
+			auto next_joint = model->GetChain()->GetActiveJoint( *it );
+			auto axis = joint->Axis();
+			auto dir  = next_joint->Origin() - joint->Origin();
+
+			if ( axis.cross( dir ).norm() < epsilon )
+				continue;
+		}
+		fabrik_indices.emplace( previous_joint_index );
+		previous_joint_index = *it;
+	}
+
+	auto last_joint = model->GetChain()->GetActiveJoint( previous_joint_index );
+	if ( last_joint->IsPrismatic() )
+	{
+		fabrik_indices.emplace( previous_joint_index );
+	}
+	else 
+	{
+		auto p_tip = Translation( group_to_evaluate.tip_home );
+		auto axis = last_joint->Axis();
+		auto dir  = p_tip - last_joint->Origin();
+
+		if ( axis.cross( dir ).norm() > epsilon )
+			fabrik_indices.emplace( previous_joint_index );
+	}
+	
+	fabrik_tip_home.noalias() = model->GetHomeConfiguration() * Inverse( group_to_evaluate.tip_home );
+
+	return { "fabrik", fabrik_indices, fabrik_tip_home };
 }
 
 // ------------------------------------------------------------
@@ -87,10 +152,23 @@ IKSolution FABRIKSolver::Solve(
 		return { IKSolverState::Unreachable, {}};
 	}
 
+	std::cout << "Initial State" << std::endl;
+	std::cout << "Seed          = " << problem.seed.transpose() << std::endl;
+	std::cout << "Target        = " << p_target.transpose() << std::endl;
+	std::cout << "Bone Lenghts  = ";
+	PrintBoneLengths( buffers.bone_lengths );
+
 	double error;
 	for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
 	{
+		std::cout << "--------------------- Iteration " << iter << " ---------------------" << std::endl;
 		error = Utils::Distance( p_target, buffers.poses[n_joints].origin );
+
+		std::cout << "joints= " << buffers.joints.transpose() << std::endl;
+		std::cout << "FK    = " << Translation( buffers.fk ).transpose() << std::endl;
+		std::cout << "Error = " << error << std::endl;
+		std::cout << "Pose  = " << std::endl;
+		PrintPoses( buffers.poses );
 
 		if ( error < parameters_.error_tolerance )
 		{

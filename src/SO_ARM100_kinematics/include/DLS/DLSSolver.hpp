@@ -2,11 +2,12 @@
 
 #include "Global.hpp"
 
-#include "DLSSolver/DLSSolverState.hpp"
+#include "DLS/DLSSolverState.hpp"
 #include "Model/IKModelBase.hpp"
 #include "Seed/IKRandomSeedGenerator.hpp"
 #include "Solver/IKSolverBase.hpp"
 #include "Solver/SolverType.hpp"
+
 #include <Eigen/src/SVD/JacobiSVD.h>
 
 namespace SOArm100::Kinematics::Solver

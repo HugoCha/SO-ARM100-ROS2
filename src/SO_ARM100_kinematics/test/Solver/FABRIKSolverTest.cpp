@@ -1,4 +1,4 @@
-#include "FABRIKSolver/FabrikSolver.hpp"
+#include "FABRIK/FabrikSolver.hpp"
 
 #include "Global.hpp"
 

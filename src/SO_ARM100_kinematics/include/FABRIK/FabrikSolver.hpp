@@ -4,6 +4,7 @@
 
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
+#include "Model/KinematicModel.hpp"
 #include "Model/Pose.hpp"
 #include "Solver/IKSolverBase.hpp"
 
@@ -79,6 +80,10 @@ struct SolverBuffers
 };
 
 SolverParameters parameters_;
+
+static Model::JointGroup ComputeFabrikGroup( 
+	Model::KinematicModelConstPtr model, 
+	std::optional< Model::JointGroup > sub_group );
 
 void PreSolveAzimuthJoints(
 	const Vec3d& p_target,
