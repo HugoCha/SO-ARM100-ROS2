@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "ArticulationType.hpp"
-#include "Model/Joint.hpp"
+#include "Joint.hpp"
 
 #include <memory>
 #include <span>

@@ -1,6 +1,4 @@
-#pragma once
-
-#include "FABRIK/Articulation.hpp"
+#include "Model/Articulation.hpp"
 
 #include "Model/Joint.hpp"
 #include "Utils/KinematicsUtils.hpp"

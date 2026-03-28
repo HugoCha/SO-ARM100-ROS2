@@ -1,8 +1,8 @@
-#include "FABRIK/Skeleton.hpp"
+#include "Model/Skeleton.hpp"
 
 #include "Global.hpp"
 
-#include "FABRIK/Articulation.hpp"
+#include "Model/Articulation.hpp"
 #include "Model/KinematicModel.hpp"
 
 #include <memory>

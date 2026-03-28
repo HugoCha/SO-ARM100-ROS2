@@ -1,6 +1,5 @@
 #include "FABRIK/FabrikSolverDraft.hpp"
 
-#include "FABRIK/Skeleton.hpp"
 #include "Global.hpp"
 
 #include "FABRIK/FabrikAnalyzer.hpp"
@@ -9,6 +8,7 @@
 #include "Model/JointState.hpp"
 #include "Model/JointType.hpp"
 #include "Model/Pose.hpp"
+#include "Model/Skeleton.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"

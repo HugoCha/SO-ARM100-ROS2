@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Global.hpp"
-#include "Model/JointState.hpp"
+
+#include "JointState.hpp"
 
 namespace SOArm100::Kinematics::Model
 {

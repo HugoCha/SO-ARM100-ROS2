@@ -1,11 +1,11 @@
 #pragma once
 
-#include "FABRIK/ArticulationState.hpp"
 #include "Global.hpp"
 
 #include "Articulation.hpp"
+#include "ArticulationState.hpp"
 #include "Bone.hpp"
-#include "Model/Joint.hpp"
+#include "Joint.hpp"
 
 #include <memory>
 #include <span>

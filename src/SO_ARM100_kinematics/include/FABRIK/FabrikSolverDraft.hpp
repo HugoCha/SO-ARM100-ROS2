@@ -8,7 +8,7 @@
 #include "Model/JointGroup.hpp"
 #include "Model/JointState.hpp"
 #include "Model/KinematicModel.hpp"
-#include "Skeleton.hpp"
+#include "Model/Skeleton.hpp"
 #include "Solver/IKSolverBase.hpp"
 
 #include <vector>
