@@ -1,6 +1,7 @@
 #include "Utils/KinematicsUtils.hpp"
 
 #include "Global.hpp"
+#include "Model/Joint.hpp"
 #include "Model/JointChain.hpp"
 
 #include <Eigen/Dense>
@@ -10,6 +11,38 @@
 
 namespace SOArm100::Kinematics
 {
+
+// ------------------------------------------------------------
+
+const Mat3d Rotation( const Vec3d& V1, const Vec3d& V2 ) noexcept
+{
+	Vec3d V1_norm = V1.normalized();
+	Vec3d V2_norm = V2.normalized();
+
+	Vec3d V1xV2 = V1_norm.cross( V2_norm );
+	double V1dotV2 = V1_norm.dot( V2_norm );
+	
+	Vec3d axis = V1xV2.normalized();
+	double angle = 0;
+
+	if ( V1xV2.norm() < epsilon )
+	{
+		if ( V1dotV2 > 0 ) return Mat3d::Identity();
+		if ( std::abs( V1_norm.x() ) < 0.6 ) axis = Vec3d::UnitX();
+		else if ( std::abs( V1_norm.y() ) < 0.6 ) axis = Vec3d::UnitY();
+		else if ( std::abs( V1_norm.z() ) < 0.6 ) axis = Vec3d::UnitZ();
+		axis = axis.cross( V1_norm ).normalized();
+		angle = M_PI;
+	}
+	else
+	{
+		double sin_angle = V1xV2.norm();
+		double cos_angle = V1dotV2;
+		angle = std::atan2( sin_angle, cos_angle );
+	}
+
+	return AngleAxis( angle, axis ).toRotationMatrix();
+}
 
 // ------------------------------------------------------------
 
@@ -154,7 +187,7 @@ void PoseError(
 	Vec6d& pose_error ) noexcept
 {
 	Mat4d T_error = target * Inverse( current );
-	Eigen::AngleAxisd aa( Rotation( T_error ) );
+	AngleAxis aa( Rotation( T_error ) );
 	Vec3d omega = aa.axis() * aa.angle();
 	pose_error.head( 3 ).noalias() = omega;
 	pose_error.tail( 3 ).noalias() = Translation( T_error );
@@ -179,7 +212,7 @@ void WeightedPoseError(
 
 	if ( rotation_weight > 0 )
 	{
-		Eigen::AngleAxisd aa( Rotation( T_error ) );
+		AngleAxis aa( Rotation( T_error ) );
 		weighted_error.head( 3 ).noalias() =
 			rotation_weight * ( aa.axis() * aa.angle() );
 	}
@@ -338,6 +371,74 @@ std::vector< double > EvaluateAngleCandidates(
 		} );
 
 	return candidates;
+}
+
+// ------------------------------------------------------------
+
+std::optional< const Vec3d > ComputeIntersection( 
+	const std::span< const Model::JointConstPtr >& joints )
+{
+	int n = joints.size();
+
+	Vec3d center;
+	Eigen::MatrixXd omega_x( 3 * n, 3 );
+	Eigen::MatrixXd opp_v( 3 * n, 1 );
+
+	for ( int i = 0; i < n; ++i )
+	{
+		const auto& twist = joints[i]->GetTwist();
+		omega_x.block< 3, 3 >( 3 * i, 0 ) = SkewMatrix( twist.GetAxis() );
+		opp_v.segment< 3 >( 3 * i ) = -twist.GetLinear();
+	}
+
+	// Center is the point Pwc such as omega_i x Pwc = -v_i
+	// <=> || omega_i_x * Pwc + vi ||^2 = 0
+	// <=> Solve least square equation : min( f(Pwc) )
+	// with f( Pwc ) = || omega_i_x * Pwc + vi ||^2
+	const int rows = 3 * n;
+
+	center = omega_x
+	               .colPivHouseholderQr()
+	               .solve( opp_v );
+
+	double max_residual = 0.0;
+	for ( int i = 0; i < n; ++i )
+	{
+		const Mat3d& omega_i_x = omega_x.block< 3, 3 >( 3 * i, 0 );
+		const Vec3d& opp_v_i = opp_v.segment< 3 >( 3 * i );
+		const Vec3d& residual = omega_i_x * center - opp_v_i;
+		max_residual = std::max( max_residual, residual.norm() );
+	}
+
+	if ( max_residual > epsilon )
+		return std::nullopt;
+
+	return center;
+}
+
+// ------------------------------------------------------------
+
+bool AxesIndependent( const std::span< Model::JointConstPtr >& joints )
+{
+	const int k = static_cast< int >( joints.size() );
+	if ( k > 3 ) return false;
+
+	if ( k == 1 )
+		return joints[0]->GetTwist().GetAxis().norm() > epsilon;
+
+	if ( k == 2 )
+	{
+		const Vec3d& w1 = joints[0]->GetTwist().GetAxis();
+		const Vec3d& w2 = joints[1]->GetTwist().GetAxis();
+
+		return w1.cross( w2 ).norm() > epsilon;
+	}
+
+	Mat3d W;
+	for ( int i = 0; i < 3; ++i )
+		W.col( i ) = joints[i]->GetTwist().GetAxis();
+
+	return std::abs( W.determinant() ) > epsilon;
 }
 
 // ------------------------------------------------------------

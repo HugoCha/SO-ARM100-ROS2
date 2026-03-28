@@ -71,12 +71,10 @@ IKPresolution Planar2RHeuristic::Presolve(
 	VecXd seed = problem.seed;
 	VecXd planar_solution( 2 );
 
-	auto T_first_planar = ComputeGroupFirstJointPose( seed );
-	auto T_group_target = ComputeGroupTarget( seed, problem.target );
+	auto T_group_target = ComputeGroupLocalTarget( seed, problem.target );
 
-	Vec3d p_first_planar = Translation( T_first_planar );
 	Vec3d p_group_target = Translation( T_group_target );
-	Vec3d wrist_dir = p_group_target - p_first_planar;
+	Vec3d wrist_dir = p_group_target;
 
 	double x_local = wrist_dir.dot( reference_direction_ );
 	double y_local = wrist_dir.dot( up_direction_ );

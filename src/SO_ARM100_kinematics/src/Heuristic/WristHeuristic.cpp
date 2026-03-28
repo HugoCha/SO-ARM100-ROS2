@@ -91,7 +91,7 @@ IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_
 	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
 
 	const Vec3d& axis = GetActiveJoint( GetGroup().Index( 0 ) )->Axis();
-	Eigen::AngleAxisd aa( R_target );
+	AngleAxis aa( R_target );
 	double proj = aa.axis().dot( axis );
 
 	// aa.axis() // axis <=> | proj | = 1
@@ -136,7 +136,7 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 		v_perp.dot( vp_perp )
 		);
 
-	Mat3d R1 = Eigen::AngleAxisd( q1, e1 ).toRotationMatrix();
+	Mat3d R1 = AngleAxis( q1, e1 ).toRotationMatrix();
 	Mat3d R2 = R1.transpose() * R_target;
 
 	// R2 = I + sin(q2) e2x + ( 1 - cos(q2) ) * ( e2x * e2x )
@@ -152,8 +152,8 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 	double q2 = atan2( e2.dot( w ), ( R2.trace() - 1.0 ) * 0.5 );
 
 	Mat3d R_check =
-		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
-		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
+		AngleAxis( q1, e1 ).toRotationMatrix() *
+		AngleAxis( q2, e2 ).toRotationMatrix();
 
 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
@@ -198,7 +198,7 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 
 	double q1 = atan2( e1.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
 
-	Mat3d R1 = Eigen::AngleAxisd( q1, e1 ).toRotationMatrix();
+	Mat3d R1 = AngleAxis( q1, e1 ).toRotationMatrix();
 	R = R1.transpose() * R;
 
 	// STEP 2: Solve q2 by aligning e3 again
@@ -218,7 +218,7 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 
 	double q2 = atan2( e2.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
 
-	Mat3d R2 = Eigen::AngleAxisd( q2, e2 ).toRotationMatrix();
+	Mat3d R2 = AngleAxis( q2, e2 ).toRotationMatrix();
 	R = R2.transpose() * R;
 
 	// STEP 3: Extract q3 directly
@@ -230,9 +230,9 @@ IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_
 	double q3 = atan2( e3.dot( w ), ( R.trace() - 1.0 ) * 0.5 );
 
 	Mat3d R_check =
-		Eigen::AngleAxisd( q1, e1 ).toRotationMatrix() *
-		Eigen::AngleAxisd( q2, e2 ).toRotationMatrix() *
-		Eigen::AngleAxisd( q3, e3 ).toRotationMatrix();
+		AngleAxis( q1, e1 ).toRotationMatrix() *
+		AngleAxis( q2, e2 ).toRotationMatrix() *
+		AngleAxis( q3, e3 ).toRotationMatrix();
 
 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{

@@ -16,17 +16,17 @@ class FabrikAnalyzer
 {
 public:
 [[nodiscard]] static std::optional< JointGroup > Analyze(
-    const JointChain& joint_chain,
+    const JointChain& chain,
     const Mat4d& home,
     int start,
     int count );
 
 [[nodiscard]] static std::optional< JointGroup > Analyze(
-    const JointChain& joint_chain,
-    const Mat4d& home );
+    const JointChain& chain,
+    const JointGroup& sub_group );
 
-[[nodiscard]] static bool CheckConsistency(
-    const JointChain& joint_chain,
-    const JointGroup& fabrik_group );
+[[nodiscard]] static std::optional< JointGroup > Analyze(
+    const JointChain& chain,
+    const Mat4d& home );
 };
 }

@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 
+#include <memory>
 #include <span>
 
 namespace SOArm100::Kinematics
@@ -10,11 +11,15 @@ namespace Model
 {
 class Joint;
 class JointChain;
+using JointConstPtr = std::shared_ptr< const Joint >;
 }
+
 
 [[nodiscard]] inline const Mat3d Rotation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 3 >( 0, 0 );
 }
+
+[[nodiscard]] const Mat3d Rotation( const Vec3d& v1, const Vec3d& v2 ) noexcept;
 
 [[nodiscard]] inline const Vec3d Translation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 1 >( 0, 3 );
@@ -86,4 +91,7 @@ std::vector< double > EvaluateAngleCandidates(
 	const Model::Joint& joint,
 	double seed,
 	double raw_angle ) noexcept;
+
+std::optional< const Vec3d > ComputeIntersection( const std::span< const Model::JointConstPtr >& joints );
+bool AxesIndependent( const std::span< const Model::JointConstPtr >& joints );
 }

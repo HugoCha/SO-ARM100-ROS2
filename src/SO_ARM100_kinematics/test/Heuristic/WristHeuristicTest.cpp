@@ -42,7 +42,7 @@ void TearDown() override
 TEST_F( WristHeuristicTest, SolveRobotWrist )
 {
 	auto model = 
-		Data::GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
+		Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
 
 	int start = 3;
 	int count = 3;
@@ -200,7 +200,7 @@ TEST_F( WristHeuristicTest, SolveRevolute3 )
 	VecXd seed = VecXd::Zero( 3 );
 
 	Mat4d target = Mat4d::Identity();
-	target.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 4, Vec3d( 0, 0, 1 ) ).toRotationMatrix();
+	target.block< 3, 3 >( 0, 0 ) = AngleAxis( M_PI / 4, Vec3d( 0, 0, 1 ) ).toRotationMatrix();
 	target.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 0.0, 0.0 );
 
 	auto problem = CreateProblem( seed, target );

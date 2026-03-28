@@ -5,6 +5,7 @@
 #include "JointType.hpp"
 #include "Limits.hpp"
 #include "Link.hpp"
+#include "Pose.hpp"
 #include "Twist.hpp"
 
 #include <limits>
@@ -72,6 +73,14 @@ const Vec3d Axis() const {
 
 const Vec3d TransformAxis( const Mat4d& transform ) const {
 	return twist_->TransformAxis( transform );
+}
+
+const struct Pose Pose( const Mat4d& transform ) const {
+	struct Pose pose;
+	Vec4d origin_homogenous = link_->GetJointOrigin().block< 4,1 >( 0, 3 );
+	pose.axis = twist_->TransformAxis( transform );
+	pose.origin = ( transform * origin_homogenous ).head( 3 );
+	return pose;
 }
 
 bool IsRevolute() const {

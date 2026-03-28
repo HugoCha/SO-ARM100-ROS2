@@ -1,4 +1,4 @@
-#include "DLSSolver/AdaptativeDamping.hpp"
+#include "DLS/AdaptativeDamping.hpp"
 
 #include "Global.hpp"
 #include "Utils/KinematicsUtils.hpp"

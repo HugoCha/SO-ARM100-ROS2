@@ -16,7 +16,7 @@ class IKJointGroupModelBaseTest : public ::testing::Test
 {
 protected:
 void SetUp() override {
-	model_ = Data::GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
+	model_ = Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
 }
 
 void TearDown() override {

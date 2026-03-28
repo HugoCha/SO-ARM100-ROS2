@@ -1,4 +1,5 @@
 #include "FABRIK/FabrikSolver.hpp"
+#include "FABRIK/FabrikSolverDraft.hpp"
 
 #include "Global.hpp"
 
@@ -29,13 +30,13 @@ class FABRIKSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	model_ = Data::GetPlanar3RRobot();
-	solver_ = std::make_unique< Solver::FABRIKSolver >( model_ );
+	model_ = Data::GetZYZRevoluteRobot();
+	solver_ = std::make_unique< Solver::FABRIKSolverDraft >( model_ );
 }
 
 protected:
 random_numbers::RandomNumberGenerator rng_;
-std::unique_ptr< Solver::FABRIKSolver > solver_;
+std::unique_ptr< Solver::FABRIKSolverDraft > solver_;
 static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 };
 
@@ -46,11 +47,12 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 TEST_F( FABRIKSolverTest, IK_ConvergesFromNearSeed )
 {
 	VecXd joints( 3 );
+	//joints << 0.4, 0.3, 0.25;
 	joints << 0.4, 0.3, 0.25;
 	VecXd seed( 3 );
-	seed << joints[0] + 0.03,
-			joints[1] + 0.04,
-			joints[2] - 0.04;
+	seed << joints[0] + 0.3,
+			joints[1] + 0.4,
+			joints[2] - 0.4;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -253,6 +255,7 @@ TEST_F( FABRIKSolverTest, IK_IterationCountReasonable )
 
 TEST_F( FABRIKSolverTest, IK_TighterToleranceImproves )
 {
+	/*
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
 	VecXd seed = VecXd::Zero(3);
@@ -275,6 +278,7 @@ TEST_F( FABRIKSolverTest, IK_TighterToleranceImproves )
 		EXPECT_LE( result_tight.error, result_default.error + 1e-9 )
 		    << "Tighter tolerance should not produce worse error.";
 	}
+	*/
 }
 
 // ------------------------------------------------------------

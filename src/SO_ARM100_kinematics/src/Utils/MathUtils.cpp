@@ -39,4 +39,38 @@ Vec3d ProjectOnAxis(
 
 // ------------------------------------------------------------
 
+double Angle( const Vec3d& V1, const Vec3d& V2 )
+{
+	Vec3d V1xV2 = V1.cross( V2 );
+	double V1dotV2 = V1.dot( V2 );
+	
+	double angle = 0;
+
+	if ( V1xV2.norm() < epsilon )
+	{
+		if ( V1dotV2 > 0 ) return 0.0;
+		return M_PI;
+	}
+
+    double sin_angle = V1xV2.norm();
+    double cos_angle = V1dotV2;
+    return std::atan2( sin_angle, cos_angle );
+}
+
+// ------------------------------------------------------------
+
+double SignedAngle( const Vec3d& V1, const Vec3d& V2, const Vec3d& normal )
+{
+	Vec3d V1xV2 = V1.cross( V2 );
+	double V1dotV2 = V1.dot( V2 );
+	
+    double sin_angle = V1xV2.norm();
+    double cos_angle = V1dotV2;
+    double angle  = std::atan2( sin_angle, cos_angle );
+
+    return ( normal.dot( V1xV2 ) < 0 ) ? -angle : angle;
+}
+
+// ------------------------------------------------------------
+
 }

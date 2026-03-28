@@ -1,4 +1,4 @@
-#include "DLSSolver/AdaptativeStep.hpp"
+#include "DLS/AdaptativeStep.hpp"
 
 #include <algorithm>
 

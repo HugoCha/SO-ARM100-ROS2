@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 #include "Model/IKModelBase.hpp"
+#include "Model/JointState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <stdexcept>
@@ -34,59 +35,174 @@ IKJointGroupModelBase::IKJointGroupModelBase(
 
 // ------------------------------------------------------------
 
-Mat4d IKJointGroupModelBase::ComputeGroupFirstJointPose( const VecXd& seed ) const
+Mat4d IKJointGroupModelBase::ComputeGroupLocalTarget(
+	const VecXd& seed,
+	const Mat4d& target ) const
 {
-	const auto& first_joint_origin =
-		GetChain()->GetActiveJoint( group_.FirstIndex() )->OriginTransform();
+	Mat4d T_target = target;
+	
+	if ( ancestor_ )
+	{
+		Mat4d T_ancestor_inv = GetAncestorInverseTransform( seed );
+		T_target = T_ancestor_inv * T_target;
+	}
+	if ( successor_ )
+	{
+		Mat4d T_successor_inv = GetSuccessorInverseTransform();
+		T_target = T_target * T_successor_inv;
+	}
 
-	if ( !ancestor_ )
-		return first_joint_origin;
-
-	Mat4d T_first_joint;
-	VecXd ancestor_joints = ancestor_->GetGroupJoints( seed );
-
-	GetChain()->ComputeFK(
-		ancestor_joints,
-		first_joint_origin,
-		T_first_joint );
-
-	return T_first_joint;
+	return T_target;
 }
 
 // ------------------------------------------------------------
 
-Mat4d IKJointGroupModelBase::ComputeGroupTarget(
+Mat4d IKJointGroupModelBase::ComputeGroupWorldTarget(
 	const VecXd& seed,
 	const Mat4d& target ) const
 {
-	if ( !ancestor_ && !successor_ )
-		return target;
-
-	Mat4d T_ancestor_inv;
+	Mat4d T_target = target;
 	
-	if ( ancestor_ )
+	if ( successor_ )
 	{
-		Mat4d T_ancestor;
-
-		VecXd ancestor_joints = ancestor_->GetGroupJoints( seed );
-		GetChain()->ComputeFK(
-			ancestor_joints,
-			group_.tip_home,
-			T_ancestor );
-
-		T_ancestor_inv = Inverse( T_ancestor );
-
-		if ( !successor_ )
-			return T_ancestor_inv * target;
+		Mat4d T_successor_inv = GetSuccessorInverseTransform();
+		T_target = T_target * T_successor_inv;
 	}
 
-	Mat4d T_successor_inv;
-	T_successor_inv = home_in_tip_inv_;
+	return T_target;
+}
 
-	if ( !ancestor_ )
-		return target * T_successor_inv;
+// ------------------------------------------------------------
 
-	return T_ancestor_inv * target * T_successor_inv;
+bool IKJointGroupModelBase::ComputeGroupJointStatesFK( 
+	const VecXd& joints,
+	const Mat4d& to_local_transform, 
+	std::vector< Model::JointState >& states, 
+	Mat4d& fk ) const
+{
+	const int n_joints = joints.size();
+	const int n_model_joints = GetChain()->GetActiveJointCount();
+	const int n_group_joints = GetGroup().Size();
+
+	if ( states.size() < n_group_joints )
+		states.resize( GetGroup().Size() );
+
+	if ( n_joints != n_model_joints )
+		throw std::invalid_argument( "Joints size mismatch" );
+
+	if ( !GetChain()->WithinLimits( joints.topRows( GetGroup().LastIndex() + 1 ) ) )
+		return false;
+
+	Mat4d T_cumul = to_local_transform;
+	
+	int state_index = 0;
+	for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
+		
+		if ( GetGroup().indices.contains( i ) )
+		{
+			states[state_index].pose  = joint->Pose( T_cumul );
+			states[state_index].value = joints[i];
+			state_index++;
+		}
+
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( joints[i] );
+	}
+
+	fk.noalias() = T_cumul * GetGroup().tip_home;
+	return true;
+}
+
+// ------------------------------------------------------------
+
+bool IKJointGroupModelBase::ComputeGroupFK( 
+	const VecXd& joints,
+	const Mat4d& to_local_transform, 
+	Mat4d& fk ) const
+{
+	const int n_joints = joints.size();
+	const int n_model_joints = GetChain()->GetActiveJointCount();
+	const int n_group_joints = GetGroup().Size();
+
+	if ( n_joints != n_model_joints )
+		throw std::invalid_argument( "Joints size mismatch" );
+
+	if ( !GetChain()->WithinLimits( joints.topRows( GetGroup().LastIndex() + 1 ) ) )
+		return false;
+
+	Mat4d T_cumul = to_local_transform;
+	
+	int state_index = 0;
+	for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( joints[i] );
+	}
+
+	fk.noalias() = T_cumul * GetGroup().tip_home;
+	return true;
+}
+
+// ------------------------------------------------------------
+
+bool IKJointGroupModelBase::ComputeGroupJointPosesFK( 
+	const VecXd& joints,
+	const Mat4d& to_local_transform, 
+	std::vector< Mat4d >& joint_poses, 
+	Mat4d& fk ) const
+{
+	const int n_joints = joints.size();
+	const int n_model_joints = GetChain()->GetActiveJointCount();
+	const int n_group_joints = GetGroup().Size();
+
+	if ( joint_poses.size() < n_group_joints )
+		joint_poses.resize( GetGroup().Size() );
+
+	if ( n_joints != n_model_joints )
+		throw std::invalid_argument( "Joints size mismatch" );
+
+	if ( !GetChain()->WithinLimits( joints.topRows( GetGroup().LastIndex() + 1 ) ) )
+		return false;
+
+	Mat4d T_cumul = to_local_transform;
+	
+	int pose_index = 0;
+	for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
+		
+		if ( GetGroup().indices.contains( i ) )
+		{
+			joint_poses[i].noalias() = T_cumul * joint->OriginTransform();
+			pose_index++;
+		}
+
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( joints[i] );
+	}
+
+	fk.noalias() = T_cumul * GetGroup().tip_home;
+	return true;
+}
+
+// ------------------------------------------------------------
+
+Mat4d IKJointGroupModelBase::GetAncestorInverseTransform( const VecXd& seed ) const
+{
+	if ( !ancestor_ ) return Mat4d::Identity();
+
+	Mat4d T_ancestor;
+
+	VecXd ancestor_joints = ancestor_->GetGroupJoints( seed );
+	GetChain()->ComputeFK(
+		ancestor_joints,
+		ancestor_->tip_home,
+		T_ancestor );
+
+	return Inverse( T_ancestor );
 }
 
 // ------------------------------------------------------------

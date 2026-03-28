@@ -31,7 +31,7 @@ Mat4d ToTransformMatrix( const geometry_msgs::msg::Pose& pose_msg )
 	    pose_msg.position.y,
 	    pose_msg.position.z;
 
-	Eigen::Quaterniond quaternion( pose_msg.orientation.w, pose_msg.orientation.x,
+	Quaternion quaternion( pose_msg.orientation.w, pose_msg.orientation.x,
 	                               pose_msg.orientation.y, pose_msg.orientation.z );
 
 	pose.block< 3, 3 >( 0, 0 ) = quaternion.normalized().toRotationMatrix();
@@ -77,7 +77,7 @@ geometry_msgs::msg::Pose ToPoseMsg( const Mat4d& matrix )
 	pose_msg.position.y = matrix( 1, 3 );
 	pose_msg.position.z = matrix( 2, 3 );
 
-	Eigen::Quaterniond quaternion( matrix.block< 3, 3 >( 0, 0 ) );
+	Quaternion quaternion( matrix.block< 3, 3 >( 0, 0 ) );
 
 	pose_msg.orientation.x = quaternion.x();
 	pose_msg.orientation.y = quaternion.y();

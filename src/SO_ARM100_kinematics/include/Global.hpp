@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
+#include <Eigen/src/Geometry/Quaternion.h>
 
 namespace SOArm100::Kinematics
 {
@@ -17,6 +18,9 @@ using Mat6d = Eigen::Matrix< double, 6, 6 >;
 using MatXd = Eigen::MatrixXd;
 
 using Iso3d = Eigen::Isometry3d;
+
+using AngleAxis = Eigen::AngleAxisd;
+using Quaternion = Eigen::Quaterniond; 
 
 constexpr double epsilon = 1e-6;
 

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "Global.hpp"
@@ -141,3 +142,4 @@ void PrintBoneLengths( const std::span< const double > bone_lengths ) const;
 void PrintPoses( const std::span< const Model::Pose >& poses ) const;
 };
 }
+*/

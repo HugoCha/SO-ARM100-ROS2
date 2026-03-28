@@ -47,7 +47,7 @@ TEST_F( KinematicsUtilsTest, SkewMatrixTest )
 TEST_F( KinematicsUtilsTest, InverseTransform )
 {
 	Mat4d transform = Mat4d::Identity();
-	transform.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
+	transform.block< 3, 3 >( 0, 0 ) = AngleAxis( M_PI / 2, Eigen::Vector3d::UnitZ() ).toRotationMatrix();
 	transform.block< 3, 1 >( 0, 3 ) = Vec3d( 1.0, 2.0, 3.0 );
 
 	Mat4d inverse = Inverse( transform );

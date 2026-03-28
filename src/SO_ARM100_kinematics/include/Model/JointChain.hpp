@@ -10,6 +10,7 @@
 
 namespace SOArm100::Kinematics::Model
 {
+struct JointState;
 struct Pose;
 
 class JointChain
@@ -103,20 +104,20 @@ bool ComputeFK(
 	return ComputeFK( thetas.data(), thetas.size(), home_configuration, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeJointStatesFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
-	std::vector< Pose >& joints_fk,
+	std::vector< JointState >& joint_states,
 	Mat4d& fk ) const {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+	return ComputeJointStatesFK( thetas.data(), thetas.size(), home_configuration, joint_states, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeJointStatesFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
-	std::vector< Pose >& joints_fk,
+	std::vector< JointState >& joint_states,
 	Mat4d& fk ) const {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+	return ComputeJointStatesFK( thetas.data(), thetas.size(), home_configuration, joint_states, fk );
 }
 
 bool ComputeJointPosesFK(
@@ -175,11 +176,11 @@ bool ComputeFK(
 	const Mat4d& home_configuration,
 	Mat4d& fk ) const noexcept;
 
-bool ComputeJointPosesFK(
+bool ComputeJointStatesFK(
 	const double* thetas,
 	int n_joints,
 	const Mat4d& home_configuration,
-	std::vector< Pose >& joints_fk,
+	std::vector< JointState >& joint_states,
 	Mat4d& fk ) const noexcept;
 
 bool ComputeJointPosesFK(

@@ -116,8 +116,8 @@ TEST_F( HybridSolverTest, InverseKinematic_Singularity )
 {
 	// Create a target pose that might cause a singularity
 	Mat4d target_pose = Mat4d::Identity();
-	target_pose.block< 3, 3 >( 0, 0 ) = Eigen::AngleAxisd( M_PI / 2, Vec3d( 0, 1, 0 ) ).toRotationMatrix() *
-	                                    Eigen::AngleAxisd( M_PI / 2, Vec3d( 1, 0, 0 ) ).toRotationMatrix();
+	target_pose.block< 3, 3 >( 0, 0 ) = AngleAxis( M_PI / 2, Vec3d( 0, 1, 0 ) ).toRotationMatrix() *
+	                                    AngleAxis( M_PI / 2, Vec3d( 1, 0, 0 ) ).toRotationMatrix();
 	target_pose.block< 3, 1 >( 0, 3 ) = Vec3d( 0.5, 0.5, 1.0 );
 
 	// Seed joints

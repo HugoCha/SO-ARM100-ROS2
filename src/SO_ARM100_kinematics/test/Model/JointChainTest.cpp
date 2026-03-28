@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 #include "Model/Joint.hpp"
+#include "Model/JointState.hpp"
 #include "Model/Pose.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
@@ -407,18 +408,18 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeJointPoses )
 
 	Mat4d expected_fk = Data::GetZYZRevoluteRobotTransform( joints[0], joints[1], joints[2] );
 
-	std::vector< Model::Pose > result_int_fk;
+	std::vector< Model::JointState > result_int_fk;
 	Mat4d result;
-	joint_chain.ComputeJointPosesFK( joints, home, result_int_fk, result );
+	joint_chain.ComputeJointStatesFK( joints, home, result_int_fk, result );
 
 	for ( int i = 0; i < 3; i++ )
 	{
-		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].origin ).norm() < 1e-9 )
+		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].pose.origin ).norm() < 1e-9 )
 		    << "Expected Origin " << i << " = " << std::endl << expected_int_fk[i].origin.transpose() << std::endl
-		    << "Result Origin   " << i << " = " << std::endl << result_int_fk[i].origin.transpose() << std::endl;
-		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].axis ).norm() < 1e-9 )
+		    << "Result Origin   " << i << " = " << std::endl << result_int_fk[i].pose.origin.transpose() << std::endl;
+		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].pose.axis ).norm() < 1e-9 )
 		    << "Expected Axis " << i << " = " << std::endl << expected_int_fk[i].axis.transpose() << std::endl
-		    << "Result Axis   " << i << " = " << std::endl << result_int_fk[i].axis.transpose() << std::endl;;
+		    << "Result Axis   " << i << " = " << std::endl << result_int_fk[i].pose.axis.transpose() << std::endl;;
 	}
 	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
 	    << "Expected fk = " << std::endl << expected_fk << std::endl

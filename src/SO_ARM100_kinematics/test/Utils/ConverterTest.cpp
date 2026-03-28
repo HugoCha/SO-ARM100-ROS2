@@ -60,7 +60,7 @@ TEST_F( ConvertTest, ToTransformMatrixTest )
 	pose.position.z = 3.0;
 
 	// 90° rotation around Z
-	Eigen::Quaterniond q( Eigen::AngleAxisd( M_PI / 2.0, Eigen::Vector3d::UnitZ() ) );
+	Quaternion q( AngleAxis( M_PI / 2.0, Eigen::Vector3d::UnitZ() ) );
 	pose.orientation.x = q.x();
 	pose.orientation.y = q.y();
 	pose.orientation.z = q.z();
@@ -110,10 +110,10 @@ TEST_F( ConvertTest, PoseRoundTripTest )
 	input_pose.position.y = 1.2;
 	input_pose.position.z = 0.8;
 
-	Eigen::Quaterniond q(
-		Eigen::AngleAxisd( 0.3, Eigen::Vector3d::UnitX() ) *
-		Eigen::AngleAxisd( -0.2, Eigen::Vector3d::UnitY() ) *
-		Eigen::AngleAxisd( 1.0, Eigen::Vector3d::UnitZ() ) );
+	Quaternion q(
+		AngleAxis( 0.3, Eigen::Vector3d::UnitX() ) *
+		AngleAxis( -0.2, Eigen::Vector3d::UnitY() ) *
+		AngleAxis( 1.0, Eigen::Vector3d::UnitZ() ) );
 
 	input_pose.orientation.x = q.x();
 	input_pose.orientation.y = q.y();
@@ -128,7 +128,7 @@ TEST_F( ConvertTest, PoseRoundTripTest )
 	EXPECT_NEAR( output_pose.position.y, input_pose.position.y, 1e-12 );
 	EXPECT_NEAR( output_pose.position.z, input_pose.position.z, 1e-12 );
 
-	Eigen::Quaterniond q_out(
+	Quaternion q_out(
 		output_pose.orientation.w,
 		output_pose.orientation.x,
 		output_pose.orientation.y,

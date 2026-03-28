@@ -125,7 +125,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
 
 	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
-	Eigen::Quaterniond quaternion( Rotation( transform ) );
+	Quaternion quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -152,7 +152,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
 
 	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
-	Eigen::Quaterniond quaternion( Rotation( transform ) );
+	Quaternion quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -179,7 +179,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithCombinedMovements )
 
 	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
-	Eigen::Quaterniond quaternion( Rotation( transform ) );
+	Quaternion quaternion( Rotation( transform ) );
 
 	// Verify that the pose was computed (values should be within reasonable bounds)
 	EXPECT_NEAR( end_effector_pose.position.x, translation.x(), 1e-3 );
@@ -206,7 +206,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsAllJointsInMotion )
 
 	auto transform  = Data::GetZYZRevoluteRobotTransform( joint_angles[0], joint_angles[1], joint_angles[2] );
 	auto translation = Translation( transform );
-	Eigen::Quaterniond quaternion( Rotation( transform ) );
+	Quaternion quaternion( Rotation( transform ) );
 
 	std::cout << "Expected = \n" << transform << std::endl;
 	// Verify that the pose was computed (values should be within reasonable bounds)

@@ -3,7 +3,7 @@
 #include "Global.hpp"
 #include "Model/Joint.hpp"
 #include "Model/Limits.hpp"
-#include "Model/Pose.hpp"
+#include "Model/JointState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>
@@ -228,11 +228,11 @@ bool JointChain::ComputeFK(
 
 // ------------------------------------------------------------
 
-bool JointChain::ComputeJointPosesFK(
+bool JointChain::ComputeJointStatesFK(
 	const double* thetas,
 	int n_joints,
 	const Mat4d& home_configuration,
-	std::vector< Pose >& joint_poses,
+	std::vector< JointState >& joint_states,
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
@@ -241,8 +241,8 @@ bool JointChain::ComputeJointPosesFK(
 	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
-	if ( joint_poses.size() < n_joints )
-		joint_poses.resize( n_joints );
+	if ( joint_states.size() < n_joints )
+		joint_states.resize( n_joints );
 
 	Mat4d T_cumul = Mat4d::Identity();
 
@@ -250,8 +250,8 @@ bool JointChain::ComputeJointPosesFK(
 	{
 		const auto& joint = GetActiveJoint( i );
 		const auto& twist = joint->GetTwist();
-		joint_poses[i].origin.noalias() = ( T_cumul * joint->Origin().homogeneous() ).head( 3 );
-		joint_poses[i].axis.noalias()   = Rotation( T_cumul ) * joint->Axis();
+		joint_states[i].pose  = joint->Pose( T_cumul );
+		joint_states[i].value = thetas[i];
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 	}
 

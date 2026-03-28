@@ -1,7 +1,9 @@
+/*
 #include "FABRIK/FabrikSolver.hpp"
 
 #include "Global.hpp"
 
+#include "FABRIK/FabrikAnalyzer.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/Pose.hpp"
@@ -13,13 +15,16 @@
 #include "Utils/KinematicsUtils.hpp"
 
 #include <ios>
+#include <optional>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace SOArm100::Kinematics::Solver
 {
+
 // ------------------------------------------------------------
 
 static rclcpp::Logger get_logger()
@@ -57,63 +62,25 @@ Model::JointGroup FABRIKSolver::ComputeFabrikGroup(
 	Model::KinematicModelConstPtr model, 
 	std::optional< Model::JointGroup > sub_group )
 {
-	const int n_joints = model->GetChain()->GetActiveJointCount();
-	Model::JointGroup group_to_evaluate;
+	std::optional< Model::JointGroup > fabrik_group;
+
 	if ( !sub_group )
 	{
-		group_to_evaluate = Model::JointGroup::CreateFromRange( 
-			"full", 
-			0, 
-			n_joints, 
+		fabrik_group = Model::FabrikAnalyzer::Analyze( 
+			*model->GetChain(), 
 			model->GetHomeConfiguration() );
 	}
 	else
 	{
-		group_to_evaluate = *sub_group;
+		fabrik_group = Model::FabrikAnalyzer::Analyze(
+			*model->GetChain(),
+			*sub_group );
 	}
 
-	if ( group_to_evaluate.Size() == 0 )
-		return group_to_evaluate;
+	if ( !fabrik_group )
+		throw std::invalid_argument( "Cannot run FABRIK with this configuration" );
 
-	std::set< int > fabrik_indices;
-	Mat4d fabrik_tip_home;
-
-	auto previous_joint_index = group_to_evaluate.FirstIndex();
-	auto it = ++group_to_evaluate.indices.begin();
-	for (; it != group_to_evaluate.indices.end(); ++it )
-	{
-		auto joint = model->GetChain()->GetActiveJoint( previous_joint_index ); 
-		if ( joint->IsRevolute() )
-		{
-			auto next_joint = model->GetChain()->GetActiveJoint( *it );
-			auto axis = joint->Axis();
-			auto dir  = next_joint->Origin() - joint->Origin();
-
-			if ( axis.cross( dir ).norm() < epsilon )
-				continue;
-		}
-		fabrik_indices.emplace( previous_joint_index );
-		previous_joint_index = *it;
-	}
-
-	auto last_joint = model->GetChain()->GetActiveJoint( previous_joint_index );
-	if ( last_joint->IsPrismatic() )
-	{
-		fabrik_indices.emplace( previous_joint_index );
-	}
-	else 
-	{
-		auto p_tip = Translation( group_to_evaluate.tip_home );
-		auto axis = last_joint->Axis();
-		auto dir  = p_tip - last_joint->Origin();
-
-		if ( axis.cross( dir ).norm() > epsilon )
-			fabrik_indices.emplace( previous_joint_index );
-	}
-	
-	fabrik_tip_home.noalias() = model->GetHomeConfiguration() * Inverse( group_to_evaluate.tip_home );
-
-	return { "fabrik", fabrik_indices, fabrik_tip_home };
+	return *fabrik_group;
 }
 
 // ------------------------------------------------------------
@@ -149,7 +116,7 @@ IKSolution FABRIKSolver::Solve(
 
 	if ( Utils::Distance( p_base, p_target ) > TotalBoneLength( buffers.bone_lengths ) )
 	{
-		return { IKSolverState::Unreachable, {}};
+		return { IKSolverState::Unreachable, {} };
 	}
 
 	std::cout << "Initial State" << std::endl;
@@ -204,23 +171,32 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 	int& fabrik_start_idx,
 	VecXd& joints ) const
 {
+	const int n_joints = GetChain()->GetActiveJointCount();
 	const int n = GetGroup().Size();
 	fabrik_start_idx = 0;
 
-	std::vector< Model::Pose > zero_poses( n + 1 );
-	VecXd zero = VecXd::Zero( n );
+	std::vector< Model::Pose > zero_poses( n_joints );
+	std::vector< Model::Pose > group_zero_poses( n + 1 );
+	VecXd zero = VecXd::Zero( n_joints );
 	Mat4d tip_home;
 	GetChain()->ComputeJointPosesFK( zero, GetGroup().tip_home, zero_poses, tip_home );
-	zero_poses[n].origin = Translation( GetGroup().tip_home );
+	
+	group_zero_poses[n].origin = Translation( GetGroup().tip_home );
 
 	for ( int i = 0; i < n; i++ )
 	{
+		group_zero_poses[i] = zero_poses[GetGroup().Index( i )];
+		if ( i + 1 < n )
+		{
+			group_zero_poses[i + 1] = zero_poses[GetGroup().Index( i + 1 )];
+		}
+
 		const auto& joint = GetChain()->GetActiveJoint( GetGroup().Index( i ) );
 		if ( !joint->IsRevolute() )
 			continue;
 
-		Vec3d bone = zero_poses[i + 1].origin - zero_poses[i].origin;
-		Vec3d axis = zero_poses[i].axis;
+		Vec3d bone = group_zero_poses[i + 1].origin - group_zero_poses[i].origin;
+		Vec3d axis = group_zero_poses[i].axis;
 
 		double alignment = std::abs( axis.dot( bone.normalized() ) );
 		if ( alignment < 0.99 )
@@ -229,7 +205,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 		if ( fabrik_start_idx == i )
 			fabrik_start_idx++;
 
-		Vec3d target_dir = p_target - zero_poses[i].origin;
+		Vec3d target_dir = p_target - group_zero_poses[i].origin;
 		target_dir -= axis * axis.dot( target_dir );
 
 		if ( target_dir.norm() < error_tolerance )
@@ -238,7 +214,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 		Vec3d ref_dir = bone - axis * axis.dot( bone );
 		if ( ref_dir.norm() < 1e-6 )
 		{
-			Vec3d next_axis = zero_poses[i + 1].axis;
+			Vec3d next_axis = group_zero_poses[i + 1].axis;
 			ref_dir = axis.cross( next_axis );
 			if ( ref_dir.norm() < 1e-6 )
 				continue;
@@ -256,7 +232,7 @@ void FABRIKSolver::PreSolveAzimuthJoints(
 
 		if ( candidates.empty() )
 			continue;
-		joints[i] = candidates[0];
+		joints[GetGroup().Index( i )] = candidates[0];
 	}
 }
 
@@ -474,7 +450,7 @@ void FABRIKSolver::ApplyRevoluteJointLimit(
 		double clamped = limits.Clamp( current_angle );
 		double delta   = clamped - current_angle;
 
-		Eigen::AngleAxisd correction( delta, parent_pose.axis );
+		AngleAxis correction( delta, parent_pose.axis );
 		for ( size_t k = 0; k < child_poses.size(); k++ )
 		{
 			Vec3d bone_vec = child_poses[k].origin - parent_pose.origin;
@@ -522,3 +498,4 @@ void FABRIKSolver::PrintPoses( const std::span< const Model::Pose >& poses ) con
 // ------------------------------------------------------------
 
 }
+*/

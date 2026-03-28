@@ -58,6 +58,9 @@ static Model::KinematicModelConstPtr GetSphericalWristRobot();
 static Model::KinematicModelConstPtr GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
 
 // Revolute Base - Planar2R - Spherical Wrist / 6 DOFs
-static Model::KinematicModelConstPtr GetRevolute_Planar2R_Wrist3R_6DOFsRobot();
+static Model::KinematicModelConstPtr GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
+
+// Revolute Base - Planar 2R - Non Spherical Wrist / 6 DOFs
+static Model::KinematicModelConstPtr GetURLikeRobot();
 };
 }
