@@ -70,21 +70,21 @@ static Mat4d ComputeHomeInTipTransform(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group );
 
-bool ComputeGroupJointStatesFK( 
-	const VecXd& joints, 
-	const Mat4d& to_local_transform, 
-	std::vector< Model::JointState >& joint_states, 
+bool ComputeGroupJointStatesFK(
+	const VecXd& joints,
+	const Mat4d& to_local_transform,
+	std::vector< Model::JointState >& joint_states,
 	Mat4d& fk ) const;
 
-bool ComputeGroupJointPosesFK( 
-	const VecXd& joints, 
-	const Mat4d& to_local_transform, 
-	std::vector< Mat4d >& joint_poses, 
+bool ComputeGroupJointPosesFK(
+	const VecXd& joints,
+	const Mat4d& to_local_transform,
+	std::vector< Mat4d >& joint_poses,
 	Mat4d& fk ) const;
 
-bool ComputeGroupFK( 
-	const VecXd& joints, 
-	const Mat4d& to_local_transform, 
+bool ComputeGroupFK(
+	const VecXd& joints,
+	const Mat4d& to_local_transform,
 	Mat4d& fk ) const;
 };
 }

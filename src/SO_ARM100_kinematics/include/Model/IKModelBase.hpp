@@ -28,5 +28,5 @@ const Model::Joint* GetActiveJoint( int index ) const {
 		return nullptr;
 	return model_->GetChain()->GetActiveJoint( index ).get();
 }
-}; 
+};
 }

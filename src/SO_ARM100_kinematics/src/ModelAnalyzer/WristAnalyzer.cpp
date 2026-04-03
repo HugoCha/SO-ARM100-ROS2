@@ -1,6 +1,7 @@
 #include "ModelAnalyzer/WristAnalyzer.hpp"
 
 #include "Global.hpp"
+
 #include "Model/JointGroup.hpp"
 #include "Model/JointChain.hpp"
 #include "Utils/KinematicsUtils.hpp"

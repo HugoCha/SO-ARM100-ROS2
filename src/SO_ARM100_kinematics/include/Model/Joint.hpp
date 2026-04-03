@@ -59,15 +59,15 @@ const Limits& GetLimits() const {
 	return *limits_;
 }
 
-const Mat4d OriginTransform() const {
+const Mat4d& OriginTransform() const {
+	return link_->GetJointOriginTransform();
+}
+
+const Vec3d& Origin() const {
 	return link_->GetJointOrigin();
 }
 
-const Vec3d Origin() const {
-	return Translation( link_->GetJointOrigin() );
-}
-
-const Vec3d Axis() const {
+const Vec3d& Axis() const {
 	return twist_->GetAxis();
 }
 
@@ -77,7 +77,7 @@ const Vec3d TransformAxis( const Mat4d& transform ) const {
 
 const struct Pose Pose( const Mat4d& transform ) const {
 	struct Pose pose;
-	Vec4d origin_homogenous = link_->GetJointOrigin().block< 4,1 >( 0, 3 );
+	Vec4d origin_homogenous = link_->GetJointOrigin().block< 4, 1 >( 0, 3 );
 	pose.axis = twist_->TransformAxis( transform );
 	pose.origin = ( transform * origin_homogenous ).head( 3 );
 	return pose;

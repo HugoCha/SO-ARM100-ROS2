@@ -4,6 +4,7 @@
 #include "Model/Limits.hpp"
 #include "Model/Twist.hpp"
 #include "RobotModelTestData.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
@@ -279,6 +280,418 @@ TEST_F( KinematicsUtilsTest, POEWithVecXd )
 	POE( joint_chain, M, thetas, poe );
 
 	EXPECT_TRUE( poe.isApprox( transform ) );
+}
+
+// ------------------------------------------------------------
+
+// Build a revolute joint whose axis passes through `point_on_axis` with direction `axis`.
+// Twist(axis, point_on_axis) internally computes linear = -(axis_normalized × point_on_axis).
+static Model::JointConstPtr MakeRevoluteJoint(
+	const Vec3d& axis,
+	const Vec3d& point_on_axis = Vec3d::Zero() )
+{
+	return std::make_shared< const Model::Joint >(
+		Model::Twist( axis, point_on_axis ),
+		Model::Link( ToTransformMatrix( point_on_axis ), 0 ),
+		Model::Limits( -M_PI, M_PI )
+		);
+}
+
+static std::span< const Model::JointConstPtr > ToSpan(
+	const std::vector< Model::JointConstPtr >& v )
+{
+	return { v };
+}
+
+// ============================================================
+// ComputeIntersection
+// ============================================================
+
+class ComputeIntersectionTest : public ::testing::Test {};
+
+// ------------------------------------------------------------
+// Concurrent axes — unique intersection exists
+// ------------------------------------------------------------
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_AtOrigin )
+{
+	// Three orthogonal axes all passing through the origin
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero() ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero() ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero() ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() ) << "Three concurrent axes at origin should have an intersection";
+	EXPECT_TRUE( result->isApprox( Vec3d::Zero(), 1e-9 ) )
+	    << "Intersection should be at origin, got " << result->transpose();
+}
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_AtArbitraryPoint )
+{
+	// Three orthogonal axes all passing through (1, 2, 3)
+	Vec3d point( 1, 2, 3 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), point ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() ) << "Three concurrent axes should have an intersection";
+	EXPECT_TRUE( result->isApprox( point, 1e-9 ) )
+	    << "Expected " << point.transpose() << ", got " << result->transpose();
+}
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_AtNegativePoint )
+{
+	Vec3d point( -2, -3, -4 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), point ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() );
+	EXPECT_TRUE( result->isApprox( point, 1e-9 ) )
+	    << "Got " << result->transpose();
+}
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_NonOrthogonalAxes )
+{
+	// Non-orthogonal but linearly independent axes, all through (1, 1, 1)
+	Vec3d point( 1, 1, 1 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized(), point ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 1 ).normalized(), point ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() );
+	EXPECT_TRUE( result->isApprox( point, 1e-9 ) )
+	    << "Got " << result->transpose();
+}
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_DifferentPointsOnAxis_ReturnsIntersection )
+{
+	// Intersection at (2, -1, 4), each axis defined from a different point along its own line:
+	//   - X-axis: defined from ( 5, -1,  4) — 3 units along X from intersection
+	//   - Y-axis: defined from ( 2,  2,  4) — 3 units along Y from intersection
+	//   - Z-axis: defined from ( 2, -1, -1) — 5 units along Z from intersection
+	Vec3d intersection( 2, -1, 4 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d(  5, -1,  4 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d(  2,  2,  4 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d(  2, -1, -1 ) ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() )
+	    << "Three lines with different definition points but same intersection should succeed";
+	EXPECT_TRUE( result->isApprox( intersection, 1e-9 ) )
+	    << "Expected " << intersection.transpose() << ", got " << result->transpose();
+}
+
+TEST_F( ComputeIntersectionTest, TwoConcurrentAxes_DifferentPointsOnAxis_ReturnsIntersection )
+{
+	// Intersection at (1, 2, 3), but each axis is defined from a different point along its line:
+	//   - X-axis line: direction (1,0,0), defined from point (3, 2, 3)  — 2 units away along X
+	//   - Y-axis line: direction (0,1,0), defined from point (1, 5, 3)  — 3 units away along Y
+	// Both lines still pass through (1, 2, 3).
+	Vec3d intersection( 1, 2, 3 );
+
+	// std::vector< Model::JointConstPtr > joints{
+	//     MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d( 3, 2, 3 ) ),
+	//     MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d( 1, 5, 3 ) ),
+	// };
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.5 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0, 1.6 ) ),
+	};
+	auto result = ComputeIntersection( ToSpan( joints ) );
+	Vec3d expected_center = Vec3d( 0.1, 0, 1.5 );
+
+	ASSERT_TRUE( result.has_value() )
+	    << "Two lines with different definition points but same intersection should succeed";
+	ASSERT_TRUE( expected_center.isApprox( *result ) )
+	    << "Expected = " << expected_center.transpose() << std::endl
+	    << "Result   = " << result->transpose() << std::endl;
+}
+
+TEST_F( ComputeIntersectionTest, TwoConcurrentAxes_ReturnsIntersection )
+{
+	// Two non-parallel, intersecting axes through (0, 0, 1)
+	Vec3d point( 0, 0, 1 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), point ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	ASSERT_TRUE( result.has_value() );
+	// The Z component is undetermined with only 2 axes; X and Y must match
+	EXPECT_NEAR( result->x(), point.x(), 1e-9 );
+	EXPECT_NEAR( result->y(), point.y(), 1e-9 );
+}
+
+TEST_F( ComputeIntersectionTest, UnnormalizedAxis_SameResultAsNormalized )
+{
+	// The Twist constructor normalises the axis internally,
+	// so a scaled axis should yield the same intersection.
+	Vec3d point( 1, 2, 3 );
+
+	std::vector< Model::JointConstPtr > joints_unit{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), point ),
+	};
+
+	std::vector< Model::JointConstPtr > joints_scaled{
+		MakeRevoluteJoint( Vec3d( 5, 0, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 3, 0 ), point ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 7 ), point ),
+	};
+
+	auto r1 = ComputeIntersection( ToSpan( joints_unit ) );
+	auto r2 = ComputeIntersection( ToSpan( joints_scaled ) );
+
+	ASSERT_TRUE( r1.has_value() );
+	ASSERT_TRUE( r2.has_value() );
+	EXPECT_TRUE( r1->isApprox( *r2, 1e-9 ) );
+}
+
+// ------------------------------------------------------------
+// Non-concurrent axes — no exact intersection
+// ------------------------------------------------------------
+
+TEST_F( ComputeIntersectionTest, TwoParallelAxes_ReturnsNullopt )
+{
+	// Two parallel axes along Z, offset from each other in X — they never meet
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	EXPECT_FALSE( result.has_value() )
+	    << "Parallel non-coincident axes should return nullopt";
+}
+
+TEST_F( ComputeIntersectionTest, ThreeSkewAxes_ReturnsNullopt )
+{
+	// Three skew lines: each axis is offset so they do not share a common point
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d( 0, 1, 0 ) ),  // X-axis shifted +1 in Y
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 1 ) ),  // Y-axis shifted +1 in Z
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),  // Z-axis shifted +1 in X
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	EXPECT_FALSE( result.has_value() )
+	    << "Three skew axes should return nullopt" << std::endl
+	    << "Result = " << result->transpose() << std::endl;
+}
+
+TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_TwoParallel_ReturnsNullopt )
+{
+	// Two axes are parallel → the system is inconsistent unless their offsets also match
+	Vec3d point( 1, 2, 3 );
+
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), point ),              // Z through point
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d( 2, 0, 0 ) ),  // Z offset — skew
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), point ),
+	};
+
+	auto result = ComputeIntersection( ToSpan( joints ) );
+
+	EXPECT_FALSE( result.has_value() );
+}
+
+// ============================================================
+// AxesIndependent
+// ============================================================
+
+class AxesIndependentTest : public ::testing::Test {};
+
+// ------------------------------------------------------------
+// Single joint
+// ------------------------------------------------------------
+
+TEST_F( AxesIndependentTest, SingleJoint_NonZeroAxis_ReturnsTrue )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+	};
+	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, SingleJoint_ZeroAxis_ReturnsFalse )
+{
+	// A zero-length axis: use the prismatic Twist constructor (linear only)
+	// and build a joint manually so the axis stays zero.
+	auto joint = std::make_shared< const Model::Joint >(
+		Model::Twist( Vec3d::Zero() ),   // prismatic with zero linear → axis = (0,0,0)
+		Model::Link(),
+		Model::Limits( -M_PI, M_PI )
+		);
+
+	std::vector< Model::JointConstPtr > joints{ joint };
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+// ------------------------------------------------------------
+// Two joints
+// ------------------------------------------------------------
+
+TEST_F( AxesIndependentTest, TwoJoints_OrthogonalAxes_ReturnsTrue )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+	};
+	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, TwoJoints_ParallelAxes_ReturnsFalse )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, TwoJoints_AntiParallelAxes_ReturnsFalse )
+{
+	// w2 = -w1 → cross product is zero
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0,  1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, -1 ) ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, TwoJoints_ScaledParallelAxes_ReturnsFalse )
+{
+	// Twist normalises the axis, so (0,0,2) and (0,0,1) are the same direction
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 2 ) ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, TwoJoints_NonOrthogonalButIndependent_ReturnsTrue )
+{
+	// (1,0,0) and (1,1,0) — not orthogonal, but cross product is non-zero
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ) ),
+	};
+	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+// ------------------------------------------------------------
+// Three joints
+// ------------------------------------------------------------
+
+TEST_F( AxesIndependentTest, ThreeJoints_OrthogonalAxes_ReturnsTrue )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+	};
+	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, ThreeJoints_ThirdAxisInSpanOfFirstTwo_ReturnsFalse )
+{
+	// w3 = w1 + w2 → determinant is zero
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, ThreeJoints_AllParallel_ReturnsFalse )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, ThreeJoints_TwoParallelOneIndependent_ReturnsFalse )
+{
+	// Two parallel Z axes → determinant is zero regardless of the third
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+TEST_F( AxesIndependentTest, ThreeJoints_NonOrthogonalButFullRank_ReturnsTrue )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 1 ).normalized() ),
+	};
+	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
+}
+
+// ------------------------------------------------------------
+// More than three joints — always false
+// ------------------------------------------------------------
+
+TEST_F( AxesIndependentTest, FourJoints_OrthogonalAxes_ReturnsFalse )
+{
+	// AxesIndependent hard-returns false for k > 3
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) )
+	    << "More than 3 joints should always return false";
+}
+
+TEST_F( AxesIndependentTest, FiveJoints_ReturnsFalse )
+{
+	std::vector< Model::JointConstPtr > joints{
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 1 ).normalized() ),
+	};
+	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
 
 // ------------------------------------------------------------

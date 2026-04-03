@@ -56,7 +56,7 @@ Vec3d RevoluteBaseHeuristic::ComputeDirection( const Mat4d& T_tip ) const
 	const auto& p_tip = Translation( T_tip );
 	const auto& base_origin =  GetBaseJoint()->Origin();
 	const auto& base_axis = GetBaseJoint()->Axis();
-	Vec3d direction = ProjectOnPlane( p_tip, base_origin, base_axis );
+	Vec3d direction = ProjectPointOnPlane( p_tip, base_origin, base_axis );
 
 	if ( direction.norm() < epsilon )
 		return Vec3d::Zero();

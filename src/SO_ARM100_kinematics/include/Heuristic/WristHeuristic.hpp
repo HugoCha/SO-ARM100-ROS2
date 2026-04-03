@@ -15,8 +15,8 @@ namespace SOArm100::Kinematics::Heuristic
 class WristHeuristic : public Model::IKJointGroupModelBase, IIKHeuristic
 {
 public:
-WristHeuristic( 
-	Model::KinematicModelConstPtr model, 
+WristHeuristic(
+	Model::KinematicModelConstPtr model,
 	Model::JointGroup wrist_group );
 
 virtual IKPresolution Presolve(

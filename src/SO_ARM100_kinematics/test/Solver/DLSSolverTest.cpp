@@ -405,7 +405,7 @@ TEST_F( DLSSolverTest, EdgeCase_NearSingularTarget )
 	// For this robot, singularity occurs when arm is straight
 	VecXd singular_joints{ 3 };
 	singular_joints << 0.0, 0.0, 0.0;
-	VecXd seed(3);
+	VecXd seed( 3 );
 	seed << 0.5, 0.5, 0.5;
 
 	auto problem = CreateProblem( seed, singular_joints );

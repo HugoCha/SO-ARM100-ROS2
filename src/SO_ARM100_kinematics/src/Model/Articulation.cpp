@@ -1,5 +1,7 @@
 #include "Model/Articulation.hpp"
 
+#include "Global.hpp"
+#include "Model/ArticulationType.hpp"
 #include "Model/Joint.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -22,20 +24,21 @@ Articulation::Articulation(
 
 // ------------------------------------------------------------
 
-std::vector< std::shared_ptr< const Articulation > > Articulation::ExtractFromJoints(
-	const std::span< const JointConstPtr >& joints )
+std::vector< std::shared_ptr< const Articulation >> Articulation::ExtractFromJoints(
+	const std::span< const JointConstPtr >& joints,
+	const Mat4d& tip )
 {
 	const int n_joints = joints.size();
 	int index = 0;
 
 	std::vector< std::shared_ptr< const Articulation >> articulations;
 
-    auto last_articulation = ExtractArticulationFromLastJoints( joints );
-    const int n_joints_without_last = n_joints - last_articulation->JointCount(); 
+	auto last_articulation = ExtractArticulationFromLastJoints( joints, tip );
+	const int n_joints_without_last = n_joints - last_articulation->JointCount();
 
 	while ( index < n_joints_without_last )
 	{
-		if ( index < n_joints_without_last - 2 && joints[index+2]->GetLink().GetLength() > 0 )
+		if ( index < n_joints_without_last - 2 && joints[index + 2]->GetLink().GetLength() > 0 )
 		{
 			if ( auto articulation = ExtractArticulationFromJoints(
 					 joints[index],
@@ -47,7 +50,7 @@ std::vector< std::shared_ptr< const Articulation > > Articulation::ExtractFromJo
 				continue;
 			}
 		}
-		if ( index < n_joints_without_last - 1 && joints[index+1]->GetLink().GetLength() > 0  )
+		if ( index < n_joints_without_last - 1 && joints[index + 1]->GetLink().GetLength() > 0  )
 		{
 			if ( auto articulation = ExtractArticulationFromJoints(
 					 joints[index],
@@ -69,12 +72,13 @@ std::vector< std::shared_ptr< const Articulation > > Articulation::ExtractFromJo
 		}
 	}
 
+	articulations.push_back( std::move( last_articulation ) );
 	return articulations;
 }
 
 // ------------------------------------------------------------
 
-std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoints(
+std::shared_ptr< Articulation > Articulation::ExtractArticulationFromJoints(
 	JointConstPtr joint1 )
 {
 	if ( !joint1 || joint1->IsFixed() )
@@ -96,7 +100,7 @@ std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoint
 
 // ------------------------------------------------------------
 
-std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoints(
+std::shared_ptr< Articulation > Articulation::ExtractArticulationFromJoints(
 	JointConstPtr joint1,
 	JointConstPtr joint2 )
 {
@@ -123,7 +127,7 @@ std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoint
 
 // ------------------------------------------------------------
 
-std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoints(
+std::shared_ptr< Articulation > Articulation::ExtractArticulationFromJoints(
 	JointConstPtr joint1,
 	JointConstPtr joint2,
 	JointConstPtr joint3 )
@@ -151,33 +155,59 @@ std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromJoint
 
 // ------------------------------------------------------------
 
-std::shared_ptr< const Articulation > Articulation::ExtractArticulationFromLastJoints(
-    const std::span< const JointConstPtr >& joints )
+std::shared_ptr< Articulation > Articulation::ExtractArticulationFromLastJoints(
+	const std::span< const JointConstPtr >& joints,
+	const Mat4d& tip )
 {
-    const int n_last_joints = std::min( 3, (int)joints.size() );
-    auto maybe_last_joints = joints.last( n_last_joints );
+	const int n_last_joints = std::min( 3, ( int )joints.size() );
+	auto maybe_last_joints = joints.last( n_last_joints );
 
-    if ( n_last_joints == 3 )
-    {
-        if ( auto articulation = ExtractArticulationFromJoints(
-            joints[0],
-            joints[1],
-            joints[2] ) )
-        {
-            return articulation;
-        }
-    }
-    if ( n_last_joints >= 2 )
-    {
-        if ( auto articulation = ExtractArticulationFromJoints(
-            joints[n_last_joints-2],
-            joints[n_last_joints-1] ) )
-        {
-            return articulation;
-        }
-    }
+	if ( n_last_joints == 3 )
+	{
+		if ( auto articulation = ExtractArticulationFromJoints(
+				 maybe_last_joints[0],
+				 maybe_last_joints[1],
+				 maybe_last_joints[2] ) )
+		{
+			return articulation;
+		}
+	}
+	if ( n_last_joints >= 2 )
+	{
+		if ( auto articulation = ExtractArticulationFromJoints(
+				 maybe_last_joints[n_last_joints - 2],
+				 maybe_last_joints[n_last_joints - 1] ) )
+		{
+			return articulation;
+		}
+	}
 
-    return ExtractArticulationFromJoints( joints[n_last_joints-1] );
+	auto last_joint = maybe_last_joints[n_last_joints - 1];
+
+	if ( last_joint->IsPrismatic() )
+	{
+		return std::shared_ptr< Articulation >( new Articulation(
+													ArticulationType::Prismatic,
+													std::vector< JointConstPtr >{ last_joint },
+													last_joint->Origin() ) );
+	}
+
+	const Vec3d& p_tip = Translation( tip );
+	const Vec3d& tip_dir = p_tip - last_joint->Origin();
+
+	ArticulationType type = last_joint->IsFixed() ? ArticulationType::Fixed : ArticulationType::Revolute;
+	Vec3d p_center = last_joint->Origin();
+
+	// Tip on last joint axis
+	if ( last_joint->IsFixed() || tip_dir.cross( last_joint->Axis() ).norm() < epsilon )
+	{
+		p_center = p_tip;
+	}
+
+	return std::shared_ptr< Articulation >( new Articulation(
+												type,
+												std::vector< JointConstPtr >{ last_joint },
+												p_center ) );
 }
 
 // ------------------------------------------------------------

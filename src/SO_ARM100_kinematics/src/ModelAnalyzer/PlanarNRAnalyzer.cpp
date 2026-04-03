@@ -27,7 +27,7 @@ std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
 
 	if ( start_idx < 0 || start_idx + N > n_joints )
 		return std::nullopt;
-	
+
 	auto axis = GetJointAxis( chain, start_idx );
 
 	for ( int i = start_idx + 1; i < N; i++ )

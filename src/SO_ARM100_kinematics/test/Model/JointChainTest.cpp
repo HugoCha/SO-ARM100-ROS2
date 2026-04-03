@@ -414,12 +414,12 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeJointPoses )
 
 	for ( int i = 0; i < 3; i++ )
 	{
-		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].pose.origin ).norm() < 1e-9 )
+		EXPECT_TRUE( ( expected_int_fk[i].origin - result_int_fk[i].Origin() ).norm() < 1e-9 )
 		    << "Expected Origin " << i << " = " << std::endl << expected_int_fk[i].origin.transpose() << std::endl
-		    << "Result Origin   " << i << " = " << std::endl << result_int_fk[i].pose.origin.transpose() << std::endl;
-		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].pose.axis ).norm() < 1e-9 )
+		    << "Result Origin   " << i << " = " << std::endl << result_int_fk[i].Origin().transpose() << std::endl;
+		EXPECT_TRUE( ( expected_int_fk[i].axis - result_int_fk[i].Axis() ).norm() < 1e-9 )
 		    << "Expected Axis " << i << " = " << std::endl << expected_int_fk[i].axis.transpose() << std::endl
-		    << "Result Axis   " << i << " = " << std::endl << result_int_fk[i].pose.axis.transpose() << std::endl;;
+		    << "Result Axis   " << i << " = " << std::endl << result_int_fk[i].Axis().transpose() << std::endl;;
 	}
 	EXPECT_TRUE( IsApprox( expected_fk, result, 1e-9 ) )
 	    << "Expected fk = " << std::endl << expected_fk << std::endl

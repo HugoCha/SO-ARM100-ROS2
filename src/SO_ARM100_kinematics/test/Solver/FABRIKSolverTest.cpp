@@ -47,12 +47,12 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 TEST_F( FABRIKSolverTest, IK_ConvergesFromNearSeed )
 {
 	VecXd joints( 3 );
-	//joints << 0.4, 0.3, 0.25;
+	// joints << 0.4, 0.3, 0.25;
 	joints << 0.4, 0.3, 0.25;
 	VecXd seed( 3 );
 	seed << joints[0] + 0.3,
-			joints[1] + 0.4,
-			joints[2] - 0.4;
+	    joints[1] + 0.4,
+	    joints[2] - 0.4;
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -97,7 +97,7 @@ TEST_F( FABRIKSolverTest, IK_ConvergesFromExactSeed )
 TEST_F( FABRIKSolverTest, IK_ZeroConfiguration )
 {
 	VecXd joints = VecXd::Zero( 3 );
-	VecXd seed(3);
+	VecXd seed( 3 );
 	seed << 0.1, 0.1, 0.1;
 
 	auto problem = CreateProblem( seed, joints );
@@ -139,7 +139,7 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge )
 	joints << M_PI / 4, 0, M_PI / 5;
 	Mat4d target = ComputeFK( joints );
 
-	std::vector< Eigen::Vector< double, 3 > > seeds = {
+	std::vector< Eigen::Vector< double, 3 >> seeds = {
 		{ 0, 0, 0 },
 		{ 0.3, 0.4, -0.2 },
 		{ -0.3, -0.4, 0.2 },
@@ -165,7 +165,7 @@ TEST_F( FABRIKSolverTest, IK_PositionAccuracy )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, M_PI / 4;
-	VecXd seed(3);
+	VecXd seed( 3 );
 	seed << 0., -0.7, 0.8;
 
 	auto problem = CreateProblem( seed, joints );
@@ -192,7 +192,7 @@ TEST_F( FABRIKSolverTest, IK_JointLimitsRespected )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, 3 * M_PI / 2, M_PI / 4;
-	VecXd seed = VecXd::Zero(3);
+	VecXd seed = VecXd::Zero( 3 );
 
 	auto problem = CreateProblem( seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -239,7 +239,7 @@ TEST_F( FABRIKSolverTest, IK_IterationCountReasonable )
 {
 	VecXd joints( 3 );
 	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	VecXd seed(3);
+	VecXd seed( 3 );
 	seed << 0.3, 0.4, 0.5;
 
 	auto problem = CreateProblem( seed, joints );
@@ -256,29 +256,29 @@ TEST_F( FABRIKSolverTest, IK_IterationCountReasonable )
 TEST_F( FABRIKSolverTest, IK_TighterToleranceImproves )
 {
 	/*
-	VecXd joints( 3 );
-	joints << M_PI / 3, M_PI / 4, M_PI / 5;
-	VecXd seed = VecXd::Zero(3);
+	   VecXd joints( 3 );
+	   joints << M_PI / 3, M_PI / 4, M_PI / 5;
+	   VecXd seed = VecXd::Zero(3);
 
-	auto problem = CreateProblem( seed, joints );
+	   auto problem = CreateProblem( seed, joints );
 
-	// Default tolerance
-	auto result_default = solver_->Solve( problem, Solver::IKRunContext() );
+	   // Default tolerance
+	   auto result_default = solver_->Solve( problem, Solver::IKRunContext() );
 
-	// Tighter tolerance, more iterations
-	Solver::FABRIKSolver::SolverParameters tight_params( 100, 1e-6 );
-	solver_->SetParameters( tight_params );
-	auto result_tight = solver_->Solve( problem, Solver::IKRunContext() );
+	   // Tighter tolerance, more iterations
+	   Solver::FABRIKSolver::SolverParameters tight_params( 100, 1e-6 );
+	   solver_->SetParameters( tight_params );
+	   auto result_tight = solver_->Solve( problem, Solver::IKRunContext() );
 
-	// Reset
-	solver_->SetParameters( Solver::FABRIKSolver::SolverParameters{} );
+	   // Reset
+	   solver_->SetParameters( Solver::FABRIKSolver::SolverParameters{} );
 
-	if ( result_default.Success() && result_tight.Success() )
-	{
-		EXPECT_LE( result_tight.error, result_default.error + 1e-9 )
-		    << "Tighter tolerance should not produce worse error.";
-	}
-	*/
+	   if ( result_default.Success() && result_tight.Success() )
+	   {
+	    EXPECT_LE( result_tight.error, result_default.error + 1e-9 )
+	        << "Tighter tolerance should not produce worse error.";
+	   }
+	 */
 }
 
 // ------------------------------------------------------------

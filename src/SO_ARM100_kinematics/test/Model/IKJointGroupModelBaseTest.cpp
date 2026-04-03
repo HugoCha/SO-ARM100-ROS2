@@ -30,14 +30,14 @@ Model::KinematicModelConstPtr model_;
 
 TEST_F( IKJointGroupModelBaseTest, Constructor )
 {
-	auto planar_group = 
-	Model::PlanarNRJointGroup( 
-		1, 
-		2, 
-		Mat4d::Identity() );
+	auto planar_group =
+		Model::PlanarNRJointGroup(
+			1,
+			2,
+			Mat4d::Identity() );
 
-	Model::IKJointGroupModelBase heuristic( 
-		model_, 
+	Model::IKJointGroupModelBase heuristic(
+		model_,
 		planar_group );
 
 	// Check if the group is correctly set
@@ -51,14 +51,14 @@ TEST_F( IKJointGroupModelBaseTest, Constructor )
 
 TEST_F( IKJointGroupModelBaseTest, GetAncestor_Valid )
 {
-	auto planar_group = 
-		Model::PlanarNRJointGroup( 
-			1, 
-			2, 
+	auto planar_group =
+		Model::PlanarNRJointGroup(
+			1,
+			2,
 			Mat4d::Identity() );
 
-	Model::IKJointGroupModelBase heuristic( 
-		model_, 
+	Model::IKJointGroupModelBase heuristic(
+		model_,
 		planar_group );
 
 	auto ancestor = heuristic.GetAncestor();
@@ -72,14 +72,14 @@ TEST_F( IKJointGroupModelBaseTest, GetAncestor_Valid )
 
 TEST_F( IKJointGroupModelBaseTest, GetSuccessor_Valid )
 {
-	auto planar_group = 
-		Model::PlanarNRJointGroup( 
-			1, 
-			2, 
+	auto planar_group =
+		Model::PlanarNRJointGroup(
+			1,
+			2,
 			Mat4d::Identity() );
 
 	Model::IKJointGroupModelBase heuristic(
-		model_, 
+		model_,
 		planar_group );
 
 	auto successor = heuristic.GetSuccessor();
@@ -95,8 +95,8 @@ TEST_F( IKJointGroupModelBaseTest, GetSuccessor_Valid )
 TEST_F( IKJointGroupModelBaseTest, GetAncestor_NoAncestor )
 {
 	Model::RevoluteBaseJointGroup base( model_->GetHomeConfiguration() );
-	Model::IKJointGroupModelBase heuristic( 
-		model_, 
+	Model::IKJointGroupModelBase heuristic(
+		model_,
 		base );
 
 	auto ancestor = heuristic.GetAncestor();
@@ -107,13 +107,13 @@ TEST_F( IKJointGroupModelBaseTest, GetAncestor_NoAncestor )
 
 TEST_F( IKJointGroupModelBaseTest, GetSuccessor_NoSuccessor )
 {
-	Model::WristJointGroup wrist( 
-		3, 
-		3, 
+	Model::WristJointGroup wrist(
+		3,
+		3,
 		model_->GetHomeConfiguration() );
 
-	Model::IKJointGroupModelBase heuristic( 
-		model_, 
+	Model::IKJointGroupModelBase heuristic(
+		model_,
 		wrist );
 
 	auto successor = heuristic.GetSuccessor();

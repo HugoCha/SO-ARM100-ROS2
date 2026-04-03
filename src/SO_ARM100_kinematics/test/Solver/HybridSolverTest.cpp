@@ -94,7 +94,7 @@ TEST_F( HybridSolverTest, InverseKinematic_WithDifferentSeedJoints )
 	auto target_pose = ComputeFK( joints );
 
 	// Test with different seed joints
-	std::vector<Eigen::Vector<double, 5>> seed_joints_list = {
+	std::vector< Eigen::Vector< double, 5 >> seed_joints_list = {
 		{ 0, 0, 0, 0, 0 },
 		{ M_PI / 4, M_PI / 4, M_PI / 4, M_PI / 4, M_PI / 4 },
 		{ -M_PI / 4, -M_PI / 4, -M_PI / 4, -M_PI / 4, -M_PI / 4 },

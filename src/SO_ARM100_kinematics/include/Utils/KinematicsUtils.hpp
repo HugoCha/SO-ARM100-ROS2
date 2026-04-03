@@ -14,7 +14,6 @@ class JointChain;
 using JointConstPtr = std::shared_ptr< const Joint >;
 }
 
-
 [[nodiscard]] inline const Mat3d Rotation( const Mat4d& matrix ) noexcept {
 	return matrix.block< 3, 3 >( 0, 0 );
 }
@@ -75,23 +74,29 @@ void POE(
 	const VecXd& thetas,
 	Mat4d& poe ) noexcept;
 
-double RotationError( const Mat3d& target, const Mat3d& result ) noexcept;
-double RotationError( const Mat4d& target, const Mat4d& result ) noexcept;
+[[nodiscard]] double RotationError( const Mat3d& target, const Mat3d& result ) noexcept;
+[[nodiscard]] double RotationError( const Mat4d& target, const Mat4d& result ) noexcept;
 
-double TranslationError( const Vec3d& target, const Vec3d& result ) noexcept;
-double TranslationError( const Mat4d& target, const Mat4d& result ) noexcept;
+[[nodiscard]] double TranslationError( const Vec3d& target, const Vec3d& result ) noexcept;
+[[nodiscard]] double TranslationError( const Mat4d& target, const Mat4d& result ) noexcept;
 
-bool IsApprox(
+[[nodiscard]] bool IsApprox(
 	const Mat4d& target,
 	const Mat4d& result,
 	double rotation_tol = rotation_tolerance,
 	double translation_tol = translation_tolerance ) noexcept;
 
-std::vector< double > EvaluateAngleCandidates(
+[[nodiscard]] std::vector< double > EvaluateAngleCandidates(
 	const Model::Joint& joint,
 	double seed,
 	double raw_angle ) noexcept;
 
-std::optional< const Vec3d > ComputeIntersection( const std::span< const Model::JointConstPtr >& joints );
-bool AxesIndependent( const std::span< const Model::JointConstPtr >& joints );
+[[nodiscard]] std::optional< Vec3d > ComputeIntersection(
+	const std::span< const Model::JointConstPtr >& joints );
+
+[[nodiscard]] std::optional< Vec3d > ComputeIntersection(
+	const std::span< const Vec3d >& points,
+	const std::span< const Vec3d >& directions );
+
+[[nodiscard]] bool AxesIndependent( const std::span< const Model::JointConstPtr >& joints );
 }

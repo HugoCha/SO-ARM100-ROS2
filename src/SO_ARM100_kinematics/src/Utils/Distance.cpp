@@ -15,13 +15,13 @@ double Distance(
 
 	switch ( type )
 	{
-		case DistanceType::Chebysev:
-			return ( p1 - p2 ).maxCoeff();
-		case DistanceType::Manhattan:
-			return ( p1 - p2 ).cwiseAbs().sum();
-		default:
-		case DistanceType::Euclidean:
-			return ( p1 - p2 ).norm();
+	case DistanceType::Chebysev:
+		return ( p1 - p2 ).maxCoeff();
+	case DistanceType::Manhattan:
+		return ( p1 - p2 ).cwiseAbs().sum();
+	default:
+	case DistanceType::Euclidean:
+		return ( p1 - p2 ).norm();
 	}
 }
 

@@ -433,17 +433,17 @@ Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::RevoluteBaseJointGroup base_group( 
+	Model::RevoluteBaseJointGroup base_group(
 		ToTransformMatrix( Vec3d( 1, 0, 1 ) ) );
 
-	Model::WristJointGroup wrist_group( 
-		1, 
-		2, 
+	Model::WristJointGroup wrist_group(
+		1,
+		2,
 		ToTransformMatrix( Vec3d( 0, 0, 0.1 ) ) );
 
 	topology.Add( base_group );
 	topology.Add( wrist_group );
-	
+
 	return topology;
 }
 
@@ -941,6 +941,8 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 
 	// Wrist joints (2 revolute joints - 2R wrist)
 	origin = next_origin;
+	next_origin = origin;
+	next_origin.z() += 0.1;
 	axis = Vec3d::UnitX();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -948,7 +950,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 		Model::Limits( -M_PI, M_PI )
 		);
 
-	origin.x() += 0.1;
+	origin = next_origin;
 	axis = Vec3d::UnitZ();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1165,7 +1167,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI / 2, M_PI / 2 )
 		);
-	
+
 	origin = next_origin;
 	next_origin = Vec3d( 0.4, 0.2, 0.6 );
 	axis = Vec3d::UnitY();
@@ -1174,7 +1176,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
-	
+
 	// Wrist 2 revolute joints
 	origin = next_origin;
 	next_origin = Vec3d( 0.5, 0.2, 0.6 );

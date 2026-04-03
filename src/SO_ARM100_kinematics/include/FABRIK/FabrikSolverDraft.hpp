@@ -15,8 +15,8 @@
 
 namespace SOArm100::Kinematics::Solver
 {
-class FABRIKSolverDraft : 
-	public Model::IKJointGroupModelBase, 
+class FABRIKSolverDraft :
+	public Model::IKJointGroupModelBase,
 	public IKSolverBase
 {
 public:
@@ -69,8 +69,8 @@ struct SolverBuffers
 	explicit SolverBuffers( int n_joints )
 	{
 		joints.resize( n_joints );
-        old_states.resize( n_joints + 1 );
-		states.resize( n_joints + 1 );
+		// old_states.resize( n_joints + 1 );
+		// states.resize( n_joints + 1 );
 	}
 
 	int GetSize() const {
@@ -80,7 +80,7 @@ struct SolverBuffers
 
 class Articulation
 {
-std::vector< std::pair< int, const Model::Joint* > > joints;
+std::vector< std::pair< int, const Model::Joint* >> joints;
 std::pair< int, const Model::Joint* > child;
 };
 
@@ -94,65 +94,22 @@ void ComputeJointStates(
 
 static std::vector< Vec3d > ComputeBones(
 	Model::KinematicModelConstPtr model,
-    Model::JointGroup group );
+	Model::JointGroup group );
 
 void BackwardPass(
-    const Vec3d& p_target,
-    const Model::Skeleton& skeleton,
-    const std::span< Model::JointState >& states ) const;
+	const Vec3d& p_target,
+	const Model::Skeleton& skeleton,
+	const std::span< Model::JointState >& states ) const;
 
 void ForwardPass(
-    const Vec3d& p_base,
-    const Model::Skeleton& skeleton,
-    const std::span< Model::JointState >& states ) const;
-
-void ProjectJoints(
-    const Vec3d& p_target,
-    const std::span< Model::JointState >& old_joint_states,
-    const std::span< Model::JointState >& joint_states ) const;
-
-void ProjectJoint(
-    const Vec3d& p_target,
-    const std::span< Model::JointState >& old_joint_states,
-    const std::span< Model::JointState >& joint_states,
-    int index ) const;
-
-void ProjectPrismaticJoint(
-    const Model::Joint* joint,
-    const Vec3d& p_target,
-    Model::JointState& state ) const;
-
-void ProjectRevoluteJoint(
-    const Model::Joint* joint,
-    const Vec3d& p_target,
-    const Model::JointState& old_state,
-    const Model::JointState& new_state,
-    const Model::JointState& old_child,
-    const Model::JointState& new_child,
-    Model::JointState& state ) const;
-
-int ForwardDirectionChidlIndex(
-    const Model::JointChain& chain,
-    const Model::Skeleton& skeleton,
-    int index ) const;
-
-Vec3d ForwardDirection(
-    const Model::JointState& parent,
-    const Vec3d& p_target,
-    const std::span< const Model::JointState >& childs ) const;
-
-int ForwardDirectionChild(
-    const Model::JointState& parent,
-    const std::span< const Model::JointState >& childs ) const;
+	const Vec3d& p_base,
+	const Model::Skeleton& skeleton,
+	const std::span< Model::JointState >& states ) const;
 
 void ForwardKinematics(
-    const Model::Skeleton& skeleton,
-    const std::span< Model::JointState >& states,
-    int index ) const;
-
-void UpdateJoints(
-    const std::span< const Model::JointState >& states,
-    VecXd& joints ) const;
+	const Model::Skeleton& skeleton,
+	const std::span< Model::JointState >& states,
+	int index ) const;
 
 void PrintBones(  const Model::Skeleton& skeleton  ) const;
 void PrintStates( const std::span< const Model::JointState >& state ) const;

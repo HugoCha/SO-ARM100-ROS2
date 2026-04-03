@@ -41,7 +41,7 @@ void TearDown() override
 
 TEST_F( WristHeuristicTest, SolveRobotWrist )
 {
-	auto model = 
+	auto model =
 		Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
 
 	int start = 3;
@@ -50,7 +50,7 @@ TEST_F( WristHeuristicTest, SolveRobotWrist )
 	Model::WristJointGroup wrist_group( start, count, tip_home );
 
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
-	
+
 	VecXd seed( 6 );
 	seed << M_PI / 4, M_PI / 4, M_PI / 4, 0, 0, 0;
 
@@ -66,9 +66,9 @@ TEST_F( WristHeuristicTest, SolveRobotWrist )
 	EXPECT_TRUE( result.Sucess() );
 	EXPECT_EQ( 6, result.joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) )
-		<< "target = " << std::endl << problem.target << std::endl
-		<< "result = " << std::endl << result_pose << std::endl
-		<< "joints = " << result.joints.transpose() << std::endl;
+	    << "target = " << std::endl << problem.target << std::endl
+	    << "result = " << std::endl << result_pose << std::endl
+	    << "joints = " << result.joints.transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -84,13 +84,13 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 
 	int start = 0;
 	int count = 1;
-	Mat4d tip_home = 
+	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
 	Model::WristJointGroup wrist_group( start, count, tip_home );
 
-	auto  model = CreateModel( single_joint_chain, wrist_group );
+	auto model = CreateModel( single_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
-	
+
 	VecXd seed = VecXd::Zero( 1 );
 	VecXd joints( 1 );
 	joints << M_PI / 4;
@@ -118,19 +118,19 @@ TEST_F( WristHeuristicTest, SolveRevolute1_Unreachable )
 
 	int start = 0;
 	int count = 1;
-	Mat4d tip_home = 
+	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
 	Model::WristJointGroup wrist_group( start, count, tip_home );
 
-	auto  model = CreateModel( single_joint_chain, wrist_group );
+	auto model = CreateModel( single_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
-	
+
 	VecXd seed = VecXd::Zero( 1 );
 	Mat4d target;
 	target << 0, 0, -1, 0,
-			  0, 1,  0, 0,
-			  1, 0,  0, 0,
-			  0, 0,  0, 1;
+	    0, 1,  0, 0,
+	    1, 0,  0, 0,
+	    0, 0,  0, 1;
 
 
 	auto problem = CreateProblem( seed, target );
@@ -160,13 +160,13 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 
 	int start = 0;
 	int count = 2;
-	Mat4d tip_home = 
+	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
 	Model::WristJointGroup wrist_group( start, count, tip_home );
 
-	auto  model = CreateModel( two_joint_chain, wrist_group );
+	auto model = CreateModel( two_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
-	
+
 	VecXd seed = VecXd::Zero( 2 );
 	VecXd joints( 2 );
 	joints << M_PI / 4, M_PI / 4;
@@ -186,17 +186,17 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 
 TEST_F( WristHeuristicTest, SolveRevolute3 )
 {
-	auto model = 
+	auto model =
 		Data::GetSphericalWristRobot();
 
 	int start = 0;
 	int count = 3;
-	Mat4d tip_home = 
+	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 0, 0, 1 ) );
 	Model::WristJointGroup wrist_group( start, count, tip_home );
 
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
-	
+
 	VecXd seed = VecXd::Zero( 3 );
 
 	Mat4d target = Mat4d::Identity();
@@ -212,8 +212,8 @@ TEST_F( WristHeuristicTest, SolveRevolute3 )
 	EXPECT_TRUE( result.Sucess() );
 	EXPECT_EQ( 3, result.joints.size() );
 	EXPECT_TRUE( Rotation( problem.target ).isApprox( Rotation( result_pose ), rotation_tolerance ) )
-		<< "target = " << std::endl << problem.target << std::endl
-		<< "result = " << std::endl << result_pose << std::endl;
+	    << "target = " << std::endl << problem.target << std::endl
+	    << "result = " << std::endl << result_pose << std::endl;
 }
 
 // ------------------------------------------------------------

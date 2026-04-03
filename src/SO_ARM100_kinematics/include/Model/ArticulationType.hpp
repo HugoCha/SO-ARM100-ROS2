@@ -4,9 +4,10 @@ namespace SOArm100::Kinematics::Model
 {
 enum class ArticulationType
 {
-    Revolute,
-    Universal,
-    Spherical,
-    Prismatic
+	Fixed,
+	Revolute,
+	Universal,
+	Spherical,
+	Prismatic
 };
 }

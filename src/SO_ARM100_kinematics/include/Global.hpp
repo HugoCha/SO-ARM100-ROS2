@@ -20,7 +20,7 @@ using MatXd = Eigen::MatrixXd;
 using Iso3d = Eigen::Isometry3d;
 
 using AngleAxis = Eigen::AngleAxisd;
-using Quaternion = Eigen::Quaterniond; 
+using Quaternion = Eigen::Quaterniond;
 
 constexpr double epsilon = 1e-6;
 

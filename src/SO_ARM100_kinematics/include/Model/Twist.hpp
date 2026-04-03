@@ -20,15 +20,15 @@ Twist( Twist&& ) = default;
 
 Twist& operator = ( Twist&& ) = default;
 
-[[nodiscard]] inline operator const Vec6d () const {
+[[nodiscard]] inline operator const Vec6d& () const {
 	return twist_;
 }
 
-[[nodiscard]] inline const Vec3d GetAxis() const {
+[[nodiscard]] inline const Vec3d& GetAxis() const {
 	return axis_;
 }
 
-[[nodiscard]] inline const Vec3d GetLinear() const {
+[[nodiscard]] inline const Vec3d& GetLinear() const {
 	return linear_;
 }
 
