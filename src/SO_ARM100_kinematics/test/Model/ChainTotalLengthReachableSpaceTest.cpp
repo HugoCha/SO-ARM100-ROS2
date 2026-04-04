@@ -1,4 +1,4 @@
-#include "Model/TotalLengthReachableSpace.hpp"
+#include "Model/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 #include "RobotModelTestData.hpp"
@@ -15,7 +15,7 @@ namespace SOArm100::Kinematics::Test
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class TotalLengthReachableSpaceTest : public ::testing::Test
+class ChainTotalLengthReachableSpaceTest : public ::testing::Test
 {
 protected:
 void SetUp() override
@@ -31,7 +31,7 @@ void SetUp() override
 	// Create a robot model for testing
 	Model::JointChain joint_chain = Data::GetZYZRevoluteRobotJointChain();
 	Mat4d home = Data::GetZYZRevoluteRobotHome();
-	reachable_space_.reset( new Model::TotalLengthReachableSpace( joint_chain, home ) );
+	reachable_space_.reset( new Model::ChainTotalLengthReachableSpace( joint_chain, home ) );
 }
 
 void TearDown() override
@@ -40,13 +40,13 @@ void TearDown() override
 }
 
 protected:
-std::unique_ptr< Model::TotalLengthReachableSpace > reachable_space_;
+std::unique_ptr< Model::ChainTotalLengthReachableSpace > reachable_space_;
 };
 
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-TEST_F( TotalLengthReachableSpaceTest, IsUnreachable )
+TEST_F( ChainTotalLengthReachableSpaceTest, IsUnreachable )
 {
 	Mat4d target_pose;
 
@@ -61,7 +61,7 @@ TEST_F( TotalLengthReachableSpaceTest, IsUnreachable )
 
 // ------------------------------------------------------------
 
-TEST_F( TotalLengthReachableSpaceTest, IsReachable )
+TEST_F( ChainTotalLengthReachableSpaceTest, IsReachable )
 {
 	Mat4d target_pose;
 

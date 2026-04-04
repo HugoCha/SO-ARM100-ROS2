@@ -78,14 +78,7 @@ struct SolverBuffers
 	}
 };
 
-class Articulation
-{
-std::vector< std::pair< int, const Model::Joint* >> joints;
-std::pair< int, const Model::Joint* > child;
-};
-
 SolverParameters parameters_;
-const Model::Skeleton skeleton_;
 
 void ComputeJointStates(
 	const VecXd& joints,

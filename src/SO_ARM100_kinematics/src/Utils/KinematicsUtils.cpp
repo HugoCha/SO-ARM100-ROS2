@@ -3,7 +3,6 @@
 #include "Global.hpp"
 #include "Model/Joint.hpp"
 #include "Model/JointChain.hpp"
-#include "Utils/MathUtils.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>

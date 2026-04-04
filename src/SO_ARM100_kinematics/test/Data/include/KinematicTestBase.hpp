@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/KinematicModel.hpp"
-#include "Model/TotalLengthReachableSpace.hpp"
+#include "Model/ChainTotalLengthReachableSpace.hpp"
 #include "Solver/IKProblem.hpp"
 
 #include <gtest/gtest.h>
@@ -56,12 +56,13 @@ Model::KinematicModelConstPtr CreateModel(
 	group_topology.Add( group );
 
 	auto reachable_space =
-		std::make_unique< Model::TotalLengthReachableSpace >( chain, group.tip_home );
+		std::make_unique< Model::ChainTotalLengthReachableSpace >( chain, group.tip_home );
 
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain_ptr ),
 		group.tip_home,
 		group_topology,
+		nullptr,
 		std::move( reachable_space ) );
 }
 
@@ -75,12 +76,13 @@ Model::KinematicModelConstPtr CreateModel(
 	Model::KinematicTopology group_topology;
 
 	auto reachable_space =
-		std::make_unique< Model::TotalLengthReachableSpace >( chain, home );
+		std::make_unique< Model::ChainTotalLengthReachableSpace >( chain, home );
 
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain_ptr ),
 		home,
 		group_topology,
+		nullptr,
 		std::move( reachable_space ) );
 }
 

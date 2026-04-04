@@ -1,4 +1,4 @@
-#include "Model/TotalLengthReachableSpace.hpp"
+#include "Model/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 
@@ -11,7 +11,7 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-TotalLengthReachableSpace::TotalLengthReachableSpace(
+ChainTotalLengthReachableSpace::ChainTotalLengthReachableSpace(
 	const JointChain& chain,
 	const Mat4d& home_configuration ) :
 	origin_( ChainOrigin( chain ) ),
@@ -21,7 +21,7 @@ TotalLengthReachableSpace::TotalLengthReachableSpace(
 
 // ------------------------------------------------------------
 
-Vec3d TotalLengthReachableSpace::ChainOrigin( const JointChain& chain )
+Vec3d ChainTotalLengthReachableSpace::ChainOrigin( const JointChain& chain )
 {
 	if ( chain.Empty() )
 		return Vec3d::Zero();
@@ -30,7 +30,7 @@ Vec3d TotalLengthReachableSpace::ChainOrigin( const JointChain& chain )
 
 // ------------------------------------------------------------
 
-double TotalLengthReachableSpace::ComputeTotalLength(
+double ChainTotalLengthReachableSpace::ComputeTotalLength(
 	const JointChain& chain,
 	const Mat4d& home_configuration )
 {
@@ -54,7 +54,7 @@ double TotalLengthReachableSpace::ComputeTotalLength(
 
 // ------------------------------------------------------------
 
-bool TotalLengthReachableSpace::IsUnreachable( const Mat4d& target ) const
+bool ChainTotalLengthReachableSpace::IsUnreachable( const Mat4d& target ) const
 {
 	double distance = Utils::Distance( origin_, Translation( target ) );
 	return distance > total_length_;

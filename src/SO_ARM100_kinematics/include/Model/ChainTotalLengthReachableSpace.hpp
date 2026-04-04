@@ -11,10 +11,10 @@ class JointChain;
 
 namespace SOArm100::Kinematics::Model
 {
-class TotalLengthReachableSpace : public ReachableSpace
+class ChainTotalLengthReachableSpace : public ReachableSpace
 {
 public:
-TotalLengthReachableSpace( const JointChain& chain, const Mat4d& home_configuration );
+ChainTotalLengthReachableSpace( const JointChain& chain, const Mat4d& home_configuration );
 
 virtual bool IsUnreachable( const Mat4d& target ) const override;
 

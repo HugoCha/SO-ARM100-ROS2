@@ -20,8 +20,17 @@ using KinematicModelConstPtr = std::shared_ptr< const KinematicModel >;
 class Skeleton
 {
 public:
-static Skeleton CreateFromKinematicModel( KinematicModelConstPtr model );
-static Skeleton CreateFromKinematicModel( KinematicModelConstPtr model, const Model::JointGroup& group );
+Skeleton( 
+    const std::vector< ArticulationConstPtr >& articulations,
+    const std::vector< BoneConstPtr >& bones,
+    double total_length,
+    int joint_count ) :
+articulations_( articulations ),
+bones_( bones ),
+length_( total_length ),
+joint_count_( joint_count )
+{
+}
 
 int JointCount() const {
 	return joint_count_;
@@ -72,34 +81,6 @@ int joint_count_;
 std::vector< ArticulationConstPtr > articulations_;
 std::vector< BoneConstPtr > bones_;
 double length_;
-
-static Skeleton Create(
-	const std::span< const JointConstPtr >& joints,
-	const Mat4d& tip );
-
-static std::vector< JointConstPtr > ExtractGroupJoints(
-	const Model::JointChain& chain,
-	const Model::JointGroup& group );
-
-static std::vector< BoneConstPtr > ComputeBones(
-	const std::vector< ArticulationConstPtr >& articulations,
-	const Mat4d& tip );
-
-static double ComputeTotalLength(
-	const std::span< const ArticulationConstPtr >& articulations,
-	const std::span< const BoneConstPtr >& bones,
-	const Mat4d& tip );
-
-Skeleton( const std::vector< ArticulationConstPtr >& articulations,
-          const std::vector< BoneConstPtr >& bones,
-          double total_length,
-          int joint_count ) :
-	articulations_( articulations ),
-	bones_( bones ),
-	length_( total_length ),
-	joint_count_( joint_count )
-{
-}
 };
 
 using SkeletonConstPtr = std::shared_ptr< const Skeleton >;

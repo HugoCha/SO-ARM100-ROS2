@@ -1,6 +1,9 @@
 #include "RobotModelTestData.hpp"
 
 #include "Global.hpp"
+#include "Model/Articulation.hpp"
+#include "Model/ArticulationType.hpp"
+#include "Model/Joint.hpp"
 #include "Model/JointChain.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/KinematicModel.hpp"
@@ -8,8 +11,10 @@
 #include "Model/Limits.hpp"
 #include "Model/Link.hpp"
 #include "Model/ReachableSpace.hpp"
-#include "Model/TotalLengthReachableSpace.hpp"
+#include "Model/Skeleton.hpp"
+#include "Model/ChainTotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"
+#include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -46,7 +51,10 @@ Model::KinematicModelConstPtr URLike_robot_ = nullptr;
 
 std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
 	const Model::JointChain& chain,
-	const Mat4d home );
+	const Mat4d home )
+{
+	return std::make_unique< Model::ChainTotalLengthReachableSpace >( chain, home );
+}
 
 // ------------------------------------------------------------
 // ZYZ Revolute Robot
@@ -55,10 +63,6 @@ std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
 moveit::core::RobotModelPtr createZYZRevoluteRobotModel();
 const std::string createZYZRevoluteSRDFString();
 const std::string createZYZRevoluteRobotURDF();
-// Model::JointChain createZYZRevoluteRobotJointChain();
-// Mat4d createZYZRevoluteRobotHome();
-// Model::KinematicTopology createZYZRevoluteRobotTopology();
-// Model::KinematicModelConstPtr createZYZRevoluteRobot();
 
 // ------------------------------------------------------------
 
@@ -301,11 +305,54 @@ Model::KinematicTopology createZYZRevoluteRobotTopology()
 
 // ------------------------------------------------------------
 
-std::unique_ptr< Model::ReachableSpace > createReachableSpacePtr(
-	const Model::JointChain& chain,
-	const Mat4d home )
+Model::Skeleton createZYZRevoluteSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
 {
-	return std::make_unique< Model::TotalLengthReachableSpace >( chain, home );
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 0 )->Origin(),
+			chain.GetActiveJoint( 1 )->Origin() - chain.GetActiveJoint( 0 )->Origin() )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
 }
 
 // ------------------------------------------------------------
@@ -315,11 +362,13 @@ Model::KinematicModelConstPtr createZYZRevoluteRobot()
 	auto joint_chain = std::make_unique< const Model::JointChain >( createZYZRevoluteRobotJointChain() );
 	auto home = createZYZRevoluteRobotHome();
 	auto topology = createZYZRevoluteRobotTopology();
+	auto skeleton = std::make_shared< const Model::Skeleton >( createZYZRevoluteSkeleton( *joint_chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *joint_chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( joint_chain ),
 		home,
 		topology,
+		skeleton,
 		std::move( reachable_space ) );
 }
 
@@ -449,18 +498,63 @@ Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createRevoluteBaseSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createRevoluteBaseRobot()
 {
 	auto chain = createRevoluteBaseJointChain();
 	auto home = createRevoluteBaseHome();
 	auto topology = createRevoluteBaseTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createRevoluteBaseSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -519,18 +613,57 @@ Model::KinematicTopology createPrismaticBaseTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createPrismaticBaseSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Prismatic,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 0 )->Origin(),
+			chain.GetActiveJoint( 1 )->Origin() - chain.GetActiveJoint( 0 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createPrismaticBaseRobot()
 {
 	auto chain = createPrismaticBaseJointChain();
 	auto home = createPrismaticBaseHome();
 	auto topology = createPrismaticBaseTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createPrismaticBaseSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -589,18 +722,57 @@ Model::KinematicTopology createPlanar2RTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createPlanar2RSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 0 )->Origin(),
+			chain.GetActiveJoint( 1 )->Origin() - chain.GetActiveJoint( 0 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createPlanar2RRobot()
 {
 	auto chain = createPlanar2RJointChain();
 	auto home = createPlanar2RHome();
 	auto topology = createPlanar2RTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createPlanar2RSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -665,18 +837,71 @@ Model::KinematicTopology createPlanar3RTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createPlanar3RSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 0 )->Origin(),
+			chain.GetActiveJoint( 1 )->Origin() - chain.GetActiveJoint( 0 )->Origin() )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createPlanar3RRobot()
 {
 	auto chain = createPlanar3RJointChain();
 	auto home = createPlanar3RHome();
 	auto topology = createPlanar3RTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createPlanar3RSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -729,18 +954,43 @@ Model::KinematicTopology createWrist1RTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createWrist1RSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+		 )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createWrist1RRobot()
 {
 	auto chain = createWrist1RJointChain();
 	auto home = createWrist1RHome();
 	auto topology = createWrist1RTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createWrist1RSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -799,18 +1049,43 @@ Model::KinematicTopology createWrist2RTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createWrist2RSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createWrist2RRobot()
 {
 	auto chain = createWrist2RJointChain();
 	auto home = createWrist2RHome();
 	auto topology = createWrist2RTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createWrist2RSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -876,18 +1151,43 @@ Model::KinematicTopology createSphericalWristTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createSphericalWristSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Spherical,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ), chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createSphericalWristRobot()
 {
 	auto chain = createSphericalWristJointChain();
 	auto home = createSphericalWristHome();
 	auto topology = createSphericalWristTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createSphericalWristSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -988,18 +1288,65 @@ Model::KinematicTopology createRevolute_Planar2R_Wrist2R_5DOFsTopology( const Ma
 
 // ------------------------------------------------------------
 
+Model::Skeleton createRevolute_Planar2R_Wrist2R_5DOFsSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 3 ), chain.GetActiveJoint(  4 ) },
+			chain.GetActiveJoint( 4 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createRevolute_Planar2R_Wrist2R_5DOFsRobot()
 {
 	auto chain = createRevolute_Planar2R_Wrist2R_5DOFsJointChain();
 	auto home = createRevolute_Planar2R_Wrist2R_5DOFsHome();
 	auto topology = createRevolute_Planar2R_Wrist2R_5DOFsTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createRevolute_Planar2R_Wrist2R_5DOFsSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -1105,18 +1452,65 @@ Model::KinematicTopology createRevolute_Planar2R_SphericalWrist_6DOFsTopology( c
 
 // ------------------------------------------------------------
 
+Model::Skeleton createRevolute_Planar2R_SphericalWrist_6DOFsSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Spherical,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 3 ), chain.GetActiveJoint(  4 ), chain.GetActiveJoint(  5 ) },
+			chain.GetActiveJoint( 5 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createRevolute_Planar2R_SphericalWrist_6DOFsRobot()
 {
 	auto chain = createRevolute_Planar2R_SphericalWrist_6DOFsJointChain();
 	auto home = createRevolute_Planar2R_SphericalWrist_6DOFsHome();
 	auto topology = createRevolute_Planar2R_SphericalWrist_6DOFsTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createRevolute_Planar2R_SphericalWrist_6DOFsSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------
@@ -1226,18 +1620,73 @@ Model::KinematicTopology createURLike_6DOFsTopology( const Mat4d& home )
 
 // ------------------------------------------------------------
 
+Model::Skeleton createURLike_6DOFsSkeleton( 
+	const Model::JointChain& chain, 
+	const Mat4d& home )
+{
+	std::vector< Model::ArticulationConstPtr > articulations;
+	std::vector< Model::BoneConstPtr > bones;
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			chain.GetActiveJoint( 1 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
+			chain.GetActiveJoint( 2 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 3 ) },
+			chain.GetActiveJoint( 3 )->Origin()
+		 )
+	);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Universal,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint(  4 ), chain.GetActiveJoint(  5 ) },
+			chain.GetActiveJoint( 5 )->Origin()
+		 )
+	);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			chain.GetActiveJoint( 2 )->Origin() - chain.GetActiveJoint( 1 )->Origin() )
+	);
+
+	double total_length = 0.0;
+	for ( int i = 0; i < bones.size(); i++ )
+		total_length += bones[i]->Length();
+
+	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
+}
+
+// ------------------------------------------------------------
+
 Model::KinematicModelConstPtr createURLike_6DOFsRobot()
 {
 	auto chain = createURLike_6DOFsJointChain();
 	auto home = createURLike_6DOFsHome();
 	auto topology = createURLike_6DOFsTopology( home );
+	auto skeleton = std::make_shared< const Model::Skeleton >( createURLike_6DOFsSkeleton( *chain, home ) );
 	auto reachable_space = createReachableSpacePtr( *chain, home );
 	return std::make_shared< const Model::KinematicModel >(
 		std::move( chain ),
 		home,
 		topology,
-		std::move( reachable_space )
-		);
+		skeleton,
+		std::move( reachable_space ) );
 }
 
 // ------------------------------------------------------------

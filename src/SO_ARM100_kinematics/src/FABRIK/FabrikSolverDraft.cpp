@@ -6,16 +6,14 @@
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/JointGroup.hpp"
 #include "Model/JointState.hpp"
-#include "Model/JointType.hpp"
-#include "Model/Pose.hpp"
 #include "Model/Skeleton.hpp"
+#include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
-#include "Utils/MathUtils.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <ios>
@@ -44,8 +42,7 @@ FABRIKSolverDraft::FABRIKSolverDraft(
 	Model::JointGroup group,
 	SolverParameters parameters ) :
 	Model::IKJointGroupModelBase( model, group ),
-	parameters_( parameters ),
-	skeleton_( Model::Skeleton::CreateFromKinematicModel( model, group ) )
+	parameters_( parameters )
 {
 }
 
@@ -89,7 +86,7 @@ IKSolution FABRIKSolverDraft::Solve(
 	ComputeJointStates( buffers.joints,  buffers.states, buffers.fk );
 	const Vec3d p_base = buffers.states[0].Origin();
 
-	if ( Utils::Distance( p_base, p_target ) > skeleton_.TotalLength() )
+	if ( Utils::Distance( p_base, p_target ) > model_->GetSkeleton()->TotalLength() )
 	{
 		return { IKSolverState::Unreachable, {}};
 	}
@@ -98,7 +95,7 @@ IKSolution FABRIKSolverDraft::Solve(
 	std::cout << "Seed          = " << problem.seed.transpose() << std::endl;
 	std::cout << "Target        = " << p_target.transpose() << std::endl;
 	std::cout << "Bones  = " << std::endl;
-	PrintBones( skeleton_ );
+	PrintBones( *model_->GetSkeleton() );
 
 	double error;
 	for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
@@ -127,15 +124,15 @@ IKSolution FABRIKSolverDraft::Solve(
 
 		buffers.old_states = buffers.states;
 
-		BackwardPass( p_target, skeleton_, buffers.states );
+		BackwardPass( p_target, *model_->GetSkeleton(), buffers.states );
 		std::cout << "Backward = " << std::endl;
 		PrintStates( buffers.states );
-		ForwardPass( p_base, skeleton_, buffers.states );
+		ForwardPass( p_base, *model_->GetSkeleton(), buffers.states );
 		std::cout << "Forward = " << std::endl;
 		PrintStates( buffers.states );
 		std::cout << "Project = " << std::endl;
 		PrintStates( buffers.states );
-		ForwardKinematics( skeleton_, buffers.states, 0 );
+		ForwardKinematics( *model_->GetSkeleton(), buffers.states, 0 );
 		std::cout << "FK = " << std::endl;
 		PrintStates( buffers.states );
 	}

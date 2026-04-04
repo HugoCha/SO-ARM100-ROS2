@@ -4,6 +4,7 @@
 
 #include "JointChain.hpp"
 #include "KinematicTopology.hpp"
+#include "Model/Skeleton.hpp"
 #include "ReachableSpace.hpp"
 
 #include <memory>
@@ -17,6 +18,7 @@ KinematicModel(
 	JointChainConstPtr chain,
 	const Mat4d& home,
 	const KinematicTopology& topology,
+	const SkeletonConstPtr& skeleton_,
 	ReachableSpaceUniqueConstPtr reachable_space ) :
 	chain_( chain ),
 	home_configuration_( home ),
@@ -27,7 +29,7 @@ KinematicModel(
 }
 
 static KinematicModel Empty(){
-	return KinematicModel( nullptr, Mat4d::Zero(), KinematicTopology(), nullptr );
+	return KinematicModel( nullptr, Mat4d::Zero(), KinematicTopology(), nullptr, nullptr );
 }
 
 bool IsEmpty() const {
@@ -42,6 +44,10 @@ bool ComputeFK( const VecXd& joints, Mat4d& fk ) const {
 
 const JointChain* GetChain() const {
 	return chain_.get();
+}
+
+const Skeleton* GetSkeleton() const {
+	return skeleton_.get();
 }
 
 const Mat4d GetHomeConfiguration() const {
@@ -60,6 +66,7 @@ bool IsUnreachable( const Mat4d& target ) const {
 
 private:
 JointChainConstPtr chain_;
+SkeletonConstPtr skeleton_;
 Mat4d home_configuration_;
 KinematicTopology topology_;
 ReachableSpaceUniqueConstPtr reachable_space_;

@@ -6,8 +6,9 @@
 #include "Model/KinematicModel.hpp"
 #include "Model/KinematicTopology.hpp"
 #include "Model/ReachableSpace.hpp"
-#include "Model/TotalLengthReachableSpace.hpp"
+#include "Model/ChainTotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"
+#include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Utils/Converter.hpp"
@@ -114,8 +115,9 @@ void KinematicsSolver::Initialize(
 
 	auto joint_chain_const = std::make_shared< const Model::JointChain >( *joint_chain );
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
+	auto skeleton = Model::SkeletonAnalyzer::Analyze( joint_chain->GetJoints(), home_configuration );
 	std::unique_ptr< const Model::ReachableSpace > reachable_space =
-		std::make_unique< const Model::TotalLengthReachableSpace >( *joint_chain, home_configuration );
+		std::make_unique< const Model::ChainTotalLengthReachableSpace >( *joint_chain, home_configuration );
 
 	Model::KinematicTopology topology;
 
@@ -123,6 +125,7 @@ void KinematicsSolver::Initialize(
 		joint_chain_const,
 		home_configuration,
 		topology,
+		skeleton,
 		std::move( reachable_space ) );
 }
 
