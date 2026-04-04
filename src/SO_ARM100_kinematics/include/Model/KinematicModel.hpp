@@ -18,11 +18,12 @@ KinematicModel(
 	JointChainConstPtr chain,
 	const Mat4d& home,
 	const KinematicTopology& topology,
-	const SkeletonConstPtr& skeleton_,
+	const SkeletonConstPtr& skeleton,
 	ReachableSpaceUniqueConstPtr reachable_space ) :
 	chain_( chain ),
 	home_configuration_( home ),
 	topology_( topology ),
+	skeleton_( skeleton ),
 	reachable_space_( std::move( reachable_space ) )
 {
 	is_empty_ = !chain_ || home_configuration_.isZero();

@@ -4,6 +4,7 @@
 
 #include "Model/KinematicModel.hpp"
 #include "Model/ChainTotalLengthReachableSpace.hpp"
+#include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
 
 #include <gtest/gtest.h>
@@ -62,7 +63,7 @@ Model::KinematicModelConstPtr CreateModel(
 		std::move( chain_ptr ),
 		group.tip_home,
 		group_topology,
-		nullptr,
+		Model::SkeletonAnalyzer::Analyze( chain.GetJoints(), group ),
 		std::move( reachable_space ) );
 }
 
@@ -82,7 +83,7 @@ Model::KinematicModelConstPtr CreateModel(
 		std::move( chain_ptr ),
 		home,
 		group_topology,
-		nullptr,
+		Model::SkeletonAnalyzer::Analyze( chain.GetJoints(), home ),
 		std::move( reachable_space ) );
 }
 

@@ -6,7 +6,7 @@
 #include "Model/KinematicModel.hpp"
 #include "Model/KinematicTopology.hpp"
 #include "Model/ReachableSpace.hpp"
-#include "Model/ChainTotalLengthReachableSpace.hpp"
+#include "Model/SkeletonTotalLengthReachableSpace.hpp"
 #include "Model/Twist.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
@@ -117,7 +117,7 @@ void KinematicsSolver::Initialize(
 	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
 	auto skeleton = Model::SkeletonAnalyzer::Analyze( joint_chain->GetJoints(), home_configuration );
 	std::unique_ptr< const Model::ReachableSpace > reachable_space =
-		std::make_unique< const Model::ChainTotalLengthReachableSpace >( *joint_chain, home_configuration );
+		std::make_unique< const Model::SkeletonTotalLengthReachableSpace >( *skeleton );
 
 	Model::KinematicTopology topology;
 

@@ -85,12 +85,15 @@ double SkeletonAnalyzer::ComputeTotalLength(
 
 		total_length += initial_offset;
 
-		const auto& final_articulation = articulations.back();
-		const auto& p_tip = Translation( tip );
-		double final_offset =
-			( p_tip - final_articulation->Center() ).norm();
-
-		total_length += final_offset;
+        if ( bones.size() < articulations.size() )
+        {
+            const auto& final_articulation = articulations.back();
+            const auto& p_tip = Translation( tip );
+            double final_offset =
+			    ( p_tip - final_articulation->Center() ).norm();
+            
+            total_length += final_offset;
+        }
 	}
 
 	for ( int i = 0; i < bones.size(); i++ )

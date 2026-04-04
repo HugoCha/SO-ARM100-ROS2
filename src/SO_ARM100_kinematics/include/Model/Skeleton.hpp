@@ -4,7 +4,6 @@
 
 #include "Articulation.hpp"
 #include "Bone.hpp"
-#include "Joint.hpp"
 
 #include <memory>
 #include <span>
@@ -30,6 +29,10 @@ bones_( bones ),
 length_( total_length ),
 joint_count_( joint_count )
 {
+}
+
+bool IsEmpty() const {
+    return articulations_.empty();
 }
 
 int JointCount() const {

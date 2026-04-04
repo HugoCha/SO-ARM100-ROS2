@@ -6,6 +6,7 @@
 
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <gtest/gtest.h>
 
@@ -78,28 +79,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_Planar2RWithTipDifferentThanLastJ
 {
 	auto robot = Data::GetPlanar2RRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( joints.size(), articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 1,  articulations[0]->Joints().size() );
-	EXPECT_EQ( 1,  articulations[1]->Joints().size() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( joints[0],  articulations[0]->Joints()[0] );
-	EXPECT_EQ( joints[1],  articulations[1]->Joints()[0] );
-
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[1]->Axis(), articulations[1]->Axis() );
-
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[1]->Origin(), articulations[1]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -109,36 +102,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_Planar3RTipOnLastJointAxis_Return
 	auto robot = Data::GetPlanar3RRobot();
 	auto joints = robot->GetChain()->GetJoints();
 	auto tip_home = robot->GetHomeConfiguration();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
-		tip_home );
+		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( joints.size(), articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 1, articulations[2]->JointCount() );
-	EXPECT_EQ( 1,  articulations[0]->Joints().size() );
-	EXPECT_EQ( 1,  articulations[1]->Joints().size() );
-	EXPECT_EQ( 1,  articulations[2]->Joints().size() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( joints[0],  articulations[0]->Joints()[0] );
-	EXPECT_EQ( joints[1],  articulations[1]->Joints()[0] );
-	EXPECT_EQ( joints[2],  articulations[2]->Joints()[0] );
-
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[2]->GetType() );
-
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[1]->Axis(), articulations[1]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[2]->Axis() );
-
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[1]->Origin(), articulations[1]->Center() );
-	// Articulation center is shifted to Tip position
-	// because tip is on Last Joint axis
-	EXPECT_EQ( Translation( tip_home ), articulations[2]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -147,28 +124,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_PrismaticBaseReturnExpected )
 {
 	auto robot = Data::GetPrismaticBaseRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( joints.size(), articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 1,  articulations[0]->Joints().size() );
-	EXPECT_EQ( 1,  articulations[1]->Joints().size() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( joints[0],  articulations[0]->Joints()[0] );
-	EXPECT_EQ( joints[1],  articulations[1]->Joints()[0] );
-
-	EXPECT_EQ( Model::ArticulationType::Prismatic, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[1]->Axis(), articulations[1]->Axis() );
-
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[1]->Origin(), articulations[1]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -178,27 +147,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_RevoluteBaseReturnExpected )
 	auto robot = Data::GetRevoluteBaseRobot();
 	auto joints = robot->GetChain()->GetJoints();
 	auto tip_home = robot->GetHomeConfiguration();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
-		tip_home );
+		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 2, articulations.size() )
-	    << "Expected Size : " << 2 << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 2,  articulations[0]->Joints().size() );
-	EXPECT_EQ( 1,  articulations[1]->Joints().size() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[1]->Axis() );
-
-	EXPECT_EQ( joints[1]->Origin(), articulations[0]->Center() );
-	// Articulation center is shifted to Tip position
-	// because tip is on Last Joint axis
-	EXPECT_EQ( Translation( tip_home ), articulations[1]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -208,19 +170,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_SphericalWristReturnExpected )
 	auto robot = Data::GetSphericalWristRobot();
 	auto joints = robot->GetChain()->GetJoints();
 	auto tip_home = robot->GetHomeConfiguration();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 1, articulations.size() )
-	    << "Expected Size : " << 2 << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 3, articulations[0]->JointCount() );
-	EXPECT_EQ( 3,  articulations[0]->Joints().size() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Spherical, articulations[0]->GetType() );
-
-	EXPECT_EQ( joints[2]->Axis(), articulations[0]->Axis() );
-	EXPECT_TRUE( joints[0]->Origin().isApprox( articulations[0]->Center() ) );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -229,27 +192,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_5DofsReturnExpected )
 {
 	auto robot = Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 3, articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 2, articulations[2]->JointCount() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[2]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[1]->Axis() );
-	EXPECT_EQ( joints[4]->Axis(), articulations[2]->Axis() );
-
-	EXPECT_EQ( joints[1]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[2]->Origin(), articulations[1]->Center() );
-	EXPECT_EQ( joints[3]->Origin(), articulations[2]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -258,27 +214,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_6DofWithSphericalWristReturnExpec
 {
 	auto robot = Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 3, articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 3, articulations[2]->JointCount() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Spherical, articulations[2]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[1]->Axis() );
-	EXPECT_EQ( joints[5]->Axis(), articulations[2]->Axis() );
-
-	EXPECT_EQ( joints[1]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[2]->Origin(), articulations[1]->Center() );
-	EXPECT_EQ( joints[3]->Origin(), articulations[2]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -287,51 +236,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_6DofWithNonSphericalWristReturnEx
 {
 	auto robot = Data::GetURLikeRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 4, articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 1, articulations[2]->JointCount() );
-	EXPECT_EQ( 2, articulations[3]->JointCount() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[2]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[3]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[1]->Axis() );
-	EXPECT_EQ( joints[3]->Axis(), articulations[2]->Axis() );
-	EXPECT_EQ( joints[5]->Axis(), articulations[3]->Axis() );
-
-	EXPECT_EQ(
-		Vec3d(
-			joints[0]->Origin().x(),
-			joints[0]->Origin().y(),
-			joints[1]->Origin().z() ),
-		articulations[0]->Center() )
-	    << "Result   = " << articulations[0]->Center().transpose() << std::endl
-	    << "Expected = " << Vec3d(
-		joints[0]->Origin().x(),
-		joints[0]->Origin().y(),
-		joints[1]->Origin().z() ).transpose() << std::endl;
-	EXPECT_EQ( joints[2]->Origin(), articulations[1]->Center() );
-	EXPECT_EQ( joints[3]->Origin(), articulations[2]->Center() );
-	EXPECT_EQ(
-		Vec3d(
-			joints[5]->Origin().x(),
-			joints[4]->Origin().y(),
-			joints[4]->Origin().z() ),
-		articulations[3]->Center() )
-	    << "Result   = " << articulations[3]->Center().transpose() << std::endl
-	    << "Expected = " << Vec3d(
-		joints[5]->Origin().x(),
-		joints[4]->Origin().y(),
-		joints[4]->Origin().z() ).transpose() << std::endl;
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -340,27 +258,20 @@ TEST_F( ArticulationTest, AnalyzeArticulations_ZYZRobotReturnExpected )
 {
 	auto robot = Data::GetZYZRevoluteRobot();
 	auto joints = robot->GetChain()->GetJoints();
+	auto skeleton = robot->GetSkeleton();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		robot->GetHomeConfiguration() );
 
-	EXPECT_EQ( 3, articulations.size() )
-	    << "Expected Size : " << joints.size() << " Result Size : " << articulations.size() << std::endl;
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( 1, articulations[1]->JointCount() );
-	EXPECT_EQ( 1, articulations[2]->JointCount() );
+	EXPECT_EQ( skeleton->ArticulationCount(), articulations.size() );
 
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[1]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[2]->GetType() );
-
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[1]->Axis(), articulations[1]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[2]->Axis() );
-
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[1]->Origin(), articulations[1]->Center() );
-	EXPECT_EQ( joints[2]->Origin(), articulations[2]->Center() );
+	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( skeleton->Articulation( i )->GetType(), articulations[i]->GetType() );
+		EXPECT_EQ( skeleton->Articulation( i )->Axis(), articulations[i]->Axis() );
+		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
+		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -562,23 +473,32 @@ TEST_F( ArticulationTest, AnalyzeArticulations_OddCountJoints_AzimuthRobot_Retur
 TEST_F( SkeletonTest, Analyze_Planar2RWithTipDifferentThanLastJointAxis_ReturnExpected )
 {
 	auto robot = Data::GetPlanar2RRobot();
-	auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 2, articulation_count );
-    EXPECT_EQ( 2, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount() - 1; i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
 
-    Vec3d expected_last_bone = 
-        Translation( robot->GetHomeConfiguration() ) - skeleton->Center( articulation_count - 1 );
-    EXPECT_EQ( expected_last_bone, skeleton->Bone( skeleton->BonesCount() - 1 )->Direction() );
-    EXPECT_EQ( expected_last_bone.norm(), skeleton->Bone( skeleton->BonesCount() - 1 )->Length() );
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -586,18 +506,32 @@ TEST_F( SkeletonTest, Analyze_Planar2RWithTipDifferentThanLastJointAxis_ReturnEx
 TEST_F( SkeletonTest, Analyze_Planar3RTipOnLastJointAxis_ReturnExpected )
 {
 	auto robot = Data::GetPlanar3RRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 3, articulation_count );
-    EXPECT_EQ( 2, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount(); i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
+
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -605,23 +539,32 @@ TEST_F( SkeletonTest, Analyze_Planar3RTipOnLastJointAxis_ReturnExpected )
 TEST_F( SkeletonTest, Analyze_PrismaticBaseReturnExpected )
 {
 	auto robot = Data::GetPrismaticBaseRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 2, articulation_count );
-    EXPECT_EQ( 2, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount() - 1; i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
 
-    Vec3d expected_last_bone = 
-        Translation( robot->GetHomeConfiguration() ) - skeleton->Center( articulation_count - 1 );
-    EXPECT_EQ( expected_last_bone, skeleton->Bone( skeleton->BonesCount() - 1 )->Direction() );
-    EXPECT_EQ( expected_last_bone.norm(), skeleton->Bone( skeleton->BonesCount() - 1 )->Length() );
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -629,18 +572,32 @@ TEST_F( SkeletonTest, Analyze_PrismaticBaseReturnExpected )
 TEST_F( SkeletonTest, Analyze_RevoluteBaseReturnExpected )
 {
 	auto robot = Data::GetRevoluteBaseRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 2, articulation_count );
-    EXPECT_EQ( 1, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount(); i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
+
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -648,16 +605,32 @@ TEST_F( SkeletonTest, Analyze_RevoluteBaseReturnExpected )
 TEST_F( SkeletonTest, Analyze_SphericalWristReturnExpected )
 {
 	auto robot = Data::GetSphericalWristRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 1, articulation_count );
-    EXPECT_EQ( 1, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    Vec3d expected_last_bone = 
-        Translation( robot->GetHomeConfiguration() ) - skeleton->Center( articulation_count - 1 );
-    EXPECT_EQ( expected_last_bone, skeleton->Bone( skeleton->BonesCount() - 1 )->Direction() );
-    EXPECT_EQ( expected_last_bone.norm(), skeleton->Bone( skeleton->BonesCount() - 1 )->Length() );
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
+
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -665,23 +638,32 @@ TEST_F( SkeletonTest, Analyze_SphericalWristReturnExpected )
 TEST_F( SkeletonTest, Analyze_5DofsReturnExpected )
 {
 	auto robot = Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 3, articulation_count );
-    EXPECT_EQ( 3, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount() - 1; i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
 
-    Vec3d expected_last_bone = 
-        Translation( robot->GetHomeConfiguration() ) - skeleton->Center( articulation_count - 1 );
-    EXPECT_EQ( expected_last_bone, skeleton->Bone( skeleton->BonesCount() - 1 )->Direction() );
-    EXPECT_EQ( expected_last_bone.norm(), skeleton->Bone( skeleton->BonesCount() - 1 )->Length() );
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -689,18 +671,32 @@ TEST_F( SkeletonTest, Analyze_5DofsReturnExpected )
 TEST_F( SkeletonTest, Analyze_6DofWithSphericalWristReturnExpected )
 {
 	auto robot = Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 3, articulation_count );
-    EXPECT_EQ( 2, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount(); i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
+
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -708,23 +704,32 @@ TEST_F( SkeletonTest, Analyze_6DofWithSphericalWristReturnExpected )
 TEST_F( SkeletonTest, Analyze_6DofWithNonSphericalWristReturnExpected )
 {
 	auto robot = Data::GetURLikeRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 4, articulation_count );
-    EXPECT_EQ( 4, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount() - 1; i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
 
-    Vec3d expected_last_bone = 
-        Translation( robot->GetHomeConfiguration() ) - skeleton->Center( articulation_count - 1 );
-    EXPECT_EQ( expected_last_bone, skeleton->Bone( skeleton->BonesCount() - 1 )->Direction() );
-    EXPECT_EQ( expected_last_bone.norm(), skeleton->Bone( skeleton->BonesCount() - 1 )->Length() );
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -732,18 +737,32 @@ TEST_F( SkeletonTest, Analyze_6DofWithNonSphericalWristReturnExpected )
 TEST_F( SkeletonTest, Analyze_ZYZRobotReturnExpected )
 {
 	auto robot = Data::GetZYZRevoluteRobot();
-    auto skeleton = Model::SkeletonAnalyzer::Analyze( robot->GetChain()->GetJoints(), robot->GetHomeConfiguration() );
+	auto joints = robot->GetChain()->GetJoints();
+	auto expected_skeleton = robot->GetSkeleton();
+	auto result_skeleton = Model::SkeletonAnalyzer::Analyze(
+		joints,
+		robot->GetHomeConfiguration() );
 
-    int articulation_count = skeleton->ArticulationCount();
-    EXPECT_EQ( 3, articulation_count );
-    EXPECT_EQ( 2, skeleton->BonesCount() );
+	EXPECT_EQ( expected_skeleton->JointCount(), result_skeleton->JointCount() );
+	EXPECT_EQ( expected_skeleton->TotalLength(), result_skeleton->TotalLength() );
+	EXPECT_EQ( expected_skeleton->ArticulationCount(), result_skeleton->ArticulationCount() );
 
-    for ( int i = 0; i < skeleton->BonesCount(); i++ )
-    {
-        Vec3d expected_bone = skeleton->Center( i + 1) - skeleton->Center( i );
-        EXPECT_EQ( expected_bone, skeleton->Bone( i )->Direction() );
-        EXPECT_EQ( expected_bone.norm(), skeleton->Bone( i )->Length() );
-    }
+	for ( int i = 0; i < expected_skeleton->ArticulationCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+	}
+
+	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
+
+	for ( int i = 0; i < expected_skeleton->BonesCount(); i++ )
+	{
+		EXPECT_EQ( expected_skeleton->Bone( i )->Origin(),    result_skeleton->Bone( i )->Origin() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Direction(), result_skeleton->Bone( i )->Direction() );
+		EXPECT_EQ( expected_skeleton->Bone( i )->Length(),    result_skeleton->Bone( i )->Length() );
+	}
 }
 
 // ------------------------------------------------------------
