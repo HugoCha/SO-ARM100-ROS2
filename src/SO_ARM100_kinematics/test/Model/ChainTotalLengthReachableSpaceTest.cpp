@@ -1,9 +1,9 @@
-#include "Model/ChainTotalLengthReachableSpace.hpp"
+#include "Model/Space/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 #include "RobotModelTestData.hpp"
 
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>

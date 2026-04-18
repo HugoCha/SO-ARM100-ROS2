@@ -4,8 +4,8 @@
 #include "KinematicTestBase.hpp"
 #include "RobotModelTestData.hpp"
 
-#include "Model/JointChain.hpp"
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Model/Twist.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"

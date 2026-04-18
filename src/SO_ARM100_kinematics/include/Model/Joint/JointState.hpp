@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Pose.hpp"
+#include "Model/Pose.hpp"
 
 #include <memory>
 
@@ -13,7 +13,11 @@ class JointState
 public:
 JointState( const JointConstPtr& joint );
 
-double Value() const {
+const double& Value() const {
+	return value_;
+}
+
+double& Value() {
 	return value_;
 }
 

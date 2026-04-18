@@ -1,6 +1,6 @@
 #include "Global.hpp"
 
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 #include "Model/Limits.hpp"
 #include "Model/Twist.hpp"
 #include "RobotModelTestData.hpp"

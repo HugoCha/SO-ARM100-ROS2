@@ -2,7 +2,7 @@
 
 #include "RobotModelTestData.hpp"
 
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointGroup.hpp"
 
 namespace SOArm100::Kinematics::Test
 {

@@ -1,13 +1,10 @@
-#include "Model/ArticulationState.hpp"
+#include "Model/Skeleton/ArticulationState.hpp"
 
 #include "Global.hpp"
 
-#include "Model/Articulation.hpp"
-#include "Model/ArticulationType.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointState.hpp"
-#include "Utils/Converter.hpp"
-#include "Utils/MathUtils.hpp"
+#include "Model/Joint/JointState.hpp"
+#include "Model/Skeleton/Articulation.hpp"
+#include "Model/Skeleton/ArticulationType.hpp"
 
 #include <cmath>
 #include <memory>
@@ -24,61 +21,73 @@ ArticulationState::ArticulationState( ArticulationConstPtr articulation ) :
 {
 	for ( auto it = articulation_->Joints().begin(); it != articulation->Joints().end(); ++it )
 	{
-		joint_states_.insert( { *it, std::make_shared< JointState >( *it ) } );
+		joint_states_.push_back( std::make_shared< JointState >( *it ) );
 	}
+}
+
+// ------------------------------------------------------------
+
+std::vector< JointStateConstPtr > ArticulationState::GetJointStates() const
+{
+	std::vector< JointStateConstPtr > joint_states;
+	joint_states.reserve( joint_states_.size() );
+
+	for ( const auto& state : joint_states_ )
+		joint_states.push_back( state );
+
+	return joint_states;
 }
 
 // ------------------------------------------------------------
 
 VecXd ArticulationState::GetJointValues() const
 {
-	std::vector< double > joints( articulation_->JointCount() );
-	for ( auto it = joint_states_.begin(); it != joint_states_.end(); ++it )
-	{
-		auto joint_state = it->second;
-		joints.emplace_back( joint_state->Value() );
-	}
-	return ToVecXd( joints );
+	VecXd joints( articulation_->JointCount() );
+
+	for ( auto i = 0; i < joint_states_.size(); i++ )
+		joints[i] = joint_states_[i]->Value();
+
+	return joints;
 }
 
 // ------------------------------------------------------------
 
 void ArticulationState::SetState(
-	const Quaternion rotation,
+	const Quaternion& rotation,
 	const Vec3d& origin,
 	const VecXd& values )
 {
-	center_.origin = origin;
-	center_.axis = rotation * articulation_->Center();
+	center_ = origin;
 	rotation_ = rotation;
 
-	int value_idx = 0;
-
-	for ( auto it = joint_states_.begin(); it != joint_states_.end(); it++ )
+	Quaternion internal_rotation = rotation;
+	for ( auto i = 0; i < joint_states_.size(); i++ )
 	{
-		auto joint = it->first;
-		auto joint_state = it->second;
-		Vec3d translation = origin + rotation * ( joint->Origin() - articulation_->Center() );
-		Vec3d axis = rotation * joint->Axis();
-		joint_state->SetState( axis, translation, values[value_idx++] );
+		auto joint = articulation_->Joints()[i];
+		auto joint_state = joint_states_[i];
+		Vec3d translation = origin + internal_rotation * ( joint->Origin() - articulation_->Center() );
+		Vec3d axis = internal_rotation * joint->Axis();
+		joint_state->SetState( translation, axis, values[i] );
+		internal_rotation = internal_rotation * AngleAxis( joint_state->Value(), joint->Axis() );
 	}
 }
 
 // ------------------------------------------------------------
 
-void ArticulationState::SetPose( const Quaternion& rotation, const Vec3d& origin )
+void ArticulationState::SetCenterPose( const Quaternion& rotation, const Vec3d& origin )
 {
-	center_.origin = origin;
-	center_.axis = rotation * articulation_->Center();
+	center_ = origin;
 	rotation_ = rotation;
 
-	for ( auto it = joint_states_.begin(); it != joint_states_.end(); it++ )
+	Quaternion internal_rotation = rotation;
+	for ( auto i = 0; i < joint_states_.size(); i++ )
 	{
-		auto joint = it->first;
-		auto joint_state = it->second;
-		Vec3d translation = origin + rotation * ( joint->Origin() - articulation_->Center() );
-		Vec3d axis = rotation * joint->Axis();
-		joint_state->SetPose( axis, translation );
+		auto joint = articulation_->Joints()[i];
+		auto joint_state = joint_states_[i];
+		Vec3d translation = origin + internal_rotation * ( joint->Origin() - articulation_->Center() );
+		Vec3d axis = internal_rotation * joint->Axis();
+		joint_state->SetState( translation, axis, joint_state->Value() );
+		internal_rotation = internal_rotation * AngleAxis( joint_state->Value(), joint->Axis() );
 	}
 }
 
@@ -120,24 +129,25 @@ void ArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 void ArticulationState::ApplyRevoluteConstraints( BoneState& bone_state ) const
 {
-	Vec3d v = bone_state.Origin() + bone_state.Direction() - Origin();
+	Vec3d v = rotation_.inverse() * bone_state.Direction();
 
-	Vec3d v_plane = v - v.dot( Axis() ) * Axis();
+	auto joint = articulation_->Joints()[0];
+	Vec3d v_plane = v - v.dot( joint->Axis() ) * joint->Axis();
 
 	if ( v_plane.norm() < epsilon )
 	{
-		bone_state.Direction() = bone_state.GetBone()->Length() * Axis();
+		bone_state.Direction() = rotation_ * joint->Axis() * bone_state.GetBone()->Length();
 		return;
 	}
 
-	Vec3d v_ref = bone_state.GetBone()->Origin() + bone_state.GetBone()->Direction() - articulation_->Center();
-	Vec3d x_ref = v_ref - v_ref.dot( articulation_->Axis() ) * articulation_->Axis();
+	Vec3d v_ref = bone_state.GetBone()->Direction();
+	Vec3d x_ref = v_ref - v_ref.dot( joint->Axis() ) * joint->Axis();
 	x_ref.normalize();
-	Vec3d y_ref = articulation_->Axis().cross( x_ref );
+	Vec3d y_ref = joint->Axis().cross( x_ref );
 	y_ref.normalize();
 
 	double angle = std::atan2( v_plane.dot( y_ref ), v_plane.dot( x_ref ) );
-	angle = joint_states_.begin()->first->GetLimits().Clamp( angle );
+	angle = joint->GetLimits().Clamp( angle );
 
 	Vec3d bone_dir = ( x_ref * cos( angle ) + y_ref * sin( angle ) ).normalized();
 	bone_state.Direction() = bone_state.GetBone()->Length() * bone_dir;
@@ -147,35 +157,30 @@ void ArticulationState::ApplyRevoluteConstraints( BoneState& bone_state ) const
 
 void ArticulationState::ApplyUniversalConstraints( BoneState& bone_state ) const
 {
-	Vec3d v = bone_state.Origin() + bone_state.Direction() - Origin();
-	Vec3d v_ref = bone_state.GetBone()->Origin() + bone_state.GetBone()->Direction() - articulation_->Center();
+	Vec3d v_proposed = bone_state.Direction();
+	double L = bone_state.GetBone()->Length();
 
-	auto it = joint_states_.begin();
-	auto joint_1 = it->first;
-	auto joint_state_1 = it->second;
-	Vec3d x_ref = v_ref - v_ref.dot( joint_1->Axis() ) * joint_1->Axis();
-	x_ref.normalize();
-	++it;
+	Vec3d axis_pan = rotation_ * articulation_->Joints()[0]->Axis();
+	Vec3d axis_tilt = rotation_ * articulation_->Joints()[1]->Axis();
+	
+	Vec3d z_ref = axis_pan.cross(axis_tilt).normalized(); 
+	Vec3d x_ref = axis_pan.normalized();
+	Vec3d y_ref = axis_tilt.normalized();
 
-	auto joint_2 = it->first;
-	auto joint_state_2 = it->second;
-	Vec3d y_ref = v_ref - v_ref.dot( joint_2->Axis() ) * joint_2->Axis();
-	y_ref.normalize();
+	double x = v_proposed.dot(x_ref);
+	double y = v_proposed.dot(y_ref);
+	double z = v_proposed.dot(z_ref);
 
-	Vec3d z_ref = x_ref.cross( y_ref );
+	double alpha = std::atan2(x, z); 
+	double beta  = std::atan2(y, z);
 
-	double x = v.dot( x_ref );
-	double y = v.dot( y_ref );
-	double z = v.dot( z_ref );
-
-	double alpha = atan2( x, z );
-	double beta  = atan2( y, z );
-
-	alpha = joint_1->GetLimits().Clamp( alpha );
-	beta  = joint_2->GetLimits().Clamp( beta );
-
-	Vec3d bone_dir = ( tan( alpha ) * x_ref + tan( beta ) * y_ref + z_ref ).normalized();
-	bone_state.Direction() = bone_state.GetBone()->Length() * bone_dir;
+	Vec3d constrained_dir;
+	if (std::abs(z) > epsilon)
+		constrained_dir = (std::tan(alpha) * x_ref + std::tan(beta) * y_ref + z_ref).normalized();
+	else
+		constrained_dir = (std::sin(alpha) * x_ref + std::sin(beta) * y_ref).normalized();
+	
+	bone_state.Direction() = L * constrained_dir;
 }
 
 // ------------------------------------------------------------
@@ -186,13 +191,13 @@ void ArticulationState::ApplySphericalConstraints( BoneState& bone_state ) const
 	Vec3d z_ref = bone_state.GetBone()->Direction().normalized();
 
 	auto it = joint_states_.begin();
-	auto joint_1 = it->first;
-	auto joint_state_1 = it->second;
+	auto joint_1 = articulation_->Joints()[0];
+	auto joint_state_1 = joint_states_[0];
 	Vec3d x_ref = joint_1->Axis().cross( z_ref ).normalized();
 	++it;
 
-	auto joint_2 = it->first;
-	auto joint_state_2 = it->second;
+	auto joint_2 = articulation_->Joints()[1];
+	auto joint_state_2 = joint_states_[1];
 	Vec3d y_ref = z_ref.cross( x_ref ).normalized();
 
 	double x = v.dot( x_ref );
@@ -214,7 +219,8 @@ void ArticulationState::ApplySphericalConstraints( BoneState& bone_state ) const
 void ArticulationState::ApplyPrismaticConstraints( BoneState& bone_state ) const
 {
 	double slide = Axis().dot( bone_state.Direction() );
-	slide = joint_states_.rbegin()->first->GetLimits().Clamp( slide );
+	auto joint = articulation_->Joints()[0];
+	slide = joint->GetLimits().Clamp( slide );
 	bone_state.Direction() = slide * Axis();
 }
 
@@ -228,10 +234,10 @@ void ArticulationState::UpdateValue(
 	switch ( articulation_->GetType() )
 	{
 	case ArticulationType::Prismatic:
-		UpdatePrismaticArticulationValue( old_bone_state, new_bone_state );
+		UpdatePrismaticArticulationValue( old_state, old_bone_state, new_bone_state );
 		break;
 	case ArticulationType::Revolute:
-		UpdateRevoluteArticulationValue( old_bone_state, new_bone_state );
+		UpdateRevoluteArticulationValue( old_state, old_bone_state, new_bone_state );
 		break;
 	case ArticulationType::Universal:
 		UpdateUniversalArticulationValue( old_state, old_bone_state, new_bone_state );
@@ -247,14 +253,15 @@ void ArticulationState::UpdateValue(
 // ------------------------------------------------------------
 
 void ArticulationState::UpdatePrismaticArticulationValue(
+	const ArticulationState& old_state,
 	const BoneState& old_bone_state,
 	const BoneState& new_bone_state )
 {
 	assert( joint_states_.size() == 1 );
 
-	auto joint_state = joint_states_.begin()->second;
+	auto joint_state = joint_states_[0];
 	joint_state->UpdateValue(
-		old_bone_state.Origin(),
+		old_state.Origin(),
 		old_bone_state.Direction(),
 		new_bone_state.Direction() );
 }
@@ -262,14 +269,15 @@ void ArticulationState::UpdatePrismaticArticulationValue(
 // ------------------------------------------------------------
 
 void ArticulationState::UpdateRevoluteArticulationValue(
+	const ArticulationState& old_state,
 	const BoneState& old_bone_state,
 	const BoneState& new_bone_state )
 {
 	assert( joint_states_.size() == 1 );
 
-	auto joint_state = joint_states_.begin()->second;
+	auto joint_state = joint_states_[0];
 	joint_state->UpdateValue(
-		old_bone_state.Origin(),
+		old_state.Origin(),
 		old_bone_state.Direction(),
 		new_bone_state.Direction() );
 }
@@ -283,39 +291,24 @@ void ArticulationState::UpdateUniversalArticulationValue(
 {
 	assert( joint_states_.size() == 2 );
 
-	Vec3d v_old = old_bone_state.Direction();
-	Vec3d v_new = new_bone_state.Direction();
+	Vec3d dir = rotation_.inverse() * new_bone_state.Direction();
 
-	auto it = joint_states_.begin();
-	auto joint_1 = it->first;
-	auto joint_1_state = it->second;
-	++it;
-	auto joint_2 = it->first;
-	auto joint_2_state = it->second;
+	Vec3d axis_pan = articulation_->Joints()[0]->Axis();
+	Vec3d axis_tilt = articulation_->Joints()[1]->Axis();
 
-	Vec3d axis_1_old = old_state.joint_states_.at( joint_1 )->Axis();
-	Vec3d axis_2_old = old_state.joint_states_.at( joint_2 )->Axis();
-	Vec3d axis_1_new = joint_1_state->Axis();
-	Vec3d axis_2_new = joint_2_state->Axis();
+	Vec3d z_ref = axis_pan.cross( axis_tilt ).normalized();
+	Vec3d x_ref = axis_pan.normalized();
+	Vec3d y_ref = z_ref.cross( x_ref ).normalized();
 
-	Vec3d dir_1_old = v_old - v_old.dot( axis_2_old ) * axis_2_old;
-	Vec3d dir_1_new = v_new - v_new.dot( axis_2_new ) * axis_2_new;
+	double x = dir.dot( x_ref );
+	double y = dir.dot( y_ref );
+	double z = dir.dot( z_ref );
 
-	double old_value = joint_1_state->Value();
+	double alpha = std::atan2( x, z );
+	double beta  = std::atan2( y, z );
 
-	joint_1_state->UpdateValue(
-		old_bone_state.Origin(),
-		dir_1_old,
-		dir_1_new );
-
-	auto intermediate_aa = Quaternion::FromTwoVectors( axis_1_old, axis_1_new );
-	auto joint_1_aa = AngleAxis( joint_1_state->Value() - old_value, joint_1_state->Axis() );
-	Vec3d v_intermediate = intermediate_aa * joint_1_aa * v_old;
-
-	joint_2_state->UpdateValue(
-		old_state.Origin(),
-		v_intermediate,
-		v_new );
+	joint_states_[0]->Value() = articulation_->Joints()[0]->GetLimits().Clamp( alpha );
+	joint_states_[1]->Value() = articulation_->Joints()[1]->GetLimits().Clamp( beta );
 }
 
 // ------------------------------------------------------------

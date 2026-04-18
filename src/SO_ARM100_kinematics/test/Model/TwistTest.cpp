@@ -29,8 +29,8 @@ TEST_F( TwistTest, DefaultConstructor )
 {
 	Model::Twist twist;
 	ASSERT_TRUE( static_cast< Vec6d >( twist ).isApprox( Vec6d::Zero() ) );
-	ASSERT_TRUE( twist.GetAxis().isApprox( Vec3d::Zero() ) );
-	ASSERT_TRUE( twist.GetLinear().isApprox( Vec3d::Zero() ) );
+	ASSERT_TRUE( twist.Omega().isApprox( Vec3d::Zero() ) );
+	ASSERT_TRUE( twist.V().isApprox( Vec3d::Zero() ) );
 }
 
 // ------------------------------------------------------------
@@ -44,8 +44,8 @@ TEST_F( TwistTest, ConstructorWithLinear )
 	expected_twist << 0.0, 0.0, 0.0, 1.0, 2.0, 3.0;
 	expected_twist.tail< 3 >().normalize();
 
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_twist.tail< 3 >() ) );
-	ASSERT_TRUE( twist.GetAxis().isApprox( Vec3d::Zero() ) );
+	ASSERT_TRUE( twist.V().isApprox( expected_twist.tail< 3 >() ) );
+	ASSERT_TRUE( twist.Omega().isApprox( Vec3d::Zero() ) );
 }
 
 // ------------------------------------------------------------
@@ -60,10 +60,10 @@ TEST_F( TwistTest, ConstructorWithPointOnAxis )
 	Vec3d expected_linear = -axis.normalized().cross( point_on_axis );
 	Vec3d expected_axis = axis.normalized();
 
-	ASSERT_TRUE( twist.GetAxis().isApprox( expected_axis ) ) <<
-	    "axis expected:\n" << expected_axis << "\nreal:\n" << twist.GetAxis();
-	ASSERT_TRUE( twist.GetLinear().isApprox( expected_linear ) ) <<
-	    "linear expected:\n" << expected_linear << "\nreal:\n" << twist.GetLinear();
+	ASSERT_TRUE( twist.Omega().isApprox( expected_axis ) ) <<
+	    "axis expected:\n" << expected_axis << "\nreal:\n" << twist.Omega();
+	ASSERT_TRUE( twist.V().isApprox( expected_linear ) ) <<
+	    "linear expected:\n" << expected_linear << "\nreal:\n" << twist.V();
 }
 
 // ------------------------------------------------------------

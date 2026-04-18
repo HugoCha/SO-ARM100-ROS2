@@ -19,8 +19,8 @@ Twist::Twist() :
 
 Twist::Twist( const Vec3d& linear ) :
 	twist_( ComputeTwist( linear ) ),
-	axis_( twist_.head( 3 ) ),
-	linear_( twist_.tail( 3 ) ),
+	omega_( twist_.head( 3 ) ),
+	v_( twist_.tail( 3 ) ),
 	cache_( ComputeCache( twist_ ) )
 {
 }
@@ -29,8 +29,8 @@ Twist::Twist( const Vec3d& linear ) :
 
 Twist::Twist( const Vec3d& axis, const Vec3d& point_on_axis ) :
 	twist_( ComputeTwist( axis, point_on_axis ) ),
-	axis_( twist_.head( 3 ) ),
-	linear_( twist_.tail( 3 ) ),
+	omega_( twist_.head( 3 ) ),
+	v_( twist_.tail( 3 ) ),
 	cache_( ComputeCache( twist_ ) )
 {
 }
@@ -78,13 +78,6 @@ std::optional< Twist::Cache > Twist::ComputeCache( const Vec6d& twist )
 
 // ------------------------------------------------------------
 
-const Vec3d Twist::TransformAxis( const Mat4d& transform ) const
-{
-	return Rotation( transform ) * axis_;
-}
-
-// ------------------------------------------------------------
-
 const Mat4d Twist::ExponentialMatrix( double thetha ) const
 {
 	Mat4d exponential = Mat4d::Identity();
@@ -93,7 +86,7 @@ const Mat4d Twist::ExponentialMatrix( double thetha ) const
 
 	if ( !cache_ )
 	{
-		exponential.block< 3, 1 >( 0, 3 ).noalias() = linear_ * thetha;
+		exponential.block< 3, 1 >( 0, 3 ).noalias() = v_ * thetha;
 	}
 	else
 	{

@@ -1,7 +1,8 @@
-#include "Model/JointState.hpp"
+#include "Model/Joint/JointState.hpp"
 
 #include "Global.hpp"
-#include "Model/Joint.hpp"
+
+#include "Model/Joint/Joint.hpp"
 #include "Model/Limits.hpp"
 #include "Utils/Converter.hpp"
 

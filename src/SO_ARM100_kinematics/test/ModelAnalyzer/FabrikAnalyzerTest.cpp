@@ -1,8 +1,9 @@
 #include "FABRIK/FabrikAnalyzer.hpp"
 
 #include "Global.hpp"
+
 #include "KinematicTestBase.hpp"
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 #include "Model/Limits.hpp"
 #include "Model/Link.hpp"
 #include "Model/Twist.hpp"

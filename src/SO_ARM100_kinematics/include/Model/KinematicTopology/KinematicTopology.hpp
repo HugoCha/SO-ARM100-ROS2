@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JointGroup.hpp"
+#include "Model/Joint/JointGroup.hpp"
 
 #include <unordered_map>
 #include <optional>

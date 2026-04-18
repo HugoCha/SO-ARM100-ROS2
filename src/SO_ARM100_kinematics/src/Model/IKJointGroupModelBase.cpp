@@ -1,8 +1,9 @@
 #include "Model/IKJointGroupModelBase.hpp"
 
 #include "Global.hpp"
+
 #include "Model/IKModelBase.hpp"
-#include "Model/JointState.hpp"
+#include "Model/Joint/JointState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <stdexcept>

@@ -1,8 +1,9 @@
 #include "ModelAnalyzer/BaseAnalyzer.hpp"
 
 #include "Global.hpp"
-#include "Model/JointChain.hpp"
-#include "Model/JointGroup.hpp"
+
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <optional>

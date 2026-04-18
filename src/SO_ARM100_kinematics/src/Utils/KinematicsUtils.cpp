@@ -1,8 +1,9 @@
 #include "Utils/KinematicsUtils.hpp"
 
 #include "Global.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointChain.hpp"
+
+#include "Model/Joint/Joint.hpp"
+#include "Model/Joint/JointChain.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -384,6 +385,9 @@ std::optional< Vec3d > ComputeIntersection(
 {
 	int n = joints.size();
 
+	if ( n == 1 )
+		return joints[0]->Origin();
+
 	Mat3d A = Mat3d::Zero();
 	Vec3d b = Vec3d::Zero();
 	Vec3d d;
@@ -482,19 +486,19 @@ bool AxesIndependent( const std::span< const Model::JointConstPtr >& joints )
 		return false;
 
 	if ( k == 1 )
-		return joints[0]->GetTwist().GetAxis().norm() > epsilon;
+		return joints[0]->GetTwist().Omega().norm() > epsilon;
 
 	if ( k == 2 )
 	{
-		const Vec3d& w1 = joints[0]->GetTwist().GetAxis();
-		const Vec3d& w2 = joints[1]->GetTwist().GetAxis();
+		const Vec3d& w1 = joints[0]->GetTwist().Omega();
+		const Vec3d& w2 = joints[1]->GetTwist().Omega();
 
 		return w1.cross( w2 ).norm() > epsilon;
 	}
 
 	Mat3d W;
 	for ( int i = 0; i < 3; ++i )
-		W.col( i ) = joints[i]->GetTwist().GetAxis();
+		W.col( i ) = joints[i]->GetTwist().Omega();
 
 	return std::abs( W.determinant() ) > epsilon;
 }

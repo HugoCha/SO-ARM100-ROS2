@@ -2,7 +2,7 @@
 
 #include "RobotModelTestData.hpp"
 
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <cmath>
@@ -75,8 +75,8 @@ TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
 		auto initialized_joint = initialized_joints[i];
 		EXPECT_EQ( expected_joint->GetType(), initialized_joint->GetType() );
 
-		EXPECT_EQ( expected_joint->GetTwist().GetAxis(), initialized_joint->GetTwist().GetAxis() );
-		EXPECT_EQ( expected_joint->GetTwist().GetLinear(), initialized_joint->GetTwist().GetLinear() );
+		EXPECT_EQ( expected_joint->GetTwist().Omega(), initialized_joint->GetTwist().Omega() );
+		EXPECT_EQ( expected_joint->GetTwist().V(), initialized_joint->GetTwist().V() );
 
 		EXPECT_EQ( expected_joint->GetLink().GetJointOrigin(), initialized_joint->GetLink().GetJointOrigin() );
 		EXPECT_EQ( expected_joint->GetLink().GetLength(), initialized_joint->GetLink().GetLength() );

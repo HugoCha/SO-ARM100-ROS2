@@ -3,12 +3,11 @@
 #include "Global.hpp"
 
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointChain.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/JointState.hpp"
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
+#include "Model/Joint/JointState.hpp"
 #include "Model/KinematicModel.hpp"
-#include "Model/Skeleton.hpp"
+#include "Model/Skeleton/Skeleton.hpp"
 #include "Solver/IKSolverBase.hpp"
 
 #include <vector>

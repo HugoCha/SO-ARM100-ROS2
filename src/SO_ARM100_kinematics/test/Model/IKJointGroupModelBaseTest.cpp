@@ -4,7 +4,7 @@
 #include "RobotModelTestData.hpp"
 
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics::Test

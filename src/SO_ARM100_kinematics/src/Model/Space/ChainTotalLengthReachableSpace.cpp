@@ -1,8 +1,8 @@
-#include "Model/ChainTotalLengthReachableSpace.hpp"
+#include "Model/Space/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -14,8 +14,9 @@ namespace SOArm100::Kinematics::Model
 ChainTotalLengthReachableSpace::ChainTotalLengthReachableSpace(
 	const JointChain& chain,
 	const Mat4d& home_configuration ) :
-	origin_( ChainOrigin( chain ) ),
-	total_length_( ComputeTotalLength( chain, home_configuration ) )
+	SphericalReachableSpace( 
+		ChainOrigin( chain ),
+		ComputeTotalLength( chain, home_configuration ) )
 {
 }
 
@@ -50,14 +51,6 @@ double ChainTotalLengthReachableSpace::ComputeTotalLength(
 
 	total_length += Utils::Distance( p_last_joint, p_tip );
 	return total_length;
-}
-
-// ------------------------------------------------------------
-
-bool ChainTotalLengthReachableSpace::IsUnreachable( const Mat4d& target ) const
-{
-	double distance = Utils::Distance( origin_, Translation( target ) );
-	return distance > total_length_;
 }
 
 // ------------------------------------------------------------

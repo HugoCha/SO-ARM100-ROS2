@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "ArticulationType.hpp"
-#include "Joint.hpp"
+#include "Model/Joint/Joint.hpp"
 
 #include <memory>
 #include <span>
@@ -40,6 +40,11 @@ const Vec3d& Center() const {
 
 const Vec3d& Axis() const {
 	return ( *joints_.rbegin() )->Axis();
+}
+
+
+bool IsEmpty() const {
+	return joints_.empty();
 }
 
 private:

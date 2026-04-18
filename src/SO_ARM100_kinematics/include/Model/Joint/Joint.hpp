@@ -3,10 +3,10 @@
 #include "Global.hpp"
 
 #include "JointType.hpp"
-#include "Limits.hpp"
-#include "Link.hpp"
-#include "Pose.hpp"
-#include "Twist.hpp"
+#include "Model/Limits.hpp"
+#include "Model/Link.hpp"
+#include "Model/Pose.hpp"
+#include "Model/Twist.hpp"
 
 #include <limits>
 #include <memory>
@@ -68,17 +68,17 @@ const Vec3d& Origin() const {
 }
 
 const Vec3d& Axis() const {
-	return twist_->GetAxis();
+	return twist_->IsRevolute() ? twist_->Omega() : twist_->V();
 }
 
 const Vec3d TransformAxis( const Mat4d& transform ) const {
-	return twist_->TransformAxis( transform );
+	return Rotation( transform ) * Axis();
 }
 
 const struct Pose Pose( const Mat4d& transform ) const {
 	struct Pose pose;
 	Vec4d origin_homogenous = link_->GetJointOrigin().block< 4, 1 >( 0, 3 );
-	pose.axis = twist_->TransformAxis( transform );
+	pose.axis = Rotation( transform ) * Axis();
 	pose.origin = ( transform * origin_homogenous ).head( 3 );
 	return pose;
 }

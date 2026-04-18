@@ -1,8 +1,8 @@
-#include "Model/JointState.hpp"
+#include "Model/Joint/JointState.hpp"
 
 #include "Global.hpp"
 
-#include "Model/Joint.hpp"
+#include "Model/Joint/Joint.hpp"
 #include "Model/Pose.hpp"
 #include "Utils/MathUtils.hpp"
 

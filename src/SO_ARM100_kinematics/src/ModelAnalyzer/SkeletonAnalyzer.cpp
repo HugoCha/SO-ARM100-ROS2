@@ -2,11 +2,11 @@
 
 #include "Global.hpp"
 
-#include "Model/Articulation.hpp"
-#include "Model/ArticulationType.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/Skeleton.hpp"
+#include "Model/Joint/Joint.hpp"
+#include "Model/Joint/JointGroup.hpp"
+#include "Model/Skeleton/Articulation.hpp"
+#include "Model/Skeleton/ArticulationType.hpp"
+#include "Model/Skeleton/Skeleton.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <memory>
@@ -114,9 +114,10 @@ std::vector< JointConstPtr > SkeletonAnalyzer::ExtractGroupJoints(
 	}
 
 	std::vector< JointConstPtr > group_joints( group.Size() );
+    int i = 0;
 	for ( auto it = group.indices.begin(); it != group.indices.end(); ++it )
 	{
-		group_joints.emplace_back( joints[ *it ] );
+		group_joints[ i++ ] = joints[ *it ];
 	}
 	return group_joints;
 }
@@ -180,8 +181,10 @@ std::vector< std::shared_ptr< const Articulation >> SkeletonAnalyzer::AnalyzeArt
 
 std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< const JointConstPtr >& joints )
 {
-	std::vector< JointConstPtr > filtered_joints;
 	const int n_joints = joints.size();
+    if ( n_joints == 1 ) return { joints[0] };
+
+	std::vector< JointConstPtr > filtered_joints;
 	int i = 0;
 
 	auto can_filter_joint = []( JointConstPtr joint1, JointConstPtr joint2 ) -> bool
@@ -194,7 +197,7 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 								return is_direction_colinear;
 							};
 
-	while ( i < n_joints )
+	while ( i + 1 < n_joints )
 	{
 		int j = 1;
 		while ( i + j < n_joints && can_filter_joint( joints[i], joints[i + j] ) )

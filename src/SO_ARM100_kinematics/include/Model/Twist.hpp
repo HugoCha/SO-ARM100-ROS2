@@ -24,15 +24,13 @@ Twist& operator = ( Twist&& ) = default;
 	return twist_;
 }
 
-[[nodiscard]] inline const Vec3d& GetAxis() const {
-	return axis_;
+[[nodiscard]] inline const Vec3d& Omega() const {
+	return omega_;
 }
 
-[[nodiscard]] inline const Vec3d& GetLinear() const {
-	return linear_;
+[[nodiscard]] inline const Vec3d& V() const {
+	return v_;
 }
-
-[[nodiscard]] const Vec3d TransformAxis( const Mat4d& transform ) const;
 
 [[nodiscard]] inline bool IsRevolute() const {
 	return IsRevolute( twist_ );
@@ -54,8 +52,8 @@ struct Cache
 };
 
 Vec6d twist_;
-Vec3d axis_;
-Vec3d linear_;
+Vec3d omega_;
+Vec3d v_;
 
 std::optional< Cache > cache_;
 

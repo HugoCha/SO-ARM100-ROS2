@@ -7,8 +7,8 @@
 #include "KinematicTestBase.hpp"
 
 #include "Heuristic/IKPresolution.hpp"
-#include "Model/JointChain.hpp"
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"

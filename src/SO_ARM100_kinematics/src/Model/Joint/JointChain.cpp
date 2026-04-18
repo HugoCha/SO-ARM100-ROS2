@@ -1,9 +1,10 @@
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 
 #include "Global.hpp"
-#include "Model/Joint.hpp"
+
+#include "Model/Joint/Joint.hpp"
+#include "Model/Joint/JointState.hpp"
 #include "Model/Limits.hpp"
-#include "Model/JointState.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>

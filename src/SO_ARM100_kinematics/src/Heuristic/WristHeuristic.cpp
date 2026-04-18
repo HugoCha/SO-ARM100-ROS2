@@ -5,8 +5,8 @@
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/WristTopology.hpp"
+#include "Model/Joint/JointGroup.hpp"
+#include "Model/KinematicTopology/WristTopology.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

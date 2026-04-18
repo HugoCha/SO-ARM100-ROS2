@@ -5,7 +5,7 @@
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Utils/KinematicsUtils.hpp"

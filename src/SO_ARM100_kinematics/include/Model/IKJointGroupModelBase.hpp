@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Global.hpp"
-#include "Model/IKModelBase.hpp"
+#include "IKModelBase.hpp"
 
 namespace SOArm100::Kinematics::Model
 {

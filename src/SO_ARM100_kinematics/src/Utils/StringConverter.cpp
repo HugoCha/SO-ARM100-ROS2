@@ -2,19 +2,19 @@
 
 #include "Global.hpp"
 
-#include "Model/Articulation.hpp"
-#include "Model/ArticulationState.hpp"
-#include "Model/ArticulationType.hpp"
-#include "Model/Bone.hpp"
-#include "Model/BoneState.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointChain.hpp"
-#include "Model/JointState.hpp"
-#include "Model/JointType.hpp"
+#include "Model/Joint/Joint.hpp"
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointState.hpp"
+#include "Model/Joint/JointType.hpp"
 #include "Model/Limits.hpp"
 #include "Model/Link.hpp"
 #include "Model/Pose.hpp"
-#include "Model/Skeleton.hpp"
+#include "Model/Skeleton/Articulation.hpp"
+#include "Model/Skeleton/ArticulationState.hpp"
+#include "Model/Skeleton/ArticulationType.hpp"
+#include "Model/Skeleton/Bone.hpp"
+#include "Model/Skeleton/BoneState.hpp"
+#include "Model/Skeleton/Skeleton.hpp"
 
 // ------------------------------------------------------------
 
@@ -31,7 +31,10 @@ std::ostream& operator<<( std::ostream& os, const SOArm100::Kinematics::Model::A
 
 std::ostream& operator<<(std::ostream& os, const SOArm100::Kinematics::Model::ArticulationState& obj )
 {
-    os << "Articulation state";
+    os << "Articulation state"
+       << " Center: " << obj.Origin().transpose()
+       << " Axis: "   << obj.Axis().transpose()
+       << " Value: "  << obj.Value(); 
     return os;
 }
 
@@ -103,7 +106,7 @@ std::ostream& operator<<(std::ostream& os, const SOArm100::Kinematics::Model::Jo
 {
     os << "Joint State"
        << " Origin: " << obj.Origin().transpose()
-       << " Axis: " << obj.Origin().transpose() 
+       << " Axis: " << obj.Axis().transpose() 
        << " Value: " << obj.Value();
     return os;
 }
@@ -179,8 +182,8 @@ std::ostream& operator<<(std::ostream& os, const SOArm100::Kinematics::Model::Sk
 std::ostream& operator<<(std::ostream& os, const SOArm100::Kinematics::Model::Twist& obj )
 {
     os << "Twist"
-       << " w: " << obj.GetAxis().transpose()
-       << " v: " << obj.GetLinear().transpose();
+       << " w: " << obj.Omega().transpose()
+       << " v: " << obj.V().transpose();
     return os;  
 }
 

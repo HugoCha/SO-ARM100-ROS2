@@ -1,8 +1,8 @@
 #include "ModelAnalyzer/TopologyAnalyzer.hpp"
 
-#include "Model/JointChain.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/KinematicTopology.hpp"
+#include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
+#include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "ModelAnalyzer/BaseAnalyzer.hpp"
 #include "ModelAnalyzer/PlanarNRAnalyzer.hpp"
 #include "ModelAnalyzer/WristAnalyzer.hpp"

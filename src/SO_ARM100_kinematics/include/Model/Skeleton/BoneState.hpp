@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Model/Bone.hpp"
+#include "Bone.hpp"
 #include "Model/Pose.hpp"
 
 namespace SOArm100::Kinematics::Model

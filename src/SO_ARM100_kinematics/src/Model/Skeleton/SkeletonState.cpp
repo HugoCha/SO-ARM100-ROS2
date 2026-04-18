@@ -1,10 +1,11 @@
-#include "Model/SkeletonState.hpp"
+#include "Model/Skeleton/SkeletonState.hpp"
 
 #include "Global.hpp"
 
-#include "Model/ArticulationState.hpp"
-#include "Model/Skeleton.hpp"
+#include "Model/Skeleton/ArticulationState.hpp"
+#include "Model/Skeleton/Skeleton.hpp"
 #include "Utils/Converter.hpp"
+
 #include <stdexcept>
 
 namespace SOArm100::Kinematics::Model

@@ -278,7 +278,7 @@
 
    // ------------------------------------------------------------
 
-   void FABRIKSolver::ForwardPass(
+   void FABRIKSolver::BackwardPass(
     const Vec3d& target,
     const std::span< const double >& bone_lengths,
     int start_idx,
@@ -316,7 +316,7 @@
 
    // ------------------------------------------------------------
 
-   void FABRIKSolver::BackwardPass(
+   void FABRIKSolver::ForwardPass(
     const Vec3d& base,
     const std::span< const double >& bone_lengths,
     int start_idx,

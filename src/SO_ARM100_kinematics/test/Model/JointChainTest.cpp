@@ -1,8 +1,8 @@
-#include "Model/JointChain.hpp"
+#include "Model/Joint/JointChain.hpp"
 
 #include "Global.hpp"
-#include "Model/Joint.hpp"
-#include "Model/JointState.hpp"
+#include "Model/Joint/Joint.hpp"
+#include "Model/Joint/JointState.hpp"
 #include "Model/Pose.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
@@ -86,16 +86,16 @@ TEST_F( JointChainTest, GetZYZRevoluteRobotJointChain )
 
 	// Check specific joint properties
 	const Model::Twist& twist1 = chain.GetActiveJointTwist( 0 );
-	ASSERT_TRUE( twist1.GetAxis().isApprox( Vec3d( 0, 0, 1 ) ) );
-	ASSERT_TRUE( twist1.GetLinear().isApprox( Vec3d( 0, 0, 0 ) ) );
+	ASSERT_TRUE( twist1.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
+	ASSERT_TRUE( twist1.V().isApprox( Vec3d( 0, 0, 0 ) ) );
 
 	const Model::Twist& twist2 = chain.GetActiveJointTwist( 1 );
-	ASSERT_TRUE( twist2.GetAxis().isApprox( Vec3d( 0, 1, 0 ) ) );
-	ASSERT_TRUE( twist2.GetLinear().isApprox( Vec3d( 0, 0, 0.5 ) ) );
+	ASSERT_TRUE( twist2.Omega().isApprox( Vec3d( 0, 1, 0 ) ) );
+	ASSERT_TRUE( twist2.V().isApprox( Vec3d( 0, 0, 0.5 ) ) );
 
 	const Model::Twist& twist3 = chain.GetActiveJointTwist( 2 );
-	ASSERT_TRUE( twist3.GetAxis().isApprox( Vec3d( 0, 0, 1 ) ) );
-	ASSERT_TRUE( twist3.GetLinear().isApprox( Vec3d( 0, -1, 0 ) ) ) << twist3.GetLinear();
+	ASSERT_TRUE( twist3.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
+	ASSERT_TRUE( twist3.V().isApprox( Vec3d( 0, -1, 0 ) ) ) << twist3.V();
 }
 
 // ------------------------------------------------------------
@@ -119,8 +119,8 @@ TEST_F( JointChainTest, SubChain )
 	{
 		const Model::Twist& original_twist = chain.GetActiveJointTwist( i );
 		const Model::Twist& subchain_twist = subchain.GetActiveJointTwist( i );
-		ASSERT_TRUE( original_twist.GetAxis().isApprox( subchain_twist.GetAxis() ) );
-		ASSERT_TRUE( original_twist.GetLinear().isApprox( subchain_twist.GetLinear() ) );
+		ASSERT_TRUE( original_twist.Omega().isApprox( subchain_twist.Omega() ) );
+		ASSERT_TRUE( original_twist.V().isApprox( subchain_twist.V() ) );
 	}
 }
 
@@ -165,8 +165,8 @@ TEST_F( JointChainTest, AddFunction )
 
 	// Check the added joint's properties
 	const Model::Twist& added_twist = chain.GetActiveJointTwist( 0 );
-	ASSERT_TRUE( added_twist.GetAxis().isApprox( Vec3d( 0, 0, 1 ) ) );
-	ASSERT_TRUE( added_twist.GetLinear().isApprox( Vec3d( 0, 0, 0 ) ) );
+	ASSERT_TRUE( added_twist.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
+	ASSERT_TRUE( added_twist.V().isApprox( Vec3d( 0, 0, 0 ) ) );
 
 	const Model::Limits& added_limits = chain.GetActiveJointLimits( 0 );
 	ASSERT_EQ( added_limits.Min(), -M_PI );

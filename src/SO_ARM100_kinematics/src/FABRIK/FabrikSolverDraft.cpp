@@ -4,9 +4,9 @@
 
 #include "FABRIK/FabrikAnalyzer.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/JointGroup.hpp"
-#include "Model/JointState.hpp"
-#include "Model/Skeleton.hpp"
+#include "Model/Joint/JointGroup.hpp"
+#include "Model/Joint/JointState.hpp"
+#include "Model/Skeleton/Skeleton.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"

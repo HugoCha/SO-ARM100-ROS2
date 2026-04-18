@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "Model/KinematicTopology.hpp"
 #include "Global.hpp"
-#include "Model/JointGroup.hpp"
+
+#include "Model/KinematicTopology/KinematicTopology.hpp"
+#include "Model/Joint/JointGroup.hpp"
 
 namespace SOArm100::Kinematics::Test
 {

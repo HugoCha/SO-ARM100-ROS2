@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Model/ReachableSpace.hpp"
+#include "SphericalReachableSpace.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -11,17 +11,12 @@ class JointChain;
 
 namespace SOArm100::Kinematics::Model
 {
-class ChainTotalLengthReachableSpace : public ReachableSpace
+class ChainTotalLengthReachableSpace : public SphericalReachableSpace
 {
 public:
 ChainTotalLengthReachableSpace( const JointChain& chain, const Mat4d& home_configuration );
 
-virtual bool IsUnreachable( const Mat4d& target ) const override;
-
 private:
-Vec3d origin_;
-double total_length_;
-
 static Vec3d ChainOrigin( const JointChain& chain );
 
 static double ComputeTotalLength(

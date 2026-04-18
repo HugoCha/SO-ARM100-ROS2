@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Global.hpp"
-#include "Model/JointGroup.hpp"
+#include "Model/Joint/JointGroup.hpp"
 
 #include <optional>
 

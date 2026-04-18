@@ -2,10 +2,10 @@
 
 #include "Global.hpp"
 
-#include "JointChain.hpp"
-#include "KinematicTopology.hpp"
-#include "Model/Skeleton.hpp"
-#include "ReachableSpace.hpp"
+#include "Joint/JointChain.hpp"
+#include "KinematicTopology/KinematicTopology.hpp"
+#include "Skeleton/Skeleton.hpp"
+#include "Space/ReachableSpace.hpp"
 
 #include <memory>
 
