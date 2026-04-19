@@ -1,4 +1,4 @@
-#include "Model/Space/ChainTotalLengthReachableSpace.hpp"
+#include "Model/ReachableSpace/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 #include "RobotModelTestData.hpp"

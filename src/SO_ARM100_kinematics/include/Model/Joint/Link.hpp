@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Global.hpp"
+
 #include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics::Model

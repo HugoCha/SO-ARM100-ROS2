@@ -5,7 +5,7 @@
 #include "Joint/JointChain.hpp"
 #include "KinematicTopology/KinematicTopology.hpp"
 #include "Skeleton/Skeleton.hpp"
-#include "Space/ReachableSpace.hpp"
+#include "ReachableSpace/ReachableSpace.hpp"
 
 #include <memory>
 

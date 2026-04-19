@@ -488,7 +488,7 @@ TEST_F( SkeletonTest, Analyze_Planar2RWithTipDifferentThanLastJointAxis_ReturnEx
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -521,7 +521,7 @@ TEST_F( SkeletonTest, Analyze_Planar3RTipOnLastJointAxis_ReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -554,7 +554,7 @@ TEST_F( SkeletonTest, Analyze_PrismaticBaseReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -587,7 +587,7 @@ TEST_F( SkeletonTest, Analyze_RevoluteBaseReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -620,7 +620,7 @@ TEST_F( SkeletonTest, Analyze_SphericalWristReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -653,7 +653,7 @@ TEST_F( SkeletonTest, Analyze_5DofsReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -686,7 +686,7 @@ TEST_F( SkeletonTest, Analyze_6DofWithSphericalWristReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -719,7 +719,7 @@ TEST_F( SkeletonTest, Analyze_6DofWithNonSphericalWristReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );
@@ -752,7 +752,7 @@ TEST_F( SkeletonTest, Analyze_ZYZRobotReturnExpected )
 		EXPECT_EQ( expected_skeleton->Articulation( i )->GetType(),   result_skeleton->Articulation( i )->GetType() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Axis(),      result_skeleton->Articulation( i )->Axis() );
 		EXPECT_EQ( expected_skeleton->Articulation( i )->Center(),    result_skeleton->Articulation( i )->Center() );
-		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(),result_skeleton->Articulation( i )->JointCount() );
+		EXPECT_EQ( expected_skeleton->Articulation( i )->JointCount(), result_skeleton->Articulation( i )->JointCount() );
 	}
 
 	EXPECT_EQ( expected_skeleton->BonesCount(), result_skeleton->BonesCount() );

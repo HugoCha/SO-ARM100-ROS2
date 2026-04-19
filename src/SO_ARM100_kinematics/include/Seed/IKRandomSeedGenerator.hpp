@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Global.hpp"
+
 #include "IKSeedGenerator.hpp"
 #include "Model/KinematicModel.hpp"
 

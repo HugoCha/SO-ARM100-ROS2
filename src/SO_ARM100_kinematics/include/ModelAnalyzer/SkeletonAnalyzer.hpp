@@ -28,12 +28,12 @@ static SkeletonConstPtr Analyze(
 	const Mat4d& tip );
 
 static SkeletonConstPtr Analyze(
-    const std::span< const JointConstPtr >& joints,
-    const JointGroup& joint_group );
+	const std::span< const JointConstPtr >& joints,
+	const JointGroup& joint_group );
 
 static std::vector< std::shared_ptr< const Articulation >> AnalyzeArticulations(
-    const std::span< const JointConstPtr >& joints,
-    const Mat4d& tip );
+	const std::span< const JointConstPtr >& joints,
+	const Mat4d& tip );
 
 private:
 static Skeleton Create(
@@ -53,8 +53,8 @@ static double ComputeTotalLength(
 	const std::span< const BoneConstPtr >& bones,
 	const Mat4d& tip );
 
-static std::vector< JointConstPtr > FilterJoints( 
-    const std::span< const JointConstPtr >& joints );
+static std::vector< JointConstPtr > FilterJoints(
+	const std::span< const JointConstPtr >& joints );
 
 static std::shared_ptr< Articulation > ExtractArticulationFromJoints(
 	JointConstPtr joint1 );
@@ -64,9 +64,9 @@ static std::shared_ptr< Articulation > ExtractArticulationFromJoints(
 	JointConstPtr joint2 );
 
 static std::shared_ptr< Articulation > ExtractArticulationFromJoints(
-    JointConstPtr joint1,
-    JointConstPtr joint2,
-    JointConstPtr joint3 );
+	JointConstPtr joint1,
+	JointConstPtr joint2,
+	JointConstPtr joint3 );
 
 static std::shared_ptr< Articulation > ExtractArticulationFromLastJoints(
 	const std::span< const JointConstPtr >& joints,

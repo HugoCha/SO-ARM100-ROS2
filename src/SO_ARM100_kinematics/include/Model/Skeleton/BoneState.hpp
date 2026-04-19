@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "Bone.hpp"
-#include "Model/Pose.hpp"
+#include "Model/Geometry/Pose.hpp"
 
 namespace SOArm100::Kinematics::Model
 {

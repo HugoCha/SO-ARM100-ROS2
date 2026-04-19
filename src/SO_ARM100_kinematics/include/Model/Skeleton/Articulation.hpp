@@ -20,7 +20,8 @@ Articulation(
 	type_( type ),
 	joints_( joints ),
 	center_( center )
-{}
+{
+}
 
 ArticulationType GetType() const {
 	return type_;

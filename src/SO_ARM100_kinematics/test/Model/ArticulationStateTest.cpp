@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/Joint/Joint.hpp"
-#include "Model/Limits.hpp"
+#include "Model/Joint/Limits.hpp"
 #include "Model/Skeleton/Articulation.hpp"
 #include "Model/Skeleton/ArticulationType.hpp"
 #include "Model/Skeleton/Bone.hpp"
@@ -112,7 +112,7 @@ Model::ArticulationConstPtr spherical_articulation_;
 
 TEST_F( ArticulationStateTest, Constructor_InitialOriginMatchesArticulationCenter )
 {
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	EXPECT_TRUE( revolute_state.Origin().isApprox( revolute_articulation_->Center() ) )
 	    << "Initial origin should match the articulation's center";
 }
@@ -122,7 +122,7 @@ TEST_F( ArticulationStateTest, Constructor_InitialOriginMatchesArticulationCente
 TEST_F( ArticulationStateTest, Constructor_InitialAxisMatchesLastJointAxis )
 {
 	// For revolute, the axis should be the revolute joint's axis
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	EXPECT_TRUE( revolute_state.Axis().isApprox( revolute_joint_->Axis() ) )
 	    << "Axis should match the last joint's axis";
 }
@@ -131,7 +131,7 @@ TEST_F( ArticulationStateTest, Constructor_InitialAxisMatchesLastJointAxis )
 
 TEST_F( ArticulationStateTest, Constructor_GetArticulationReturnsCorrectArticulation )
 {
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	EXPECT_EQ( revolute_state.GetArticulation(), revolute_articulation_ )
 	    << "GetArticulation should return the same articulation passed to constructor";
 }
@@ -142,7 +142,7 @@ TEST_F( ArticulationStateTest, Constructor_GetArticulationReturnsCorrectArticula
 
 TEST_F( ArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultValues )
 {
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	auto values = revolute_state.GetJointValues();
 	EXPECT_EQ( values.size(), 1 )
 	    << "Revolute articulation should have 1 joint";
@@ -154,25 +154,25 @@ TEST_F( ArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultValues )
 
 TEST_F( ArticulationStateTest, GetJointValues_UniversalReturnsVectorOfTwoValues )
 {
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	auto values = universal_state.GetJointValues();
 	EXPECT_EQ( values.size(), 2 )
 	    << "Universal articulation should have 2 joints";
-    EXPECT_DOUBLE_EQ( values[0], 0.0 );
-    EXPECT_DOUBLE_EQ( values[1], 0.0 );
+	EXPECT_DOUBLE_EQ( values[0], 0.0 );
+	EXPECT_DOUBLE_EQ( values[1], 0.0 );
 }
 
 // ------------------------------------------------------------
 
 TEST_F( ArticulationStateTest, GetJointValues_SphericalReturnsVectorOfTwoValues )
 {
-    auto spherical_state = Model::ArticulationState( spherical_articulation_ );
+	auto spherical_state = Model::ArticulationState( spherical_articulation_ );
 	auto values = spherical_state.GetJointValues();
 	EXPECT_EQ( values.size(), 3 )
 	    << "Universal articulation should have 3 joints";
-    EXPECT_DOUBLE_EQ( values[0], 0.0 );
-    EXPECT_DOUBLE_EQ( values[1], 0.0 );
-    EXPECT_DOUBLE_EQ( values[2], 0.0 );
+	EXPECT_DOUBLE_EQ( values[0], 0.0 );
+	EXPECT_DOUBLE_EQ( values[1], 0.0 );
+	EXPECT_DOUBLE_EQ( values[2], 0.0 );
 }
 
 // ============================================================
@@ -187,16 +187,16 @@ TEST_F( ArticulationStateTest, SetState_RevoluteWithRotation_UpdatesPoseAndValue
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Zero( 1 );
 
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	revolute_state.SetState( rotation, new_origin, values );
 
-    EXPECT_EQ( 0, revolute_state.Value() );
+	EXPECT_EQ( 0, revolute_state.Value() );
 	EXPECT_TRUE( revolute_state.Origin().isApprox( new_origin ) )
-        << "Expected = " << new_origin.transpose() << std::endl
-        << "Result   = " << revolute_state.Origin().transpose() << std::endl;
+	    << "Expected = " << new_origin.transpose() << std::endl
+	    << "Result   = " << revolute_state.Origin().transpose() << std::endl;
 	EXPECT_TRUE( revolute_state.Axis().isApprox( new_axis ) )
-        << "Expected = " << new_axis.transpose() << std::endl
-        << "Result   = " << revolute_state.Axis().transpose() << std::endl;
+	    << "Expected = " << new_axis.transpose() << std::endl
+	    << "Result   = " << revolute_state.Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -207,16 +207,16 @@ TEST_F( ArticulationStateTest, SetState_UniversalWithRotation_UpdatesPoseAndValu
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Zero( 2 );
 
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	universal_state.SetState( rotation, new_origin, values );
 
 	EXPECT_EQ( 0, universal_state.Value() );
 	EXPECT_TRUE( universal_state.Origin().isApprox( Vec3d( 1, 0, 0 ) ) )
-        << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
-        << "Result   = " << universal_state.Origin().transpose() << std::endl;
+	    << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
+	    << "Result   = " << universal_state.Origin().transpose() << std::endl;
 	EXPECT_TRUE( universal_state.Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
-        << "Expected = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
-        << "Result   = " << universal_state.Axis().transpose() << std::endl;
+	    << "Expected = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
+	    << "Result   = " << universal_state.Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -224,20 +224,20 @@ TEST_F( ArticulationStateTest, SetState_UniversalWithRotation_UpdatesPoseAndValu
 TEST_F( ArticulationStateTest, SetState_SphericalWithRotation_UpdatesPoseAndValueCorrectly )
 {
 	Vec3d new_origin( 1, 0, 0 );
-    Vec3d new_axis( 0, 1, 0 );
+	Vec3d new_axis( 0, 1, 0 );
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Zero( 3 );
 
-    auto spherical_state = Model::ArticulationState( spherical_articulation_ );
+	auto spherical_state = Model::ArticulationState( spherical_articulation_ );
 	spherical_state.SetState( rotation, new_origin, values );
 
-    EXPECT_EQ( spherical_state.Value(), 0 );
+	EXPECT_EQ( spherical_state.Value(), 0 );
 	EXPECT_TRUE( spherical_state.Origin().isApprox( new_origin ) )
-        << "Expected = " << new_origin.transpose() << std::endl
-        << "Result   = " << spherical_state.Origin().transpose() << std::endl;
+	    << "Expected = " << new_origin.transpose() << std::endl
+	    << "Result   = " << spherical_state.Origin().transpose() << std::endl;
 	EXPECT_TRUE( spherical_state.Axis().isApprox( new_axis ) )
-        << "Expected = " << new_axis.transpose() << std::endl
-        << "Result   = " << spherical_state.Axis().transpose() << std::endl;
+	    << "Expected = " << new_axis.transpose() << std::endl
+	    << "Result   = " << spherical_state.Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -250,17 +250,17 @@ TEST_F( ArticulationStateTest, SetState_RevoluteWithRotation_UpdatesJointStateCo
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Ones( 1 );
 
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	revolute_state.SetState( rotation, new_origin, values );
-    auto joint_states = revolute_state.GetJointStates();
+	auto joint_states = revolute_state.GetJointStates();
 
-    EXPECT_EQ( joint_states[0]->Value(), 1 );
-    EXPECT_TRUE( joint_states[0]->Origin().isApprox( new_origin ) )
-        << "Expected = " << new_origin.transpose() << std::endl
-        << "Result   = " << joint_states[0]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[0]->Axis().isApprox( new_axis ) )
-        << "Expected = " << new_axis.transpose() << std::endl
-        << "Result   = " << joint_states[0]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[0]->Value(), 1 );
+	EXPECT_TRUE( joint_states[0]->Origin().isApprox( new_origin ) )
+	    << "Expected = " << new_origin.transpose() << std::endl
+	    << "Result   = " << joint_states[0]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[0]->Axis().isApprox( new_axis ) )
+	    << "Expected = " << new_axis.transpose() << std::endl
+	    << "Result   = " << joint_states[0]->Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -268,29 +268,29 @@ TEST_F( ArticulationStateTest, SetState_RevoluteWithRotation_UpdatesJointStateCo
 TEST_F( ArticulationStateTest, SetState_UniversalWithRotationAroundXAxis_UpdatesJointStateCorrectly )
 {
 	Vec3d new_origin( 1, 0, 0 );
-    Vec3d new_axis( 0, 0, -1 );
+	Vec3d new_axis( 0, 0, -1 );
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Zero( 2 );
 
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	universal_state.SetState( rotation, new_origin, values );
-    auto joint_states = universal_state.GetJointStates();
+	auto joint_states = universal_state.GetJointStates();
 
-    EXPECT_EQ( joint_states[0]->Value(), 0 );
-    EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 0.9, 0, 0 ) ) )
-        << "Expected origin 0 = " << Vec3d( 0.9, 0, 0 ).transpose() << std::endl
-        << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
-		<< "Expected axis 0 = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
-		<< "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[0]->Value(), 0 );
+	EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 0.9, 0, 0 ) ) )
+	    << "Expected origin 0 = " << Vec3d( 0.9, 0, 0 ).transpose() << std::endl
+	    << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
+	    << "Expected axis 0 = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
+	    << "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
 
-    EXPECT_EQ( joint_states[1]->Value(), 0 );
-    EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0, -0.1 ) ) )
-        << "Expected origin 1 = " << Vec3d( 1, 0, -0.1 ).transpose() << std::endl
-        << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
-        << "Expected axis 1 = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
-        << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[1]->Value(), 0 );
+	EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0, -0.1 ) ) )
+	    << "Expected origin 1 = " << Vec3d( 1, 0, -0.1 ).transpose() << std::endl
+	    << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
+	    << "Expected axis 1 = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
+	    << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -300,25 +300,25 @@ TEST_F( ArticulationStateTest, SetState_UniversalWithRotationAroundYAxis_Updates
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) );
 	VecXd values = VecXd::Zero( 2 );
 
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	universal_state.SetState( rotation, Vec3d( 1, 0, 0 ), values );
-    auto joint_states = universal_state.GetJointStates();
+	auto joint_states = universal_state.GetJointStates();
 
-    EXPECT_EQ( joint_states[0]->Value(), 0 );
-    EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1, 0, 0.1 ) ) )
-        << "Expected origin 0 = " << Vec3d( 1, 0, 0.1 ).transpose() << std::endl
-        << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
-		<< "Expected axis 0 = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
-		<< "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[0]->Value(), 0 );
+	EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1, 0, 0.1 ) ) )
+	    << "Expected origin 0 = " << Vec3d( 1, 0, 0.1 ).transpose() << std::endl
+	    << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
+	    << "Expected axis 0 = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
+	    << "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
 
-    EXPECT_EQ( joint_states[1]->Value(), 0 );
-    EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
-        << "Expected origin 1 = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
-        << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) )
-        << "Expected axis 1 = " << Vec3d( 0, 1, 0 ).transpose() << std::endl
-        << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[1]->Value(), 0 );
+	EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
+	    << "Expected origin 1 = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
+	    << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) )
+	    << "Expected axis 1 = " << Vec3d( 0, 1, 0 ).transpose() << std::endl
+	    << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -328,25 +328,25 @@ TEST_F( ArticulationStateTest, SetState_UniversalWithRotationAroundZAxis_Updates
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 1, 0 ), Vec3d( 1, 0, 0 ) );
 	VecXd values = VecXd::Zero( 2 );
 
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	universal_state.SetState( rotation, Vec3d( 1, 0, 0 ), values );
-    auto joint_states = universal_state.GetJointStates();
+	auto joint_states = universal_state.GetJointStates();
 
-    EXPECT_EQ( joint_states[0]->Value(), 0 );
-    EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
-        << "Expected origin 0 = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
-        << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 0, -1, 0 ) ) )
-		<< "Expected axis 0 = " << Vec3d( 0, -1, 0 ).transpose() << std::endl
-		<< "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[0]->Value(), 0 );
+	EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
+	    << "Expected origin 0 = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
+	    << "Result   origin 0 = " << joint_states[0]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 0, -1, 0 ) ) )
+	    << "Expected axis 0 = " << Vec3d( 0, -1, 0 ).transpose() << std::endl
+	    << "Result   axis 0 = " << joint_states[0]->Axis().transpose() << std::endl;
 
-    EXPECT_EQ( joint_states[1]->Value(), 0 );
-    EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1.1, 0, 0 ) ) )
-        << "Expected origin 1 = " << Vec3d( 1.1, 0, 0 ).transpose() << std::endl
-        << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
-        << "Expected axis 1 = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
-        << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[1]->Value(), 0 );
+	EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1.1, 0, 0 ) ) )
+	    << "Expected origin 1 = " << Vec3d( 1.1, 0, 0 ).transpose() << std::endl
+	    << "Result   origin 1 = " << joint_states[1]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
+	    << "Expected axis 1 = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
+	    << "Result   axis 1 = " << joint_states[1]->Axis().transpose() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -356,33 +356,33 @@ TEST_F( ArticulationStateTest, SetState_SphericalWithRotationAroundXAxis_Updates
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	VecXd values = VecXd::Ones( 3 );
 
-    auto spherical_state = Model::ArticulationState( spherical_articulation_ );
+	auto spherical_state = Model::ArticulationState( spherical_articulation_ );
 	spherical_state.SetState( rotation, Vec3d( 1, 0, 0 ), values );
-    auto joint_states = spherical_state.GetJointStates();
-        
-    EXPECT_EQ( joint_states[0]->Value(), 1 );
-    EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1.1, 0, 0 ) ) )
-        << "Expected = " << Vec3d( 1.1, 0, 0 ).transpose() << std::endl
-        << "Result   = " << joint_states[0]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
-        << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
-        << "Result   = " << joint_states[0]->Axis().transpose() << std::endl;
+	auto joint_states = spherical_state.GetJointStates();
 
-    EXPECT_EQ( joint_states[1]->Value(), 1 );
-    EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0, 0 ) ) )
-        << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
-        << "Result   = " << joint_states[1]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
-        << "Expected = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
-        << "Result   = " << joint_states[1]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[0]->Value(), 1 );
+	EXPECT_TRUE( joint_states[0]->Origin().isApprox( Vec3d( 1.1, 0, 0 ) ) )
+	    << "Expected = " << Vec3d( 1.1, 0, 0 ).transpose() << std::endl
+	    << "Result   = " << joint_states[0]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[0]->Axis().isApprox( Vec3d( 1, 0, 0 ) ) )
+	    << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
+	    << "Result   = " << joint_states[0]->Axis().transpose() << std::endl;
 
-    EXPECT_EQ( joint_states[2]->Value(), 1 );
-    EXPECT_TRUE( joint_states[2]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
-        << "Expected = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
-        << "Result   = " << joint_states[2]->Origin().transpose() << std::endl;
-    EXPECT_TRUE( joint_states[2]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) )
-        << "Expected = " << Vec3d( 0, 1, 0 ).transpose() << std::endl
-        << "Result   = " << joint_states[2]->Axis().transpose() << std::endl;
+	EXPECT_EQ( joint_states[1]->Value(), 1 );
+	EXPECT_TRUE( joint_states[1]->Origin().isApprox( Vec3d( 1, 0, 0 ) ) )
+	    << "Expected = " << Vec3d( 1, 0, 0 ).transpose() << std::endl
+	    << "Result   = " << joint_states[1]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[1]->Axis().isApprox( Vec3d( 0, 0, -1 ) ) )
+	    << "Expected = " << Vec3d( 0, 0, -1 ).transpose() << std::endl
+	    << "Result   = " << joint_states[1]->Axis().transpose() << std::endl;
+
+	EXPECT_EQ( joint_states[2]->Value(), 1 );
+	EXPECT_TRUE( joint_states[2]->Origin().isApprox( Vec3d( 1, 0.1, 0 ) ) )
+	    << "Expected = " << Vec3d( 1, 0.1, 0 ).transpose() << std::endl
+	    << "Result   = " << joint_states[2]->Origin().transpose() << std::endl;
+	EXPECT_TRUE( joint_states[2]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) )
+	    << "Expected = " << Vec3d( 0, 1, 0 ).transpose() << std::endl
+	    << "Result   = " << joint_states[2]->Axis().transpose() << std::endl;
 }
 
 // ============================================================
@@ -394,7 +394,7 @@ TEST_F( ArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 	Vec3d new_origin( 2, 3, 4 );
 	Quaternion rotation = Quaternion::Identity();
 
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	revolute_state.SetCenterPose( rotation, new_origin );
 
 	EXPECT_TRUE( revolute_state.Origin().isApprox( new_origin ) )
@@ -412,7 +412,7 @@ TEST_F( ArticulationStateTest, ApplyConstraints_RevoluteWithValidDirection_Updat
 	Quaternion rotation = Quaternion::Identity();
 	VecXd values = VecXd::Zero( 1 );
 
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	revolute_state.SetState( rotation, origin, values );
 
 	// Create a bone and bone state
@@ -430,7 +430,7 @@ TEST_F( ArticulationStateTest, ApplyConstraints_RevoluteWithValidDirection_Updat
 	Vec3d expected_direction = Vec3d( 1, 1, 0 ).normalized() * bone->Length();
 	EXPECT_TRUE( bone_state.Direction().isApprox( expected_direction ) )
 	    << "Expected Direction = " << expected_direction.transpose() << std::endl
-		<< "Result Direction = " << bone_state.Direction().transpose() << std::endl;
+	    << "Result Direction = " << bone_state.Direction().transpose() << std::endl;
 }
 
 // ============================================================
@@ -444,7 +444,7 @@ TEST_F( ArticulationStateTest, ApplyConstraints_PrismaticWithDirection_Constrain
 	Quaternion rotation = Quaternion::Identity();
 	VecXd values = VecXd::Zero( 1 );
 
-    auto prismatic_state = Model::ArticulationState( prismatic_articulation_ );
+	auto prismatic_state = Model::ArticulationState( prismatic_articulation_ );
 	prismatic_state.SetState( rotation, origin, values );
 
 	// Create a bone and bone state
@@ -477,7 +477,7 @@ TEST_F( ArticulationStateTest, ApplyConstraints_UniversalArticulation_ProducesVa
 	Quaternion rotation = Quaternion::Identity();
 	VecXd values = VecXd::Zero( 2 );
 
-    auto universal_state = Model::ArticulationState( universal_articulation_ );
+	auto universal_state = Model::ArticulationState( universal_articulation_ );
 	universal_state.SetState( rotation, origin, values );
 
 	// Create a bone and bone state
@@ -504,9 +504,9 @@ TEST_F( ArticulationStateTest, ApplyConstraints_UniversalArticulation_ProducesVa
 	universal_state.ApplyConstraints( bone_state );
 
 	// Direction should have a valid magnitude
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_state ) ) 
-		<< "Expected = " << expected_bone_state.transpose() << std::endl
-		<< "Result   = " << bone_state.Direction().transpose() << std::endl;
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_state ) )
+	    << "Expected = " << expected_bone_state.transpose() << std::endl
+	    << "Result   = " << bone_state.Direction().transpose() << std::endl;
 }
 
 // ============================================================
@@ -520,7 +520,7 @@ TEST_F( ArticulationStateTest, ApplyConstraints_SphericalArticulation_ProducesVa
 	Quaternion rotation = Quaternion::Identity();
 	VecXd values = VecXd::Zero( 3 );
 
-    auto spherical_state = Model::ArticulationState( spherical_articulation_ );
+	auto spherical_state = Model::ArticulationState( spherical_articulation_ );
 	spherical_state.SetState( rotation, origin, values );
 
 	// Create a bone and bone state
@@ -580,7 +580,7 @@ TEST_F( ArticulationStateTest, UpdateValue_UniversalFromZeroToNinetyDegrees )
 	Quaternion rotation = Quaternion::Identity();
 	VecXd values = VecXd::Zero( 2 );
 
-    auto old_state = Model::ArticulationState( universal_articulation_ );
+	auto old_state = Model::ArticulationState( universal_articulation_ );
 	old_state.SetState( rotation, origin, values );
 	auto new_state = std::make_shared< Model::ArticulationState >( universal_articulation_ );
 	new_state->SetState( rotation, origin, values );
@@ -595,14 +595,14 @@ TEST_F( ArticulationStateTest, UpdateValue_UniversalFromZeroToNinetyDegrees )
 
 	Mat4d T01;
 	T01 << 1, 0, 0, 0.1,
-		   0, cos( alpha ), -sin( alpha ), 0,
-		   0, sin( alpha ), cos( alpha ), 0,
-		   0, 0, 0, 1;
+	    0, cos( alpha ), -sin( alpha ), 0,
+	    0, sin( alpha ), cos( alpha ), 0,
+	    0, 0, 0, 1;
 	Mat4d T12;
 	T12 <<  cos( beta ), 0, -sin( beta ), 0,
-			0, 1, 0, 0.1,
-			sin( beta ), 0, cos( beta ), 0.1,
-			0, 0, 0, 1;
+	    0, 1, 0, 0.1,
+	    sin( beta ), 0, cos( beta ), 0.1,
+	    0, 0, 0, 1;
 	Mat4d T02 = T01 * T12;
 
 	Model::BoneState old_bone_state( bone );
@@ -624,7 +624,7 @@ TEST_F( ArticulationStateTest, UpdateValue_UniversalFromZeroToNinetyDegrees )
 
 TEST_F( ArticulationStateTest, Value_ReturnsDefaultValueAfterConstruction )
 {
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	EXPECT_DOUBLE_EQ( revolute_state.Value(), 0.0 )
 	    << "Value should return 0 for a newly constructed articulation state";
 }
@@ -640,7 +640,7 @@ TEST_F( ArticulationStateTest, Integration_SetStateAndGetJointValues_Consistent 
 	VecXd input_values = VecXd::Zero( 1 );
 	input_values[0] = 0.5;
 
-    auto revolute_state = Model::ArticulationState( revolute_articulation_ );
+	auto revolute_state = Model::ArticulationState( revolute_articulation_ );
 	revolute_state.SetState( rotation, origin, input_values );
 	auto retrieved_values = revolute_state.GetJointValues();
 

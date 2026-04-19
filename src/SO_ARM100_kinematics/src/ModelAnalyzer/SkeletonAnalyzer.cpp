@@ -25,17 +25,17 @@ SkeletonConstPtr SkeletonAnalyzer::Analyze(
 	auto total_length = ComputeTotalLength( articulations, bones, tip );
 
 	return std::make_shared< const Skeleton >(
-         articulations, 
-         bones, 
-         total_length, 
-         ( int )joints.size() );
+		articulations,
+		bones,
+		total_length,
+		( int )joints.size() );
 }
 
 // ------------------------------------------------------------
 
-SkeletonConstPtr SkeletonAnalyzer::Analyze( 
-    const std::span< const JointConstPtr >& joints,
-    const Model::JointGroup& group )
+SkeletonConstPtr SkeletonAnalyzer::Analyze(
+	const std::span< const JointConstPtr >& joints,
+	const Model::JointGroup& group )
 {
 	auto group_joints = ExtractGroupJoints( joints, group );
 	return Analyze( group_joints, group.tip_home );
@@ -85,15 +85,15 @@ double SkeletonAnalyzer::ComputeTotalLength(
 
 		total_length += initial_offset;
 
-        if ( bones.size() < articulations.size() )
-        {
-            const auto& final_articulation = articulations.back();
-            const auto& p_tip = Translation( tip );
-            double final_offset =
-			    ( p_tip - final_articulation->Center() ).norm();
-            
-            total_length += final_offset;
-        }
+		if ( bones.size() < articulations.size() )
+		{
+			const auto& final_articulation = articulations.back();
+			const auto& p_tip = Translation( tip );
+			double final_offset =
+				( p_tip - final_articulation->Center() ).norm();
+
+			total_length += final_offset;
+		}
 	}
 
 	for ( int i = 0; i < bones.size(); i++ )
@@ -114,10 +114,10 @@ std::vector< JointConstPtr > SkeletonAnalyzer::ExtractGroupJoints(
 	}
 
 	std::vector< JointConstPtr > group_joints( group.Size() );
-    int i = 0;
+	int i = 0;
 	for ( auto it = group.indices.begin(); it != group.indices.end(); ++it )
 	{
-		group_joints[ i++ ] = joints[ *it ];
+		group_joints[i++] = joints[*it];
 	}
 	return group_joints;
 }
@@ -135,7 +135,7 @@ std::vector< std::shared_ptr< const Articulation >> SkeletonAnalyzer::AnalyzeArt
 
 	auto last_articulation = ExtractArticulationFromLastJoints( joints, tip );
 	const int n_joints_without_last = n_joints - last_articulation->JointCount();
-	
+
 	int index = n_joints_without_last - 1;
 	while ( index >= 0 )
 	{
@@ -182,7 +182,9 @@ std::vector< std::shared_ptr< const Articulation >> SkeletonAnalyzer::AnalyzeArt
 std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< const JointConstPtr >& joints )
 {
 	const int n_joints = joints.size();
-    if ( n_joints == 1 ) return { joints[0] };
+	if ( n_joints == 1 )
+		return { joints[0] }
+	;
 
 	std::vector< JointConstPtr > filtered_joints;
 	int i = 0;

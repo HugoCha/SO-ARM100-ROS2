@@ -162,24 +162,24 @@ void ArticulationState::ApplyUniversalConstraints( BoneState& bone_state ) const
 
 	Vec3d axis_pan = rotation_ * articulation_->Joints()[0]->Axis();
 	Vec3d axis_tilt = rotation_ * articulation_->Joints()[1]->Axis();
-	
-	Vec3d z_ref = axis_pan.cross(axis_tilt).normalized(); 
+
+	Vec3d z_ref = axis_pan.cross( axis_tilt ).normalized();
 	Vec3d x_ref = axis_pan.normalized();
 	Vec3d y_ref = axis_tilt.normalized();
 
-	double x = v_proposed.dot(x_ref);
-	double y = v_proposed.dot(y_ref);
-	double z = v_proposed.dot(z_ref);
+	double x = v_proposed.dot( x_ref );
+	double y = v_proposed.dot( y_ref );
+	double z = v_proposed.dot( z_ref );
 
-	double alpha = std::atan2(x, z); 
-	double beta  = std::atan2(y, z);
+	double alpha = std::atan2( x, z );
+	double beta  = std::atan2( y, z );
 
 	Vec3d constrained_dir;
-	if (std::abs(z) > epsilon)
-		constrained_dir = (std::tan(alpha) * x_ref + std::tan(beta) * y_ref + z_ref).normalized();
+	if ( std::abs( z ) > epsilon )
+		constrained_dir = ( std::tan( alpha ) * x_ref + std::tan( beta ) * y_ref + z_ref ).normalized();
 	else
-		constrained_dir = (std::sin(alpha) * x_ref + std::sin(beta) * y_ref).normalized();
-	
+		constrained_dir = ( std::sin( alpha ) * x_ref + std::sin( beta ) * y_ref ).normalized();
+
 	bone_state.Direction() = L * constrained_dir;
 }
 

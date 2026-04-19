@@ -4,7 +4,7 @@
 
 #include "Model/Joint/Joint.hpp"
 #include "Model/Joint/JointState.hpp"
-#include "Model/Limits.hpp"
+#include "Model/Joint/Limits.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>

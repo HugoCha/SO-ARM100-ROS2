@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Model/Pose.hpp"
+#include "Model/Geometry/Pose.hpp"
 
 #include <memory>
 
@@ -17,7 +17,7 @@ const double& Value() const {
 	return value_;
 }
 
-double& Value() {
+double& Value(){
 	return value_;
 }
 

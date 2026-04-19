@@ -19,20 +19,20 @@ using KinematicModelConstPtr = std::shared_ptr< const KinematicModel >;
 class Skeleton
 {
 public:
-Skeleton( 
-    const std::vector< ArticulationConstPtr >& articulations,
-    const std::vector< BoneConstPtr >& bones,
-    double total_length,
-    int joint_count ) :
-articulations_( articulations ),
-bones_( bones ),
-length_( total_length ),
-joint_count_( joint_count )
+Skeleton(
+	const std::vector< ArticulationConstPtr >& articulations,
+	const std::vector< BoneConstPtr >& bones,
+	double total_length,
+	int joint_count ) :
+	articulations_( articulations ),
+	bones_( bones ),
+	length_( total_length ),
+	joint_count_( joint_count )
 {
 }
 
 bool IsEmpty() const {
-    return articulations_.empty();
+	return articulations_.empty();
 }
 
 int JointCount() const {

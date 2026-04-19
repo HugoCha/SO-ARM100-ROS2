@@ -1,4 +1,4 @@
-#include "Model/Twist.hpp"
+#include "Model/Joint/Twist.hpp"
 
 #include "Utils/KinematicsUtils.hpp"
 

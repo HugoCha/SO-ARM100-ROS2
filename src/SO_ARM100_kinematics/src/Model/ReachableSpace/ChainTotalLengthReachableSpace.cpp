@@ -1,4 +1,4 @@
-#include "Model/Space/ChainTotalLengthReachableSpace.hpp"
+#include "Model/ReachableSpace/ChainTotalLengthReachableSpace.hpp"
 
 #include "Global.hpp"
 
@@ -14,7 +14,7 @@ namespace SOArm100::Kinematics::Model
 ChainTotalLengthReachableSpace::ChainTotalLengthReachableSpace(
 	const JointChain& chain,
 	const Mat4d& home_configuration ) :
-	SphericalReachableSpace( 
+	SphereReachableSpace(
 		ChainOrigin( chain ),
 		ComputeTotalLength( chain, home_configuration ) )
 {

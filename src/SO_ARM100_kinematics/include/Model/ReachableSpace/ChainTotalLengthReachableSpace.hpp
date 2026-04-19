@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "SphericalReachableSpace.hpp"
+#include "SphereReachableSpace.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -11,7 +11,7 @@ class JointChain;
 
 namespace SOArm100::Kinematics::Model
 {
-class ChainTotalLengthReachableSpace : public SphericalReachableSpace
+class ChainTotalLengthReachableSpace : public SphereReachableSpace
 {
 public:
 ChainTotalLengthReachableSpace( const JointChain& chain, const Mat4d& home_configuration );

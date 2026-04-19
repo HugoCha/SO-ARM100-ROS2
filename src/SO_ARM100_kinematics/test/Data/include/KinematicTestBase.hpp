@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/KinematicModel.hpp"
-#include "Model/Space/ChainTotalLengthReachableSpace.hpp"
+#include "Model/ReachableSpace/ChainTotalLengthReachableSpace.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
 

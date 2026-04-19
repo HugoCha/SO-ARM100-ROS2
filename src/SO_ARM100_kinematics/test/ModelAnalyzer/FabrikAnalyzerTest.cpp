@@ -4,9 +4,9 @@
 
 #include "KinematicTestBase.hpp"
 #include "Model/Joint/JointChain.hpp"
-#include "Model/Limits.hpp"
-#include "Model/Link.hpp"
-#include "Model/Twist.hpp"
+#include "Model/Joint/Limits.hpp"
+#include "Model/Joint/Link.hpp"
+#include "Model/Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
 

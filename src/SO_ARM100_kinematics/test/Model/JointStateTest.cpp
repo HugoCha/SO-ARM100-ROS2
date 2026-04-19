@@ -3,7 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/Joint/Joint.hpp"
-#include "Model/Limits.hpp"
+#include "Model/Joint/Limits.hpp"
 #include "Utils/Converter.hpp"
 
 #include <gtest/gtest.h>

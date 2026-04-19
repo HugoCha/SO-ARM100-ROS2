@@ -6,7 +6,7 @@
 
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointGroup.hpp"
-#include "Model/Twist.hpp"
+#include "Model/Joint/Twist.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 

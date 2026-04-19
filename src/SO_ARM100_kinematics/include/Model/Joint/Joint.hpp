@@ -3,10 +3,10 @@
 #include "Global.hpp"
 
 #include "JointType.hpp"
-#include "Model/Limits.hpp"
-#include "Model/Link.hpp"
-#include "Model/Pose.hpp"
-#include "Model/Twist.hpp"
+#include "Limits.hpp"
+#include "Link.hpp"
+#include "Model/Geometry/Pose.hpp"
+#include "Twist.hpp"
 
 #include <limits>
 #include <memory>

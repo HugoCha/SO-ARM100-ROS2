@@ -2,8 +2,8 @@
 
 #include "Global.hpp"
 
+#include "Model/Geometry/Pose.hpp"
 #include "Model/Joint/Joint.hpp"
-#include "Model/Pose.hpp"
 #include "Utils/MathUtils.hpp"
 
 namespace SOArm100::Kinematics::Model
