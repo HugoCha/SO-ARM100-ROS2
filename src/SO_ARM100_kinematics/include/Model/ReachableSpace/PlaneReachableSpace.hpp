@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Model/Geometry/Plane.hpp"
+#include "Model/Geometry/Plane3d.hpp"
 #include "ReachableSpace.hpp"
 
 namespace SOArm100::Kinematics::Model
@@ -19,6 +19,6 @@ virtual Mat4d GetPossibleReachableTarget( const Mat4d& target ) const override;
 virtual bool IsUnreachable( const Mat4d& target ) const override;
 
 private:
-Plane plane_;
+Plane3d plane_;
 };
 }

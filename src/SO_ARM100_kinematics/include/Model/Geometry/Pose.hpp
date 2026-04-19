@@ -21,4 +21,8 @@ struct Pose
 		return pose;
 	}
 };
+
+Pose Translate( const Pose& pose, const Vec3d& translation );
+Pose Rotate( const Pose& pose, const Quaternion& rotation );
+Pose Transform( const Pose& pose, const Vec3d& translation, const Quaternion& rotation );
 }

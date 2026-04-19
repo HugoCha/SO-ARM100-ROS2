@@ -42,21 +42,21 @@ void RevoluteArticulationBoneConstraint::ApplyConstraint(
 {
 	Vec3d v = direction;
 
-	Base3d rotated_base = base_ref_->Rotate( rotation );
-	Vec3d v_plane = v - v.dot( rotated_base.Z() ) * rotated_base.Z();
+	Base3d rotated_base = Rotate( *base_ref_, rotation );
+	Vec3d v_plane = v - v.dot( rotated_base.z ) * rotated_base.z;
 
 	if ( v_plane.norm() < epsilon )
 	{
-		direction = bone_->Length() * rotated_base.Z();
+		direction = bone_->Length() * rotated_base.z;
 		return;
 	}
 
-	double angle = std::atan2( v_plane.dot( rotated_base.Y() ), v_plane.dot( rotated_base.X() ) );
+	double angle = std::atan2( v_plane.dot( rotated_base.y ), v_plane.dot( rotated_base.x ) );
 
 	auto joint = articulation_->Joints()[0];
 	angle = joint->GetLimits().Clamp( angle );
 
-	Vec3d bone_dir = ( rotated_base.X() * cos( angle ) + rotated_base.Y() * sin( angle ) ).normalized();
+	Vec3d bone_dir = ( rotated_base.x * cos( angle ) + rotated_base.y * sin( angle ) ).normalized();
 	direction = bone_->Length() * bone_dir;
 }
 

@@ -4,9 +4,9 @@
 
 namespace SOArm100::Kinematics::Model
 {
-struct Sphere
+struct Plane3d
 {
-	Vec3d center;
-	double radius;
+	Vec3d point;
+	Vec3d normal;
 };
 }

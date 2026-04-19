@@ -7,23 +7,32 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-Base3d Base3d::Translate( const Vec3d& translation ) const
+Base3d Translate( const Base3d& base, const Vec3d& translation )
 {
-	return Base3d( x_ + translation, y_ + translation, z_ + translation );
+	return Base3d(
+		base.x + translation,
+		base.y + translation,
+		base.z + translation );
 }
 
 // ------------------------------------------------------------
 
-Base3d Base3d::Rotate( const Quaternion& rotation ) const
+Base3d Rotate( const Base3d& base, const Quaternion& rotation )
 {
-	return Base3d( rotation * x_, rotation * y_, rotation * z_ );
+	return Base3d(
+		rotation * base.x,
+		rotation * base.y,
+		rotation * base.z );
 }
 
 // ------------------------------------------------------------
 
-Base3d Base3d::Transform(  const Vec3d& translation, const Quaternion& rotation ) const
+Base3d Transform( const Base3d& base, const Vec3d& translation, const Quaternion& rotation )
 {
-	return Base3d( rotation * ( x_ + translation ), rotation * ( y_ + translation ), rotation * ( z_ + translation ) );
+	return Base3d(
+		rotation * ( base.x + translation ),
+		rotation * ( base.y + translation ),
+		rotation * ( base.z + translation ) );
 }
 
 // ------------------------------------------------------------
