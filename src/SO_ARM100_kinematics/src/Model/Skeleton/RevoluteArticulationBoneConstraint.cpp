@@ -31,7 +31,7 @@ RevoluteArticulationBoneConstraint::RevoluteArticulationBoneConstraint(
 	y_ref.normalize();
 
 	base_ref_ = std::make_unique< const Base3d >( x_ref, y_ref, z_ref );
-    bone_on_axis_ = x_ref.isZero();
+	bone_on_axis_ = x_ref.isZero();
 }
 
 // ------------------------------------------------------------
@@ -41,11 +41,11 @@ void RevoluteArticulationBoneConstraint::ApplyConstraint(
 	const Vec3d& articulation_center,
 	BoneState& bone_state ) const
 {
-    if ( bone_on_axis_ )
-    {
-        bone_state.Direction() = Vec3d::Zero();
-        return;
-    }
+	if ( bone_on_axis_ )
+	{
+		bone_state.Direction() = Vec3d::Zero();
+		return;
+	}
 
 	Vec3d v = bone_state.Direction();
 

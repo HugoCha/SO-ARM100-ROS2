@@ -12,9 +12,9 @@ struct Sphere3d
 
 enum class PointSpherePosition
 {
-On,
-Inside,
-Outside
+	On,
+	Inside,
+	Outside
 };
 
 Sphere3d Translate( const Sphere3d& sphere, const Vec3d& translation );

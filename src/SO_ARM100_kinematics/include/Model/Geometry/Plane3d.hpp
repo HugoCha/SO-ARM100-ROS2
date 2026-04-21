@@ -6,15 +6,15 @@ namespace SOArm100::Kinematics::Model
 {
 struct Plane3d
 {
-Vec3d point;
-Vec3d normal;
+	Vec3d point;
+	Vec3d normal;
 };
 
 enum class PointPlanePosition
 {
-On,
-Above,
-Below
+	On,
+	Above,
+	Below
 };
 
 Plane3d Translate( const Plane3d& plane, const Vec3d& translation );

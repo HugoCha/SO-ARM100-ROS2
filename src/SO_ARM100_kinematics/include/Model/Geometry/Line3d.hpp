@@ -12,8 +12,8 @@ struct Line3d
 
 enum class PointLinePosition
 {
-On,
-Off, 
+	On,
+	Off,
 };
 
 Line3d Translate( const Line3d& line, const Vec3d& translation );

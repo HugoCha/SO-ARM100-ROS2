@@ -345,7 +345,8 @@ std::vector< double > EvaluateAngleCandidates(
 	double raw_angle ) noexcept
 {
 	if ( std::isnan( raw_angle ) )
-		return {};
+		return {}
+	;
 
 	std::vector< double > candidates;
 	candidates.reserve( 2 );
