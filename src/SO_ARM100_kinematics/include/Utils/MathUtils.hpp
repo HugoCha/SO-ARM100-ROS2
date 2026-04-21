@@ -29,4 +29,5 @@ Vec3d ProjectPointOnAxis(
 
 double Angle( const Vec3d& V1, const Vec3d& V2 );
 double SignedAngle( const Vec3d& V1, const Vec3d& V2, const Vec3d& normal );
+double AngleAroundAxis( const Vec3d& V1, const Vec3d& V2, const Vec3d& axis );
 }

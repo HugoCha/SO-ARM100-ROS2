@@ -6,6 +6,7 @@
 #include "Model/ReachableSpace/ChainTotalLengthReachableSpace.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
+#include "Utils/Converter.hpp"
 
 #include <gtest/gtest.h>
 
@@ -85,6 +86,31 @@ Model::KinematicModelConstPtr CreateModel(
 		group_topology,
 		std::move( Model::SkeletonAnalyzer::Analyze( chain.GetJoints(), home ) ),
 		std::move( reachable_space ) );
+}
+
+Model::JointConstPtr MakeRevoluteJoint(
+	const Vec3d& axis,
+	const Vec3d& origin,
+	double min   = -M_PI / 2,
+	double max   =  M_PI / 2 )
+{
+	return std::make_shared< const Model::Joint >(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), 0 ),
+		Model::Limits( min, max )
+		);
+}
+
+Model::JointConstPtr MakePrismaticJoint(
+	const Vec3d& axis,
+	const Vec3d& origin,
+	double min = 0.0,
+	double max = 1.0 )
+{
+	return std::make_shared< const Model::Joint >(
+		Model::Twist( axis ),
+		Model::Link( ToTransformMatrix( origin ), 0 ),
+		Model::Limits( min, max ) );
 }
 
 protected:

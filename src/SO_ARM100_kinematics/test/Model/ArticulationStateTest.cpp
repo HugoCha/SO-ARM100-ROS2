@@ -2,13 +2,12 @@
 
 #include "Global.hpp"
 
+#include "KinematicTestBase.hpp"
 #include "Model/Joint/Joint.hpp"
-#include "Model/Joint/Limits.hpp"
 #include "Model/Skeleton/Articulation.hpp"
 #include "Model/Skeleton/ArticulationType.hpp"
 #include "Model/Skeleton/Bone.hpp"
 #include "Model/Skeleton/BoneState.hpp"
-#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/StringConverter.hpp"
 
@@ -20,40 +19,7 @@
 namespace SOArm100::Kinematics::Test
 {
 
-// ============================================================
-// Helpers
-// ============================================================
-
-static Model::JointConstPtr MakeRevoluteJoint(
-	const Vec3d& axis,
-	const Vec3d& origin,
-	double min   = -M_PI / 2,
-	double max   =  M_PI / 2 )
-{
-	return std::make_shared< const Model::Joint >(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0 ),
-		Model::Limits( min, max )
-		);
-}
-
-static Model::JointConstPtr MakePrismaticJoint(
-	const Vec3d& axis,
-	const Vec3d& origin,
-	double min = 0.0,
-	double max = 1.0 )
-{
-	return std::make_shared< const Model::Joint >(
-		Model::Twist( axis ),
-		Model::Link( ToTransformMatrix( origin ), 0 ),
-		Model::Limits( min, max ) );
-}
-
-// ============================================================
-// Fixture
-// ============================================================
-
-class ArticulationStateTest : public ::testing::Test
+class ArticulationStateTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -94,7 +60,7 @@ void SetUp() override
 		Vec3d( 0, 0, 0 ) );
 }
 
-void TearDown() override {
+virtual void TearDown() override {
 }
 
 Model::JointConstPtr revolute_joint_;

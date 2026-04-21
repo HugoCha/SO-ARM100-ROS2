@@ -15,11 +15,12 @@ public:
 RevoluteArticulationBoneConstraint( ArticulationConstPtr articulation, BoneConstPtr bone );
 
 virtual void ApplyConstraint(
-	const Quaternion& rotation,
-	const Vec3d& center,
-	Vec3d& direction ) const override;
+	const Quaternion& articulation_rotation,
+	const Vec3d& articulation_center,
+	BoneState& bone_state ) const override;
 
 private:
 std::unique_ptr< const Base3d > base_ref_;
+bool bone_on_axis_;
 };
 }

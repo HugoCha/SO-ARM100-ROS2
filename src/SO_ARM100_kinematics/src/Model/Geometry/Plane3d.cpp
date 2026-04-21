@@ -34,4 +34,29 @@ Plane3d Transform( const Plane3d& plane, const Vec3d& translation, const Quatern
 
 // ------------------------------------------------------------
 
+Vec3d ProjectPoint( const Plane3d& plane, const Vec3d& point )
+{
+    Vec3d dir = point - plane.point;
+    Vec3d perp = plane.normal.dot( dir ) * plane.normal;
+    return dir - perp;
+}
+
+// ------------------------------------------------------------
+
+PointPlanePosition IsPointOnPlane( const Plane3d& plane, const Vec3d& point )
+{
+    Vec3d dir = point - plane.point;
+    
+    auto dot = plane.normal.dot( dir );
+    if ( std::abs( dot ) < epsilon )
+        return PointPlanePosition::On;
+
+    if ( dot < epsilon ) 
+        return PointPlanePosition::Below;
+
+    return PointPlanePosition::Above;
+}
+
+// ------------------------------------------------------------
+
 }

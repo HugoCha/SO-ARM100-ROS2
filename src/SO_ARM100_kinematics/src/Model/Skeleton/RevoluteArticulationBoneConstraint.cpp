@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/Geometry/Base3d.hpp"
+#include "Model/Skeleton/BoneState.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -15,7 +16,6 @@ RevoluteArticulationBoneConstraint::RevoluteArticulationBoneConstraint(
 	ArticulationBoneConstraint( articulation, bone )
 {
 	assert( articulation->GetType() == ArticulationType::Revolute );
-	assert( articulation->Axis() == bone->Direction() );
 
 	auto joint = articulation_->Joints()[0];
 
@@ -31,23 +31,30 @@ RevoluteArticulationBoneConstraint::RevoluteArticulationBoneConstraint(
 	y_ref.normalize();
 
 	base_ref_ = std::make_unique< const Base3d >( x_ref, y_ref, z_ref );
+    bone_on_axis_ = x_ref.isZero();
 }
 
 // ------------------------------------------------------------
 
 void RevoluteArticulationBoneConstraint::ApplyConstraint(
-	const Quaternion& rotation,
-	const Vec3d& center,
-	Vec3d& direction ) const
+	const Quaternion& articulation_rotation,
+	const Vec3d& articulation_center,
+	BoneState& bone_state ) const
 {
-	Vec3d v = direction;
+    if ( bone_on_axis_ )
+    {
+        bone_state.Direction() = Vec3d::Zero();
+        return;
+    }
 
-	Base3d rotated_base = Rotate( *base_ref_, rotation );
+	Vec3d v = bone_state.Direction();
+
+	Base3d rotated_base = Rotate( *base_ref_, articulation_rotation );
 	Vec3d v_plane = v - v.dot( rotated_base.z ) * rotated_base.z;
 
 	if ( v_plane.norm() < epsilon )
 	{
-		direction = bone_->Length() * rotated_base.z;
+		bone_state.Direction() = bone_->Length() * rotated_base.z;
 		return;
 	}
 
@@ -57,7 +64,7 @@ void RevoluteArticulationBoneConstraint::ApplyConstraint(
 	angle = joint->GetLimits().Clamp( angle );
 
 	Vec3d bone_dir = ( rotated_base.x * cos( angle ) + rotated_base.y * sin( angle ) ).normalized();
-	direction = bone_->Length() * bone_dir;
+	bone_state.Direction() = bone_->Length() * bone_dir;
 }
 
 // ------------------------------------------------------------

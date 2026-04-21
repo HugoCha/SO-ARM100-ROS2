@@ -34,4 +34,24 @@ Line3d Transform( const Line3d& line, const Vec3d& translation, const Quaternion
 
 // ------------------------------------------------------------
 
+Vec3d ProjectPoint( const Line3d& line, const Vec3d& point )
+{
+    Vec3d dir = point - line.point;
+    return line.axis.dot( dir ) * line.axis;    
+}
+
+// ------------------------------------------------------------
+
+PointLinePosition IsPointOnLine( const Line3d& line, const Vec3d& point )
+{
+    Vec3d dir = point - line.point;
+
+    if ( line.axis.cross( dir ).norm() < epsilon )
+        return PointLinePosition::On;
+
+    return PointLinePosition::Off;
+}
+
+// ------------------------------------------------------------
+
 }
