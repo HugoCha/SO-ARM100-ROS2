@@ -25,43 +25,22 @@ const Vec3d& Origin() const {
 	return pose_.origin;
 }
 
+Vec3d& Origin() {
+	return pose_.origin;
+}
+
 const Vec3d& Axis() const {
 	return pose_.axis;
 }
 
-bool UpdateValueRequired() const {
-	return update_value_required_;
+Vec3d& Axis() {
+	return pose_.axis;
 }
-
-bool UpdatePoseRequired() const {
-	return update_pose_required_;
-}
-
-void SetState( const Vec3d& origin, const Vec3d& axis, double value );
-void SetPose( const Vec3d& origin, const Vec3d& axis );
-
-void UpdatePose(
-	const Vec3d& origin,
-	const Vec3d& axis );
-
-void UpdateValue(
-	const Vec3d& old_origin,
-	const Vec3d& old_to_child_direction,
-	const Vec3d& new_to_child_direction );
 
 private:
-bool update_value_required_;
-bool update_pose_required_;
 Pose pose_;
 double value_;
 JointConstPtr joint_;
-
-void UpdatePrismaticValue(
-	const Vec3d& old_orgin );
-
-void UpdateRevoluteValue(
-	const Vec3d& old_to_child_direction,
-	const Vec3d& new_to_child_direction );
 };
 
 using JointStatePtr = std::shared_ptr< JointState >;

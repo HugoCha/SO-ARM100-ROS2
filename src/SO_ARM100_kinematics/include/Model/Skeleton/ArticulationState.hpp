@@ -11,22 +11,22 @@
 
 namespace SOArm100::Kinematics::Model
 {
-
 class ArticulationState
 {
 public:
 ArticulationState( ArticulationConstPtr articulation );
+virtual ~ArticulationState() = default;
 
 const Vec3d& Origin() const {
 	return center_;
 }
 
 const Vec3d& Axis() const {
-	return joint_states_.back()->Axis();
+	return axis_;
 }
 
 double Value() const {
-	return joint_states_.back()->Value();
+	return value_;
 }
 
 ArticulationConstPtr GetArticulation() const {
@@ -40,43 +40,17 @@ VecXd GetJointValues() const;
 void SetState( const Quaternion& rotation, const Vec3d& origin, const VecXd& values );
 void SetCenterPose( const Quaternion& rotation, const Vec3d& origin );
 
-void ApplyConstraints( BoneState& bone_state ) const;
+virtual void ApplyConstraints( BoneState& bone_state ) const = 0;
+virtual void UpdateValues( const BoneState& bone_state ) = 0;
 
-void UpdateValue(
-	const ArticulationState& old_state,
-	const BoneState& old_bone_state,
-	const BoneState& new_bone_state );
-
-private:
+protected:
 ArticulationConstPtr articulation_;
-Vec3d center_;
 Quaternion rotation_;
+Vec3d center_;
+Vec3d axis_;
+Iso3d internal_transform_;
+double value_;
 std::vector< JointStatePtr > joint_states_;
-
-void ApplyPrismaticConstraints( BoneState& bone_state ) const;
-void ApplyRevoluteConstraints( BoneState& bone_state ) const;
-void ApplyUniversalConstraints( BoneState& bone_state ) const;
-void ApplySphericalConstraints( BoneState& bone_state ) const;
-
-void UpdatePrismaticArticulationValue(
-	const ArticulationState& old_state,
-	const BoneState& old_bone_state,
-	const BoneState& new_bone_state );
-
-void UpdateRevoluteArticulationValue(
-	const ArticulationState& old_state,
-	const BoneState& old_bone_state,
-	const BoneState& new_bone_state );
-
-void UpdateUniversalArticulationValue(
-	const ArticulationState& old_state,
-	const BoneState& old_bone_state,
-	const BoneState& new_bone_state );
-
-void UpdateSphericalArticulationValue(
-	const ArticulationState& old_state,
-	const BoneState& old_bone_state,
-	const BoneState& new_bone_state );
 };
 
 using ArticulationStatePtr = std::shared_ptr< ArticulationState >;

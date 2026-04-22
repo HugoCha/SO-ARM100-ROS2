@@ -331,7 +331,7 @@ std::shared_ptr< Articulation > SkeletonAnalyzer::ExtractArticulationFromLastJoi
 	const Vec3d& p_tip = Translation( tip );
 	const Vec3d& tip_dir = p_tip - last_joint->Origin();
 
-	ArticulationType type = last_joint->IsFixed() ? ArticulationType::Fixed : ArticulationType::Revolute;
+	ArticulationType type = ArticulationType::Revolute;
 	Vec3d p_center = last_joint->Origin();
 
 	// Tip on last joint axis

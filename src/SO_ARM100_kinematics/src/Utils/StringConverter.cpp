@@ -44,8 +44,6 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 {
 	switch ( obj )
 	{
-	case SOArm100::Kinematics::Model::ArticulationType::Fixed:
-	{ os << "FIXED"; return os; }
 	case SOArm100::Kinematics::Model::ArticulationType::Revolute:
 	{ os << "REVOLUTE"; return os; }
 	case SOArm100::Kinematics::Model::ArticulationType::Prismatic:

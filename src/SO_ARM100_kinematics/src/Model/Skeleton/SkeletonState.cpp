@@ -3,9 +3,15 @@
 #include "Global.hpp"
 
 #include "Model/Skeleton/ArticulationState.hpp"
+#include "Model/Skeleton/ArticulationType.hpp"
+#include "Model/Skeleton/PrismaticArticulationState.hpp"
+#include "Model/Skeleton/RevoluteArticulationState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
+#include "Model/Skeleton/SphericalArticulationState.hpp"
+#include "Model/Skeleton/UniversalArticulationState.hpp"
 #include "Utils/Converter.hpp"
 
+#include <memory>
 #include <stdexcept>
 
 namespace SOArm100::Kinematics::Model
@@ -18,7 +24,7 @@ SkeletonState::SkeletonState( SkeletonConstPtr skeleton ) :
 {
 	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
 	{
-		articulation_states_.emplace_back( std::make_shared< ArticulationState >( skeleton->Articulation( i ) ) );
+		articulation_states_.emplace_back( CreateArticulationState( skeleton->Articulation( i ) ) );
 	}
 }
 
@@ -66,6 +72,28 @@ void SkeletonState::SetState( const VecXd& joints )
 		world_rotation = world_rotation * AngleAxis( articulation_state->Value(), articulation_state->Axis() );
 
 		sub_joint_idx += n_sub_joints;
+	}
+}
+
+// ------------------------------------------------------------
+
+ArticulationStatePtr SkeletonState::CreateArticulationState( const ArticulationConstPtr& articulation )
+{
+	switch ( articulation->GetType() )
+	{
+		case ArticulationType::Prismatic:
+			return std::make_shared< PrismaticArticulationState >( articulation );
+		case ArticulationType::Revolute:
+			return std::make_shared< RevoluteArticulationState >( articulation );
+		case ArticulationType::Universal:
+			return std::make_shared< UniversalArticulationState >( articulation );
+		case ArticulationType::Spherical:
+			return std::make_shared< SphericalArticulationState >( articulation );
+		default:
+		{
+			assert( "Unknown articulation type" );
+			return nullptr;
+		}
 	}
 }
 
