@@ -24,7 +24,7 @@ void RevoluteArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	auto joint_state = joint_states_[0];
 	auto bone = bone_state.GetBone();
 
-	Vec3d v_ref = rotation_ * bone->Direction();
+	Vec3d v_ref = world_transform_.rotation() * bone->Direction();
 	Vec3d v = bone_state.Direction();
 
 	Vec3d v_ref_plane = v_ref - v_ref.dot( joint_state->Axis() ) * joint_state->Axis();
@@ -51,7 +51,7 @@ void RevoluteArticulationState::UpdateValues( const BoneState& bone_state )
 	auto joint_state = joint_states_[0];
 	auto bone = bone_state.GetBone();
 
-	Vec3d v_ref = rotation_ * bone->Direction();
+	Vec3d v_ref = world_transform_.rotation() * bone->Direction();
 	Vec3d v = bone_state.Direction();
 
 	Vec3d v_ref_plane = v_ref - v_ref.dot( joint_state->Axis() ) * joint_state->Axis();
@@ -63,11 +63,14 @@ void RevoluteArticulationState::UpdateValues( const BoneState& bone_state )
 	}
 
 	double angle = SignedAngle( v_ref_plane, v_plane, joint_state->Axis() );
-	if ( !joint->GetLimits().Within( angle ) )
-	{
-		angle = joint->GetLimits().Clamp( angle );
-	}
-	joint_state->Value() = angle;
+
+	local_transform_.setIdentity();
+	SetJointInternalState(
+		joint_state,
+		world_transform_,
+		global_transform_,
+		local_transform_,
+		angle );
 }
 
 // ------------------------------------------------------------

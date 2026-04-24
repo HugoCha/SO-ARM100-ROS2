@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/Geometry/Pose.hpp"
+#include "Model/Joint/Joint.hpp"
 
 #include <memory>
 
@@ -25,7 +26,7 @@ const Vec3d& Origin() const {
 	return pose_.origin;
 }
 
-Vec3d& Origin() {
+Vec3d& Origin(){
 	return pose_.origin;
 }
 
@@ -33,8 +34,12 @@ const Vec3d& Axis() const {
 	return pose_.axis;
 }
 
-Vec3d& Axis() {
+Vec3d& Axis(){
 	return pose_.axis;
+}
+
+JointConstPtr GetJoint() const {
+	return joint_;
 }
 
 private:

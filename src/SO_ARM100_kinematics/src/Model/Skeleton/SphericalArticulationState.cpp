@@ -28,10 +28,10 @@ void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 	auto joint_1 = articulation_->Joints()[1];
 	auto joint_2 = articulation_->Joints()[2];
 
-	Vec3d old_bone_direction = rotation_ * internal_rotation_ * bone_state.GetBone()->Direction();
+	Vec3d old_bone_direction = global_transform_.rotation() * bone_state.GetBone()->Direction();
 	Vec3d new_bone_direction = bone_state.Direction();
 
-	auto old_bone_to_new = 
+	auto old_bone_to_new =
 		Quaternion::FromTwoVectors( old_bone_direction, new_bone_direction );
 
 	Vec3d old_ref   = joint_states_[0]->Axis().cross( joint_states_[1]->Axis() );
@@ -41,17 +41,17 @@ void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 	double old_value = joint_states_[0]->Value();
 	double new_value = old_value + SignedAngle( intermediate_ref, final_ref, joint_states_[0]->Axis() );
 	joint_states_[0]->Value() = joint_0->GetLimits().Clamp( new_value );
-	
-	auto joint_0_rotation = 
+
+	auto joint_0_rotation =
 		AngleAxis( joint_states_[0]->Value() - old_value, joint_states_[0]->Axis() );
 	intermediate_ref = joint_0_rotation * intermediate_ref;
 	joint_states_[1]->Axis() = joint_0_rotation * joint_states_[1]->Axis();
-	
+
 	old_value = joint_states_[1]->Value();
 	new_value = old_value + SignedAngle( intermediate_ref, final_ref, joint_states_[1]->Axis() );
 	joint_states_[1]->Value() = joint_1->GetLimits().Clamp( new_value );
-	
-	auto joint_1_rotation = 
+
+	auto joint_1_rotation =
 		AngleAxis( joint_states_[1]->Value() - old_value, joint_states_[1]->Axis() );
 	intermediate_ref = joint_1_rotation * intermediate_ref;
 	joint_states_[2]->Axis() = joint_1_rotation * joint_0_rotation * joint_states_[2]->Axis();

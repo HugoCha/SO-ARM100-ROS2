@@ -52,8 +52,7 @@ void SkeletonState::SetState( const VecXd& joints )
 	if ( n_joints < skeleton_->JointCount() )
 		throw std::invalid_argument( "Joints size mismatch" );
 
-	Vec3d world_origin = Vec3d::Identity();
-	Quaternion world_rotation = Quaternion::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 
 	int sub_joint_idx = 0;
 	for ( int i = 0; i < articulation_states_.size(); i++ )
@@ -64,12 +63,11 @@ void SkeletonState::SetState( const VecXd& joints )
 		auto articulation_state = articulation_states_[i];
 
 		articulation_state->SetState(
-			world_rotation,
-			world_origin,
+			world_transform,
 			sub_joints );
 
-		world_origin = articulation_state->Origin() + articulation_state->Axis() * skeleton_->Length( i );
-		world_rotation = world_rotation * AngleAxis( articulation_state->Value(), articulation_state->Axis() );
+		world_transform.translate( skeleton_->Bone( i )->Direction() );
+		world_transform = articulation_state->LocalTransform() * world_transform;
 
 		sub_joint_idx += n_sub_joints;
 	}
@@ -81,19 +79,19 @@ ArticulationStatePtr SkeletonState::CreateArticulationState( const ArticulationC
 {
 	switch ( articulation->GetType() )
 	{
-		case ArticulationType::Prismatic:
-			return std::make_shared< PrismaticArticulationState >( articulation );
-		case ArticulationType::Revolute:
-			return std::make_shared< RevoluteArticulationState >( articulation );
-		case ArticulationType::Universal:
-			return std::make_shared< UniversalArticulationState >( articulation );
-		case ArticulationType::Spherical:
-			return std::make_shared< SphericalArticulationState >( articulation );
-		default:
-		{
-			assert( "Unknown articulation type" );
-			return nullptr;
-		}
+	case ArticulationType::Prismatic:
+		return std::make_shared< PrismaticArticulationState >( articulation );
+	case ArticulationType::Revolute:
+		return std::make_shared< RevoluteArticulationState >( articulation );
+	case ArticulationType::Universal:
+		return std::make_shared< UniversalArticulationState >( articulation );
+	case ArticulationType::Spherical:
+		return std::make_shared< SphericalArticulationState >( articulation );
+	default:
+	{
+		assert( "Unknown articulation type" );
+		return nullptr;
+	}
 	}
 }
 

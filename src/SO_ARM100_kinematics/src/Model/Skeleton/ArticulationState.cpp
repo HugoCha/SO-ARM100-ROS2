@@ -15,14 +15,25 @@ namespace SOArm100::Kinematics::Model
 
 ArticulationState::ArticulationState( ArticulationConstPtr articulation ) :
 	articulation_( articulation ),
-	center_( articulation->Center() ),
-	rotation_( Quaternion::Identity() ),
-	internal_transform_( Iso3d::Identity() )
+	world_transform_( Iso3d::Identity() )
 {
+	world_transform_.translate( articulation->Center() );
+
+	Iso3d global_transform = world_transform_;
+	Iso3d local_transform = Iso3d::Identity();
 	for ( auto it = articulation_->Joints().begin(); it != articulation->Joints().end(); ++it )
 	{
 		joint_states_.push_back( std::make_shared< JointState >( *it ) );
+		SetJointInternalState(
+			joint_states_.back(),
+			world_transform_,
+			global_transform,
+			local_transform,
+			joint_states_.back()->Value() );
 	}
+
+	global_transform_ = global_transform;
+	local_transform_ = local_transform;
 }
 
 // ------------------------------------------------------------
@@ -53,55 +64,78 @@ VecXd ArticulationState::GetJointValues() const
 // ------------------------------------------------------------
 
 void ArticulationState::SetState(
-	const Quaternion& rotation,
-	const Vec3d& origin,
+	const Iso3d& world_transform,
 	const VecXd& values )
 {
-	center_ = origin;
-	rotation_ = rotation;
+	world_transform_ = world_transform;
 
-	Vec3d angle_axes;
-	Quaternion internal_rotation = Quaternion::Identity();
-	Quaternion intermediate_rotation = rotation;
+	Iso3d global_transform = world_transform_;
+	Iso3d local_transform = Iso3d::Identity();
+
 	for ( auto i = 0; i < joint_states_.size(); i++ )
 	{
-		auto joint = articulation_->Joints()[i];
-		auto joint_state = joint_states_[i];
-		joint_state->Origin() = origin + intermediate_rotation * ( joint->Origin() - articulation_->Center() );
-		joint_state->Axis()   = intermediate_rotation * joint->Axis();
-		joint_state->Value()  = joint->GetLimits().Clamp( values[i] );
-		angle_axes += joint_state->Value() * joint_state->Axis(); 
-		internal_rotation = internal_rotation * AngleAxis( joint_state->Value(), joint->Axis() );
-		intermediate_rotation = rotation * internal_rotation;
+		SetJointInternalState(
+			joint_states_[i],
+			world_transform,
+			global_transform,
+			local_transform,
+			values[i] );
 	}
-	internal_rotation_ = internal_rotation;
-	value_ = angle_axes.norm();
-	axis_  = angle_axes / angle_axes.norm();
+
+	global_transform_ = global_transform;
+	local_transform_ = local_transform;
 }
 
 // ------------------------------------------------------------
 
-void ArticulationState::SetCenterPose( const Quaternion& rotation, const Vec3d& origin )
+void ArticulationState::SetJointInternalState(
+	JointStatePtr& joint_state,
+	const Iso3d& world_transform,
+	Iso3d& global_transform,
+	Iso3d& local_transform,
+	double value ) const
 {
-	center_ = origin;
-	rotation_ = rotation;
+	auto joint = joint_state->GetJoint();
+	joint_state->Origin() =
+		global_transform.translation() +
+		global_transform.rotation() * ( joint->Origin() - articulation_->Center() );
+	joint_state->Axis()   = global_transform.rotation() * joint->Axis();
+	joint_state->Value()  = joint->GetLimits().Clamp( value );
 
-	Vec3d angle_axes;
-	Quaternion internal_rotation = Quaternion::Identity();
-	Quaternion intermediate_rotation = rotation;
+	if ( joint->IsPrismatic() )
+	{
+		Vec3d translation = joint_state->Value() * joint->Axis();
+		local_transform.translate( translation );
+	}
+	else if ( joint->IsRevolute() )
+	{
+		auto rotation = AngleAxis( joint_state->Value(), joint->Axis() );
+		local_transform.rotate( rotation );
+	}
+	global_transform = world_transform * local_transform;
+}
+
+// ------------------------------------------------------------
+
+void ArticulationState::SetCenterPose( const Iso3d& world_transform )
+{
+	world_transform_ = world_transform;
+
+	Iso3d global_transform = world_transform_;
+	Iso3d local_transform = Iso3d::Identity();
+
 	for ( auto i = 0; i < joint_states_.size(); i++ )
 	{
-		auto joint = articulation_->Joints()[i];
-		auto joint_state = joint_states_[i];
-		joint_state->Origin() = origin + intermediate_rotation * ( joint->Origin() - articulation_->Center() );
-		joint_state->Axis()   = intermediate_rotation * joint->Axis();
-		angle_axes += joint_state->Value() * joint_state->Axis(); 
-		internal_rotation = internal_rotation * AngleAxis( joint_state->Value(), joint->Axis() );
-		intermediate_rotation = rotation * internal_rotation;
+		SetJointInternalState(
+			joint_states_[i],
+			world_transform,
+			global_transform,
+			local_transform,
+			joint_states_[i]->Value() );
 	}
-	internal_rotation_ = internal_rotation;
-	value_ = angle_axes.norm();
-	axis_  = angle_axes / angle_axes.norm();
+
+	global_transform_ = global_transform;
+	local_transform_ = local_transform;
 }
 
 // ------------------------------------------------------------

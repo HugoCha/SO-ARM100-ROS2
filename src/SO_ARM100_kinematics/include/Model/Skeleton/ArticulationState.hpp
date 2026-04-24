@@ -17,16 +17,12 @@ public:
 ArticulationState( ArticulationConstPtr articulation );
 virtual ~ArticulationState() = default;
 
-const Vec3d& Origin() const {
-	return center_;
+const Iso3d GlobalTransform() const {
+	return global_transform_;
 }
 
-const Vec3d& Axis() const {
-	return axis_;
-}
-
-double Value() const {
-	return value_;
+const Iso3d& LocalTransform() const {
+	return local_transform_;
 }
 
 ArticulationConstPtr GetArticulation() const {
@@ -37,20 +33,26 @@ std::vector< JointStateConstPtr > GetJointStates() const;
 
 VecXd GetJointValues() const;
 
-void SetState( const Quaternion& rotation, const Vec3d& origin, const VecXd& values );
-void SetCenterPose( const Quaternion& rotation, const Vec3d& origin );
+void SetState( const Iso3d& world_transform, const VecXd& values );
+void SetCenterPose( const Iso3d& world_transform );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const = 0;
 virtual void UpdateValues( const BoneState& bone_state ) = 0;
 
 protected:
 ArticulationConstPtr articulation_;
-Quaternion rotation_;
-Vec3d center_;
-Vec3d axis_;
-Iso3d internal_transform_;
-double value_;
+Iso3d world_transform_;
+Iso3d global_transform_;
+Iso3d local_transform_;
+
 std::vector< JointStatePtr > joint_states_;
+
+void SetJointInternalState(
+	JointStatePtr& joint_state,
+	const Iso3d& world_transform,
+	Iso3d& global_transform,
+	Iso3d& local_transform,
+	double value ) const;
 };
 
 using ArticulationStatePtr = std::shared_ptr< ArticulationState >;

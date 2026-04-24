@@ -31,7 +31,7 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	const Vec3d& a0 = joint_state_0->Axis();
 	const Vec3d& a1 = joint_state_1->Axis();
 
-	const Vec3d& b0 = rotation_ * bone->Direction();
+	const Vec3d& b0 = global_transform_.rotation() * bone->Direction();
 	const Vec3d& b1 = bone_state.Direction();
 
 	Vec3d v0;
@@ -103,7 +103,7 @@ void UniversalArticulationState::UpdateValues( const BoneState& bone_state  )
 	Vec3d a0 = joint_state_0->Axis();
 	Vec3d a1 = joint_state_1->Axis();
 
-	Vec3d b0 = rotation_ * bone->Direction();
+	Vec3d b0 = global_transform_.rotation() * bone->Direction();
 
 	Vec3d v0 = b0;
 	Vec3d v1 = bone_state.Direction();
@@ -133,35 +133,52 @@ void UniversalArticulationState::UpdateValues( const BoneState& bone_state  )
 		a1,
 		v0,
 		v1 );
-	
+
+	double joint_0_value, joint_1_value;
+
 	if ( std::abs( solution1.distance_to_solution ) > epsilon || std::abs( solution2.distance_to_solution ) > epsilon )
 	{
 		if ( std::abs( solution1.distance_to_solution ) < std::abs( solution2.distance_to_solution ) )
 		{
-			joint_state_0->Value() = solution1.theta0;
-			joint_state_1->Value() = solution1.theta1;
+			joint_0_value = solution1.theta0;
+			joint_1_value = solution1.theta1;
 		}
 		else
 		{
-			joint_state_0->Value() = solution2.theta0;
-			joint_state_1->Value() = solution2.theta1;
+			joint_0_value = solution2.theta0;
+			joint_1_value = solution2.theta1;
 		}
 	}
 
 	Vec2d current = { joint_state_0->Value(), joint_state_1->Value() };
 	Vec2d sol1 = { solution1.theta0, solution1.theta1 };
 	Vec2d sol2 = { solution2.theta0, solution2.theta1 };
-	if ( Utils::Distance( sol1, current, Utils::DistanceType::Manhattan ) < 
-		 Utils::Distance( sol2, current, Utils::DistanceType::Manhattan ) )
+	if ( Utils::Distance( sol1, current, Utils::DistanceType::Manhattan ) <
+	     Utils::Distance( sol2, current, Utils::DistanceType::Manhattan ) )
 	{
-		joint_state_0->Value() = solution1.theta0;
-		joint_state_1->Value() = solution1.theta1;
+		joint_0_value = solution1.theta0;
+		joint_1_value = solution1.theta1;
 	}
 	else
 	{
-		joint_state_0->Value() = solution2.theta0;
-		joint_state_1->Value() = solution2.theta1;
+		joint_0_value = solution2.theta0;
+		joint_1_value = solution2.theta1;
 	}
+
+	local_transform_.setIdentity();
+	SetJointInternalState(
+		joint_state_0,
+		world_transform_,
+		global_transform_,
+		local_transform_,
+		joint_0_value );
+
+	SetJointInternalState(
+		joint_state_1,
+		world_transform_,
+		global_transform_,
+		local_transform_,
+		joint_1_value );
 }
 
 // ------------------------------------------------------------

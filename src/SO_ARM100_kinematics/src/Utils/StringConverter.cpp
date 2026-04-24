@@ -32,9 +32,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationState& obj )
 {
 	os << "Articulation state"
-	   << " Center: " << obj.Origin().transpose()
-	   << " Axis: "   << obj.Axis().transpose()
-	   << " Value: "  << obj.Value();
+	   << " Center: " << obj.GlobalTransform().translation().transpose();
 	return os;
 }
 

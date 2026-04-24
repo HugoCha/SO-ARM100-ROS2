@@ -54,27 +54,15 @@ Model::BoneConstPtr bone_off_axis_;
 TEST_F( PrismaticArticulationStateTest, Constructor_InitialOriginMatchesArticulationCenter )
 {
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	EXPECT_TRUE( state.Origin().isApprox( prismatic_articulation_->Center() ) )
-	    << "Initial origin should match the articulation's center";
-}
+	EXPECT_EQ( 1, state.GetJointStates().size() );
+	EXPECT_EQ( prismatic_joint_->Axis(), state.GetJointStates()[0]->Axis() );
+	EXPECT_EQ( prismatic_joint_->Origin(), state.GetJointStates()[0]->Origin() );
 
-// ------------------------------------------------------------
+	EXPECT_EQ( Vec3d::Zero(), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
 
-TEST_F( PrismaticArticulationStateTest, Constructor_InitialAxisMatchesLastJointAxis )
-{
-	// For revolute, the axis should be the revolute joint's axis
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	EXPECT_TRUE( state.Axis().isApprox( prismatic_articulation_->Axis() ) )
-	    << "Axis should match the last joint's axis";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( PrismaticArticulationStateTest, Constructor_GetArticulationReturnsCorrectArticulation )
-{
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	EXPECT_EQ( state.GetArticulation(), prismatic_articulation_ )
-	    << "GetArticulation should return the same articulation passed to constructor";
+	EXPECT_EQ( prismatic_articulation_->Center(), state.GlobalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.GlobalTransform().rotation() );
 }
 
 // ============================================================
@@ -98,28 +86,29 @@ TEST_F( PrismaticArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultVal
 TEST_F( PrismaticArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValueCorrectly )
 {
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
-    Vec3d expected_axis   = Vec3d( 0, 1, 0 );
-    Vec3d expected_origin = Vec3d( 0, 0, 0 );
-    VecXd expected_values( 1 );
-    expected_values[0] = 0;
+	Vec3d expected_axis   = Vec3d( 0, 1, 0 );
+	Vec3d expected_origin = Vec3d( 0, 0, 0 );
+	VecXd expected_values( 1 );
+	expected_values[0] = 0;
+
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( expected_origin );
+	world_transform.rotate( rotation );
 
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	state.SetState( rotation, expected_origin, expected_values );
+	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
-	EXPECT_EQ( expected_values[0], state.Value() );
-    EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
 
-	EXPECT_TRUE( state.Origin().isApprox( expected_origin ) )
-	    << "Expected = " << expected_origin.transpose() << std::endl
-	    << "Result   = " << state.Origin().transpose() << std::endl;
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
-	
-    
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.Axis().isApprox( expected_axis ) )
-	    << "Expected = " << expected_axis.transpose() << std::endl
-	    << "Result   = " << state.Axis().transpose() << std::endl;
+	EXPECT_EQ( Vec3d::Zero(), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( expected_origin, state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis ) );
 }
 
 // ------------------------------------------------------------
@@ -127,28 +116,29 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValu
 TEST_F( PrismaticArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndValueCorrectly )
 {
 	Quaternion rotation = Quaternion::Identity();
-    Vec3d expected_axis   = Vec3d( 0, 0, 1 );
-    Vec3d expected_origin = Vec3d( 1, 1, 1 );
-    VecXd expected_values( 1 );
-    expected_values[0] = 0;
+	Vec3d expected_axis   = Vec3d( 0, 0, 1 );
+	Vec3d expected_origin = Vec3d( 1, 1, 1 );
+	VecXd expected_values( 1 );
+	expected_values[0] = 0;
+
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( expected_origin );
+	world_transform.rotate( rotation );
 
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	state.SetState( rotation, expected_origin, expected_values );
+	state.SetState( world_transform, expected_values );
 
-    EXPECT_EQ( expected_values, state.GetJointValues() );
-	EXPECT_EQ( expected_values[0], state.Value() );
-    EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
+	EXPECT_EQ( expected_values, state.GetJointValues() );
 
-	EXPECT_TRUE( state.Origin().isApprox( expected_origin ) )
-	    << "Expected = " << expected_origin.transpose() << std::endl
-	    << "Result   = " << state.Origin().transpose() << std::endl;
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
-	
-    
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.Axis().isApprox( expected_axis ) )
-	    << "Expected = " << expected_axis.transpose() << std::endl
-	    << "Result   = " << state.Axis().transpose() << std::endl;
+	EXPECT_EQ( Vec3d::Zero(), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( expected_origin, state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis ) );
 }
 
 // ------------------------------------------------------------
@@ -156,28 +146,29 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndV
 TEST_F( PrismaticArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCorrectly )
 {
 	Quaternion rotation = Quaternion::Identity();
-    Vec3d expected_axis   = Vec3d( 0, 0, 1 );
-    Vec3d expected_origin = Vec3d( 0, 0, 0 );
-    VecXd expected_values( 1 );
-    expected_values[0] = 1;
+	Vec3d expected_axis   = Vec3d( 0, 0, 1 );
+	Vec3d expected_origin = Vec3d( 0, 0, 0 );
+	VecXd expected_values( 1 );
+	expected_values[0] = 0.5;
+
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( expected_origin );
+	world_transform.rotate( rotation );
 
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	state.SetState( rotation, expected_origin, expected_values );
+	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
-	EXPECT_EQ( expected_values[0], state.Value() );
-    EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
 
-	EXPECT_TRUE( state.Origin().isApprox( expected_origin ) )
-	    << "Expected = " << expected_origin.transpose() << std::endl
-	    << "Result   = " << state.Origin().transpose() << std::endl;
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
-	
-    
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.Axis().isApprox( expected_axis ) )
-	    << "Expected = " << expected_axis.transpose() << std::endl
-	    << "Result   = " << state.Axis().transpose() << std::endl;
+	EXPECT_EQ( Vec3d( 0, 0, 0.5 ), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( Vec3d( 0, 0, 0.5 ), state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis ) );
 }
 
 // ------------------------------------------------------------
@@ -185,28 +176,29 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 TEST_F( PrismaticArticulationStateTest, SetState_WithRotationTranslationValue_UpdatesPoseAndValueCorrectly )
 {
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
-    Vec3d expected_axis   = Vec3d( 0, 1, 0 );
-    Vec3d expected_origin = Vec3d( 1, 1, 1 );
-    VecXd expected_values( 1 );
-    expected_values[0] = 1;
+	Vec3d expected_axis   = Vec3d( 0, 1, 0 );
+	Vec3d expected_origin = Vec3d( 1, 1, 1 );
+	VecXd expected_values( 1 );
+	expected_values[0] = 0.5;
+
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( expected_origin );
+	world_transform.rotate( rotation );
 
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	state.SetState( rotation, expected_origin, expected_values );
+	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
-	EXPECT_EQ( expected_values[0], state.Value() );
-    EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
 
-	EXPECT_TRUE( state.Origin().isApprox( expected_origin ) )
-	    << "Expected = " << expected_origin.transpose() << std::endl
-	    << "Result   = " << state.Origin().transpose() << std::endl;
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
-	
-    
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.Axis().isApprox( expected_axis ) )
-	    << "Expected = " << expected_axis.transpose() << std::endl
-	    << "Result   = " << state.Axis().transpose() << std::endl;
+	EXPECT_EQ( Vec3d( 0, 0, 0.5 ), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( Vec3d( 1, 1.5, 1 ), state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( expected_values[0], state.GetJointStates()[0]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis ) );
 }
 
 // ============================================================
@@ -216,37 +208,28 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithRotationTranslationValue_Up
 TEST_F( PrismaticArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 {
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
-    Vec3d expected_axis   = Vec3d( 0, 1, 0 );
-    Vec3d expected_origin = Vec3d( 1, 1, 1 );
+	Vec3d expected_axis   = Vec3d( 0, 1, 0 );
+	Vec3d expected_origin = Vec3d( 1, 1, 1 );
 
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
 	auto values = state.GetJointValues();
 
-    state.SetCenterPose( rotation, expected_origin );
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( expected_origin );
+	world_transform.rotate( rotation );
+
+	state.SetCenterPose( world_transform );
 
 	EXPECT_EQ( values, state.GetJointValues() );
 
-	EXPECT_TRUE( state.Origin().isApprox( expected_origin ) )
-	    << "Expected = " << expected_origin.transpose() << std::endl
-	    << "Result   = " << state.Origin().transpose() << std::endl;
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
-	
-    
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.Axis().isApprox( expected_axis ) )
-	    << "Expected = " << expected_axis.transpose() << std::endl
-	    << "Result   = " << state.Axis().transpose() << std::endl;
-}
+	EXPECT_EQ( Vec3d::Zero(), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
 
-// ============================================================
-// Value accessor
-// ============================================================
+	EXPECT_EQ( expected_origin, state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
 
-TEST_F( PrismaticArticulationStateTest, Value_ReturnsDefaultValueAfterConstruction )
-{
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
-	EXPECT_DOUBLE_EQ( state.Value(), 0.0 )
-	    << "Value should return 0 for a newly constructed articulation state";
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis ) );
 }
 
 // ============================================================
@@ -263,6 +246,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -289,6 +277,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisAboveUpperLim
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -315,6 +308,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisBelowLowerLim
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -341,6 +339,12 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationT
 
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
 	auto center = Vec3d::Ones();
+
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d( 1, 1, 1 );
@@ -367,6 +371,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -393,6 +402,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLi
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -419,6 +433,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisBelowLowerLi
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d::Zero();
@@ -445,6 +464,11 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
 	auto center = Vec3d::Ones();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
 	state.ApplyConstraints( bone_state );
 
 	Vec3d expected_bone_origin = Vec3d( 1, 1, 1 );
@@ -462,6 +486,103 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 // ============================================================
 // Update Value
 // ============================================================
+
+TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTranslationWithinLimits_ExpectedResult )
+{
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+
+	auto bone_state = Model::BoneState( bone_off_axis_ );
+	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
+	bone_state.Direction() = Vec3d( 0.5, 0.5, 0.5 );
+
+	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
+	auto center = Vec3d::Ones();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
+	state.UpdateValues( bone_state );
+
+	EXPECT_EQ( state.GetJointValues().size(), 1 );
+	EXPECT_EQ( state.GetJointValues()[0], 0.5 );
+
+	EXPECT_EQ( Vec3d( 0, 0, 0.5 ), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( Vec3d( 1, 1.5, 1 ), state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( state.GetJointStates()[0]->Value(), 0.5 );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTranslationOutsideLimits_ExpectedResult )
+{
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+
+	auto bone_state = Model::BoneState( bone_off_axis_ );
+	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
+	bone_state.Direction() = Vec3d( 0.5, 1.5, 0.5 );
+
+	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
+	auto center = Vec3d::Ones();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
+	state.UpdateValues( bone_state );
+
+	EXPECT_EQ( state.GetJointValues().size(), 1 );
+	EXPECT_EQ( state.GetJointValues()[0], 1.0 );
+
+	EXPECT_EQ( Vec3d( 0, 0, 1 ), state.LocalTransform().translation() );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_TRUE( Vec3d( 1, 2, 1 ).isApprox( state.GlobalTransform().translation() ) );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_EQ( state.GetJointStates()[0]->Value(), 1.0 );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOnAxisWithRotationTranslation_ExpectedResult )
+{
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+
+	auto bone_state = Model::BoneState( bone_on_axis_ );
+	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
+	bone_state.Direction() = Vec3d( 0.5, 0.5, 0.5 );
+
+	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
+	auto center = Vec3d::Ones();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	state.SetCenterPose( world_transform );
+
+	state.UpdateValues( bone_state );
+
+	EXPECT_EQ( state.GetJointValues().size(), 1 );
+	EXPECT_NEAR( state.GetJointValues()[0], 0.4, epsilon );
+
+	EXPECT_TRUE( Vec3d( 0, 0, 0.4 ).isApprox( state.LocalTransform().translation() ) );
+	EXPECT_EQ( Mat3d::Identity(), state.LocalTransform().rotation() );
+
+	EXPECT_EQ( Vec3d( 1, 1.4, 1 ), state.GlobalTransform().translation() );
+	EXPECT_EQ( rotation.matrix(), state.GlobalTransform().rotation() );
+
+	EXPECT_NEAR( state.GetJointStates()[0]->Value(), 0.4, epsilon );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( Vec3d( 0, 1, 0 ) ) );
+}
 
 // ------------------------------------------------------------
 
