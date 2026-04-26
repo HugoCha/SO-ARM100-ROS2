@@ -1,7 +1,7 @@
 #include "Model/Skeleton/SphericalArticulationState.hpp"
 
 #include "Global.hpp"
-#include "Utils/MathUtils.hpp"
+#include "Utils/Euler.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -12,12 +12,18 @@ SphericalArticulationState::SphericalArticulationState( ArticulationConstPtr art
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Spherical );
+	euler_configuration_ = Euler::ComputeConfiguration(
+		articulation->Joints()[0]->Axis(),
+		articulation->Joints()[1]->Axis(),
+		articulation->Joints()[2]->Axis() );
 }
 
 // ------------------------------------------------------------
 
 void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 {
+	if ( bone_state.Direction().norm() != bone_state.GetBone()->Length() )
+		bone_state.Direction() = bone_state.GetBone()->Length() * bone_state.Direction().normalized();
 }
 
 // ------------------------------------------------------------
@@ -28,37 +34,41 @@ void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 	auto joint_1 = articulation_->Joints()[1];
 	auto joint_2 = articulation_->Joints()[2];
 
-	Vec3d old_bone_direction = global_transform_.rotation() * bone_state.GetBone()->Direction();
-	Vec3d new_bone_direction = bone_state.Direction();
+	Vec3d old_bone = bone_state.GetBone()->Direction();
+	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
+	
+	Vec3d angles;
+	if ( euler_configuration_.has_value() )
+	{
+		angles = Euler::Solve(
+			*euler_configuration_, 
+			joint_0->Axis(),
+			joint_1->Axis(), 
+			joint_2->Axis(), 
+			old_bone, 
+			new_bone );
+	}
 
-	auto old_bone_to_new =
-		Quaternion::FromTwoVectors( old_bone_direction, new_bone_direction );
+	SetJointInternalState( 
+		joint_states_[0], 
+		world_transform_, 
+		global_transform_, 
+		local_transform_, 
+		angles[0] );
 
-	Vec3d old_ref   = joint_states_[0]->Axis().cross( joint_states_[1]->Axis() );
-	Vec3d intermediate_ref = old_ref;
-	Vec3d final_ref = old_bone_to_new * old_ref;
+	SetJointInternalState( 
+		joint_states_[1], 
+		world_transform_, 
+		global_transform_, 
+		local_transform_, 
+		angles[1] );
 
-	double old_value = joint_states_[0]->Value();
-	double new_value = old_value + SignedAngle( intermediate_ref, final_ref, joint_states_[0]->Axis() );
-	joint_states_[0]->Value() = joint_0->GetLimits().Clamp( new_value );
-
-	auto joint_0_rotation =
-		AngleAxis( joint_states_[0]->Value() - old_value, joint_states_[0]->Axis() );
-	intermediate_ref = joint_0_rotation * intermediate_ref;
-	joint_states_[1]->Axis() = joint_0_rotation * joint_states_[1]->Axis();
-
-	old_value = joint_states_[1]->Value();
-	new_value = old_value + SignedAngle( intermediate_ref, final_ref, joint_states_[1]->Axis() );
-	joint_states_[1]->Value() = joint_1->GetLimits().Clamp( new_value );
-
-	auto joint_1_rotation =
-		AngleAxis( joint_states_[1]->Value() - old_value, joint_states_[1]->Axis() );
-	intermediate_ref = joint_1_rotation * intermediate_ref;
-	joint_states_[2]->Axis() = joint_1_rotation * joint_0_rotation * joint_states_[2]->Axis();
-
-	old_value = joint_states_[2]->Value();
-	new_value = old_value + SignedAngle( intermediate_ref, final_ref, joint_states_[2]->Axis() );
-	joint_states_[2]->Value() = joint_2->GetLimits().Clamp( new_value );
+	SetJointInternalState( 
+		joint_states_[2], 
+		world_transform_, 
+		global_transform_, 
+		local_transform_, 
+		angles[2] );
 }
 
 // ------------------------------------------------------------
