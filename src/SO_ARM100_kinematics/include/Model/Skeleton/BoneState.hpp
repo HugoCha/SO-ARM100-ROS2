@@ -4,6 +4,7 @@
 
 #include "Bone.hpp"
 #include "Model/Geometry/Pose.hpp"
+#include <memory>
 
 namespace SOArm100::Kinematics::Model
 {
@@ -40,4 +41,7 @@ private:
 BoneConstPtr bone_;
 Pose pose_;
 };
+
+using BoneStatePtr = std::shared_ptr< BoneState >;
+
 }

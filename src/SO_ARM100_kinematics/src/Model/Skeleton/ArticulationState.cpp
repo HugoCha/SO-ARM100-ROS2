@@ -13,7 +13,7 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-ArticulationState::ArticulationState( ArticulationConstPtr articulation ) :
+ArticulationState::ArticulationState( const Articulation* articulation ) :
 	articulation_( articulation ),
 	world_transform_( Iso3d::Identity() )
 {

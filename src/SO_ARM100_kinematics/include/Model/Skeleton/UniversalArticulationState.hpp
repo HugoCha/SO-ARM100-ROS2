@@ -11,7 +11,7 @@ class Limits;
 class UniversalArticulationState : public ArticulationState
 {
 public:
-UniversalArticulationState( ArticulationConstPtr articulation );
+UniversalArticulationState( const Articulation* articulation );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const override;
 virtual void UpdateValues( const BoneState& bone_state ) override;

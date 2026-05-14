@@ -7,7 +7,7 @@ namespace SOArm100::Kinematics::Model
 class RevoluteArticulationState : public ArticulationState
 {
 public:
-RevoluteArticulationState( ArticulationConstPtr articulation );
+RevoluteArticulationState( const Articulation* articulation );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const override;
 

@@ -59,7 +59,7 @@ Model::BoneConstPtr bone_off_axis_;
 
 TEST_F( RevoluteArticulationStateTest, Constructor_InitialOriginMatchesArticulationCenter )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	EXPECT_EQ( 1, state.GetJointStates().size() );
 	EXPECT_EQ( revolute_joint_->Axis(), state.GetJointStates()[0]->Axis() );
 	EXPECT_EQ( revolute_joint_->Origin(), state.GetJointStates()[0]->Origin() );
@@ -77,7 +77,7 @@ TEST_F( RevoluteArticulationStateTest, Constructor_InitialOriginMatchesArticulat
 
 TEST_F( RevoluteArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultValues )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	auto values = state.GetJointValues();
 	EXPECT_EQ( values.size(), 1 )
 	    << "Revolute articulation should have 1 joint";
@@ -101,7 +101,7 @@ TEST_F( RevoluteArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValue
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -131,7 +131,7 @@ TEST_F( RevoluteArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndVa
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -161,7 +161,7 @@ TEST_F( RevoluteArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCor
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -193,7 +193,7 @@ TEST_F( RevoluteArticulationStateTest, SetState_WithRotationTranslationValue_Upd
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -221,7 +221,7 @@ TEST_F( RevoluteArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 	Vec3d expected_axis   = Vec3d( 0, 1, 0 );
 	Vec3d expected_origin = Vec3d( 1, 1, 1 );
 
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 	auto values = state.GetJointValues();
 
 	Iso3d world_transform = Iso3d::Identity();
@@ -248,7 +248,7 @@ TEST_F( RevoluteArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 
 TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d( 1, 0, 0 );
@@ -278,7 +278,7 @@ TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_E
 
 TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 1, 0, 0 );
@@ -309,7 +309,7 @@ TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits_
 
 TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLimit_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 1, 0, 0 );
@@ -340,7 +340,7 @@ TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLim
 
 TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisBelowLowerLimit_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -371,7 +371,7 @@ TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisBelowLowerLim
 
 TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 0, 0, 0 );
@@ -403,7 +403,7 @@ TEST_F( RevoluteArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotationT
 
 TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTranslationWithinLimits_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 0, 0, 0 );
@@ -438,7 +438,7 @@ TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTrans
 
 TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTranslationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 0, 0, 0 );
@@ -473,7 +473,7 @@ TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTrans
 
 TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOnAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::RevoluteArticulationState( revolute_articulation_ );
+	auto state = Model::RevoluteArticulationState( revolute_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d( 0, 0, 0 );

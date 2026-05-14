@@ -10,7 +10,7 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-RevoluteArticulationState::RevoluteArticulationState( ArticulationConstPtr articulation ) :
+RevoluteArticulationState::RevoluteArticulationState( const Articulation* articulation ) :
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Revolute );

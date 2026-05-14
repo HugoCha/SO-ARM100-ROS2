@@ -53,7 +53,7 @@ Model::BoneConstPtr bone_off_axis_;
 
 TEST_F( PrismaticArticulationStateTest, Constructor_InitialOriginMatchesArticulationCenter )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	EXPECT_EQ( 1, state.GetJointStates().size() );
 	EXPECT_EQ( prismatic_joint_->Axis(), state.GetJointStates()[0]->Axis() );
 	EXPECT_EQ( prismatic_joint_->Origin(), state.GetJointStates()[0]->Origin() );
@@ -71,7 +71,7 @@ TEST_F( PrismaticArticulationStateTest, Constructor_InitialOriginMatchesArticula
 
 TEST_F( PrismaticArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultValues )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	auto values = state.GetJointValues();
 	EXPECT_EQ( values.size(), 1 )
 	    << "Revolute articulation should have 1 joint";
@@ -95,7 +95,7 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValu
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -125,7 +125,7 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndV
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -155,7 +155,7 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -185,7 +185,7 @@ TEST_F( PrismaticArticulationStateTest, SetState_WithRotationTranslationValue_Up
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -211,7 +211,7 @@ TEST_F( PrismaticArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 	Vec3d expected_axis   = Vec3d( 0, 1, 0 );
 	Vec3d expected_origin = Vec3d( 1, 1, 1 );
 
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 	auto values = state.GetJointValues();
 
 	Iso3d world_transform = Iso3d::Identity();
@@ -238,7 +238,7 @@ TEST_F( PrismaticArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -269,7 +269,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisAboveUpperLimit_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -300,7 +300,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisAboveUpperLim
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisBelowLowerLimit_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -331,7 +331,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisBelowLowerLim
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
@@ -363,7 +363,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationT
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -394,7 +394,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLimit_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -425,7 +425,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLi
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisBelowLowerLimit_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d::Zero();
@@ -456,7 +456,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisBelowLowerLi
 
 TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
@@ -489,7 +489,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 
 TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTranslationWithinLimits_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
@@ -522,7 +522,7 @@ TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTrans
 
 TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTranslationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
@@ -555,7 +555,7 @@ TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTrans
 
 TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOnAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::PrismaticArticulationState( prismatic_articulation_ );
+	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	bone_state.Origin() = Vec3d( 1.1, 1, 1 );

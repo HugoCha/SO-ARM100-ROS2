@@ -1,21 +1,28 @@
 #include "Model/Skeleton/SphericalArticulationState.hpp"
 
 #include "Global.hpp"
-#include "Utils/Euler.hpp"
+
+#include "Euler/EulerModel.hpp"
+
+#include <memory>
 
 namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------
 
-SphericalArticulationState::SphericalArticulationState( ArticulationConstPtr articulation ) :
+SphericalArticulationState::SphericalArticulationState( const Articulation* articulation ) :
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Spherical );
-	euler_configuration_ = Euler::ComputeConfiguration(
-		articulation->Joints()[0]->Axis(),
-		articulation->Joints()[1]->Axis(),
-		articulation->Joints()[2]->Axis() );
+	auto euler_model = EulerModel::ComputeModel(
+		articulation->Joints()[0],
+		articulation->Joints()[1],
+		articulation->Joints()[2] );
+	if ( euler_model.has_value() )
+	{
+		spherical_solver_ = std::make_unique< Solver::SphericalSolver >( *euler_model, Solver::SphericalSolver::SolverParameters() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -38,15 +45,12 @@ void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 	
 	Vec3d angles;
-	if ( euler_configuration_.has_value() )
+	if ( spherical_solver_ )
 	{
-		angles = Euler::Solve(
-			*euler_configuration_, 
-			joint_0->Axis(),
-			joint_1->Axis(), 
-			joint_2->Axis(), 
+		auto result = spherical_solver_->Solve(
 			old_bone, 
 			new_bone );
+		angles = result.angles;
 	}
 
 	SetJointInternalState( 

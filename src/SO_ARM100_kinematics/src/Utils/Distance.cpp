@@ -16,7 +16,7 @@ double Distance(
 	switch ( type )
 	{
 	case DistanceType::Chebysev:
-		return ( p1 - p2 ).maxCoeff();
+		return ( p1 - p2 ).cwiseAbs().maxCoeff();
 	case DistanceType::Manhattan:
 		return ( p1 - p2 ).cwiseAbs().sum();
 	default:

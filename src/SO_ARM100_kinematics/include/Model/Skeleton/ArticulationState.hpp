@@ -14,7 +14,7 @@ namespace SOArm100::Kinematics::Model
 class ArticulationState
 {
 public:
-ArticulationState( ArticulationConstPtr articulation );
+ArticulationState( const Articulation* articulation );
 virtual ~ArticulationState() = default;
 
 const Iso3d GlobalTransform() const {
@@ -25,7 +25,7 @@ const Iso3d& LocalTransform() const {
 	return local_transform_;
 }
 
-ArticulationConstPtr GetArticulation() const {
+const Articulation* GetArticulation() const {
 	return articulation_;
 }
 
@@ -40,7 +40,7 @@ virtual void ApplyConstraints( BoneState& bone_state ) const = 0;
 virtual void UpdateValues( const BoneState& bone_state ) = 0;
 
 protected:
-ArticulationConstPtr articulation_;
+const Articulation* articulation_;
 Iso3d world_transform_;
 Iso3d global_transform_;
 Iso3d local_transform_;

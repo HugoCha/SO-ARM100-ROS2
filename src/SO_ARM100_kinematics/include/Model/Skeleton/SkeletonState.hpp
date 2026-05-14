@@ -4,29 +4,29 @@
 
 #include "ArticulationState.hpp"
 #include "Model/Skeleton/Articulation.hpp"
+#include "BoneState.hpp"
 #include "Skeleton.hpp"
 
 #include <vector>
 
 namespace SOArm100::Kinematics::Model
 {
-class ArticulationState;
-
 class SkeletonState
 {
 public:
-SkeletonState( SkeletonConstPtr skeleton );
+SkeletonState( const Skeleton* skeleton );
 
 VecXd GetJointValues() const;
+std::vector< BoneState > GetBoneStates() const;
 
 void SetState( const VecXd& joints );
-bool RefreshRequired() const;
-void Refresh();
+void ApplyConstraint( BoneState& bone_state, int i ) const;
+void UpdateValue( const BoneState& bone_state, int i );
 
 private:
-SkeletonConstPtr skeleton_;
+const Model::Skeleton* skeleton_;
 std::vector< ArticulationStatePtr > articulation_states_;
 
-static ArticulationStatePtr CreateArticulationState( const ArticulationConstPtr& articulation );
+static ArticulationStatePtr CreateArticulationState( const Articulation* articulation );
 };
 }

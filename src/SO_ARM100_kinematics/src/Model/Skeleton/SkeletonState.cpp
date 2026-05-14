@@ -4,6 +4,7 @@
 
 #include "Model/Skeleton/ArticulationState.hpp"
 #include "Model/Skeleton/ArticulationType.hpp"
+#include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/PrismaticArticulationState.hpp"
 #include "Model/Skeleton/RevoluteArticulationState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
@@ -19,13 +20,36 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-SkeletonState::SkeletonState( SkeletonConstPtr skeleton ) :
+SkeletonState::SkeletonState( const Skeleton* skeleton ) :
 	skeleton_( skeleton )
 {
 	for ( int i = 0; i < skeleton->ArticulationCount(); i++ )
 	{
-		articulation_states_.emplace_back( CreateArticulationState( skeleton->Articulation( i ) ) );
+		articulation_states_.emplace_back( CreateArticulationState( skeleton->Articulation( i ).get() ) );
 	}
+}
+
+// ------------------------------------------------------------
+
+std::vector< BoneState > SkeletonState::GetBoneStates() const 
+{
+	std::vector< BoneState > bone_states;
+	const auto& bones = skeleton_->Bones();
+
+	for ( int i = 0; i < bones.size(); i++ )
+	{
+		const auto& bone = bones[i];
+		const auto& articulation_state = articulation_states_[i];
+		const auto& T_articulation = articulation_state->GlobalTransform();
+		auto bone_state = BoneState( bones[i] );
+		
+		bone_state.Origin() = T_articulation.translation();
+		bone_state.Direction() = T_articulation.rotation() * bone->Direction();
+
+		bone_states.emplace_back( bone_state );
+	}
+
+	return bone_states;
 }
 
 // ------------------------------------------------------------
@@ -41,7 +65,6 @@ VecXd SkeletonState::GetJointValues() const
 		joint_index += articulation_joints.size();
 	}
 	return ToVecXd( joints );
-
 }
 
 // ------------------------------------------------------------
@@ -75,7 +98,36 @@ void SkeletonState::SetState( const VecXd& joints )
 
 // ------------------------------------------------------------
 
-ArticulationStatePtr SkeletonState::CreateArticulationState( const ArticulationConstPtr& articulation )
+void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
+{
+	const int n_joints = skeleton_->ArticulationCount();
+	if ( i < 0 || i >= n_joints ) throw std::out_of_range( "Index must match articulation index" );
+
+	articulation_states_[i]->UpdateValues( bone_state );
+
+	Iso3d transform; 
+
+	for ( int j = i + 1; j < n_joints; j++ )
+	{
+		transform = articulation_states_[j]->GlobalTransform();
+		transform.translate( skeleton_->Bone( j - 1 )->Direction() );
+		articulation_states_[j]->SetCenterPose( transform );
+	}
+}
+
+// ------------------------------------------------------------
+
+void SkeletonState::ApplyConstraint( BoneState& bone_state, int i ) const
+{
+	const int n_joints = skeleton_->ArticulationCount();
+	if ( i < 0 || i >= n_joints ) throw std::out_of_range( "Index must match articulation index" );
+
+	articulation_states_[i]->ApplyConstraints( bone_state );
+}
+
+// ------------------------------------------------------------
+
+ArticulationStatePtr SkeletonState::CreateArticulationState( const Articulation* articulation )
 {
 	switch ( articulation->GetType() )
 	{

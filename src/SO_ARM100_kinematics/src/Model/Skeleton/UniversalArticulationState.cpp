@@ -12,7 +12,7 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-UniversalArticulationState::UniversalArticulationState( ArticulationConstPtr articulation ) :
+UniversalArticulationState::UniversalArticulationState( const Articulation* articulation ) :
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Universal );

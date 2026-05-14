@@ -77,7 +77,7 @@ Model::BoneConstPtr bone_off_axis_;
 
 TEST_F( UniversalArticulationStateTest, Constructor_InitialOriginMatchesArticulationCenter )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	EXPECT_EQ( 2, state.GetJointStates().size() );
 
 	EXPECT_EQ( revolute_joint_1_->Axis(), state.GetJointStates()[0]->Axis() );
@@ -99,7 +99,7 @@ TEST_F( UniversalArticulationStateTest, Constructor_InitialOriginMatchesArticula
 
 TEST_F( UniversalArticulationStateTest, GetJointValues_ReturnsVectorOfDefaultValues )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	auto values = state.GetJointValues();
 	EXPECT_EQ( values.size(), 2 )
 	    << "Universal articulation should have 2 joint";
@@ -122,7 +122,7 @@ TEST_F( UniversalArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValu
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -164,7 +164,7 @@ TEST_F( UniversalArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndV
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -207,7 +207,7 @@ TEST_F( UniversalArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -247,7 +247,7 @@ TEST_F( UniversalArticulationStateTest, SetState_WithRotationTranslationValue_Up
 	world_transform.translate( expected_origin );
 	world_transform.rotate( rotation );
 
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	state.SetState( world_transform, expected_values );
 
 	EXPECT_EQ( expected_values, state.GetJointValues() );
@@ -283,7 +283,7 @@ TEST_F( UniversalArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 	Quaternion rotation = Quaternion::FromTwoVectors( Vec3d( 0, 0, 1 ), Vec3d( 0, 1, 0 ) );
 	Vec3d expected_origin = Vec3d( 1, 1, 1 );
 
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	auto values = state.GetJointValues();
 
 	Iso3d world_transform = Iso3d::Identity();
@@ -322,7 +322,7 @@ TEST_F( UniversalArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRotationWithinLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -353,7 +353,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRo
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointRotationWithinLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -384,7 +384,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisCombinedRotationWithinLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -415,7 +415,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisCombinedRota
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
@@ -446,7 +446,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRotationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -477,7 +477,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRo
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointRotationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -508,7 +508,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 
@@ -539,7 +539,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_
 
 TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_on_axis_ );
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitX() );
@@ -572,7 +572,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationT
 
 TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTranslation_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
@@ -626,7 +626,7 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 
 TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
@@ -678,7 +678,7 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 
 TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotationOutsideLimits_ExpectedResult )
 {
-	auto state = Model::UniversalArticulationState( universal_articulation_ );
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 

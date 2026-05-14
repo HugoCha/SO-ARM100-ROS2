@@ -7,7 +7,9 @@
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Model/KinematicModel.hpp"
+#include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
+#include "Model/Skeleton/SkeletonState.hpp"
 #include "Solver/IKSolverBase.hpp"
 
 #include <vector>
@@ -58,25 +60,6 @@ void SetParameters( const SolverParameters& parameters ){
 	const IKRunContext& context ) const override;
 
 private:
-struct SolverBuffers
-{
-	std::vector< Model::JointState > old_states;
-	std::vector< Model::JointState > states;
-	VecXd joints;
-	Mat4d fk;
-
-	explicit SolverBuffers( int n_joints )
-	{
-		joints.resize( n_joints );
-		// old_states.resize( n_joints + 1 );
-		// states.resize( n_joints + 1 );
-	}
-
-	int GetSize() const {
-		return joints.size();
-	}
-};
-
 SolverParameters parameters_;
 
 void ComputeJointStates(
@@ -90,18 +73,13 @@ static std::vector< Vec3d > ComputeBones(
 
 void BackwardPass(
 	const Vec3d& p_target,
-	const Model::Skeleton& skeleton,
-	const std::span< Model::JointState >& states ) const;
+	const Model::SkeletonState& skeleton_state,
+	std::vector< Model::BoneState >& bone_states ) const;
 
 void ForwardPass(
 	const Vec3d& p_base,
-	const Model::Skeleton& skeleton,
-	const std::span< Model::JointState >& states ) const;
-
-void ForwardKinematics(
-	const Model::Skeleton& skeleton,
-	const std::span< Model::JointState >& states,
-	int index ) const;
+	Model::SkeletonState& skeleton_state,
+	std::vector< Model::BoneState >& bone_states ) const;
 
 void PrintBones(  const Model::Skeleton& skeleton  ) const;
 void PrintStates( const std::span< const Model::JointState >& state ) const;

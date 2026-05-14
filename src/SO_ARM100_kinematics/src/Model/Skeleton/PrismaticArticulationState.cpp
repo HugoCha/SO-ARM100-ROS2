@@ -10,7 +10,7 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-PrismaticArticulationState::PrismaticArticulationState( ArticulationConstPtr articulation  ) :
+PrismaticArticulationState::PrismaticArticulationState( const Articulation* articulation  ) :
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Prismatic );
