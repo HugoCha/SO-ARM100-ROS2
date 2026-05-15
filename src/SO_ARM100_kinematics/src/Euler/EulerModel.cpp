@@ -17,8 +17,10 @@ namespace SOArm100::Kinematics::Model
 
 double WrapAngle( double angle )
 {
-	while ( angle > M_PI ) angle -= 2 * M_PI;
-	while ( angle < -M_PI ) angle += 2 * M_PI;
+	while ( angle > M_PI )
+		angle -= 2 * M_PI;
+	while ( angle < -M_PI )
+		angle += 2 * M_PI;
 	return angle;
 }
 
@@ -81,14 +83,14 @@ std::vector< Vec3d > EulerModel::DecomposeCanonical( const Mat3d& R_canonical ) 
 		( long )EulerAxis::X,
 		( long )EulerAxis::Y,
 		( long )EulerAxis::Z );
-	
+
 	if ( indirect_ )
 		angles[2] = -angles[2];
 
 	Vec3d other_angles;
-	other_angles << WrapAngle( M_PI + angles[0] ), 
-					WrapAngle( M_PI - angles[1] ), 
-					WrapAngle( M_PI + angles[2] );
+	other_angles << WrapAngle( M_PI + angles[0] ),
+	    WrapAngle( M_PI - angles[1] ),
+	    WrapAngle( M_PI + angles[2] );
 
 	return { angles, other_angles };
 }

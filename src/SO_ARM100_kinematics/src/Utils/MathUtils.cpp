@@ -131,7 +131,7 @@ double AngleAroundAxis( const Vec3d& V1, const Vec3d& V2, const Vec3d& axis )
 
 // ------------------------------------------------------------
 
-double OrthogonalityError( const Mat3d& Q ) 
+double OrthogonalityError( const Mat3d& Q )
 {
 	return ( Q.transpose() * Q - Mat3d::Identity() ).norm();
 }

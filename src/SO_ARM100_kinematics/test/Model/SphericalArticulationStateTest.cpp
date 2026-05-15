@@ -39,17 +39,17 @@ void SetUp() override
 		Vec3d( 0.1, 0, 0 ),
 		-M_PI / 2,
 		M_PI / 2 );
-    revolute_joint_3_ = MakeRevoluteJoint(
-        Vec3d( 0, 0, 1 ),
-        Vec3d( 0.1, 0, 0 ),
-        -M_PI / 2,
-        M_PI / 2 );
-	std::vector< Model::JointConstPtr > spherical_joints = 
-    { 
-        revolute_joint_1_, 
-        revolute_joint_2_,
-        revolute_joint_3_
-    };
+	revolute_joint_3_ = MakeRevoluteJoint(
+		Vec3d( 0, 0, 1 ),
+		Vec3d( 0.1, 0, 0 ),
+		-M_PI / 2,
+		M_PI / 2 );
+	std::vector< Model::JointConstPtr > spherical_joints =
+	{
+		revolute_joint_1_,
+		revolute_joint_2_,
+		revolute_joint_3_
+	};
 	spherical_articulation_ = std::make_shared< const Model::Articulation >(
 		Model::ArticulationType::Spherical,
 		spherical_joints,
@@ -62,10 +62,10 @@ void SetUp() override
 void TearDown() override {
 }
 
-Vec3d BoneOffAxisInternalDirection( 
-    double angle1, 
-    double angle2, 
-    double angle3 )
+Vec3d BoneOffAxisInternalDirection(
+	double angle1,
+	double angle2,
+	double angle3 )
 {
 	Iso3d T03 = Iso3d::Identity();
 	T03.rotate( AngleAxis( angle1, Vec3d::UnitX() ) );
@@ -162,11 +162,11 @@ TEST_F( SphericalArticulationStateTest, SetState_WithRotation_UpdatesPoseAndValu
 	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
 					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 
-    auto local_rotation_2 = AngleAxis( expected_values[1], revolute_joint_2_->Axis() );
-    EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
-                    rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
+	auto local_rotation_2 = AngleAxis( expected_values[1], revolute_joint_2_->Axis() );
+	EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
+					 rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
 }
 
 // ------------------------------------------------------------
@@ -202,17 +202,17 @@ TEST_F( SphericalArticulationStateTest, SetState_WithTranslation_UpdatesPoseAndV
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox(
 					 rotation * revolute_joint_1_->Axis() ) );
 
-    auto local_rotation_1 = AngleAxis( expected_values[0], revolute_joint_1_->Axis() );
-    EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
-                    rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
+	auto local_rotation_1 = AngleAxis( expected_values[0], revolute_joint_1_->Axis() );
+	EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
+					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 
-    auto local_rotation_2 = AngleAxis( expected_values[1], revolute_joint_2_->Axis() );
-    EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
-                    rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
+	auto local_rotation_2 = AngleAxis( expected_values[1], revolute_joint_2_->Axis() );
+	EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
+					 rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
 }
 
 // ------------------------------------------------------------
@@ -249,15 +249,15 @@ TEST_F( SphericalArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox(
 					 rotation * revolute_joint_1_->Axis() ) );
 
-    EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
-                    rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
+	EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
+					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 
-    EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
-                    rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
+	EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
+					 rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
 }
 
 // ------------------------------------------------------------
@@ -294,15 +294,15 @@ TEST_F( SphericalArticulationStateTest, SetState_WithRotationTranslationValue_Up
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox(
 					 rotation * revolute_joint_1_->Axis() ) );
 
-    EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
-                    rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
+	EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
+					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 
-    EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
-                    rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
+	EXPECT_EQ( expected_values[2], state.GetJointStates()[2]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
+					 rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
 }
 
 // ============================================================
@@ -341,15 +341,15 @@ TEST_F( SphericalArticulationStateTest, SetPose_UpdatesOriginCorrectly )
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox(
 					 rotation * revolute_joint_1_->Axis() ) );
 
-    EXPECT_EQ( 0, state.GetJointStates()[1]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
-                    rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
+	EXPECT_EQ( 0, state.GetJointStates()[1]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
+					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 
-    EXPECT_EQ( 0, state.GetJointStates()[2]->Value() );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
-                    rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
+	EXPECT_EQ( 0, state.GetJointStates()[2]->Value() );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( expected_origin ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox(
+					 rotation * local_rotation_1 * local_rotation_2 * revolute_joint_3_->Axis() ) );
 }
 
 // ============================================================
@@ -368,33 +368,33 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
-    auto rotation = Quaternion::Identity();
-    auto center = Vec3d::Zero();
+	auto rotation = Quaternion::Identity();
+	auto center = Vec3d::Zero();
 
-    double initial_value_1 = M_PI / 2;
-    double initial_value_2 = 0;
-    double initial_value_3 = 0;
+	double initial_value_1 = M_PI / 2;
+	double initial_value_2 = 0;
+	double initial_value_3 = 0;
 	bone_state.Origin() = center;
-	bone_state.Direction() = BoneOffAxisInternalDirection( 
-        initial_value_1,
-        initial_value_2, 
-        initial_value_3 );
+	bone_state.Direction() = BoneOffAxisInternalDirection(
+		initial_value_1,
+		initial_value_2,
+		initial_value_3 );
 
-    Iso3d world_transform = Iso3d::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
 	state.UpdateValues( bone_state );
 
-    auto result_direction = BoneOffAxisInternalDirection(
-        state.GetJointValues()[0],
-        state.GetJointValues()[1],
-        state.GetJointValues()[2] );
+	auto result_direction = BoneOffAxisInternalDirection(
+		state.GetJointValues()[0],
+		state.GetJointValues()[1],
+		state.GetJointValues()[2] );
 
-    EXPECT_TRUE( result_direction.isApprox( bone_state.Direction() ) );
+	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction() ) );
 
-    auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
+	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
 	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
 	auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
 	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
@@ -434,60 +434,60 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
 
-    double initial_value_1 = 0;
-    double initial_value_2 = M_PI / 4;
-    double initial_value_3 = 0;
+	double initial_value_1 = 0;
+	double initial_value_2 = M_PI / 4;
+	double initial_value_3 = 0;
 	bone_state.Origin() = center;
-	bone_state.Direction() = BoneOffAxisInternalDirection( 
-        initial_value_1,
-        initial_value_2, 
-        initial_value_3 );
+	bone_state.Direction() = BoneOffAxisInternalDirection(
+		initial_value_1,
+		initial_value_2,
+		initial_value_3 );
 
-    Iso3d world_transform = Iso3d::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
 	state.UpdateValues( bone_state );
 
-    auto result_direction = BoneOffAxisInternalDirection(
-        state.GetJointValues()[0],
-        state.GetJointValues()[1],
-        state.GetJointValues()[2] );
+	auto result_direction = BoneOffAxisInternalDirection(
+		state.GetJointValues()[0],
+		state.GetJointValues()[1],
+		state.GetJointValues()[2] );
 
-    EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
-        << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-        << "Result Direction = " << std::endl << result_direction << std::endl
-        << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
-        << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
+	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
+	    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+	    << "Result Direction = " << std::endl << result_direction << std::endl
+	    << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
+	    << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
 
-    auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
-    auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
-    auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
-    auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
+	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
+	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
+	auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
+	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
 
-    EXPECT_EQ( state.GetJointValues().size(), 3 );
+	EXPECT_EQ( state.GetJointValues().size(), 3 );
 
-    EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-    EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
 
-    EXPECT_EQ( center, state.GlobalTransform().translation() );
-    EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_EQ( center, state.GlobalTransform().translation() );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
 
-    EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
 
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
 
-    auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
-    auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-    auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
+	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
+	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
+	auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
 }
 
 // ------------------------------------------------------------
@@ -501,59 +501,59 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisThirdJointRotati
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
 
-    double initial_value_1 = 0;
-    double initial_value_2 = 0;
-    double initial_value_3 = M_PI / 4;
+	double initial_value_1 = 0;
+	double initial_value_2 = 0;
+	double initial_value_3 = M_PI / 4;
 	bone_state.Origin() = center;
-	bone_state.Direction() = BoneOffAxisInternalDirection( 
-        initial_value_1,
-        initial_value_2, 
-        initial_value_3 );
+	bone_state.Direction() = BoneOffAxisInternalDirection(
+		initial_value_1,
+		initial_value_2,
+		initial_value_3 );
 
-    Iso3d world_transform = Iso3d::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
 	state.UpdateValues( bone_state );
 
-    auto result_direction = BoneOffAxisInternalDirection(
-        state.GetJointValues()[0],
-        state.GetJointValues()[1],
-        state.GetJointValues()[2] );
+	auto result_direction = BoneOffAxisInternalDirection(
+		state.GetJointValues()[0],
+		state.GetJointValues()[1],
+		state.GetJointValues()[2] );
 
-    EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
-        << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-        << "Result Direction = " << std::endl << result_direction << std::endl
-        << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
-        << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
-    auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
-    auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
-    auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
-    auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
+	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
+	    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+	    << "Result Direction = " << std::endl << result_direction << std::endl
+	    << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
+	    << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
+	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
+	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
+	auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
+	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
 
-    EXPECT_EQ( state.GetJointValues().size(), 3 );
+	EXPECT_EQ( state.GetJointValues().size(), 3 );
 
-    EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-    EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
 
-    EXPECT_EQ( center, state.GlobalTransform().translation() );
-    EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_EQ( center, state.GlobalTransform().translation() );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
 
-    EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
 
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
 
-    auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
-    auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-    auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
+	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
+	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
+	auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
 }
 
 // ------------------------------------------------------------
@@ -567,60 +567,60 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisCombinedRotation
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
 
-    double initial_value_1 = M_PI / 4;
-    double initial_value_2 = M_PI / 4;
-    double initial_value_3 = M_PI / 4;
+	double initial_value_1 = M_PI / 4;
+	double initial_value_2 = M_PI / 4;
+	double initial_value_3 = M_PI / 4;
 	bone_state.Origin() = center;
-	bone_state.Direction() = BoneOffAxisInternalDirection( 
-        initial_value_1,
-        initial_value_2, 
-        initial_value_3 );
+	bone_state.Direction() = BoneOffAxisInternalDirection(
+		initial_value_1,
+		initial_value_2,
+		initial_value_3 );
 
-    Iso3d world_transform = Iso3d::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
 	state.UpdateValues( bone_state );
 
-    auto result_direction = BoneOffAxisInternalDirection(
-        state.GetJointValues()[0],
-        state.GetJointValues()[1],
-        state.GetJointValues()[2] );
+	auto result_direction = BoneOffAxisInternalDirection(
+		state.GetJointValues()[0],
+		state.GetJointValues()[1],
+		state.GetJointValues()[2] );
 
-    EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
-        << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-        << "Result Direction = " << std::endl << result_direction << std::endl
-        << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
-        << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
+	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-6 ) )
+	    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+	    << "Result Direction = " << std::endl << result_direction << std::endl
+	    << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
+	    << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
 
-    auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
-    auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
-    auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
-    auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
+	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
+	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
+	auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
+	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
 
-    EXPECT_EQ( state.GetJointValues().size(), 3 );
+	EXPECT_EQ( state.GetJointValues().size(), 3 );
 
-    EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-    EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
 
-    EXPECT_EQ( center, state.GlobalTransform().translation() );
-    EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_EQ( center, state.GlobalTransform().translation() );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
 
-    EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
 
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
 
-    auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
-    auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-    auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
+	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
+	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
+	auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
 }
 
 // ------------------------------------------------------------
@@ -633,69 +633,69 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
 	auto center = Vec3d( 1, 1, 1 );
 
-    // double initial_value_1 = M_PI / 4;
-    // double initial_value_2 = -M_PI / 6;
-    // double initial_value_3 = M_PI / 3;
-    double initial_value_1 = 2.2577826963175429;
-    double initial_value_2 =  -0.92270994597863509;
-    double initial_value_3 = 0.93561708640141328;
+	// double initial_value_1 = M_PI / 4;
+	// double initial_value_2 = -M_PI / 6;
+	// double initial_value_3 = M_PI / 3;
+	double initial_value_1 = 2.2577826963175429;
+	double initial_value_2 =  -0.92270994597863509;
+	double initial_value_3 = 0.93561708640141328;
 	bone_state.Origin() = center;
-    Vec3d bone_dir = BoneOffAxisInternalDirection( 
-        initial_value_1,
-        initial_value_2, 
-        initial_value_3 );
+	Vec3d bone_dir = BoneOffAxisInternalDirection(
+		initial_value_1,
+		initial_value_2,
+		initial_value_3 );
 	bone_state.Direction() = rotation * bone_dir;
 
-    Iso3d world_transform = Iso3d::Identity();
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
 	state.UpdateValues( bone_state );
 
-    auto result_bone_dir = BoneOffAxisInternalDirection(
-        state.GetJointValues()[0],
-        state.GetJointValues()[1],
-        state.GetJointValues()[2] );
+	auto result_bone_dir = BoneOffAxisInternalDirection(
+		state.GetJointValues()[0],
+		state.GetJointValues()[1],
+		state.GetJointValues()[2] );
 
-    auto result_direction = rotation * result_bone_dir;
+	auto result_direction = rotation * result_bone_dir;
 
-    EXPECT_TRUE( bone_dir.isApprox( result_bone_dir, 1e-2 ) )
-        << "Expect bone dir = " << std::endl << bone_dir << std::endl
-        << "Result bone dir = " << std::endl << result_bone_dir << std::endl;
-    EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-2 ) )
-        << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-        << "Result Direction = " << std::endl << result_direction << std::endl
-        << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
-        << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
+	EXPECT_TRUE( bone_dir.isApprox( result_bone_dir, 1e-2 ) )
+	    << "Expect bone dir = " << std::endl << bone_dir << std::endl
+	    << "Result bone dir = " << std::endl << result_bone_dir << std::endl;
+	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-2 ) )
+	    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+	    << "Result Direction = " << std::endl << result_direction << std::endl
+	    << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
+	    << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
 
-    auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
-    auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
-    auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
-    auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
+	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
+	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );
+	auto expected_local_rotation_3 = AngleAxis( state.GetJointValues()[2], revolute_joint_3_->Axis() );
+	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2 * expected_local_rotation_3;
 
-    EXPECT_EQ( state.GetJointValues().size(), 3 );
+	EXPECT_EQ( state.GetJointValues().size(), 3 );
 
-    EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-    EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
 
-    EXPECT_EQ( center, state.GlobalTransform().translation() );
-    EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_EQ( center, state.GlobalTransform().translation() );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
 
-    EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
-    EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[0]->Value(), state.GetJointValues()[0], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[1]->Value(), state.GetJointValues()[1], epsilon );
+	EXPECT_NEAR( state.GetJointStates()[2]->Value(), state.GetJointValues()[2], epsilon );
 
-    EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( 0.9, 1.0, 1.0 ) ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( 0.9, 1.0, 1.0 ) ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( center ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Origin().isApprox( center ) );
 
-    auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
-    auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-    auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
-    EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-    EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
-    EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
+	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
+	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
+	auto expected_axis_3 = rotation * expected_local_rotation_1 * expected_local_rotation_2 * revolute_joint_3_->Axis();
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[2]->Axis().isApprox( expected_axis_3 ) );
 }
 
 // ------------------------------------------------------------
@@ -707,39 +707,39 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisConsistency_Expe
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
 	auto center = Vec3d( 1, 1, 1 );
-    
-    Iso3d world_transform = Iso3d::Identity();
+
+	Iso3d world_transform = Iso3d::Identity();
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 	bone_state.Origin() = center;
 
-    double initial_value_1, initial_value_2, initial_value_3;
-    const int ITER = 10;
-    for ( int i = 0; i < ITER; i++ )
-    {
-        revolute_joint_1_->GetLimits().Random( rng_, &initial_value_1 );
-        revolute_joint_2_->GetLimits().Random( rng_, &initial_value_2 );
-        revolute_joint_3_->GetLimits().Random( rng_, &initial_value_3 );
-        bone_state.Direction() = rotation * BoneOffAxisInternalDirection( 
-            initial_value_1,
-            initial_value_2, 
-            initial_value_3 );
+	double initial_value_1, initial_value_2, initial_value_3;
+	const int ITER = 10;
+	for ( int i = 0; i < ITER; i++ )
+	{
+		revolute_joint_1_->GetLimits().Random( rng_, & initial_value_1 );
+		revolute_joint_2_->GetLimits().Random( rng_, & initial_value_2 );
+		revolute_joint_3_->GetLimits().Random( rng_, & initial_value_3 );
+		bone_state.Direction() = rotation * BoneOffAxisInternalDirection(
+			initial_value_1,
+			initial_value_2,
+			initial_value_3 );
 
-        state.UpdateValues( bone_state );
+		state.UpdateValues( bone_state );
 
-        auto result_direction = rotation * BoneOffAxisInternalDirection(
-            state.GetJointValues()[0],
-            state.GetJointValues()[1],
-            state.GetJointValues()[2] );
+		auto result_direction = rotation * BoneOffAxisInternalDirection(
+			state.GetJointValues()[0],
+			state.GetJointValues()[1],
+			state.GetJointValues()[2] );
 
-        EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-2 ) )
-            << "Failed Iteration = " << i << std::endl
-            << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-            << "Result Direction = " << std::endl << result_direction << std::endl
-            << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
-            << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
-    }
+		EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-2 ) )
+		    << "Failed Iteration = " << i << std::endl
+		    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+		    << "Result Direction = " << std::endl << result_direction << std::endl
+		    << "Thetas initial = " << initial_value_1 << " " << initial_value_2 << " " << initial_value_3 << std::endl
+		    << "Thetas final   = " << state.GetJointValues()[0] << " " << state.GetJointValues()[1] << " " << state.GetJointValues()[2] << std::endl;
+	}
 }
 
 // ------------------------------------------------------------

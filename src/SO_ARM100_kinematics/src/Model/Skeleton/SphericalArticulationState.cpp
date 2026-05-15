@@ -42,32 +42,32 @@ void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 
 	Vec3d old_bone = bone_state.GetBone()->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
-	
+
 	auto result = spherical_solver_->Solve(
-		old_bone, 
+		old_bone,
 		new_bone );
 	Vec3d angles = result.angles;
 
 	local_transform_.setIdentity();
-	SetJointInternalState( 
-		joint_states_[0], 
-		world_transform_, 
-		global_transform_, 
-		local_transform_, 
+	SetJointInternalState(
+		joint_states_[0],
+		world_transform_,
+		global_transform_,
+		local_transform_,
 		angles[0] );
 
-	SetJointInternalState( 
-		joint_states_[1], 
-		world_transform_, 
-		global_transform_, 
-		local_transform_, 
+	SetJointInternalState(
+		joint_states_[1],
+		world_transform_,
+		global_transform_,
+		local_transform_,
 		angles[1] );
 
-	SetJointInternalState( 
-		joint_states_[2], 
-		world_transform_, 
-		global_transform_, 
-		local_transform_, 
+	SetJointInternalState(
+		joint_states_[2],
+		world_transform_,
+		global_transform_,
+		local_transform_,
 		angles[2] );
 }
 

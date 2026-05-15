@@ -31,7 +31,7 @@ SkeletonState::SkeletonState( const Skeleton* skeleton ) :
 
 // ------------------------------------------------------------
 
-std::vector< BoneState > SkeletonState::GetBoneStates() const 
+std::vector< BoneState > SkeletonState::GetBoneStates() const
 {
 	std::vector< BoneState > bone_states;
 	const auto& bones = skeleton_->Bones();
@@ -42,7 +42,7 @@ std::vector< BoneState > SkeletonState::GetBoneStates() const
 		const auto& articulation_state = articulation_states_[i];
 		const auto& T_articulation = articulation_state->GlobalTransform();
 		auto bone_state = BoneState( bones[i] );
-		
+
 		bone_state.Origin() = T_articulation.translation();
 		bone_state.Direction() = T_articulation.rotation() * bone->Direction();
 
@@ -88,7 +88,7 @@ void SkeletonState::SetState( const VecXd& joints )
 		articulation_state->SetState(
 			world_transform,
 			sub_joints );
-		
+
 		if ( i < articulation_states_.size() - 1 )
 		{
 			world_transform.translate( skeleton_->Bone( i )->Direction() );
@@ -103,15 +103,16 @@ void SkeletonState::SetState( const VecXd& joints )
 void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
 {
 	const int n_joints = skeleton_->ArticulationCount();
-	if ( i < 0 || i >= n_joints ) throw std::out_of_range( "Index must match articulation index" );
+	if ( i < 0 || i >= n_joints )
+		throw std::out_of_range( "Index must match articulation index" );
 
 	articulation_states_[i]->UpdateValues( bone_state );
 
-	Iso3d transform; 
+	Iso3d transform;
 
 	for ( int j = i + 1; j < n_joints; j++ )
 	{
-		transform = articulation_states_[j-1]->GlobalTransform();
+		transform = articulation_states_[j - 1]->GlobalTransform();
 		transform.translate( skeleton_->Bone( j - 1 )->Direction() );
 		articulation_states_[j]->SetCenterPose( transform );
 	}
@@ -122,7 +123,8 @@ void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
 void SkeletonState::ApplyConstraint( BoneState& bone_state, int i ) const
 {
 	const int n_joints = skeleton_->ArticulationCount();
-	if ( i < 0 || i >= n_joints ) throw std::out_of_range( "Index must match articulation index" );
+	if ( i < 0 || i >= n_joints )
+		throw std::out_of_range( "Index must match articulation index" );
 
 	articulation_states_[i]->ApplyConstraints( bone_state );
 }

@@ -20,7 +20,7 @@ SkeletonState( const Skeleton* skeleton );
 VecXd GetJointValues() const;
 
 std::span< const ArticulationStatePtr > GetArticulationStates() const {
-    return articulation_states_;
+	return articulation_states_;
 }
 
 std::vector< BoneState > GetBoneStates() const;

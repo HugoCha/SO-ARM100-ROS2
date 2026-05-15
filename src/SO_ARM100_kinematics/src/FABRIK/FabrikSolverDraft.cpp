@@ -123,10 +123,10 @@ IKSolution FABRIKSolverDraft::Solve(
 		// std::cout << "Backward = " << std::endl;
 		// PrintStates( buffers.states );
 		ForwardPass( p_base, skeleton_state, bone_states );
-		//std::cout << "Forward = " << std::endl;
+		// std::cout << "Forward = " << std::endl;
 		// PrintStates( buffers.states );
 		// std::cout << "Project = " << std::endl;
-		//PrintStates( buffers.states );
+		// PrintStates( buffers.states );
 		// ForwardKinematics( *model_->GetSkeleton(), buffers.states, 0 );
 		// std::cout << "FK = " << std::endl;
 		// PrintStates( buffers.states );
@@ -149,7 +149,7 @@ void FABRIKSolverDraft::BackwardPass(
 	for ( int i = n - 1; i > 0; i-- )
 	{
 		bone_states[i].Direction() =
-	        ( last_origin - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
+			( last_origin - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
 
 		skeleton_state.ApplyConstraint( bone_states[i], i );
 
@@ -172,12 +172,12 @@ void FABRIKSolverDraft::ForwardPass(
 
 	for ( int i = 0; i < n; i++ )
 	{
-	    bone_states[i].Direction() =
-	        (bone_states[i+1].Origin() - bone_states[i].Origin()).normalized() * bone_states[i].GetBone()->Length();
+		bone_states[i].Direction() =
+			( bone_states[i + 1].Origin() - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
 
 		skeleton_state.UpdateValue( bone_states[i], i );
 
-	    bone_states[i+1].Origin() =
+		bone_states[i + 1].Origin() =
 			bone_states[i].Origin() + bone_states[i].Direction();
 	}
 }

@@ -152,16 +152,16 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex0_UpdatesArticulat
 
 	skeleton_state_->UpdateValue( bone_state, 0 );
 
-    Vec3d expected_joints;
-    expected_joints << 0, M_PI / 6, M_PI / 6;
+	Vec3d expected_joints;
+	expected_joints << 0, M_PI / 6, M_PI / 6;
 
-    const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
+	const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
 	const auto& T12 = Data::GetZYZRevoluteRobotT12( expected_joints[1] );
 	const auto& T23 = Data::GetZYZRevoluteRobotT23( expected_joints[2] );
 	const auto& T02 = T01 * T12;
 	const auto& T03 = T02 * T23;
 
-    // Articulation States
+	// Articulation States
 	auto articulation_state = skeleton_state_->GetArticulationStates()[0];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
@@ -169,22 +169,22 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex0_UpdatesArticulat
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Vec3d::Zero() ) );
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 
-    articulation_state = skeleton_state_->GetArticulationStates()[1];
+	articulation_state = skeleton_state_->GetArticulationStates()[1];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
 	EXPECT_EQ( articulation_state->GetJointValues()[0], expected_joints[1] );
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Translation( T02 ) ) )
-        << "Expected Translation = " << Translation( T02 ).transpose() << std::endl
+	    << "Expected Translation = " << Translation( T02 ).transpose() << std::endl
 	    << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 
-    articulation_state = skeleton_state_->GetArticulationStates()[2];
+	articulation_state = skeleton_state_->GetArticulationStates()[2];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
 	EXPECT_EQ( articulation_state->GetJointValues()[0], expected_joints[2] );
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Translation( T03 ) ) )
-        << "Expected Translation = " << Translation( T03 ).transpose() << std::endl
-        << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
+	    << "Expected Translation = " << Translation( T03 ).transpose() << std::endl
+	    << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 }
 
@@ -202,16 +202,16 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex1_UpdatesArticulat
 
 	skeleton_state_->UpdateValue( bone_state, 1 );
 
-    Vec3d expected_joints;
-    expected_joints << M_PI / 6, 0, M_PI / 6;
+	Vec3d expected_joints;
+	expected_joints << M_PI / 6, 0, M_PI / 6;
 
-    const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
+	const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
 	const auto& T12 = Data::GetZYZRevoluteRobotT12( expected_joints[1] );
 	const auto& T23 = Data::GetZYZRevoluteRobotT23( expected_joints[2] );
 	const auto& T02 = T01 * T12;
 	const auto& T03 = T02 * T23;
 
-    // Articulation States
+	// Articulation States
 	auto articulation_state = skeleton_state_->GetArticulationStates()[0];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
@@ -219,22 +219,22 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex1_UpdatesArticulat
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Vec3d::Zero() ) );
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 
-    articulation_state = skeleton_state_->GetArticulationStates()[1];
+	articulation_state = skeleton_state_->GetArticulationStates()[1];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
 	EXPECT_EQ( articulation_state->GetJointValues()[0], expected_joints[1] );
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Translation( T02 ) ) )
-        << "Expected Translation = " << Translation( T02 ).transpose() << std::endl
+	    << "Expected Translation = " << Translation( T02 ).transpose() << std::endl
 	    << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 
-    articulation_state = skeleton_state_->GetArticulationStates()[2];
+	articulation_state = skeleton_state_->GetArticulationStates()[2];
 
 	EXPECT_EQ( articulation_state->GetJointValues().size(), 1 );
 	EXPECT_EQ( articulation_state->GetJointValues()[0], expected_joints[2] );
 	EXPECT_TRUE( articulation_state->GlobalTransform().translation().isApprox( Translation( T03 ) ) )
-        << "Expected Translation = " << Translation( T03 ).transpose() << std::endl
-        << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
+	    << "Expected Translation = " << Translation( T03 ).transpose() << std::endl
+	    << "Result   Translation = " << articulation_state->GlobalTransform().translation().transpose() << std::endl;
 	EXPECT_TRUE( articulation_state->LocalTransform().translation().isApprox( Vec3d::Zero() ) );
 }
 
@@ -252,19 +252,19 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneState_UpdatesBoneState )
 
 	skeleton_state_->UpdateValue( bone_state, 0 );
 
-    Vec3d expected_joints;
-    expected_joints << 0, M_PI / 6, M_PI / 6;
+	Vec3d expected_joints;
+	expected_joints << 0, M_PI / 6, M_PI / 6;
 
-    const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
+	const auto& T01 = Data::GetZYZRevoluteRobotT01( expected_joints[0] );
 	const auto& T12 = Data::GetZYZRevoluteRobotT12( expected_joints[1] );
 	const auto& T23 = Data::GetZYZRevoluteRobotT23( expected_joints[2] );
 	const auto& T02 = T01 * T12;
 	const auto& T03 = T02 * T23;
 
-    // Bone States
+	// Bone States
 	auto bone_states = skeleton_state_->GetBoneStates();
-	
-    EXPECT_EQ( bone_states.size(), skeleton_->BonesCount() );
+
+	EXPECT_EQ( bone_states.size(), skeleton_->BonesCount() );
 
 	auto bone = skeleton_->Bone( 0 );
 	auto result_bone_state = bone_states[0];
@@ -311,10 +311,10 @@ TEST_F( SkeletonStateTest, ApplyConstraint_WithValidBoneState_AppliesConstraints
 	// Apply constraint
 	skeleton_state_->ApplyConstraint( bone_state, 0 );
 
-    Vec3d expected_direction = Vec3d( 0.5, 0, 0 );
+	Vec3d expected_direction = Vec3d( 0.5, 0, 0 );
 	EXPECT_TRUE( bone_state.Direction().isApprox( expected_direction ) )
-        << "Expected Direction = " << expected_direction.transpose() << std::endl
-        << "Result   Direction = " << bone_state.Direction().transpose() << std::endl;
+	    << "Expected Direction = " << expected_direction.transpose() << std::endl
+	    << "Result   Direction = " << bone_state.Direction().transpose() << std::endl;
 }
 
 // ============================================================
