@@ -96,11 +96,9 @@ Mat3d ComposeRotation(
     const Vec3d& ax2,
     const Vec3d& ax3 ) const
 {
-    Mat3d R1 = AngleAxis( a1, ax1 ).toRotationMatrix();
-    Mat3d R2 = AngleAxis( a2, R1 * ax2 ).toRotationMatrix();
-    Mat3d R3 = AngleAxis( a3, R1 * R2 * ax3 ).toRotationMatrix();
-
-    return R3;
+    return ( AngleAxis( a1, ax1 ) *
+             AngleAxis( a2, ax2 ) *
+             AngleAxis( a3, ax3 ) ).toRotationMatrix();
 }
 
 // ------------------------------------------------------------
@@ -191,14 +189,40 @@ void ExpectRoundTrip(
         c.ax3 );
     
     bool singularity;
-    auto angles =
+    auto branches =
         model->DecomposePhysical( R_world );
 
+    EXPECT_EQ( branches.size(), 2 );
+    
+    Vec3d angles = branches[0];
     Mat3d R_reconstructed = ComposeRotation( 
         *model, 
-        a1,
-        a2,
-        a3,
+        angles[0],
+        angles[1],
+        angles[2],
+        c.ax1,
+        c.ax2,
+        c.ax3 );
+
+    EXPECT_TRUE(
+        R_world.isApprox(
+            R_reconstructed,
+            1e-6 ) )
+        << "Reconstruction failed for "
+        << c.name
+        << "\nExpected:\n"
+        << R_world
+        << "\nGot:\n"
+        << R_reconstructed
+        << "\nAngles: "
+        << angles.transpose();
+
+    angles = branches[1];
+    R_reconstructed = ComposeRotation( 
+        *model, 
+        angles[0],
+        angles[1],
+        angles[2],
         c.ax1,
         c.ax2,
         c.ax3 );
@@ -298,10 +322,12 @@ TEST_F(
         ASSERT_TRUE( model.has_value() );
 
         bool singularity;
-        auto angles =
+        auto branches =
             model->DecomposePhysical( Mat3d::Identity() );
+        
+        EXPECT_EQ( branches.size(), 2 );
 
-
+        Vec3d angles = branches[0];
         EXPECT_NEAR( angles[0], 0.0, 1e-6 )
             << c.name;
 
@@ -309,6 +335,16 @@ TEST_F(
             << c.name;
 
         EXPECT_NEAR( angles[2], 0.0, 1e-6 )
+            << c.name;
+
+        angles = branches[1];
+        EXPECT_NEAR( angles[0], M_PI, 1e-6 )
+            << c.name;
+
+        EXPECT_NEAR( angles[1], M_PI, 1e-6 )
+            << c.name;
+
+        EXPECT_NEAR( angles[2], M_PI, 1e-6 )
             << c.name;
     }
 }

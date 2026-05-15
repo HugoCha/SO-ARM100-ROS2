@@ -147,7 +147,7 @@ const std::string createZYZRevoluteRobotURDF()
                 <child link="link_2"/>
                 <origin xyz="0.5 0 0" rpy="0 0 0"/>
                 <axis xyz="0 1 0"/>
-                <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
+                <limit lower="0" upper="3.14159" effort="100" velocity="1.0"/>
             </joint>
 
             <link name="link_2">
@@ -264,7 +264,7 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	Model::Link link2( ToTransformMatrix( origin2 ), 0.5 );
 
-	Model::Limits limits2( -M_PI, M_PI );
+	Model::Limits limits2( 0, M_PI );
 
 	joint_chain.Add( twist2, link2, limits2 );
 

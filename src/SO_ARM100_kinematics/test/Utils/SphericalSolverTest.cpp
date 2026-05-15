@@ -50,9 +50,9 @@ void SetUp() override
         -M_PI / 6, M_PI / 6 );
 
     auto model_opt = Model::EulerModel::ComputeModel( 
-        joint_x_, 
+        joint_z_, 
         joint_y_, 
-        joint_z_ );
+        joint_x_ );
     ASSERT_TRUE( model_opt.has_value() );
     model_ = std::make_unique< Model::EulerModel >( *model_opt );
     solver_ = std::make_unique< Solver::SphericalSolver >( *model_, Solver::SphericalSolver::SolverParameters() );
@@ -326,7 +326,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_PureZRotation_NoDirectionChange )
 
 TEST_F( SphericalSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
 {
-    Vec3d old_dir = Vec3d::UnitZ();
+    Vec3d old_dir = Vec3d::UnitX();
     // Build a target from known angles so we can verify round-trip
     const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
     Vec3d angles = Vec3d( a1, a2, a3 );
@@ -339,8 +339,8 @@ TEST_F( SphericalSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
 TEST_F( SphericalSolverTest, Solve_Dir_OppositeDirection_DirectionMatches )
 {
     // 180° rotation — numerically tricky for FromTwoVectors
-    Vec3d old_dir = Vec3d::UnitZ();
-    Vec3d new_dir = -Vec3d::UnitZ();
+    Vec3d old_dir = Vec3d::UnitX();
+    Vec3d new_dir = -Vec3d::UnitX();
 
     CheckAllConfigurations( old_dir, new_dir );
 }
@@ -471,10 +471,34 @@ TEST_F( SphericalSolverTest, Solve_Dir_Consistency_SameInputSameOutput )
 // Stress — random directions within limits
 // ============================================================
 
+
+TEST_F( SphericalSolverTest, Solve_Dir_HardDirection_DirectionAlwaysMatches )
+{
+    Vec3d old_dir = Vec3d::UnitZ();
+    Vec3d seed    = Vec3d::Zero();
+
+    Vec3d angles;
+    angles << -0.70445933432462216,
+              -1.4225262739977698,
+              -0.12398932995613121;
+
+    Vec3d new_dir = ApplyAngles( *model_, old_dir, angles );
+
+    auto result = solver_->Solve( old_dir, new_dir );
+
+    Vec3d recovered = ApplyAngles( *model_, old_dir, result.angles );
+    EXPECT_TRUE( recovered.isApprox( new_dir, 1e-3 ) ) 
+            << "Original Angles " << angles.transpose() << "\n"
+            << "Expected:  " << new_dir.transpose()   << "\n"
+            << "Got:       " << recovered.transpose() << "\n"
+            << "Result Angles:    " << result.angles.transpose();
+}
+
 TEST_F( SphericalSolverTest, Solve_Dir_RandomDirections_DirectionAlwaysMatches )
 {
     random_numbers::RandomNumberGenerator rng;
-    Vec3d old_dir = Vec3d::UnitZ();
+    Vec3d old_dir = Vec3d::UnitX();
+    //Vec3d old_dir = Vec3d::Ones();
     Vec3d seed    = Vec3d::Zero();
 
     const int ITER = 20;

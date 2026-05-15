@@ -15,6 +15,15 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
+double WrapAngle( double angle )
+{
+	while ( angle > M_PI ) angle -= 2 * M_PI;
+	while ( angle < -M_PI ) angle += 2 * M_PI;
+	return angle;
+}
+
+// ------------------------------------------------------------
+
 EulerModel::EulerModel(
 	const Mat3d& basis_matrix,
 	const Model::JointConstPtr& joint1,
@@ -23,6 +32,12 @@ EulerModel::EulerModel(
 	Q_( basis_matrix ),
 	joints_( { joint1, joint2, joint3 } )
 {
+	indirect_ = false;
+	if ( Q_.determinant() < 0.0 )
+	{
+		Q_.col( 2 ) = -Q_.col( 2 );
+		indirect_ = true;
+	}
 }
 
 // ------------------------------------------------------------
@@ -60,19 +75,27 @@ Mat3d EulerModel::BuildBasisChangeMatrix(
 
 // ------------------------------------------------------------
 
-Vec3d EulerModel::DecomposeCanonical( const Mat3d& R_canonical ) const
+std::vector< Vec3d > EulerModel::DecomposeCanonical( const Mat3d& R_canonical ) const
 {
 	Vec3d angles = R_canonical.eulerAngles(
 		( long )EulerAxis::X,
 		( long )EulerAxis::Y,
 		( long )EulerAxis::Z );
+	
+	if ( indirect_ )
+		angles[2] = -angles[2];
 
-	return angles;
+	Vec3d other_angles;
+	other_angles << WrapAngle( M_PI + angles[0] ), 
+					WrapAngle( M_PI - angles[1] ), 
+					WrapAngle( M_PI + angles[2] );
+
+	return { angles, other_angles };
 }
 
 // ------------------------------------------------------------
 
-Vec3d EulerModel::DecomposePhysical( const Mat3d& R_physical ) const
+std::vector< Vec3d > EulerModel::DecomposePhysical( const Mat3d& R_physical ) const
 {
 	return DecomposeCanonical( ToCanonical( R_physical ) );
 }

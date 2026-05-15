@@ -15,14 +15,15 @@ SphericalArticulationState::SphericalArticulationState( const Articulation* arti
 	ArticulationState( articulation )
 {
 	assert( articulation->GetType() == ArticulationType::Spherical );
+
 	auto euler_model = EulerModel::ComputeModel(
 		articulation->Joints()[0],
 		articulation->Joints()[1],
 		articulation->Joints()[2] );
-	if ( euler_model.has_value() )
-	{
-		spherical_solver_ = std::make_unique< Solver::SphericalSolver >( *euler_model, Solver::SphericalSolver::SolverParameters() );
-	}
+
+	assert( euler_model.has_value() );
+
+	spherical_solver_ = std::make_unique< Solver::SphericalSolver >( *euler_model, Solver::SphericalSolver::SolverParameters() );
 }
 
 // ------------------------------------------------------------
@@ -37,22 +38,17 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
 {
-	auto joint_0 = articulation_->Joints()[0];
-	auto joint_1 = articulation_->Joints()[1];
-	auto joint_2 = articulation_->Joints()[2];
+	assert( spherical_solver_ );
 
 	Vec3d old_bone = bone_state.GetBone()->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 	
-	Vec3d angles;
-	if ( spherical_solver_ )
-	{
-		auto result = spherical_solver_->Solve(
-			old_bone, 
-			new_bone );
-		angles = result.angles;
-	}
+	auto result = spherical_solver_->Solve(
+		old_bone, 
+		new_bone );
+	Vec3d angles = result.angles;
 
+	local_transform_.setIdentity();
 	SetJointInternalState( 
 		joint_states_[0], 
 		world_transform_, 

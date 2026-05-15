@@ -4,6 +4,7 @@
 
 #include "EulerModel.hpp"
 
+#include <functional>
 
 namespace SOArm100::Kinematics::Solver
 {
@@ -26,8 +27,7 @@ struct IKResult {
     double cost;           ///< optimizer cost at solution
     double fk_error;       ///< ‖FK(θ)·p_tcp_local − p_target‖ [m]
     double singularity_margin; ///< 0=singular, 1=far (cos θ₂ in canonical frame)
-    bool   in_limits;      ///< all joints within limits?
-    bool   reachable;      ///< |p_target| ≈ |p_tcp_local|?
+    bool   reachable;      ///< all joints within limits?
     bool   near_singular;  ///< middle joint near gimbal lock?
 };
 
@@ -51,14 +51,35 @@ SolverParameters& GetParameters() {
     std::optional<Vec3d> theta_pref = std::nullopt) const;
 
 private:
+struct EulerBranch
+{
+    double phi;
+    Vec3d angles;
+    double cost;
+};
+
+using CostFn = std::function< EulerBranch( double phi ) >;
+
 Model::EulerModel model_;    
 SolverParameters parameters_;   
 
-static double GoldenSearchSection(
-    const std::function< double(double) >& f,
+double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
+double LimitViolationCost( const Vec3d& angles ) const;
+double SingularityCost( const Mat3d& R_canonical ) const;
+
+EulerBranch GridSearch( const CostFn& f ) const;
+
+EulerBranch GoldenSearchSection( 
+    const CostFn& f,
     double a, 
     double b,
-    double tol, 
-    int max_iter );
+    double tol = 1e-9 ) const;
+
+bool CheckLimits( Vec3d& angles ) const;
+
+
+Mat3d ComputeRMinimal(
+    const Vec3d& old_dir,
+    const Vec3d& new_dir ) const;
 };
 }

@@ -88,11 +88,13 @@ void SkeletonState::SetState( const VecXd& joints )
 		articulation_state->SetState(
 			world_transform,
 			sub_joints );
-
-		world_transform.translate( skeleton_->Bone( i )->Direction() );
-		world_transform = articulation_state->LocalTransform() * world_transform;
-
-		sub_joint_idx += n_sub_joints;
+		
+		if ( i < articulation_states_.size() - 1 )
+		{
+			world_transform.translate( skeleton_->Bone( i )->Direction() );
+			world_transform = articulation_state->LocalTransform() * world_transform;
+			sub_joint_idx += n_sub_joints;
+		}
 	}
 }
 
@@ -109,7 +111,7 @@ void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
 
 	for ( int j = i + 1; j < n_joints; j++ )
 	{
-		transform = articulation_states_[j]->GlobalTransform();
+		transform = articulation_states_[j-1]->GlobalTransform();
 		transform.translate( skeleton_->Bone( j - 1 )->Direction() );
 		articulation_states_[j]->SetCenterPose( transform );
 	}

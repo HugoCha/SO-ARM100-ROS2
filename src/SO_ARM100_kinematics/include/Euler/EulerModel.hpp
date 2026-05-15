@@ -45,8 +45,8 @@ public:
 [[nodiscard]] Mat3d RecomposeCanonical( const Vec3d& q ) const;
 [[nodiscard]] Mat3d RecomposePhysical( const Vec3d& q ) const;
 
-[[nodiscard]] Vec3d DecomposeCanonical( const Mat3d& R_Canonical ) const;
-[[nodiscard]] Vec3d DecomposePhysical( const Mat3d& R_Physical ) const;
+[[nodiscard]] std::vector< Vec3d > DecomposeCanonical( const Mat3d& R_Canonical ) const;
+[[nodiscard]] std::vector< Vec3d > DecomposePhysical( const Mat3d& R_Physical ) const;
 
 /// Check if a canonical rotation is near XYZ gimbal lock (θ₂ ≈ ±π/2).
 [[nodiscard]] bool IsSingular(const Mat3d& R_canonical, double tol = 0.05 ) const;
@@ -63,6 +63,7 @@ enum class EulerAxis
 };
 
 Mat3d Q_;
+bool indirect_;
 std::vector< Model::JointConstPtr > joints_;
 
 EulerModel(
