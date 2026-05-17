@@ -147,7 +147,7 @@ const std::string createZYZRevoluteRobotURDF()
                 <child link="link_2"/>
                 <origin xyz="0.5 0 0" rpy="0 0 0"/>
                 <axis xyz="0 1 0"/>
-                <limit lower="0" upper="3.14159" effort="100" velocity="1.0"/>
+                <limit lower="-1.570796" upper="1.570796" effort="100" velocity="1.0"/>
             </joint>
 
             <link name="link_2">
@@ -163,7 +163,7 @@ const std::string createZYZRevoluteRobotURDF()
                 <child link="end_effector"/>
                 <origin xyz="0.5 0 0" rpy="0 0 0"/>
                 <axis xyz="0 0 1"/>
-                <limit lower="-3.14159" upper="3.14159" effort="100" velocity="1.0"/>
+                <limit lower="-1.570796" upper="1.570796" effort="100" velocity="1.0"/>
             </joint>
 
             <link name="end_effector">
@@ -264,7 +264,7 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	Model::Link link2( ToTransformMatrix( origin2 ), 0.5 );
 
-	Model::Limits limits2( 0, M_PI );
+	Model::Limits limits2( -M_PI, M_PI );
 
 	joint_chain.Add( twist2, link2, limits2 );
 
@@ -1755,6 +1755,26 @@ Model::KinematicModelConstPtr Data::GetURLikeRobot()
 		URLike_robot_ = createURLike_6DOFsRobot();
 	}
 	return URLike_robot_;
+}
+
+// ------------------------------------------------------------
+
+std::map< std::string, Model::KinematicModelConstPtr > Data::GetAllRobots()
+{
+	return 
+	{
+		{"ZYZ", GetZYZRevoluteRobot()},
+		{"RevoluteBase", GetRevoluteBaseRobot()},
+		{"PrismaticBase", GetPrismaticBaseRobot()},
+		{"Planar2R", GetPlanar2RRobot()},
+		{"Planar3R", GetPlanar3RRobot()},
+		{"Wrist1R", GetWrist1RRobot()},
+		{"Wrist2R", GetWrist2RRobot()},
+		{"Wrist3R", GetSphericalWristRobot()},
+		{"5-axis arm", GetRevolute_Planar2R_Wrist2R_5DOFsRobot()},
+		{"6-axis arm", GetRevolute_Planar2R_SphericalWrist_6DOFsRobot()},
+		{"Universal Robot", GetURLikeRobot()},
+	};
 }
 
 // ------------------------------------------------------------

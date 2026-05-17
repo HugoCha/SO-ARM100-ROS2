@@ -11,6 +11,11 @@ namespace SOArm100::Kinematics::Model
 class BoneState
 {
 public:
+BoneState( const Vec3d& origin, const Vec3d& direction ) :
+	bone_( nullptr ),
+	pose_( origin, direction )
+{}
+
 BoneState( BoneConstPtr bone ) :
 	bone_( bone ),
 	pose_( bone->Origin(), bone->Direction() )

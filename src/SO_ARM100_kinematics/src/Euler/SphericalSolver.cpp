@@ -21,7 +21,19 @@ SphericalSolver::SphericalSolver(
 
 // ------------------------------------------------------------
 
-SphericalSolver::IKResult SphericalSolver::Solve(
+SphericalSolver::IKResult SphericalSolver::SolveFromRotation(
+	const Mat3d& R_target,
+	std::optional< Vec3d > theta_pref ) const
+{
+	const Vec3d& initial = model_.GetJoint( 2 )->Axis();
+	const Vec3d& final   = R_target * initial;
+	
+	return SolveFromTwoVectors( initial, final, theta_pref );
+}
+
+// ------------------------------------------------------------
+
+SphericalSolver::IKResult SphericalSolver::SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
 	std::optional< Vec3d > theta_pref ) const
@@ -50,31 +62,33 @@ SphericalSolver::IKResult SphericalSolver::Solve(
 	const Vec3d free_axis = p_target_c.normalized();
 	const double dphi = 2.0 * M_PI / static_cast< double >( parameters_.phi_samples );
 
-	auto cost_fn = [&]( double phi ) -> EulerBranch {
-					   const Mat3d R_phi  = Eigen::AngleAxisd( phi, free_axis ).toRotationMatrix();
-					   const Mat3d R_canonical = R_phi * R_base;
+	auto cost_fn =
+		[&]( double phi ) -> EulerBranch
+		{
+			const Mat3d R_phi  = Eigen::AngleAxisd( phi, free_axis ).toRotationMatrix();
+			const Mat3d R_canonical = R_phi * R_base;
 
-					   const auto& branches = model_.DecomposeCanonical( R_canonical );
+			const auto& branches = model_.DecomposeCanonical( R_canonical );
 
-					   std::vector< EulerBranch > euler_branches( 2 );
+			std::vector< EulerBranch > euler_branches( 2 );
 
-					   for ( int i = 0; i < 2; i++ )
-					   {
-						   const Vec3d& angles = branches[i];
-						   double cost = 0.0;
+			for ( int i = 0; i < 2; i++ )
+			{
+				const Vec3d& angles = branches[i];
+				double cost = 0.0;
 
-						   cost += DeviationCost( prefered, angles );
-						   cost += LimitViolationCost( angles );
-						   cost += SingularityCost( R_canonical );
+				cost += DeviationCost( prefered, angles );
+				cost += LimitViolationCost( angles );
+				cost += SingularityCost( R_canonical );
 
-						   euler_branches[i].angles = angles;
-						   euler_branches[i].cost = cost;
-						   euler_branches[i].phi = phi;
-					   }
+				euler_branches[i].angles = angles;
+				euler_branches[i].cost = cost;
+				euler_branches[i].phi = phi;
+			}
 
-					   return euler_branches[0].cost < euler_branches[1].cost ?
-					          euler_branches[0] : euler_branches[1];
-				   };
+			return euler_branches[0].cost < euler_branches[1].cost ?
+			       euler_branches[0] : euler_branches[1];
+		};
 
 	auto best_coarse_branch = GridSearch( cost_fn );
 	auto best_branch = GoldenSearchSection(

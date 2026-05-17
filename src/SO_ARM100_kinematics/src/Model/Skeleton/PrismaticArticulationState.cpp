@@ -46,7 +46,9 @@ void PrismaticArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 // ------------------------------------------------------------
 
-void PrismaticArticulationState::UpdateValues( const BoneState& bone_state )
+void PrismaticArticulationState::UpdateValues( 
+	const BoneState& bone_state, 
+	double damping_factor )
 {
 	auto joint = articulation_->Joints()[0];
 	auto joint_state = joint_states_[0];
@@ -67,14 +69,16 @@ void PrismaticArticulationState::UpdateValues( const BoneState& bone_state )
 	double slide = sign >= 0 ? slide_axis.norm() : -slide_axis.norm();
 	slide = joint->GetLimits().Clamp( slide );
 
-	local_transform_.setIdentity();
+	Iso3d local_transform = Iso3d::Identity();
 
 	SetJointInternalState(
 		joint_state,
-		world_transform_,
-		global_transform_,
-		local_transform_,
-		slide );
+		local_transform,
+		slide,
+		damping_factor );
+
+	local_transform_ = local_transform;
+	global_transform_ = world_transform_ * local_transform_;
 }
 
 // ------------------------------------------------------------

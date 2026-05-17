@@ -84,6 +84,10 @@ void SkeletonState::SetState( const VecXd& joints )
 		VecXd sub_joints = joints.segment( sub_joint_idx, n_sub_joints );
 
 		auto articulation_state = articulation_states_[i];
+		if ( i == 0 )
+		{
+			world_transform.translate( articulation_state->GetArticulation()->Center() );
+		}
 
 		articulation_state->SetState(
 			world_transform,
@@ -91,8 +95,8 @@ void SkeletonState::SetState( const VecXd& joints )
 
 		if ( i < articulation_states_.size() - 1 )
 		{
+			world_transform = world_transform * articulation_state->LocalTransform();
 			world_transform.translate( skeleton_->Bone( i )->Direction() );
-			world_transform = articulation_state->LocalTransform() * world_transform;
 			sub_joint_idx += n_sub_joints;
 		}
 	}
@@ -100,13 +104,13 @@ void SkeletonState::SetState( const VecXd& joints )
 
 // ------------------------------------------------------------
 
-void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
+void SkeletonState::UpdateValue( const BoneState& bone_state, int i, double damping_factor )
 {
 	const int n_joints = skeleton_->ArticulationCount();
 	if ( i < 0 || i >= n_joints )
 		throw std::out_of_range( "Index must match articulation index" );
 
-	articulation_states_[i]->UpdateValues( bone_state );
+	articulation_states_[i]->UpdateValues( bone_state, damping_factor );
 
 	Iso3d transform;
 

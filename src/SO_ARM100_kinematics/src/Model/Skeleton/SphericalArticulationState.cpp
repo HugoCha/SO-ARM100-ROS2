@@ -36,39 +36,42 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 // ------------------------------------------------------------
 
-void SphericalArticulationState::UpdateValues( const BoneState& bone_state )
+void SphericalArticulationState::UpdateValues( 
+	const BoneState& bone_state,
+	double damping_factor )
 {
 	assert( spherical_solver_ );
 
 	Vec3d old_bone = bone_state.GetBone()->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	auto result = spherical_solver_->Solve(
+	auto result = spherical_solver_->SolveFromTwoVectors(
 		old_bone,
 		new_bone );
 	Vec3d angles = result.angles;
 
-	local_transform_.setIdentity();
+	Iso3d local_transform = Iso3d::Identity();
+
 	SetJointInternalState(
 		joint_states_[0],
-		world_transform_,
-		global_transform_,
-		local_transform_,
-		angles[0] );
+		local_transform,
+		angles[0],
+		damping_factor );
 
 	SetJointInternalState(
 		joint_states_[1],
-		world_transform_,
-		global_transform_,
-		local_transform_,
-		angles[1] );
+		local_transform,
+		angles[1],
+		damping_factor );
 
 	SetJointInternalState(
 		joint_states_[2],
-		world_transform_,
-		global_transform_,
-		local_transform_,
-		angles[2] );
+		local_transform,
+		angles[2],
+		damping_factor );
+
+	local_transform_ = local_transform;
+	global_transform_ = world_transform_ * local_transform_;
 }
 
 // ------------------------------------------------------------

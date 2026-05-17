@@ -3,9 +3,7 @@
 #include "Global.hpp"
 
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointGroup.hpp"
-#include "Model/Joint/JointState.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
@@ -26,7 +24,7 @@ struct SolverParameters
 	int max_iterations;
 	double error_tolerance;
 
-	SolverParameters( int max_iterations = 20, double error_tolerance = 5e-3 ) :
+	SolverParameters( int max_iterations = 50, double error_tolerance = 5e-3 ) :
 		max_iterations( max_iterations ),
 		error_tolerance( error_tolerance )
 	{
@@ -62,14 +60,8 @@ void SetParameters( const SolverParameters& parameters ){
 private:
 SolverParameters parameters_;
 
-void ComputeJointStates(
-	const VecXd& joints,
-	std::vector< Model::JointState >& states,
-	Mat4d& fk ) const;
-
-static std::vector< Vec3d > ComputeBones(
-	Model::KinematicModelConstPtr model,
-	Model::JointGroup group );
+std::vector< Model::BoneState >
+	ComputeBoneStates( const Model::SkeletonState& skeleton_state ) const;
 
 void BackwardPass(
 	const Vec3d& p_target,
@@ -81,7 +73,8 @@ void ForwardPass(
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const;
 
-void PrintBones(  const Model::Skeleton& skeleton  ) const;
-void PrintStates( const std::span< const Model::JointState >& state ) const;
+void UpdateValues(
+	Model::SkeletonState& skeleton_state,
+	std::vector< Model::BoneState >& bone_states ) const;
 };
 }

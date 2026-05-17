@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Solver/IKProblem.hpp"
 #include <ostream>
 
 namespace SOArm100::Kinematics
@@ -22,8 +23,16 @@ class Skeleton;
 class SkeletonState;
 class Twist;
 }
+
+namespace Solver
+{
+struct IKProblem;
+struct IKSolution;
+enum class IKSolverState;
+}
 }
 
+// Model
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationType& obj );
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Articulation& obj );
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationState& obj );
@@ -39,3 +48,8 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Skeleton& obj );
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::SkeletonState& obj );
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Twist& obj );
+
+// Solver
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKProblem& obj );
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolution& obj );
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolverState& obj );

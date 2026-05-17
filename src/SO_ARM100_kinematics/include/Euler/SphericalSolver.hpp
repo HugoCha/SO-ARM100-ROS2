@@ -45,9 +45,13 @@ SolverParameters& GetParameters(){
 	return parameters_;
 }
 
-[[nodiscard]] IKResult Solve(
+[[nodiscard]] IKResult SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
+	std::optional< Vec3d > theta_pref = std::nullopt ) const;
+
+[[nodiscard]] IKResult SolveFromRotation(
+	const Mat3d& R_target,
 	std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
 private:

@@ -39,6 +39,7 @@ void SetUp() override
 		Vec3d( 0.1, 0.1, 0 ),
 		-M_PI / 2,
 		M_PI / 2 );
+
 	std::vector< Model::JointConstPtr > universal_joints = { revolute_joint_1_, revolute_joint_2_ };
 	universal_articulation_ = std::make_shared< const Model::Articulation >(
 		Model::ArticulationType::Universal,
@@ -61,7 +62,7 @@ Vec3d BoneOffAxisInternalDirection( double angle1, double angle2 )
 	T03.rotate( AngleAxis( angle2, Vec3d::UnitY() ) );
 	T03.translate( Vec3d( 0, 0, 1 ) );
 
-	return T03.translation() - bone_off_axis_->Origin();
+	return ( T03.translation() - bone_off_axis_->Origin() ).normalized() * bone_off_axis_->Length();
 }
 
 Model::JointConstPtr revolute_joint_1_;
@@ -229,7 +230,9 @@ TEST_F( UniversalArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 
 	EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
 	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox(
-					 Vec3d( 0, 0, 0.1 ) ) );
+					 Vec3d( 0, 0, 0.1 ) ) )
+				<< "Result   Origin " << 1 << " = " << state.GetJointStates()[1]->Origin().transpose() << std::endl
+				<< "Expected Origin " << 1 << " = " << Vec3d( 0, 0, 0.1 ).transpose() << std::endl;
 	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
 					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 }
@@ -724,6 +727,109 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
 	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency_ExpectedResult )
+{
+	const int kTrial = 100;
+	random_numbers::RandomNumberGenerator rng;
+	int fail = 0;
+
+	Iso3d world_transform = Iso3d::Identity();
+	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
+	auto center = Vec3d( 1, 1, 1 );
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+	
+	
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
+	auto bone_state = Model::BoneState( bone_off_axis_ );
+	bone_state.Origin() = Vec3d( 0.0, 0, 0 );
+	
+	double angle1, angle2;
+	
+	for ( int i = 0; i < kTrial; i++ )
+	{
+		revolute_joint_1_->GetLimits().Random( rng, &angle1 );
+		revolute_joint_2_->GetLimits().Random( rng, &angle2 );
+		bone_state.Direction() = rotation * BoneOffAxisInternalDirection( angle1, angle2 );
+
+		state.SetCenterPose( world_transform );
+		state.UpdateValues( bone_state );
+
+		auto result_angles = state.GetJointValues();
+		Vec3d result_dir = rotation * BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
+
+		if ( !result_dir.isApprox( bone_state.Direction() ) )
+		{
+			ADD_FAILURE() 
+				<< "Fail for iteration " << i << std::endl
+				<< "Original angles = " << angle1 << " " << angle2 << std::endl
+				<< "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
+				<< "Original dir    = " << bone_state.Direction().transpose()  << std::endl
+				<< "Result dir      = " << result_dir.transpose() << std::endl
+				<< "Diff            = " << ( bone_state.Direction() - result_dir ).transpose() << std::endl
+				<< "Error           = " << ( bone_state.Direction() - result_dir ).norm() << std::endl;
+
+			fail++;
+		}
+	}
+	
+	EXPECT_EQ( fail, 0 );
+}
+
+// ------------------------------------------------------------
+
+TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOnAxisCheckConsistency_ExpectedResult )
+{
+	/*
+	const int kTrial = 100;
+	random_numbers::RandomNumberGenerator rng;
+	int fail = 0;
+
+	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
+
+	auto rotation = Quaternion::Identity();
+	auto center = Vec3d::Zero();
+	Iso3d world_transform = Iso3d::Identity();
+	world_transform.translate( center );
+	world_transform.rotate( rotation );
+
+	auto bone_state = Model::BoneState( bone_on_axis_ );
+	bone_state.Origin() = Vec3d( 0.0, 0, 0 );
+	
+	double angle1, angle2;
+
+
+	for ( int i = 0; i < kTrial; i++ )
+	{
+		revolute_joint_1_->GetLimits().Random( rng, &angle1 );
+		revolute_joint_2_->GetLimits().Random( rng, &angle2 );
+		bone_state.Direction() = BoneOffAxisInternalDirection( angle1, angle2 );
+
+		state.SetCenterPose( world_transform );
+		state.UpdateValues( bone_state );
+
+		auto result_angles = state.GetJointValues();
+		Vec3d result_dir = BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
+
+		if ( !result_dir.isApprox( bone_state.Direction() ) )
+		{
+			ADD_FAILURE() 
+				<< "Fail for iteration " << i << std::endl
+				<< "Original angles = " << angle1 << " " << angle2 << std::endl
+				<< "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
+				<< "Original dir    = " << bone_state.Direction().transpose()  << std::endl
+				<< "Original dir    = " << result_dir.transpose() << std::endl;
+
+			fail++;
+		}
+	}
+	
+	EXPECT_EQ( fail, 0 );
+	*/
 }
 
 // ------------------------------------------------------------

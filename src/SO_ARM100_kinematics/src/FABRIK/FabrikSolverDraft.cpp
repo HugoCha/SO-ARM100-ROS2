@@ -5,7 +5,7 @@
 #include "FABRIK/FabrikAnalyzer.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/Joint/JointGroup.hpp"
-#include "Model/Joint/JointState.hpp"
+#include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
 #include "Model/Skeleton/SkeletonState.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
@@ -15,13 +15,11 @@
 #include "Solver/IKSolverState.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
-#include <ios>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
-#include <span>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -72,7 +70,7 @@ IKSolution FABRIKSolverDraft::Solve(
 
 	const int n_joints = GetChain()->GetActiveJointCount();
 
-	if ( problem.seed.size() < n_joints )
+	if ( problem.seed.size() != n_joints )
 	{
 		RCLCPP_ERROR( get_logger(), "InitializeState: Joint vector size mismatch." );
 		return { IKSolverState::NotRun, {}};
@@ -90,22 +88,21 @@ IKSolution FABRIKSolverDraft::Solve(
 	std::cout << "Initial State" << std::endl;
 	std::cout << "Seed          = " << problem.seed.transpose() << std::endl;
 	std::cout << "Target        = " << p_target.transpose() << std::endl;
-	std::cout << "Bones  = " << std::endl;
-	PrintBones( *model_->GetSkeleton() );
-
+	std::cout << *model_->GetSkeleton() << std::endl;
+	
 	double error;
 	for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
 	{
 		std::cout << "--------------------- Iteration " << iter << " ---------------------" << std::endl;
-		auto bone_states = skeleton_state.GetBoneStates();
-		error = Utils::Distance( p_target, bone_states.back().Origin() );
-
-		// std::cout << "joints= " << buffers.joints.transpose() << std::endl;
-		// std::cout << "FK    = " << Translation( buffers.fk ).transpose() << std::endl;
-		// std::cout << "Error = " << error << std::endl;
-		// std::cout << "Pose Error = " << ( p_target - buffers.states.back().Origin() ).transpose() << std::endl;
-		// std::cout << "Pose  = " << std::endl;
-		// PrintStates( buffers.states );
+		std::cout << skeleton_state << std::endl;
+		auto bone_states = ComputeBoneStates( skeleton_state );
+		auto tip_position = bone_states.back().Origin(); 
+		error = Utils::Distance( p_target, tip_position );
+		
+		std::cout << "joints= " << skeleton_state.GetJointValues().transpose() << std::endl;
+		std::cout << "Error = " << error << std::endl;
+		std::cout << "Tip position = " << tip_position.transpose() << std::endl;
+		std::cout << "Pose Error = " << ( p_target - tip_position ).transpose() << std::endl;
 
 		if ( error < parameters_.error_tolerance )
 		{
@@ -120,20 +117,28 @@ IKSolution FABRIKSolverDraft::Solve(
 		}
 
 		BackwardPass( p_target, skeleton_state, bone_states );
-		// std::cout << "Backward = " << std::endl;
-		// PrintStates( buffers.states );
 		ForwardPass( p_base, skeleton_state, bone_states );
-		// std::cout << "Forward = " << std::endl;
-		// PrintStates( buffers.states );
-		// std::cout << "Project = " << std::endl;
-		// PrintStates( buffers.states );
-		// ForwardKinematics( *model_->GetSkeleton(), buffers.states, 0 );
-		// std::cout << "FK = " << std::endl;
-		// PrintStates( buffers.states );
+		UpdateValues( skeleton_state, bone_states );
 	}
 
 	return { IKSolverState::MaxIterations, skeleton_state.GetJointValues(),
 	         error, parameters_.max_iterations };
+}
+
+// ------------------------------------------------------------
+
+std::vector< Model::BoneState > FABRIKSolverDraft::ComputeBoneStates( 
+	const Model::SkeletonState& skeleton_state ) const
+{
+	auto bone_states = skeleton_state.GetBoneStates();
+
+	if ( skeleton_state.GetSkeleton()->ArticulationCount() > skeleton_state.GetSkeleton()->BonesCount() )
+	{
+		auto final_bone_state = Model::BoneState( bone_states.back().Origin() + bone_states.back().Direction(), Vec3d::Zero() );
+		bone_states.emplace_back( final_bone_state );
+	}
+
+	return bone_states;
 }
 
 // ------------------------------------------------------------
@@ -143,20 +148,24 @@ void FABRIKSolverDraft::BackwardPass(
 	const Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const
 {
-	const int n = bone_states.size();
-	Vec3d last_origin = p_target;
+	const int n = bone_states.size() - 1;
+	bone_states[n].Origin() = p_target;
 
-	for ( int i = n - 1; i > 0; i-- )
+	for ( int i = n - 1; i >= 0; i-- )
 	{
 		bone_states[i].Direction() =
-			( last_origin - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
+			( bone_states[i+1].Origin() - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
+
+		// std::cout << "Bwd" << std::to_string( i ) << " : " 
+		// 	<< bone_states[i] << std::endl;
 
 		skeleton_state.ApplyConstraint( bone_states[i], i );
 
 		bone_states[i].Origin() =
-			last_origin - bone_states[i].Direction();
+			bone_states[i+1].Origin() - bone_states[i].Direction();
 
-		last_origin = bone_states[i].Origin();
+		// std::cout << "Bwd" << std::to_string( i ) << " : " 
+		// 		  << bone_states[i] << std::endl;
 	}
 }
 
@@ -167,7 +176,7 @@ void FABRIKSolverDraft::ForwardPass(
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const
 {
-	const int n = bone_states.size();
+	const int n = bone_states.size() - 1;
 	bone_states[0].Origin() = p_base;
 
 	for ( int i = 0; i < n; i++ )
@@ -175,7 +184,9 @@ void FABRIKSolverDraft::ForwardPass(
 		bone_states[i].Direction() =
 			( bone_states[i + 1].Origin() - bone_states[i].Origin() ).normalized() * bone_states[i].GetBone()->Length();
 
-		skeleton_state.UpdateValue( bone_states[i], i );
+		skeleton_state.ApplyConstraint( bone_states[i], i );
+		// std::cout << "Fwd" << std::to_string( i ) << " : " 
+		// 	<< bone_states[i] << std::endl;
 
 		bone_states[i + 1].Origin() =
 			bone_states[i].Origin() + bone_states[i].Direction();
@@ -184,38 +195,20 @@ void FABRIKSolverDraft::ForwardPass(
 
 // ------------------------------------------------------------
 
-void FABRIKSolverDraft::PrintBones( const Model::Skeleton& skeleton ) const
+void FABRIKSolverDraft::UpdateValues(
+	Model::SkeletonState& skeleton_state,
+	std::vector< Model::BoneState >& bone_states ) const
 {
-	const int n_bones = skeleton.Bones().size();
-	std::stringstream bones_ss;
-	for ( int i = 0; i < n_bones; i++ )
-	{
-		bones_ss << "{ ";
-		bones_ss << "dir = " << skeleton.Direction( i ).transpose();
-		bones_ss << ", length = " << skeleton.Length( i );
-		bones_ss << " }" << std::endl;
-	}
-	std::cout << bones_ss.str();
-}
+	const int n = bone_states.size() - 1;
 
-// ------------------------------------------------------------
-
-void FABRIKSolverDraft::PrintStates( const std::span< const Model::JointState >& states ) const
-{
-	const int n_poses = states.size();
-	std::stringstream poses_ss;
-	poses_ss << std::fixed << std::setprecision( 3 ) << std::showpos;
-	for ( int i = 0; i < n_poses; i++ )
+	for ( int i = 0; i < n; i++ )
 	{
-		poses_ss << "{ origin = ";
-		poses_ss << std::internal << states[i].Origin().transpose();
-		poses_ss << ", axis = ";
-		poses_ss << std::right << states[i].Axis().transpose();
-		poses_ss << ", value = ";
-		poses_ss << states[i].Value();
-		poses_ss << " }" << std::endl;
+		//std::cout << std::to_string( i ) << " : "<< bone_states[i] << std::endl;
+		skeleton_state.UpdateValue( bone_states[i], i, 1.0 );
 	}
-	std::cout << poses_ss.str();
+	
+	//std::cout << std::to_string( i ) << " : "<< bone_states[i] << std::endl;
+	bone_states[n].Origin() = bone_states[n-1].Origin() + bone_states[n-1].Direction();
 }
 
 // ------------------------------------------------------------

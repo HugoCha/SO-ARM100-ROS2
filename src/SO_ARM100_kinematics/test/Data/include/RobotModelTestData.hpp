@@ -4,6 +4,7 @@
 #include "Model/KinematicModel.hpp"
 
 #include <moveit/macros/class_forward.hpp>
+#include <map>
 
 namespace moveit::core
 {
@@ -62,5 +63,7 @@ static Model::KinematicModelConstPtr GetRevolute_Planar2R_SphericalWrist_6DOFsRo
 
 // Revolute Base - Planar 2R - Non Spherical Wrist / 6 DOFs
 static Model::KinematicModelConstPtr GetURLikeRobot();
+
+static std::map< std::string, Model::KinematicModelConstPtr > GetAllRobots();
 };
 }

@@ -37,7 +37,7 @@ void SetState( const Iso3d& world_transform, const VecXd& values );
 void SetCenterPose( const Iso3d& world_transform );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const = 0;
-virtual void UpdateValues( const BoneState& bone_state ) = 0;
+virtual void UpdateValues( const BoneState& bone_state, double damping_factor = 1.0 ) = 0;
 
 protected:
 const Articulation* articulation_;
@@ -49,10 +49,9 @@ std::vector< JointStatePtr > joint_states_;
 
 void SetJointInternalState(
 	JointStatePtr& joint_state,
-	const Iso3d& world_transform,
-	Iso3d& global_transform,
-	Iso3d& local_transform,
-	double value ) const;
+	Iso3d& internal_local_transform,
+	double value,
+	double damping_factor ) const;
 };
 
 using ArticulationStatePtr = std::shared_ptr< ArticulationState >;

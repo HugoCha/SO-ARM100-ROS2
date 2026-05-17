@@ -198,7 +198,7 @@ void CheckConfiguration(
 	    << "Failed ComputeModel for " << c.name;
 
 	auto solver = Solver::SphericalSolver( *model, parameters_ );
-	auto result = solver.Solve( old_dir, new_dir, prefered_dir );
+	auto result = solver.SolveFromTwoVectors( old_dir, new_dir, prefered_dir );
 
 	Vec3d recovered = ApplyAngles( *model, old_dir, result.angles );
 
@@ -207,6 +207,9 @@ void CheckConfiguration(
 	    << "Expected dir: " << new_dir.transpose()    << "\n"
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
+
+    EXPECT_LE( result.fk_error, 1e-4 );
+    EXPECT_EQ( result.reachable, true );
 }
 
 // ------------------------------------------------------------
@@ -227,7 +230,7 @@ void CheckConfigurationForAngles(
 
 	Vec3d new_dir = ApplyAngles( *model, old_dir, angles );
 	auto solver = Solver::SphericalSolver( *model, parameters_ );
-	auto result = solver.Solve( old_dir, new_dir, prefered_dir );
+	auto result = solver.SolveFromTwoVectors( old_dir, new_dir, prefered_dir );
 
 	Vec3d recovered = ApplyAngles( *model, old_dir, result.angles );
 
@@ -236,8 +239,10 @@ void CheckConfigurationForAngles(
 	    << "Expected dir: " << new_dir.transpose()    << "\n"
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
-}
 
+    EXPECT_LE( result.fk_error, 1e-4 );
+    EXPECT_EQ( result.reachable, true );
+}
 
 // ------------------------------------------------------------
 
@@ -275,7 +280,7 @@ Solver::SphericalSolver::SolverParameters parameters_;
 };
 
 // ============================================================
-// Solve (direction overload) — identity
+// SolveFromTwoVectors (direction overload) — identity
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Dir_SameDirection_ReturnsNearZeroAngles )
@@ -287,7 +292,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_SameDirection_ReturnsNearZeroAngles )
 }
 
 // ============================================================
-// Solve (direction overload) — single axis rotations
+// SolveFromTwoVectors (direction overload) — single axis rotations
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Dir_PureXRotation_DirectionMatches )
@@ -322,7 +327,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_PureZRotation_NoDirectionChange )
 }
 
 // ============================================================
-// Solve (direction overload) — combined rotations
+// SolveFromTwoVectors (direction overload) — combined rotations
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
@@ -347,7 +352,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_OppositeDirection_DirectionMatches )
 }
 
 // ============================================================
-// Solve (direction overload) — seed influence
+// SolveFromTwoVectors (direction overload) — seed influence
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
@@ -360,8 +365,8 @@ TEST_F( SphericalSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
 	Vec3d seed_zero = Vec3d::Zero();
 	Vec3d seed_far  = Vec3d( M_PI / 2, 0, 0 );   // close to the "canonical" solution
 
-	auto result_zero = solver_->Solve( old_dir, new_dir, seed_zero );
-	auto result_seed = solver_->Solve( old_dir, new_dir, seed_far );
+	auto result_zero = solver_->SolveFromTwoVectors( old_dir, new_dir, seed_zero );
+	auto result_seed = solver_->SolveFromTwoVectors( old_dir, new_dir, seed_far );
 
 	// Both must reach the target
 	ExpectDirectionMatch( *model_, old_dir, new_dir, result_zero );
@@ -374,7 +379,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
 }
 
 // ============================================================
-// Solve (direction overload) — joint limits respected
+// SolveFromTwoVectors (direction overload) — joint limits respected
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Dir_TargetWithinLimits_AnglesSatisfyLimits )
@@ -384,7 +389,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetWithinLimits_AnglesSatisfyLimits )
 	Vec3d new_dir = ApplyAngles( *model_tight_, old_dir, Vec3d( M_PI / 8, M_PI / 8, 0 ) );
 	Vec3d seed    = Vec3d::Zero();
 
-	auto result = solver_tight_->Solve( old_dir, new_dir );
+	auto result = solver_tight_->SolveFromTwoVectors( old_dir, new_dir );
 	ExpectDirectionMatch( *model_tight_, old_dir, new_dir, result, 1e-3 );
 
 	for ( int i = 0; i < 3; ++i )
@@ -405,7 +410,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 	Vec3d new_dir = Vec3d( 1, 0, 0 );   // 90° from UnitZ — beyond ±30° limits
 	Vec3d seed    = Vec3d::Zero();
 
-	auto result = solver_tight_->Solve( old_dir, new_dir );
+	auto result = solver_tight_->SolveFromTwoVectors( old_dir, new_dir );
 
 	// Must not crash and angles must stay within limits (best-effort)
 	for ( int i = 0; i < 3; ++i )
@@ -416,19 +421,17 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 }
 
 // ============================================================
-// Solve (matrix overload)
+// SolveFromTwoVectors (matrix overload)
 // ============================================================
 
 TEST_F( SphericalSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
 {
-//     Vec3d seed = Vec3d::Zero();
+    Vec3d seed = Vec3d::Zero();
 
-//     auto result = Solver::SphericalSolver::Solve( *model_, parameters_, seed, Mat3d::Identity() );
+    auto result = solver_->SolveFromRotation( Mat3d::Identity(), seed );
 
-//     EXPECT_TRUE( result.solution.isZero( 1e-4 ) )
-//         << "Angles: " << result.solution.transpose();
-	EXPECT_TRUE( false );
-
+    EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
+        << "Angles: " << result.angles.transpose();
 }
 
 // ------------------------------------------------------------
@@ -436,20 +439,19 @@ TEST_F( SphericalSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
 TEST_F( SphericalSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 {
 	// Build R from known angles and verify the solver recovers them
-	// const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
-	// Mat3d R_target = ( AngleAxis( a1, Vec3d::UnitZ() )
-	//                  * AngleAxis( a2, Vec3d::UnitY() )
-	//                  * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
+	const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
+	Mat3d R_target = ( AngleAxis( a1, Vec3d::UnitZ() )
+	                 * AngleAxis( a2, Vec3d::UnitY() )
+	                 * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
 
-	// Vec3d seed = Vec3d::Zero();
-	// auto result = Solver::SphericalSolver::Solve( *model_, parameters_, seed, R_target );
+	Vec3d seed = Vec3d::Zero();
+    auto result = solver_->SolveFromRotation( R_target, seed );
 
 	// // The matrix overload uses a3 as the tracked direction.
 	// // Error is defined on that direction, so check via ApplyAngles on UnitZ.
-	// Vec3d old_dir = Vec3d::UnitZ();
-	// Vec3d new_dir = R_target * old_dir;
-	// ExpectDirectionMatch( old_dir, new_dir, result );
-	EXPECT_TRUE( false );
+	Vec3d old_dir = Vec3d::UnitZ();
+	Vec3d new_dir = R_target * old_dir;
+	ExpectDirectionMatch( *model_, old_dir, new_dir, result );
 }
 
 // ============================================================
@@ -462,8 +464,8 @@ TEST_F( SphericalSolverTest, Solve_Dir_Consistency_SameInputSameOutput )
 	Vec3d new_dir = Vec3d( 0, 1, 1 ).normalized();
 	Vec3d seed    = Vec3d::Zero();
 
-	auto r1 = solver_->Solve( old_dir, new_dir );
-	auto r2 = solver_->Solve( old_dir, new_dir );
+	auto r1 = solver_->SolveFromTwoVectors( old_dir, new_dir );
+	auto r2 = solver_->SolveFromTwoVectors( old_dir, new_dir );
 
 	EXPECT_TRUE( r1.angles.isApprox( r2.angles, epsilon ) );
 }
@@ -485,7 +487,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_HardDirection_DirectionAlwaysMatches )
 
 	Vec3d new_dir = ApplyAngles( *model_, old_dir, angles );
 
-	auto result = solver_->Solve( old_dir, new_dir );
+	auto result = solver_->SolveFromTwoVectors( old_dir, new_dir );
 
 	Vec3d recovered = ApplyAngles( *model_, old_dir, result.angles );
 	EXPECT_TRUE( recovered.isApprox( new_dir, 1e-3 ) )
@@ -519,7 +521,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_RandomDirections_DirectionAlwaysMatches )
 
 		Vec3d new_dir = ApplyAngles( *model_, old_dir, random_angles );
 
-		auto result = solver_->Solve( old_dir, new_dir );
+		auto result = solver_->SolveFromTwoVectors( old_dir, new_dir );
 
 		Vec3d recovered = ApplyAngles( *model_, old_dir, result.angles );
 		if ( !recovered.isApprox( new_dir, 1e-3 ) )

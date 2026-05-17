@@ -40,12 +40,14 @@ void RevoluteArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	angle = joint->GetLimits().Clamp( angle );
 	auto rotation = AngleAxis( angle, joint_state->Axis() );
 
-	bone_state.Direction() = rotation * v_ref;
+	bone_state.Direction() = ( rotation * v_ref ).normalized() * bone->Length();
 }
 
 // ------------------------------------------------------------
 
-void RevoluteArticulationState::UpdateValues( const BoneState& bone_state )
+void RevoluteArticulationState::UpdateValues( 
+	const BoneState& bone_state, 
+	double damping_factor )
 {
 	auto joint = articulation_->Joints()[0];
 	auto joint_state = joint_states_[0];
@@ -64,13 +66,16 @@ void RevoluteArticulationState::UpdateValues( const BoneState& bone_state )
 
 	double angle = SignedAngle( v_ref_plane, v_plane, joint_state->Axis() );
 
-	local_transform_.setIdentity();
+	Iso3d local_transform = Iso3d::Identity();
+
 	SetJointInternalState(
 		joint_state,
-		world_transform_,
-		global_transform_,
-		local_transform_,
-		angle );
+		local_transform,
+		angle,
+		damping_factor );
+
+	local_transform_ = local_transform;
+	global_transform_ = world_transform_ * local_transform_;
 }
 
 // ------------------------------------------------------------

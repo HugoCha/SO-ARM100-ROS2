@@ -183,21 +183,21 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 {
 	const int n_joints = joints.size();
 	if ( n_joints == 1 )
-		return { joints[0] }
-	;
+		return { joints[0] };
 
 	std::vector< JointConstPtr > filtered_joints;
 	int i = 0;
 
-	auto can_filter_joint = []( JointConstPtr joint1, JointConstPtr joint2 ) -> bool
-							{
-								if ( !joint1->Axis().isApprox( joint2->Axis() ) )
-									return false;
+	auto can_filter_joint = 
+		[]( JointConstPtr joint1, JointConstPtr joint2 ) -> bool
+		{
+			if ( !joint1->Axis().isApprox( joint2->Axis() ) )
+				return false;
 
-								Vec3d direction = joint2->Origin() - joint1->Origin();
-								bool is_direction_colinear = joint1->Axis().cross( direction ).norm() < epsilon;
-								return is_direction_colinear;
-							};
+			Vec3d direction = joint2->Origin() - joint1->Origin();
+			bool is_direction_colinear = joint1->Axis().cross( direction ).norm() < epsilon;
+			return is_direction_colinear;
+		};
 
 	while ( i + 1 < n_joints )
 	{
@@ -207,6 +207,11 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 
 		filtered_joints.emplace_back( joints[i] );
 		i += j;
+	}
+
+	if ( i == n_joints - 1 )
+	{
+		filtered_joints.emplace_back( joints[i] );
 	}
 
 	return filtered_joints;

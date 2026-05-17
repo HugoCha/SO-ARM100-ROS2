@@ -14,7 +14,7 @@ public:
 UniversalArticulationState( const Articulation* articulation );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const override;
-virtual void UpdateValues( const BoneState& bone_state ) override;
+virtual void UpdateValues( const BoneState& bone_state, double damping_factor = 1.0 ) override;
 
 private:
 struct Solution
@@ -23,7 +23,7 @@ struct Solution
 	double theta1;
 	AngleAxis rotation0;
 	AngleAxis rotation1;
-	Vec3d bone_direction;
+	Vec3d local_bone_direction;
 
 	double distance_to_solution;
 };

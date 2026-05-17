@@ -4,6 +4,7 @@
 
 #include "Model/Joint/Joint.hpp"
 #include "Model/Joint/JointChain.hpp"
+#include "Utils/Distance.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -315,7 +316,7 @@ double RotationError( const Mat4d& target, const Mat4d& result ) noexcept
 
 double TranslationError( const Vec3d& target, const Vec3d& result ) noexcept
 {
-	return ( target - result ).norm();
+	return Utils::Distance( target, result );
 }
 
 // ------------------------------------------------------------

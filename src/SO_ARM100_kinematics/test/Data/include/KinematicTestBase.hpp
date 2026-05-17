@@ -37,7 +37,7 @@ Solver::IKProblem CreateProblem( const VecXd& seed, const VecXd& joints )
 	return CreateProblem( seed, ComputeFK( joints ) );
 }
 
-Solver::IKProblem CreateProblem( const VecXd& seed, const Mat4d& target  )
+Solver::IKProblem CreateProblem( const VecXd& seed, Mat4d target  )
 {
 	return {
 	    target,

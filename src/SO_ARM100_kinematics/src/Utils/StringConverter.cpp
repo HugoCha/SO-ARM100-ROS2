@@ -15,6 +15,11 @@
 #include "Model/Skeleton/Bone.hpp"
 #include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
+#include "Model/Skeleton/SkeletonState.hpp"
+#include "Solver/IKProblem.hpp"
+#include "Solver/IKSolution.hpp"
+#include "Solver/IKSolverState.hpp"
+#include <string>
 
 // ------------------------------------------------------------
 
@@ -32,7 +37,8 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationState& obj )
 {
 	os << "Articulation state"
-	   << " Center: " << obj.GlobalTransform().translation().transpose();
+	   << " Center: " << obj.GlobalTransform().translation().transpose()
+	   << " Values: " << obj.GetJointValues().transpose();
 	return os;
 }
 
@@ -178,6 +184,16 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::SkeletonState& obj )
 {
 	os << "Skeleton State" << std::endl;
+	auto bone_states = obj.GetBoneStates();
+	auto articulation_states = obj.GetArticulationStates();
+
+	for ( int i = 0; i < articulation_states.size(); i++ )
+	{
+		os << std::to_string( i + 1 ) << ": " << *articulation_states[i] << std::endl;
+		if ( i < bone_states.size() )
+			os << std::to_string( i + 1 ) << ": " << bone_states[i] << std::endl;
+	}
+
 	return os;
 }
 
@@ -188,6 +204,47 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 	os << "Twist"
 	   << " w: " << obj.Omega().transpose()
 	   << " v: " << obj.V().transpose();
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKProblem& obj )
+{
+	os << "IKProblem" << std::endl;
+	os << "rotation tol: " << obj.rotation_tolerance 
+	   << " translation tol: " << obj.position_tolerance
+	   << " timeout(ms): " << obj.timeout << std::endl;
+	os << "Seed: " << obj.seed.transpose() << std::endl;
+	os << "Target: " << std::endl << obj.target;
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolverState& obj )
+{
+	switch ( obj ) 
+	{
+		case SOArm100::Kinematics::Solver::IKSolverState::BestPossible: os << "Best Possible"; break;
+		case SOArm100::Kinematics::Solver::IKSolverState::Converged: os << "Converged"; break;
+		case SOArm100::Kinematics::Solver::IKSolverState::MaxIterations: os << "Max Iterations"; break;
+		case SOArm100::Kinematics::Solver::IKSolverState::MaxRestart: os << "Max Restart"; break;
+		case SOArm100::Kinematics::Solver::IKSolverState::NotRun: os << "Not Run"; break;
+		case SOArm100::Kinematics::Solver::IKSolverState::Unreachable: os << "Unreachable"; break;
+	}
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolution& obj )
+{
+	os << "IKSolution" << std::endl;
+	os << "State: " << obj.state << std::endl;
+	os << "Error: " << obj.error << std::endl;
+	os << "Score: " << obj.score << std::endl;
+	os << "Joint: " << obj.joints.transpose();
 	return os;
 }
 
