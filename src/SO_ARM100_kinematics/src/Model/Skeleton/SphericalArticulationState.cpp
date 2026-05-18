@@ -30,8 +30,24 @@ SphericalArticulationState::SphericalArticulationState( const Articulation* arti
 
 void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 {
-	if ( bone_state.Direction().norm() != bone_state.GetBone()->Length() )
-		bone_state.Direction() = bone_state.GetBone()->Length() * bone_state.Direction().normalized();
+	const auto& bone = bone_state.GetBone();
+	Vec3d old_bone = bone->Direction();
+	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
+
+	auto result = spherical_solver_->SolveFromTwoVectors(
+		old_bone,
+		new_bone );
+
+	if ( !result.reachable )
+	{
+		auto local_rotation = 
+			AngleAxis( result.angles[2], articulation_->Joints()[2]->Axis() ) * 
+			AngleAxis( result.angles[1], articulation_->Joints()[1]->Axis() ) * 
+			AngleAxis( result.angles[0], articulation_->Joints()[0]->Axis() );
+		
+		Vec3d bone_dir = world_transform_.rotation() * local_rotation * bone->Direction();
+		bone_state.Direction() = bone_dir.normalized() * bone->Length();
+	}
 }
 
 // ------------------------------------------------------------
@@ -45,7 +61,7 @@ void SphericalArticulationState::UpdateValues(
 	Vec3d old_bone = bone_state.GetBone()->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	auto result = spherical_solver_->SolveFromTwoVectors(
+	auto result = spherical_solver_->SolveAndOptimizeFromTwoVectors(
 		old_bone,
 		new_bone );
 	Vec3d angles = result.angles;

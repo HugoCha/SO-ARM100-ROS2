@@ -84,7 +84,7 @@ const Mat4d Twist::ExponentialMatrix( double thetha ) const
 	Mat3d R;
 	Vec3d t;
 
-	if ( !cache_ )
+	if ( !IsRevolute() )
 	{
 		exponential.block< 3, 1 >( 0, 3 ).noalias() = v_ * thetha;
 	}

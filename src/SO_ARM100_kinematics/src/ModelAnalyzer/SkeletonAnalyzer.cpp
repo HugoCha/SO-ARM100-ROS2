@@ -96,8 +96,18 @@ double SkeletonAnalyzer::ComputeTotalLength(
 		}
 	}
 
+	for ( int i = 0; i < articulations.size(); i++ )
+	{
+		if ( articulations[i]->GetType() == ArticulationType::Prismatic )
+		{
+			total_length += articulations[i]->Joints()[0]->GetLimits().Max();
+		}
+	}
+
 	for ( int i = 0; i < bones.size(); i++ )
+	{
 		total_length += bones[i]->Length();
+	}
 
 	return total_length;
 }

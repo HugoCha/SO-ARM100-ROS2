@@ -22,10 +22,15 @@ public:
 struct SolverParameters
 {
 	int max_iterations;
+	int max_stalled_iterations;
 	double error_tolerance;
 
-	SolverParameters( int max_iterations = 50, double error_tolerance = 5e-3 ) :
+	SolverParameters( 
+		int max_iterations = 50, 
+		int max_stalled_iterations = 3,
+		double error_tolerance = 5e-3 ) :
 		max_iterations( max_iterations ),
+		max_stalled_iterations( max_stalled_iterations ),
 		error_tolerance( error_tolerance )
 	{
 	}
@@ -58,6 +63,14 @@ void SetParameters( const SolverParameters& parameters ){
 	const IKRunContext& context ) const override;
 
 private:
+struct SolverHistory
+{
+int stalled_error_cnt;
+double last_non_stalled_error;
+VecXd best_joints;
+double best_error;
+};
+
 SolverParameters parameters_;
 
 std::vector< Model::BoneState >
@@ -76,5 +89,12 @@ void ForwardPass(
 void UpdateValues(
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const;
+
+void UpdateHistory( 
+	const VecXd& joints,
+	double error,
+	SolverHistory& history ) const;
+
+bool HasFixedBaseOrigin() const;
 };
 }

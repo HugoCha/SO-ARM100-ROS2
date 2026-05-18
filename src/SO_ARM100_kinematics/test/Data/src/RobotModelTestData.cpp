@@ -264,7 +264,7 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	Model::Link link2( ToTransformMatrix( origin2 ), 0.5 );
 
-	Model::Limits limits2( -M_PI, M_PI );
+	Model::Limits limits2( -M_PI / 2, M_PI / 2 );
 
 	joint_chain.Add( twist2, link2, limits2 );
 
@@ -276,7 +276,7 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	Model::Link link3( ToTransformMatrix( origin3 ), 0 );
 
-	Model::Limits limits3( -M_PI, M_PI );
+	Model::Limits limits3( -M_PI / 2, M_PI / 2 );
 
 	joint_chain.Add( twist3, link3, limits3 );
 
@@ -654,6 +654,9 @@ Model::Skeleton createPrismaticBaseSkeleton(
 	for ( int i = 0; i < bones.size(); i++ )
 		total_length += bones[i]->Length();
 
+	// Add Prismatic joint max length
+	total_length += chain.GetActiveJoint( 0 )->GetLimits().Max();
+
 	return Model::Skeleton( articulations, bones, total_length, chain.GetJointCount() );
 }
 
@@ -939,7 +942,7 @@ std::unique_ptr< const Model::JointChain > createWrist1RJointChain()
 
 	chain->Add(
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -950,7 +953,7 @@ std::unique_ptr< const Model::JointChain > createWrist1RJointChain()
 
 Mat4d createWrist1RHome()
 {
-	return ToTransformMatrix( Vec3d( 0.0, 0, 1 ) );
+	return ToTransformMatrix( Vec3d( 0, 1, 1 ) );
 }
 
 // ------------------------------------------------------------
@@ -982,6 +985,12 @@ Model::Skeleton createWrist1RSkeleton(
 			chain.GetActiveJoint( 0 )->Origin()
 			)
 		);
+
+	bones.emplace_back(
+	std::make_shared< const Model::Bone >(
+		chain.GetActiveJoint( 0 )->Origin(),
+		Translation( home ) - chain.GetActiveJoint( 0 )->Origin() )
+	);
 
 	double total_length = 0.0;
 	for ( int i = 0; i < bones.size(); i++ )
@@ -1034,7 +1043,7 @@ std::unique_ptr< const Model::JointChain > createWrist2RJointChain()
 
 	chain->Add(
 		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -1045,7 +1054,7 @@ std::unique_ptr< const Model::JointChain > createWrist2RJointChain()
 
 Mat4d createWrist2RHome()
 {
-	return ToTransformMatrix( Vec3d( 0.0, 0, 1 ) );
+	return ToTransformMatrix( Vec3d( 0.0, 0, 2 ) );
 }
 
 // ------------------------------------------------------------
@@ -1076,6 +1085,12 @@ Model::Skeleton createWrist2RSkeleton(
 			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
 			chain.GetActiveJoint( 1 )->Origin()
 			)
+		);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 1 )->Origin(),
+			Translation( home ) - chain.GetActiveJoint( 1 )->Origin() )
 		);
 
 	double total_length = 0.0;
@@ -1449,7 +1464,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	axis = Vec3d::UnitZ();
 	chain->Add(
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( ToTransformMatrix( origin ), 0. ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1460,7 +1475,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 
 Mat4d createRevolute_Planar2R_SphericalWrist_6DOFsHome()
 {
-	return ToTransformMatrix( Vec3d( 0.0, 0, 1.5 ) );
+	return ToTransformMatrix( Vec3d( 0.0, 0., 1.5 ) );
 }
 
 // ------------------------------------------------------------

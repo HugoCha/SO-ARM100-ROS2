@@ -21,9 +21,19 @@
 #include "Solver/IKSolverState.hpp"
 #include <string>
 
+namespace  SOArm100::Kinematics 
+{
+
+// ============================================================
+// Model
+// ============================================================
+
+namespace Model
+{
+
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Articulation& obj )
+std::ostream& operator << ( std::ostream& os, const Articulation& obj )
 {
 	os << "Articulation "
 	   << obj.GetType()
@@ -34,27 +44,27 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationState& obj )
+std::ostream& operator << ( std::ostream& os, const ArticulationState& obj )
 {
 	os << "Articulation state"
-	   << " Center: " << obj.GlobalTransform().translation().transpose()
+	   << " Center: " << obj.WorldTransform().translation().transpose()
 	   << " Values: " << obj.GetJointValues().transpose();
 	return os;
 }
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::ArticulationType& obj )
+std::ostream& operator << ( std::ostream& os, const ArticulationType& obj )
 {
 	switch ( obj )
 	{
-	case SOArm100::Kinematics::Model::ArticulationType::Revolute:
+	case ArticulationType::Revolute:
 	{ os << "REVOLUTE"; return os; }
-	case SOArm100::Kinematics::Model::ArticulationType::Prismatic:
+	case ArticulationType::Prismatic:
 	{ os << "PRISMATIC"; return os; }
-	case SOArm100::Kinematics::Model::ArticulationType::Universal:
+	case ArticulationType::Universal:
 	{ os << "UNIVERSAL"; return os; }
-	case SOArm100::Kinematics::Model::ArticulationType::Spherical:
+	case ArticulationType::Spherical:
 	{ os << "SPHERICAL"; return os; }
 	}
 	return os;
@@ -62,7 +72,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Bone& obj )
+std::ostream& operator << ( std::ostream& os, const Bone& obj )
 {
 	os << "Bone"
 	   << " Origin: " << obj.Origin().transpose()
@@ -73,7 +83,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::BoneState& obj )
+std::ostream& operator << ( std::ostream& os, const BoneState& obj )
 {
 	os << "Bone State"
 	   << " Origin: " << obj.Origin().transpose()
@@ -83,7 +93,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Joint& obj )
+std::ostream& operator << ( std::ostream& os, const Joint& obj )
 {
 	os << "Joint "
 	   << obj.GetType()
@@ -95,7 +105,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::JointChain& obj )
+std::ostream& operator << ( std::ostream& os, const JointChain& obj )
 {
 	os << "Joint Chain" << std::endl;
 	for ( int i = 0; i < obj.GetJointCount(); i++ )
@@ -109,7 +119,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::JointState& obj )
+std::ostream& operator << ( std::ostream& os, const JointState& obj )
 {
 	os << "Joint State"
 	   << " Origin: " << obj.Origin().transpose()
@@ -120,15 +130,15 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::JointType& obj )
+std::ostream& operator << ( std::ostream& os, const JointType& obj )
 {
 	switch ( obj )
 	{
-	case SOArm100::Kinematics::Model::JointType::FIXED:
+	case JointType::FIXED:
 	{ os << "FIXED"; return os; }
-	case SOArm100::Kinematics::Model::JointType::REVOLUTE:
+	case JointType::REVOLUTE:
 	{ os << "REVOLUTE"; return os; }
-	case SOArm100::Kinematics::Model::JointType::PRISMATIC:
+	case JointType::PRISMATIC:
 	{ os << "PRISMATIC"; return os; }
 	}
 	return os;
@@ -136,7 +146,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Limits& obj )
+std::ostream& operator << ( std::ostream& os, const Limits& obj )
 {
 	os << "Limits"
 	   << " Min: " << obj.Min()
@@ -146,7 +156,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Link& obj )
+std::ostream& operator << ( std::ostream& os, const Link& obj )
 {
 	os << "Link"
 	   << " Origin: " << obj.GetJointOrigin().transpose()
@@ -156,7 +166,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Pose& obj )
+std::ostream& operator << ( std::ostream& os, const Pose& obj )
 {
 	os << "Pose"
 	   << " Origin: " << obj.origin.transpose()
@@ -166,7 +176,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Skeleton& obj )
+std::ostream& operator << ( std::ostream& os, const Skeleton& obj )
 {
 	os << "Skeleton" << std::endl;
 	for ( int i = 0; i < obj.ArticulationCount(); i++ )
@@ -181,7 +191,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::SkeletonState& obj )
+std::ostream& operator << ( std::ostream& os, const SkeletonState& obj )
 {
 	os << "Skeleton State" << std::endl;
 	auto bone_states = obj.GetBoneStates();
@@ -199,7 +209,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model::Twist& obj )
+std::ostream& operator << ( std::ostream& os, const Twist& obj )
 {
 	os << "Twist"
 	   << " w: " << obj.Omega().transpose()
@@ -207,9 +217,16 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Model:
 	return os;
 }
 
-// ------------------------------------------------------------
+}
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKProblem& obj )
+// ============================================================
+// Solver
+// ============================================================
+
+namespace Solver
+{
+
+std::ostream& operator << ( std::ostream& os, const IKProblem& obj )
 {
 	os << "IKProblem" << std::endl;
 	os << "rotation tol: " << obj.rotation_tolerance 
@@ -222,26 +239,27 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolverState& obj )
+std::ostream& operator << ( std::ostream& os, const IKSolverState& obj )
 {
 	switch ( obj ) 
 	{
-		case SOArm100::Kinematics::Solver::IKSolverState::BestPossible: os << "Best Possible"; break;
-		case SOArm100::Kinematics::Solver::IKSolverState::Converged: os << "Converged"; break;
-		case SOArm100::Kinematics::Solver::IKSolverState::MaxIterations: os << "Max Iterations"; break;
-		case SOArm100::Kinematics::Solver::IKSolverState::MaxRestart: os << "Max Restart"; break;
-		case SOArm100::Kinematics::Solver::IKSolverState::NotRun: os << "Not Run"; break;
-		case SOArm100::Kinematics::Solver::IKSolverState::Unreachable: os << "Unreachable"; break;
+		case IKSolverState::BestPossible: os << "Best Possible"; break;
+		case IKSolverState::Converged: os << "Converged"; break;
+		case IKSolverState::MaxIterations: os << "Max Iterations"; break;
+		case IKSolverState::MaxRestart: os << "Max Restart"; break;
+		case IKSolverState::NotRun: os << "Not Run"; break;
+		case IKSolverState::Unreachable: os << "Unreachable"; break;
 	}
 	return os;
 }
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver::IKSolution& obj )
+std::ostream& operator << ( std::ostream& os, const IKSolution& obj )
 {
 	os << "IKSolution" << std::endl;
 	os << "State: " << obj.state << std::endl;
+	os << "Iter : " << obj.iterations << std::endl;
 	os << "Error: " << obj.error << std::endl;
 	os << "Score: " << obj.score << std::endl;
 	os << "Joint: " << obj.joints.transpose();
@@ -249,3 +267,7 @@ std::ostream& operator << ( std::ostream& os, const SOArm100::Kinematics::Solver
 }
 
 // ------------------------------------------------------------
+
+}
+
+}

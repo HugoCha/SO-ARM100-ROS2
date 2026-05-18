@@ -143,7 +143,7 @@ TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationZ )
 TEST_F( KinematicsSolverTest, ForwardKinematicsWithRevoluteRotationY )
 {
 	// Rotate joint_2 (y-axis) by 90 degrees (pi/2 radians)
-	std::vector< double > joint_angles = { 0.0, 1.5708, 0.0 };     // pi/2 ≈ 1.5708
+	std::vector< double > joint_angles = { 0.0, M_PI / 4, 0.0 };     // pi/2 ≈ 1.5708
 	geometry_msgs::msg::Pose end_effector_pose;
 
 	bool result = solver_.ForwardKinematic( joint_angles, end_effector_pose );

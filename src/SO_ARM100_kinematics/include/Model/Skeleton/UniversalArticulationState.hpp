@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "ArticulationState.hpp"
+#include "Model/Skeleton/Bone.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -30,11 +31,12 @@ struct Solution
 
 Solution ComputeSolution(
 	double theta0_sol,
+	Model::BoneConstPtr bone,
 	const Limits& joint0_limits,
 	const Limits& joint1_limits,
 	const Vec3d& a0,
 	const Vec3d& a1,
-	const Vec3d& b0,
-	const Vec3d& b1 ) const;
+	const Vec3d& v0,
+	const Vec3d& v1 ) const;
 };
 }

@@ -34,22 +34,9 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	const Vec3d& b0 = bone->Direction();
 	const Vec3d& b1 = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	Vec3d v0;
-	Vec3d v1;
-	if ( joint0->Axis().cross( bone->Direction() ).norm() < epsilon )
-	{
-		v0 = a0.cross( a1 );
-		v1 = a0.cross( b1 );
-	}
-	else
-	{
-		v0 = b0;
-		v1 = b1;
-	}
-
-	double A = a1.dot( v1 ) - ( a0.dot( v1 ) ) * ( a1.dot( a0 ) );
-	double B = -a1.dot( a0.cross( v1 ) );
-	double C = ( a0.dot( v1 ) * a1.dot( a0 ) ) - a1.dot( v0 );
+	double A = a1.dot( b1 ) - ( a0.dot( b1 ) ) * ( a1.dot( a0 ) );
+	double B = -a1.dot( a0.cross( b1 ) );
+	double C = ( a0.dot( b1 ) * a1.dot( a0 ) ) - a1.dot( b0 );
 
 	double R = std::sqrt( A * A + B * B );
 	double phi = std::atan2( B, A );
@@ -57,12 +44,13 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 	auto solution1 = ComputeSolution(
 		phi - beta,
+		bone,
 		joint0->GetLimits(),
 		joint1->GetLimits(),
 		a0,
 		a1,
-		v0,
-		v1 );
+		b0,
+		b1 );
 
 	if ( std::abs( solution1.distance_to_solution ) < epsilon )
 	{
@@ -72,12 +60,13 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	{
 		auto solution2 = ComputeSolution(
 			phi + beta,
+			bone,
 			joint0->GetLimits(),
 			joint1->GetLimits(),
 			a0,
 			a1,
-			v0,
-			v1 );
+			b0,
+			b1 );
 
 		if ( std::abs( solution2.distance_to_solution ) < std::abs( solution1.distance_to_solution ) )
 		{
@@ -105,36 +94,36 @@ void UniversalArticulationState::UpdateValues(
 	Vec3d a0 = joint0->Axis();
 	Vec3d a1 = joint1->Axis();
 
-	Vec3d b0 = bone->Direction();
+	const Vec3d& b0 = bone->Direction();
+	const Vec3d& b1 = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	Vec3d v0 = b0;
-	Vec3d v1 = world_transform_.rotation().inverse() * bone_state.Direction();
-
-	double A = a1.dot( v1 ) - ( a0.dot( v1 ) ) * ( a1.dot( a0 ) );
-	double B = -a1.dot( a0.cross( v1 ) );
-	double C = ( a0.dot( v1 ) * a1.dot( a0 ) ) - a1.dot( v0 );
+	double A = a1.dot( b1 ) - ( a0.dot( b1 ) ) * ( a1.dot( a0 ) );
+	double B = -a1.dot( a0.cross( b1 ) );
+	double C = ( a0.dot( b1 ) * a1.dot( a0 ) ) - a1.dot( b0 );
 
 	double R = std::sqrt( A * A + B * B );
 	double phi = std::atan2( B, A );
-	double beta = std::acos( std::clamp( -C / R, -1.0, 1.0 ) );
+	double beta = std::acos( std::clamp( -C / ( R + 1e-9 ), -1.0, 1.0 ) );
 
 	auto solution1 = ComputeSolution(
 		phi - beta,
+		bone,
 		joint0->GetLimits(),
 		joint1->GetLimits(),
 		a0,
 		a1,
-		v0,
-		v1 );
+		b0,
+		b1 );
 
 	auto solution2 = ComputeSolution(
 		phi + beta,
+		bone,
 		joint0->GetLimits(),
 		joint1->GetLimits(),
 		a0,
 		a1,
-		v0,
-		v1 );
+		b0,
+		b1 );
 
 	double joint_0_value, joint_1_value;
 
@@ -191,6 +180,7 @@ void UniversalArticulationState::UpdateValues(
 
 UniversalArticulationState::Solution UniversalArticulationState::ComputeSolution(
 	double theta0_sol,
+	Model::BoneConstPtr bone,
 	const Limits& joint0_limits,
 	const Limits& joint1_limits,
 	const Vec3d& a0,
@@ -212,9 +202,13 @@ UniversalArticulationState::Solution UniversalArticulationState::ComputeSolution
 
 	solution.theta1 = joint1_limits.Clamp( theta1_sol );
 	solution.rotation1 = AngleAxis( solution.theta1, a1_prime );
-	solution.local_bone_direction = solution.rotation1 * solution.rotation0 * b0;
-	solution.distance_to_solution = Angle( b1, solution.local_bone_direction );
-
+	
+	Vec3d local_direction = solution.rotation1 * solution.rotation0 * b0;
+	solution.distance_to_solution = Angle( local_direction, b1 );
+	
+	solution.local_bone_direction = 
+		( solution.rotation1 * solution.rotation0 * bone->Direction() ).normalized() * bone->Length();
+	
 	return solution;
 }
 

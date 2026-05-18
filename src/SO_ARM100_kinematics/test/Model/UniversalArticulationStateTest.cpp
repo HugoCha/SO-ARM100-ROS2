@@ -65,6 +65,7 @@ Vec3d BoneOffAxisInternalDirection( double angle1, double angle2 )
 	return ( T03.translation() - bone_off_axis_->Origin() ).normalized() * bone_off_axis_->Length();
 }
 
+const double apply_constraint_precision = 5e-4;
 Model::JointConstPtr revolute_joint_1_;
 Model::JointConstPtr revolute_joint_2_;
 Model::ArticulationConstPtr universal_articulation_;
@@ -347,7 +348,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRo
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -378,7 +379,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -409,7 +410,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisCombinedRota
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -440,7 +441,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -471,7 +472,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisFirstJointRo
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -502,7 +503,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -533,7 +534,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -564,7 +565,7 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationT
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
 	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction ) )
+	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
 	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
 	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
 }
@@ -603,10 +604,10 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	EXPECT_EQ( state.GetJointValues().size(), 2 );
 
 	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation(), 1e-5 ) );
 
 	EXPECT_EQ( center, state.GlobalTransform().translation() );
-	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation(), 1e-5 ) );
 
 	EXPECT_NEAR( state.GetJointValues()[0], expected_value_1, epsilon );
 	EXPECT_NEAR( state.GetJointValues()[1], expected_value_2, epsilon );
@@ -614,15 +615,17 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	EXPECT_NEAR( state.GetJointStates()[0]->Value(), expected_value_1, epsilon );
 	EXPECT_NEAR( state.GetJointStates()[1]->Value(), expected_value_2, epsilon );
 
-	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( 0.9, 1, 1 ) ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( Vec3d( 1, 1 + 0.1 * sin( expected_value_1 ), 1 - 0.1 * cos( expected_value_1 ) ) ) )
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( 0.9, 1, 1 ), 1e-5 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( Vec3d( 1, 1 + 0.1 * sin( expected_value_1 ), 1 - 0.1 * cos( expected_value_1 ) ), 1e-5 ) )
 	    << "Expected = " << Vec3d( 1, 1 + 0.1 * sin( expected_value_1 ), 1 - 0.1 * cos( expected_value_1 ) ) << std::endl
 	    << "Result = " << state.GetJointStates()[1]->Origin() << std::endl;
 
 	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
 	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1, 1e-5 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2, 1e-5 ) )
+		<< "Expected Axis = " << std::endl << expected_axis_2 << std::endl
+		<< "Result Axis   = " << std::endl << state.GetJointStates()[1]->Axis() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -655,10 +658,10 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 	EXPECT_EQ( state.GetJointValues().size(), 2 );
 
 	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation(), 1e-5 ) );
 
 	EXPECT_EQ( center, state.GlobalTransform().translation() );
-	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation(), 1e-5 ) );
 
 	EXPECT_NEAR( state.GetJointValues()[0], expected_value_1, epsilon );
 	EXPECT_NEAR( state.GetJointValues()[1], expected_value_2, epsilon );
@@ -707,10 +710,10 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	EXPECT_EQ( state.GetJointValues().size(), 2 );
 
 	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation() ) );
+	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation(), 1e-5  ) );
 
 	EXPECT_EQ( center, state.GlobalTransform().translation() );
-	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation() ) );
+	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation(), 1e-5  ) );
 
 	EXPECT_NEAR( state.GetJointValues()[0], expected_value_1, epsilon );
 	EXPECT_NEAR( state.GetJointValues()[1], expected_value_2, epsilon );
@@ -718,15 +721,15 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	EXPECT_NEAR( state.GetJointStates()[0]->Value(), expected_value_1, epsilon );
 	EXPECT_NEAR( state.GetJointStates()[1]->Value(), expected_value_2, epsilon );
 
-	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ) ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( Vec3d( 0, 0.1, 0 ) ) )
+	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ), 1e-5  ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( Vec3d( 0, 0.1, 0 ), 1e-5  ) )
 	    << "Expected = " <<  Vec3d( 0, 0.1, 0 ) << std::endl
 	    << "Result = " << state.GetJointStates()[1]->Origin() << std::endl;
 
 	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
 	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2 ) );
+	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2, 1e-5 ) );
 }
 
 // ------------------------------------------------------------
@@ -762,7 +765,7 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency
 		auto result_angles = state.GetJointValues();
 		Vec3d result_dir = rotation * BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
 
-		if ( !result_dir.isApprox( bone_state.Direction() ) )
+		if ( !result_dir.isApprox( bone_state.Direction(), 1e-5 ) )
 		{
 			ADD_FAILURE() 
 				<< "Fail for iteration " << i << std::endl

@@ -12,7 +12,7 @@ namespace SOArm100::Kinematics::Model
 
 bool SphereReachableSpace::IsUnreachable( const Mat4d& target ) const
 {
-	return Utils::Distance( Translation( target ), sphere_.center ) > sphere_.radius;
+	return Utils::Distance( Translation( target ), sphere_.center ) > ( 1 + margin_percent_ ) * sphere_.radius;
 }
 
 // ------------------------------------------------------------

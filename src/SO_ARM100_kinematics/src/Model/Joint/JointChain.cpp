@@ -223,7 +223,7 @@ bool JointChain::ComputeFK(
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 	}
 
-	fk = T_cumul * home_configuration;
+	fk.noalias() = T_cumul * home_configuration;
 	return true;
 }
 

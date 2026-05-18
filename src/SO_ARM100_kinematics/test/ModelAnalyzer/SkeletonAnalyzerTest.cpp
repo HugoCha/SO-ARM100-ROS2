@@ -93,6 +93,10 @@ TEST_F( ArticulationTest, AnalyzeArticulations_Planar2RWithTipDifferentThanLastJ
 		EXPECT_EQ( skeleton->Articulation( i )->Center(), articulations[i]->Center() );
 		EXPECT_EQ( skeleton->Articulation( i )->JointCount(), articulations[i]->JointCount() );
 	}
+
+	//------------------------------------------------------------
+	// TODO Add test for bone state
+	//------------------------------------------------------------
 }
 
 // ------------------------------------------------------------

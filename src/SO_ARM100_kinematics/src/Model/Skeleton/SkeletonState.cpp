@@ -12,6 +12,7 @@
 #include "Model/Skeleton/UniversalArticulationState.hpp"
 #include "Utils/Converter.hpp"
 
+#include <map>
 #include <memory>
 #include <stdexcept>
 
@@ -104,13 +105,14 @@ void SkeletonState::SetState( const VecXd& joints )
 
 // ------------------------------------------------------------
 
-void SkeletonState::UpdateValue( const BoneState& bone_state, int i, double damping_factor )
+void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
 {
 	const int n_joints = skeleton_->ArticulationCount();
 	if ( i < 0 || i >= n_joints )
 		throw std::out_of_range( "Index must match articulation index" );
 
-	articulation_states_[i]->UpdateValues( bone_state, damping_factor );
+	auto type = articulation_states_[i]->GetArticulation()->GetType();
+	articulation_states_[i]->UpdateValues( bone_state, DampingFactors()[type] );
 
 	Iso3d transform;
 

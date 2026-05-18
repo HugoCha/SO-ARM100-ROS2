@@ -253,8 +253,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithinLimits_
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d::Zero();
-	Vec3d expected_bone_direction = Vec3d( 0, 0, 0.5 );
+	Vec3d expected_bone_origin = Vec3d( 0, 0, 0.4 );
+	Vec3d expected_bone_direction = Vec3d( 0, 0, 0.1 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
@@ -284,8 +284,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisAboveUpperLim
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d::Zero();
-	Vec3d expected_bone_direction = Vec3d( 0, 0, 1.1 );
+	Vec3d expected_bone_origin = Vec3d( 0, 0, 1 );
+	Vec3d expected_bone_direction = Vec3d( 0, 0, 0.1 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
@@ -347,8 +347,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOnAxisWithRotationT
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d( 1, 1, 1 );
-	Vec3d expected_bone_direction = Vec3d( 0, 0.5, 0 );
+	Vec3d expected_bone_origin = Vec3d( 1, 1.4, 1 );
+	Vec3d expected_bone_direction = Vec3d( 0, 0.1, 0 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
@@ -378,8 +378,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithinLimits
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d::Zero();
-	Vec3d expected_bone_direction = Vec3d( 1, 0, 0.5 );
+	Vec3d expected_bone_origin = Vec3d( 0, 0, 0.5 );
+	Vec3d expected_bone_direction = Vec3d( 1, 0, 0 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
@@ -409,8 +409,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisAboveUpperLi
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d::Zero();
-	Vec3d expected_bone_direction = Vec3d( 1, 0, 1 );
+	Vec3d expected_bone_origin = Vec3d( 0, 0, 1 );
+	Vec3d expected_bone_direction = Vec3d( 1, 0, 0 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
@@ -459,7 +459,7 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 	auto state = Model::PrismaticArticulationState( prismatic_articulation_.get() );
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
-	bone_state.Origin() = Vec3d( 1.1, 1, 1 );
+	bone_state.Origin() = Vec3d( 1.1, 1.1, 1 );
 	bone_state.Direction() = Vec3d( 0.5, 0.5, 0.5 );
 
 	auto rotation = Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitY() );
@@ -471,8 +471,8 @@ TEST_F( PrismaticArticulationStateTest, ApplyConstraints_BoneOffAxisWithRotation
 
 	state.ApplyConstraints( bone_state );
 
-	Vec3d expected_bone_origin = Vec3d( 1, 1, 1 );
-	Vec3d expected_bone_direction = Vec3d( 1, 0.5, 0 );
+	Vec3d expected_bone_origin = Vec3d( 1, 1.6, 1 );
+	Vec3d expected_bone_direction = Vec3d( 1, 0, 0 );
 
 	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
 	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl

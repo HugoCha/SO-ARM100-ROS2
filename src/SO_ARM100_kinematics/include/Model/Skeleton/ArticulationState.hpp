@@ -17,6 +17,10 @@ public:
 ArticulationState( const Articulation* articulation );
 virtual ~ArticulationState() = default;
 
+const Iso3d WorldTransform() const {
+	return world_transform_;
+}
+
 const Iso3d GlobalTransform() const {
 	return global_transform_;
 }

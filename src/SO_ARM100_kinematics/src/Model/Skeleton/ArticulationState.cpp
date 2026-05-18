@@ -98,8 +98,7 @@ void ArticulationState::SetJointInternalState(
 		internal_transform.translation() +
 		internal_transform.rotation() * ( joint->Origin() - articulation_->Center() );
 
-	damping_factor = std::clamp( damping_factor, 0.1, 1.0 );
-
+	damping_factor = std::clamp( damping_factor, 1e-1, 1.0 );
 	joint_state->Axis() = internal_transform.rotation() * joint->Axis();
 
 	double old_value = joint_state->Value();

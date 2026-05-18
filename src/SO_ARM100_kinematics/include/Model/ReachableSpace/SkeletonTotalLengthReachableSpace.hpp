@@ -8,10 +8,11 @@ namespace SOArm100::Kinematics::Model
 class SkeletonTotalLengthReachableSpace : public SphereReachableSpace
 {
 public:
-SkeletonTotalLengthReachableSpace( const Skeleton& skeleton ) :
+SkeletonTotalLengthReachableSpace( const Skeleton& skeleton, double margin_percent = 0.005 ) :
 	SphereReachableSpace(
 		SkeletonOrigin( skeleton ),
-		skeleton.TotalLength() )
+		skeleton.TotalLength(),
+		margin_percent )
 {
 }
 

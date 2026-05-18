@@ -45,12 +45,23 @@ SolverParameters& GetParameters(){
 	return parameters_;
 }
 
-[[nodiscard]] IKResult SolveFromTwoVectors(
+// Returns first found solution
+[[nodiscard]] IKResult SolveFromTwoVectors( 	
+	const Vec3d& p_tcp_local,
+	const Vec3d& p_target ) const;
+	
+// Returns first found solution
+[[nodiscard]] IKResult SolveFromRotation(
+	const Mat3d& R_target ) const;
+	
+// Returns optimized solution
+[[nodiscard]] IKResult SolveAndOptimizeFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
 	std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
-[[nodiscard]] IKResult SolveFromRotation(
+// Returns optimized solution
+[[nodiscard]] IKResult SolveAndOptimizeFromRotation(
 	const Mat3d& R_target,
 	std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
@@ -68,10 +79,11 @@ Model::EulerModel model_;
 SolverParameters parameters_;
 
 double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
-double LimitViolationCost( const Vec3d& angles ) const;
+double LimitViolationCost( const Vec3d& angles, double violation_weight ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
 
 EulerBranch GridSearch( const CostFn& f ) const;
+EulerBranch FirstSolutionSearch( const CostFn& f ) const;
 
 EulerBranch GoldenSearchSection(
 	const CostFn& f,
