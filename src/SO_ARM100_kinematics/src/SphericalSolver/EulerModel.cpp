@@ -1,4 +1,4 @@
-#include "Euler/EulerModel.hpp"
+#include "SphericalSolver/EulerModel.hpp"
 
 #include "Global.hpp"
 #include "Model/Joint/Joint.hpp"
@@ -12,17 +12,6 @@
 
 namespace SOArm100::Kinematics::Model
 {
-
-// ------------------------------------------------------------
-
-double WrapAngle( double angle )
-{
-	while ( angle > M_PI )
-		angle -= 2 * M_PI;
-	while ( angle < -M_PI )
-		angle += 2 * M_PI;
-	return angle;
-}
 
 // ------------------------------------------------------------
 
@@ -122,14 +111,14 @@ Mat3d EulerModel::RecomposePhysical( const Vec3d& angles ) const
 
 // ------------------------------------------------------------
 
-bool EulerModel::IsSingular( const Mat3d& R_canonical, double tol ) const
+bool EulerModel::IsSingular( const Mat3d& R_canonical, double tol )
 {
 	return SingularityMargin( R_canonical ) < tol;
 }
 
 // ------------------------------------------------------------
 
-double EulerModel::SingularityMargin( const Mat3d& R_canonical ) const
+double EulerModel::SingularityMargin( const Mat3d& R_canonical )
 {
 	const double cos_t2 = std::sqrt(
 		R_canonical( 0, 0 ) * R_canonical( 0, 0 )

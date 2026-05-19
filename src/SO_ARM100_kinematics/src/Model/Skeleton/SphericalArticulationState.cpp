@@ -2,7 +2,9 @@
 
 #include "Global.hpp"
 
-#include "Euler/EulerModel.hpp"
+#include "SphericalSolver/SphericalModel.hpp"
+#include "SphericalSolver/SphericalSolver.hpp"
+#include "SphericalSolver/SphericalSolution.hpp"
 
 #include <memory>
 
@@ -12,18 +14,24 @@ namespace SOArm100::Kinematics::Model
 // ------------------------------------------------------------
 
 SphericalArticulationState::SphericalArticulationState( const Articulation* articulation ) :
-	ArticulationState( articulation )
+	ArticulationState( articulation ),
+	solver_( nullptr )
 {
 	assert( articulation->GetType() == ArticulationType::Spherical );
 
-	auto euler_model = EulerModel::ComputeModel(
+	auto model = SphericalModel::ComputeModel(
 		articulation->Joints()[0],
 		articulation->Joints()[1],
 		articulation->Joints()[2] );
 
-	assert( euler_model.has_value() );
-
-	spherical_solver_ = std::make_unique< Solver::SphericalSolver >( *euler_model, Solver::SphericalSolver::SolverParameters() );
+	if ( !model.has_value() )
+	{
+		throw std::invalid_argument( "Joints axes must intersect in one point and be independant." );
+	}
+	
+	solver_ = std::make_unique< Solver::SphericalSolver >( 
+		*model, 
+		Solver::SphericalSolver::SolverParameters() );
 }
 
 // ------------------------------------------------------------
@@ -34,10 +42,8 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	Vec3d old_bone = bone->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	auto result = spherical_solver_->SolveFromTwoVectors(
-		old_bone,
-		new_bone );
-
+	auto result = solver_->SolveFromTwoVectors( old_bone, new_bone );
+	
 	if ( !result.reachable )
 	{
 		auto local_rotation = 
@@ -48,6 +54,10 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 		Vec3d bone_dir = world_transform_.rotation() * local_rotation * bone->Direction();
 		bone_state.Direction() = bone_dir.normalized() * bone->Length();
 	}
+	else
+	{
+		bone_state.Direction() = bone_state.Direction().normalized() * bone->Length();
+	}
 }
 
 // ------------------------------------------------------------
@@ -56,15 +66,16 @@ void SphericalArticulationState::UpdateValues(
 	const BoneState& bone_state,
 	double damping_factor )
 {
-	assert( spherical_solver_ );
+	Vec3d angles;
 
 	Vec3d old_bone = bone_state.GetBone()->Direction();
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	auto result = spherical_solver_->SolveAndOptimizeFromTwoVectors(
+	auto result = solver_->SolveAndOptimizeFromTwoVectors(
 		old_bone,
 		new_bone );
-	Vec3d angles = result.angles;
+
+	angles = result.angles;
 
 	Iso3d local_transform = Iso3d::Identity();
 

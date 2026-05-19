@@ -1,9 +1,10 @@
-#include "Euler/SphericalSolver.hpp"
-#include "Euler/EulerModel.hpp"
+#include "SphericalSolver/EulerModel.hpp"
 
 #include "Global.hpp"
 #include "KinematicTestBase.hpp"
 #include "Model/Joint/Joint.hpp"
+#include "SphericalSolver/EulerSolver.hpp"
+#include "SphericalSolver/SphericalSolution.hpp"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -14,10 +15,10 @@ namespace SOArm100::Kinematics::Test
 {
 
 // ============================================================
-// Solver::SphericalSolver Test
+// Solver::EulerSolver Test
 // ============================================================
 
-class SphericalSolverTest : public KinematicTestBase
+class EulerSolverTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -55,7 +56,7 @@ void SetUp() override
 		joint_x_ );
 	ASSERT_TRUE( model_opt.has_value() );
 	model_ = std::make_unique< Model::EulerModel >( *model_opt );
-	solver_ = std::make_unique< Solver::SphericalSolver >( *model_, Solver::SphericalSolver::SolverParameters() );
+	solver_ = std::make_unique< Solver::EulerSolver >( *model_, Solver::EulerSolver::SolverParameters() );
 
 	auto tight_opt = Model::EulerModel::ComputeModel(
 		joint_x_tight_,
@@ -63,7 +64,7 @@ void SetUp() override
 		joint_z_tight_ );
 	ASSERT_TRUE( tight_opt.has_value() );
 	model_tight_ = std::make_unique< Model::EulerModel >( *tight_opt );
-	solver_tight_ = std::make_unique< Solver::SphericalSolver >( *model_tight_, Solver::SphericalSolver::SolverParameters() );
+	solver_tight_ = std::make_unique< Solver::EulerSolver >( *model_tight_, Solver::EulerSolver::SolverParameters() );
 }
 
 void TearDown() override {
@@ -170,7 +171,7 @@ void ExpectDirectionMatch(
 	const Model::EulerModel model,
 	const Vec3d& old_dir,
 	const Vec3d& new_dir,
-	const Solver::SphericalSolver::IKResult& result,
+	const Solver::SphericalSolution& result,
 	double tol = 1e-4 )
 {
 	Vec3d recovered = ApplyAngles( model, old_dir, result.angles );
@@ -197,7 +198,7 @@ void CheckConfiguration(
 	ASSERT_TRUE( model.has_value() )
 	    << "Failed ComputeModel for " << c.name;
 
-	auto solver = Solver::SphericalSolver( *model, parameters_ );
+	auto solver = Solver::EulerSolver( *model, parameters_ );
 	auto result = solver.SolveAndOptimizeFromTwoVectors( old_dir, new_dir, prefered_dir );
 
 	Vec3d recovered = ApplyAngles( *model, old_dir, result.angles );
@@ -229,7 +230,7 @@ void CheckConfigurationForAngles(
 	    << "Failed ComputeModel for " << c.name;
 
 	Vec3d new_dir = ApplyAngles( *model, old_dir, angles );
-	auto solver = Solver::SphericalSolver( *model, parameters_ );
+	auto solver = Solver::EulerSolver( *model, parameters_ );
 	auto result = solver.SolveAndOptimizeFromTwoVectors( old_dir, new_dir, prefered_dir );
 
 	Vec3d recovered = ApplyAngles( *model, old_dir, result.angles );
@@ -274,16 +275,16 @@ Model::JointConstPtr joint_x_tight_, joint_y_tight_, joint_z_tight_;
 std::unique_ptr< Model::EulerModel > model_;
 std::unique_ptr< Model::EulerModel > model_tight_;
 
-std::unique_ptr< Solver::SphericalSolver > solver_;
-std::unique_ptr< Solver::SphericalSolver > solver_tight_;
-Solver::SphericalSolver::SolverParameters parameters_;
+std::unique_ptr< Solver::EulerSolver > solver_;
+std::unique_ptr< Solver::EulerSolver > solver_tight_;
+Solver::EulerSolver::SolverParameters parameters_;
 };
 
 // ============================================================
 // SolveAndOptimizeFromTwoVectors (direction overload) — identity
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_SameDirection_ReturnsNearZeroAngles )
+TEST_F( EulerSolverTest, Solve_Dir_SameDirection_ReturnsNearZeroAngles )
 {
 	Vec3d old_dir = Vec3d::UnitZ();
 	Vec3d new_dir = Vec3d::UnitZ();
@@ -295,7 +296,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_SameDirection_ReturnsNearZeroAngles )
 // SolveAndOptimizeFromTwoVectors (direction overload) — single axis rotations
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_PureXRotation_DirectionMatches )
+TEST_F( EulerSolverTest, Solve_Dir_PureXRotation_DirectionMatches )
 {
 	Vec3d old_dir = Vec3d::UnitZ();
 	// R_x(π/2) maps Z → -Y
@@ -306,7 +307,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_PureXRotation_DirectionMatches )
 
 // ------------------------------------------------------------
 
-TEST_F( SphericalSolverTest, Solve_Dir_PureYRotation_DirectionMatches )
+TEST_F( EulerSolverTest, Solve_Dir_PureYRotation_DirectionMatches )
 {
 	Vec3d old_dir = Vec3d::UnitZ();
 	// R_y(π/2) maps Z → X
@@ -317,7 +318,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_PureYRotation_DirectionMatches )
 
 // ------------------------------------------------------------
 
-TEST_F( SphericalSolverTest, Solve_Dir_PureZRotation_NoDirectionChange )
+TEST_F( EulerSolverTest, Solve_Dir_PureZRotation_NoDirectionChange )
 {
 	// Z rotation doesn't move UnitZ — error should be zero regardless of θ3
 	Vec3d old_dir = Vec3d::UnitZ();
@@ -330,7 +331,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_PureZRotation_NoDirectionChange )
 // SolveAndOptimizeFromTwoVectors (direction overload) — combined rotations
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
+TEST_F( EulerSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
 {
 	Vec3d old_dir = Vec3d::UnitX();
 	// Build a target from known angles so we can verify round-trip
@@ -342,7 +343,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_CombinedRotation_DirectionMatches )
 
 // ------------------------------------------------------------
 
-TEST_F( SphericalSolverTest, Solve_Dir_OppositeDirection_DirectionMatches )
+TEST_F( EulerSolverTest, Solve_Dir_OppositeDirection_DirectionMatches )
 {
 	// 180° rotation — numerically tricky for FromTwoVectors
 	Vec3d old_dir = Vec3d::UnitZ();
@@ -355,7 +356,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_OppositeDirection_DirectionMatches )
 // SolveAndOptimizeFromTwoVectors (direction overload) — seed influence
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
+TEST_F( EulerSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
 {
 	// There are infinitely many angle triplets that map old→new.
 	// With a non-zero seed the optimizer should prefer angles near the seed.
@@ -382,7 +383,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_SeedCloserToResult_AnglesCloseToSeed )
 // SolveAndOptimizeFromTwoVectors (direction overload) — joint limits respected
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_TargetWithinLimits_AnglesSatisfyLimits )
+TEST_F( EulerSolverTest, Solve_Dir_TargetWithinLimits_AnglesSatisfyLimits )
 {
 	// Small rotation — should be reachable within tight limits
 	Vec3d old_dir = Vec3d::UnitZ();
@@ -401,7 +402,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetWithinLimits_AnglesSatisfyLimits )
 
 // ------------------------------------------------------------
 
-TEST_F( SphericalSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
+TEST_F( EulerSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 {
 	// Large rotation — unreachable within tight limits.
 	// Solver must return something (no throw) and error will be non-zero
@@ -424,11 +425,11 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 // SolveAndOptimizeFromTwoVectors (matrix overload)
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
+TEST_F( EulerSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
 {
     Vec3d seed = Vec3d::Zero();
 
-    auto result = solver_->SolveAndOptimizeFromRotation( Mat3d::Identity(), seed );
+    auto result = solver_->SolveFromRotation( Mat3d::Identity() );
 
     EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
         << "Angles: " << result.angles.transpose();
@@ -436,7 +437,7 @@ TEST_F( SphericalSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
 
 // ------------------------------------------------------------
 
-TEST_F( SphericalSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
+TEST_F( EulerSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 {
 	// Build R from known angles and verify the solver recovers them
 	const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
@@ -445,7 +446,7 @@ TEST_F( SphericalSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 	                 * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
 
 	Vec3d seed = Vec3d::Zero();
-    auto result = solver_->SolveAndOptimizeFromRotation( R_target, seed );
+    auto result = solver_->SolveFromRotation( R_target );
 
 	// // The matrix overload uses a3 as the tracked direction.
 	// // Error is defined on that direction, so check via ApplyAngles on UnitZ.
@@ -458,7 +459,7 @@ TEST_F( SphericalSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 // Consistency — multiple calls same result
 // ============================================================
 
-TEST_F( SphericalSolverTest, Solve_Dir_Consistency_SameInputSameOutput )
+TEST_F( EulerSolverTest, Solve_Dir_Consistency_SameInputSameOutput )
 {
 	Vec3d old_dir = Vec3d( 1, 0, 0 ).normalized();
 	Vec3d new_dir = Vec3d( 0, 1, 1 ).normalized();
@@ -475,7 +476,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_Consistency_SameInputSameOutput )
 // ============================================================
 
 
-TEST_F( SphericalSolverTest, Solve_Dir_HardDirection_DirectionAlwaysMatches )
+TEST_F( EulerSolverTest, Solve_Dir_HardDirection_DirectionAlwaysMatches )
 {
 	Vec3d old_dir = Vec3d::UnitZ();
 	Vec3d seed    = Vec3d::Zero();
@@ -497,7 +498,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_HardDirection_DirectionAlwaysMatches )
 	    << "Result Angles:    " << result.angles.transpose();
 }
 
-TEST_F( SphericalSolverTest, Solve_Dir_RandomDirections_DirectionAlwaysMatches )
+TEST_F( EulerSolverTest, Solve_Dir_RandomDirections_DirectionAlwaysMatches )
 {
 	random_numbers::RandomNumberGenerator rng;
 	Vec3d old_dir = Vec3d::UnitX();

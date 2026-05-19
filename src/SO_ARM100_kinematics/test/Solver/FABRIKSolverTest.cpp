@@ -1,5 +1,4 @@
 #include "FABRIK/FabrikSolver.hpp"
-#include "FABRIK/FabrikSolverDraft.hpp"
 
 #include "Global.hpp"
 
@@ -92,8 +91,8 @@ Solver::IKSolution CheckConvergence(
 {
 	EXPECT_EQ( seed.size(), joints.size() );
 
-	auto parameters = Solver::FABRIKSolverDraft::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
-	auto solver = Solver::FABRIKSolverDraft( model, parameters );
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto solver = Solver::FABRIKSolver( model, parameters );
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
@@ -119,8 +118,8 @@ Solver::IKSolution CheckConvergenceFromTarget(
 	const VecXd& seed,
 	const Mat4d& target )
 {
-	auto parameters = Solver::FABRIKSolverDraft::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
-	auto solver = Solver::FABRIKSolverDraft( model, parameters );
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto solver = Solver::FABRIKSolver( model, parameters );
 	auto problem = CreateProblem( seed, target );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
@@ -148,8 +147,8 @@ Solver::IKSolution CheckConvergenceNoFailure(
 {
 	EXPECT_EQ( seed.size(), joints.size() );
 
-	auto parameters = Solver::FABRIKSolverDraft::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
-	auto solver = Solver::FABRIKSolverDraft( model, parameters );
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto solver = Solver::FABRIKSolver( model, parameters );
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
@@ -259,7 +258,7 @@ TEST_F( FABRIKSolverTest, IK_UnreachableFarTarget )
 	target( 1, 3 )   = 0.0;
 	target( 2, 3 )   = 0.0;
 
-	auto solver = Solver::FABRIKSolverDraft( model_ );
+	auto solver = Solver::FABRIKSolver( model_ );
 	auto problem = CreateProblem( VecXd::Zero( n_joints ), target );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 
@@ -281,7 +280,7 @@ TEST_F( FABRIKSolverTest, IK_UnreachableFarTarget_AllRobots )
 		target( 1, 3 )   = 0.0;
 		target( 2, 3 )   = 0.0;
 
-		auto solver = Solver::FABRIKSolverDraft( robot.second );
+		auto solver = Solver::FABRIKSolver( robot.second );
 		auto problem = CreateProblem( VecXd::Zero( n_joints ), target );
 		auto result = solver.Solve( problem, Solver::IKRunContext() );
 
@@ -680,7 +679,7 @@ TEST_F( FABRIKSolverTest, IK_SeedSizeMismatchFails )
 	VecXd joints = VecXd::Zero( n_joints );
 
 	auto problem = CreateProblem( VecXd::Zero( n_joints + 1 ), joints );
-	auto solver = Solver::FABRIKSolverDraft( model_ );
+	auto solver = Solver::FABRIKSolver( model_ );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::NotRun )

@@ -8,7 +8,10 @@
 
 namespace SOArm100::Kinematics::Solver
 {
-class SphericalSolver
+struct SphericalSolution;
+struct SphericalSolutionBranch;
+
+class EulerSolver
 {
 public:
 struct SolverParameters
@@ -21,17 +24,7 @@ struct SolverParameters
 	double singularity_penalty { 1e4 };  ///< penalty weight for singular configs
 };
 
-struct IKResult {
-	Vec3d angles;          ///< physical joint angles (θ₁, θ₂, θ₃) [rad]
-	double phi;            ///< optimal free angle φ [rad]
-	double cost;           ///< optimizer cost at solution
-	double fk_error;       ///< ‖FK(θ)·p_tcp_local − p_target‖ [m]
-	double singularity_margin; ///< 0=singular, 1=far (cos θ₂ in canonical frame)
-	bool reachable;        ///< all joints within limits?
-	bool near_singular;    ///< middle joint near gimbal lock?
-};
-
-explicit SphericalSolver( const Model::EulerModel& model, SolverParameters parameters );
+explicit EulerSolver( const Model::EulerModel& model, SolverParameters parameters );
 
 const Model::EulerModel& GetEulerModel()  const {
 	return model_;
@@ -44,36 +37,23 @@ const SolverParameters& GetParameters() const {
 SolverParameters& GetParameters(){
 	return parameters_;
 }
-
-// Returns first found solution
-[[nodiscard]] IKResult SolveFromTwoVectors( 	
-	const Vec3d& p_tcp_local,
-	const Vec3d& p_target ) const;
 	
-// Returns first found solution
-[[nodiscard]] IKResult SolveFromRotation(
+[[nodiscard]] SphericalSolution SolveFromRotation(
 	const Mat3d& R_target ) const;
 	
+// Returns first found solution
+[[nodiscard]] SphericalSolution SolveFromTwoVectors( 	
+	const Vec3d& p_tcp_local,
+	const Vec3d& p_target ) const;
+
 // Returns optimized solution
-[[nodiscard]] IKResult SolveAndOptimizeFromTwoVectors(
+[[nodiscard]] SphericalSolution SolveAndOptimizeFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
 	std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
-// Returns optimized solution
-[[nodiscard]] IKResult SolveAndOptimizeFromRotation(
-	const Mat3d& R_target,
-	std::optional< Vec3d > theta_pref = std::nullopt ) const;
-
 private:
-struct EulerBranch
-{
-	double phi;
-	Vec3d angles;
-	double cost;
-};
-
-using CostFn = std::function< EulerBranch ( double phi ) >;
+using CostFn = std::function< SphericalSolutionBranch ( double phi ) >;
 
 Model::EulerModel model_;
 SolverParameters parameters_;
@@ -82,10 +62,10 @@ double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
 double LimitViolationCost( const Vec3d& angles, double violation_weight ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
 
-EulerBranch GridSearch( const CostFn& f ) const;
-EulerBranch FirstSolutionSearch( const CostFn& f ) const;
+SphericalSolutionBranch GridSearch( const CostFn& f ) const;
+SphericalSolutionBranch FirstSolutionSearch( const CostFn& f ) const;
 
-EulerBranch GoldenSearchSection(
+SphericalSolutionBranch GoldenSearchSection(
 	const CostFn& f,
 	double a,
 	double b,

@@ -1,4 +1,4 @@
-#include "Euler/EulerModel.hpp"
+#include "SphericalSolver/EulerModel.hpp"
 
 #include "Global.hpp"
 

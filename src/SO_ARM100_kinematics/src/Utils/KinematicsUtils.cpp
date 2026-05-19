@@ -302,7 +302,7 @@ void POE(
 double RotationError( const Mat3d& target, const Mat3d& result ) noexcept
 {
 	Mat3d R_error = result.transpose() * target;
-	return acos( ( R_error.trace() - 1 ) / 2.0 );
+	return acos( std::clamp( ( R_error.trace() - 1 ) / 2.0, -1.0, 1.0 ) );
 }
 
 // ------------------------------------------------------------

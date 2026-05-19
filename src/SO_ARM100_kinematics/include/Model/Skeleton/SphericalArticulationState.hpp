@@ -2,7 +2,8 @@
 
 #include "ArticulationState.hpp"
 #include "Model/Skeleton/BoneState.hpp"
-#include "Euler/SphericalSolver.hpp"
+#include "SphericalSolver/SphericalSolver.hpp"
+
 #include <memory>
 
 namespace SOArm100::Kinematics::Model
@@ -16,6 +17,6 @@ virtual void ApplyConstraints( BoneState& bone_state ) const override;
 virtual void UpdateValues( const BoneState& bone_state, double damping_factor = 1.0 ) override;
 
 private:
-std::unique_ptr< Solver::SphericalSolver > spherical_solver_;
+std::unique_ptr< Solver::SphericalSolver > solver_;
 };
 }

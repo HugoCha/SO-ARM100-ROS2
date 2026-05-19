@@ -51,10 +51,10 @@ public:
 [[nodiscard]] std::vector< Vec3d > DecomposePhysical( const Mat3d& R_Physical ) const;
 
 /// Check if a canonical rotation is near XYZ gimbal lock (θ₂ ≈ ±π/2).
-[[nodiscard]] bool IsSingular( const Mat3d& R_canonical, double tol = 0.05 ) const;
+[[nodiscard]] static bool IsSingular( const Mat3d& R_canonical, double tol = 0.05 );
 
 /// Measure distance from singularity (0 = at singularity, 1 = far away).
-[[nodiscard]] double SingularityMargin( const Mat3d& R_canonical ) const;
+[[nodiscard]] static double SingularityMargin( const Mat3d& R_canonical );
 
 private:
 enum class EulerAxis

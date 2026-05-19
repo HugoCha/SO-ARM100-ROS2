@@ -1,6 +1,7 @@
 #include "Utils/MathUtils.hpp"
 
 #include "Global.hpp"
+#include <stdexcept>
 
 namespace SOArm100::Kinematics
 {
@@ -127,6 +128,22 @@ double AngleAroundAxis( const Vec3d& V1, const Vec3d& V2, const Vec3d& axis )
 	double cos_angle = std::clamp( V1dotV2 - axisdotV1 * axisdotV2, -1.0, 1.0 );
 
 	return std::atan2( sin_angle, cos_angle );
+}
+
+// ------------------------------------------------------------
+
+double WrapAngle( double angle, double lo, double hi )
+{
+	double span = hi - lo;
+	if ( span < 2 * M_PI )
+		throw std::invalid_argument( "Span must be at least 2π" );
+
+	while ( angle > hi )
+		angle -= 2 * M_PI;
+	while ( angle < lo )
+		angle += 2 * M_PI;
+	
+	return angle;
 }
 
 // ------------------------------------------------------------
