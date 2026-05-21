@@ -6,7 +6,9 @@
 #include "Model/ReachableSpace/ChainTotalLengthReachableSpace.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
 #include "Solver/IKProblem.hpp"
+#include "Solver/IKSolution.hpp"
 #include "Utils/Converter.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -19,6 +21,15 @@ Mat4d ComputeFK( const VecXd& joints )
 {
 	Mat4d fk;
 	model_->ComputeFK( joints, fk );
+	return fk;
+}
+
+Mat4d ComputeFK( 
+	Model::KinematicModelConstPtr model,
+	const VecXd& joints )
+{
+	Mat4d fk;
+	model->ComputeFK( joints, fk );
 	return fk;
 }
 
@@ -46,6 +57,29 @@ Solver::IKProblem CreateProblem( const VecXd& seed, Mat4d target  )
 	    rotation_tolerance,
 	    100 };
 }
+
+double PoseError( 
+	Model::KinematicModelConstPtr model,
+	const Solver::IKProblem& problem,
+	const Solver::IKSolution& solution )
+{
+	Vec6d pose_error;
+	SOArm100::Kinematics::PoseError( 
+		problem.target, 
+		ComputeFK( model, solution.joints ), 
+		pose_error );
+	return pose_error.norm();
+};
+
+double PositionError(
+	Model::KinematicModelConstPtr model,
+	const Solver::IKProblem& problem,
+	const Solver::IKSolution& solution )
+{
+	return TranslationError( 
+		problem.target, 
+		ComputeFK( model, solution.joints ) );
+};
 
 Model::KinematicModelConstPtr CreateModel(
 	const Model::JointChain& chain,

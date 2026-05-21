@@ -2,6 +2,8 @@
 
 #include "Global.hpp"
 
+#include "Heuristic/IKHeuristicState.hpp"
+#include "Heuristic/IKPresolution.hpp"
 #include "Model/Geometry/Pose.hpp"
 #include "Model/Joint/Joint.hpp"
 #include "Model/Joint/JointChain.hpp"
@@ -259,10 +261,46 @@ std::ostream& operator << ( std::ostream& os, const IKSolution& obj )
 {
 	os << "IKSolution" << std::endl;
 	os << "State: " << obj.state << std::endl;
-	os << "Iter : " << obj.iterations << std::endl;
 	os << "Error: " << obj.error << std::endl;
+	os << "Iter : " << obj.iterations << std::endl;
 	os << "Score: " << obj.score << std::endl;
 	os << "Joint: " << obj.joints.transpose();
+	return os;
+}
+
+// ------------------------------------------------------------
+
+}
+
+// ============================================================
+// Heurisitic
+// ============================================================
+
+namespace Heuristic 
+{
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const IKPresolution& obj )
+{
+	os << "IKPresolution" << std::endl;
+	os << "State: " << obj.state << std::endl;
+	os << "Error: " << obj.error << std::endl;
+	os << "Iter : " << obj.iterations << std::endl;
+	os << "Joint: " << obj.joints.transpose() << std::endl;
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const IKHeuristicState& obj )
+{
+	switch ( obj ) 
+	{
+		case IKHeuristicState::Success: os << "Sucess"; break;
+		case IKHeuristicState::PartialSuccess: os << "Partial Success"; break;
+		case IKHeuristicState::Fail: os << "Fail"; break;
+	}
 	return os;
 }
 

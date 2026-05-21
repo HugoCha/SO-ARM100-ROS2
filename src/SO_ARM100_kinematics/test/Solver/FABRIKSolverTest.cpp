@@ -169,6 +169,8 @@ Solver::IKSolution CheckConvergenceNoFailure(
 			<< "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
 	}
 
+	result.score = PoseError( model_, problem, result );
+				
 	return result;
 }
 
@@ -335,7 +337,6 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge )
 		else
 			std::cout
 				<< "Seed index " << s << " failed. "
-				<< "Error = " << result.error << std::endl
 				<< "Seeds: " << seeds[s].transpose() << std::endl;
 	}
 
@@ -447,7 +448,7 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations )
 
 		auto result = CheckConvergenceNoFailure( model_, parameters, seed, joints );
 
-		avg_error+= result.error / ( double )kTrials;
+		avg_error+= result.score / ( double )kTrials;
 		avg_iter += result.iterations / ( double )kTrials;
 	}
 
@@ -476,7 +477,7 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations_AllRobots )
 
 			auto result = CheckConvergenceNoFailure( robot.second, parameters, seed, joints );
 
-			avg_error+= result.error / ( double )kTrials;
+			avg_error+= result.score / ( double )kTrials;
 			avg_iter += result.iterations / ( double )kTrials;
 		}
 

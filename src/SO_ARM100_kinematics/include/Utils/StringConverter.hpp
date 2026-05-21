@@ -40,6 +40,16 @@ std::ostream& operator << ( std::ostream& os, const SkeletonState& obj );
 std::ostream& operator << ( std::ostream& os, const Twist& obj );
 }
 
+// Heuristic
+namespace Heuristic 
+{
+enum class IKHeuristicState;
+struct IKPresolution;
+
+std::ostream& operator << ( std::ostream& os, const IKPresolution& obj );
+std::ostream& operator << ( std::ostream& os, const IKHeuristicState& obj );
+}
+
 // Solver
 namespace Solver
 {

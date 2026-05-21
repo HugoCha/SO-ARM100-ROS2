@@ -1,11 +1,11 @@
 #include "DLS/DLSSolver.hpp"
 
+#include "Global.hpp"
+
 #include "DLS/AdaptativeDamping.hpp"
 #include "DLS/DLSSolverState.hpp"
-#include "Global.hpp"
 #include "Model/IKModelBase.hpp"
 #include "Seed/IKRandomSeedGenerator.hpp"
-#include "Seed/IKSeedGenerator.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
@@ -97,21 +97,18 @@ IKSolution DLSSolver::Solve(
 		// std::cout << "--------------- Iteration " << iter << " ---------------" << std::endl;
 		if ( context.StopRequested() )
 		{
-			return { IKSolverState::NotRun, history.best_joints,
-			         history.best_error, iter };
+			return { IKSolverState::NotRun, history.best_joints, history.best_error, iter };
 		}
 
 		auto solver_state = EvaluateConvergence( *state, iter );
 
 		if ( solver_state == DLSSolverState::Converged )
 		{
-			return { IKSolverState::Converged, state->joints,
-			         state->error, iter };
+			return { IKSolverState::Converged, state->joints, state->error, iter };
 		}
 		if ( solver_state == DLSSolverState::BestPossible )
 		{
-			return { IKSolverState::BestPossible, state->joints,
-			         state->error, iter };
+			return { IKSolverState::BestPossible, state->joints, state->error };
 		}
 		if ( solver_state == DLSSolverState::Stalled )
 		{
@@ -125,8 +122,7 @@ IKSolution DLSSolver::Solve(
 		PerformIteration( problem.target, *state, buffers );
 	}
 
-	return { IKSolverState::MaxIterations, history.best_joints,
-	         history.best_error, parameters_.max_iterations };
+	return { IKSolverState::MaxIterations, history.best_joints, history.best_error, parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------

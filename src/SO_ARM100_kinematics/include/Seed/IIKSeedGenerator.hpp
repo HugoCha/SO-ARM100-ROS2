@@ -11,10 +11,10 @@ struct IKProblem;
 
 namespace Seed
 {
-class IKSeedGenerator
+class IIKSeedGenerator
 {
 public:
-virtual ~IKSeedGenerator() = default;
+virtual ~IIKSeedGenerator() = default;
 
 virtual VecXd Generate( const Solver::IKProblem& problem ) const = 0;
 };

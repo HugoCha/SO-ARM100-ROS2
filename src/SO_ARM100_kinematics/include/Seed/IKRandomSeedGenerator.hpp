@@ -2,12 +2,12 @@
 
 #include "Global.hpp"
 
-#include "IKSeedGenerator.hpp"
+#include "IIKSeedGenerator.hpp"
 #include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics::Seed
 {
-class IKRandomSeedGenerator : public IKSeedGenerator
+class IKRandomSeedGenerator : public IIKSeedGenerator
 {
 public:
 enum class RandomType

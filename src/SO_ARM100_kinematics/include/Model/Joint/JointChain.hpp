@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 #include "Joint.hpp"
+#include "Utils/Converter.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -63,8 +64,8 @@ int GetJointIndex( const Joint* joint ) const;
 const Joint* GetNextJoint( const Joint* joint ) const;
 const Joint* GetPreviousJoint( const Joint* joint ) const;
 
-[[nodiscard]] std::vector< double > ActiveJointCenters() const noexcept {
-	return active_joint_centers_;
+[[nodiscard]] VecXd ActiveJointCenters() const noexcept {
+	return ToVecXd( active_joint_centers_ );
 }
 
 [[nodiscard]] bool WithinLimits( const VecXd& joints ) const {

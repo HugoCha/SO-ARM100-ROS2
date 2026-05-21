@@ -121,20 +121,17 @@ IKSolution FABRIKSolver::Solve(
 
 		if ( error < parameters_.error_tolerance )
 		{
-			return { IKSolverState::Converged, history.best_joints,
-					history.best_error, iter };
+			return { IKSolverState::Converged, history.best_joints, history.best_error, iter };
 		}
 
 		if ( history.stalled_error_cnt > parameters_.max_stalled_iterations )
 		{
-			return { IKSolverState::BestPossible, history.best_joints,
-					history.best_error, iter };
+			return { IKSolverState::BestPossible, history.best_joints, history.best_error, iter };
 		}
 
 		if ( context.StopRequested() )
 		{
-			return { IKSolverState::NotRun, skeleton_state.GetJointValues(),
-			         error, iter };
+			return { IKSolverState::NotRun, history.best_joints, history.best_error, iter };
 		}
 
 		BackwardPass( p_target, skeleton_state, bone_states );
@@ -142,8 +139,7 @@ IKSolution FABRIKSolver::Solve(
 		UpdateValues( skeleton_state, bone_states );
 	}
 
-	return { IKSolverState::MaxIterations, skeleton_state.GetJointValues(),
-	         error, parameters_.max_iterations };
+	return { IKSolverState::MaxIterations, history.best_joints, history.best_error, parameters_.max_iterations };
 }
 
 // ------------------------------------------------------------

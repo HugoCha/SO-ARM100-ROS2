@@ -10,7 +10,9 @@ struct IKPresolution
 {
 	VecXd joints;
 	IKHeuristicState state;
-
+	double error;
+	int iterations;
+	
 	bool Sucess() const {
 		return state == IKHeuristicState::Success;
 	}

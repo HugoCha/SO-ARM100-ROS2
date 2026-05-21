@@ -140,7 +140,7 @@ TEST_F( DLSSolverTest, SolveIK_HomePosition )
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
-	EXPECT_LT( result.error, DEFAULT_TOLERANCE );
+	EXPECT_LT( PoseError( model_, problem, result ), DEFAULT_TOLERANCE );
 	EXPECT_EQ( result.joints.size(), 3 );
 
 	// Verify the solution reaches the target
@@ -279,7 +279,7 @@ TEST_F( DLSSolverTest, SolveIK_MaxIterationsReached )
 	std::cout << "seed = " << std::endl << problem.seed.transpose() << std::endl;
 	std::cout << "result = " << std::endl << ComputeFK( result.joints ) << std::endl;
 
-	EXPECT_GE( result.error, params.error_tolerance );
+	EXPECT_GE( PoseError( model_, problem, result ), params.error_tolerance );
 	EXPECT_EQ( result.state, Solver::IKSolverState::MaxIterations );
 	EXPECT_EQ( result.iterations, params.max_iterations );
 }
@@ -338,7 +338,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 
 	if ( result.Success() )
 	{
-		EXPECT_LT( result.error, 1e-6 );
+		EXPECT_LT( PoseError( model_, problem, result ), 1e-6 );
 	}
 }
 

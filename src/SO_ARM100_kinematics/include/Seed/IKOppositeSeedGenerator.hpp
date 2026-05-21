@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Model/KinematicModel.hpp"
-#include "Seed/IKSeedGenerator.hpp"
+#include "Seed/IIKSeedGenerator.hpp"
 
 #include <set>
 
 namespace SOArm100::Kinematics::Seed
 {
-class IKOppositeSeedGenerator : public IKSeedGenerator
+class IKOppositeSeedGenerator : public IIKSeedGenerator
 {
 public:
 IKOppositeSeedGenerator( Model::KinematicModelConstPtr model );
