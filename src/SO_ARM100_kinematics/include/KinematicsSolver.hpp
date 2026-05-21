@@ -2,7 +2,7 @@
 
 #include "Global.hpp"
 
-#include "HybridSolver/HybridSolver.hpp"
+#include "PipelineSolver/PipelineSolver.hpp"
 #include "Model/KinematicModel.hpp"
 
 #include <geometry_msgs/geometry_msgs/msg/pose.hpp>
@@ -35,7 +35,7 @@ virtual void Initialize(
 
 virtual void Initialize(
 	Model::KinematicModelConstPtr model,
-	const Solver::HybridSolver& solver,
+	const Solver::PipelineSolver& solver,
 	double search_discretization );
 
 Model::KinematicModelConstPtr GetModel() const {
@@ -62,7 +62,7 @@ Model::KinematicModelConstPtr GetModel() const {
 
 private:
 Model::KinematicModelConstPtr model_;
-std::unique_ptr< const Solver::HybridSolver > solver_;
+std::unique_ptr< const Solver::PipelineSolver > solver_;
 
 [[nodiscard]] bool InverseKinematic(
 	const Mat4d& target,

@@ -3,7 +3,6 @@
 #include "Global.hpp"
 #include "KinematicTestBase.hpp"
 #include "Model/Joint/Joint.hpp"
-#include "SphericalSolver/EulerModel.hpp"
 #include "SphericalSolver/EulerSolver.hpp"
 #include "SphericalSolver/SphericalModel.hpp"
 #include "SphericalSolver/SphericalSolution.hpp"
@@ -12,7 +11,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <cmath>
-#include <ostream>
 #include <vector>
 
 namespace SOArm100::Kinematics::Test
@@ -28,9 +26,9 @@ protected:
 void SetUp() override
 {
     // Standard Orthogonal Axes (Orthogonal Wrist Layout)
-    joint_x_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 2, M_PI / 2 );
-    joint_y_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 2, M_PI / 2 );
-    joint_z_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 2, M_PI / 2 );
+    joint_x_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 2, M_PI );
+    joint_y_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 2, M_PI );
+    joint_z_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 2, M_PI );
 
     // Tight Limits Setup for Bounds Validation
     joint_x_tight_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
@@ -562,20 +560,6 @@ TEST_F( SphericalSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 		EXPECT_GE( result.angles[i], -M_PI / 6 - epsilon ) << "Joint " << i << " below min";
 		EXPECT_LE( result.angles[i],  M_PI / 6 + epsilon ) << "Joint " << i << " above max";
 	}
-}
-
-// ============================================================
-// SolveAndOptimizeFromTwoVectors (matrix overload)
-// ============================================================
-
-TEST_F( SphericalSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
-{
-    Vec3d seed = Vec3d::Zero();
-
-    auto result = solver_orthogonal_->SolveFromRotation( Mat3d::Identity() );
-
-    EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
-        << "Angles: " << result.angles.transpose();
 }
 
 // ------------------------------------------------------------

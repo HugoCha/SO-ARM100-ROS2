@@ -1,4 +1,4 @@
-#include "HybridSolver/HybridSolver.hpp"
+#include "PipelineSolver/PipelineSolver.hpp"
 
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
@@ -9,14 +9,17 @@ namespace SOArm100::Kinematics::Solver
 
 // ------------------------------------------------------------
 
-HybridSolver::HybridSolver( Model::KinematicModelConstPtr model ) :
-	Model::IKModelBase( model )
+PipelineSolver::PipelineSolver( 
+	Model::KinematicModelConstPtr model,
+	std::vector< Solver::IKPipeline > pipelines ) :
+	Model::IKModelBase( model ),
+	pipelines_( pipelines )
 {
 }
 
 // ------------------------------------------------------------
 
-IKSolution HybridSolver::Solve(
+IKSolution PipelineSolver::Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {

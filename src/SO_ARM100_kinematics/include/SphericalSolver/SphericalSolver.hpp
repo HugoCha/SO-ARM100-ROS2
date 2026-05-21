@@ -38,7 +38,8 @@ const Model::SphericalModel& GetModel() const {
 }
 
 [[nodiscard]] SphericalSolution SolveFromRotation(
-	const Mat3d& R_target ) const;
+	const Mat3d& R_target,
+    std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
 // Returns first found solution
 [[nodiscard]] SphericalSolution SolveFromTwoVectors(
@@ -60,6 +61,8 @@ Model::SphericalModel model_;
 double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
 double LimitViolationCost( const Vec3d& angles, double violation_weight ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
+double RotationErrorCost( const Mat3d& R_target, const Vec3d& angles ) const;
+double FKErrorCost( const Vec3d& p_tcp, const Vec3d& p_target, const Vec3d& angles ) const;
 
 SphericalSolutionBranch GridSearch( const CostFn& f ) const;
 SphericalSolutionBranch FirstSolutionSearch( const CostFn& f ) const;

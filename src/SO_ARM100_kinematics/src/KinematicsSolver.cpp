@@ -1,7 +1,7 @@
 #include "KinematicsSolver.hpp"
 
 #include "Global.hpp"
-#include "HybridSolver/HybridSolver.hpp"
+#include "PipelineSolver/PipelineSolver.hpp"
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/Twist.hpp"
 #include "Model/KinematicModel.hpp"
@@ -132,7 +132,7 @@ void KinematicsSolver::Initialize(
 
 void KinematicsSolver::Initialize(
 	Model::KinematicModelConstPtr model,
-	const Solver::HybridSolver& solver,
+	const Solver::PipelineSolver& solver,
 	double search_discretization )
 {
 	model_ = model;

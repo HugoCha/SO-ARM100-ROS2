@@ -86,11 +86,12 @@ std::vector< Vec3d > SphericalModel::Decompose( const Mat3d& R_target ) const
 
     double C = a1.transpose() * R_target * a3;
     double K = C - cache_.gamma;
-    double psi = std::asin( K / ( cache_.R + 1e-9 ) );
-
-    if ( K * K > cache_.R_sq )
+    
+    if ( K * K > cache_.R_sq + 1e-6 )
         return ComputeClosest( R_target, K );
 
+    double K_clamped = std::clamp( K, -cache_.R, cache_.R );
+    double psi = std::asin( K_clamped / ( cache_.R + 1e-9 ) );
     double theta2_sol1 = WrapAngle( cache_.phi + psi );
     double theta2_sol2 = WrapAngle( cache_.phi + M_PI - psi );
 
