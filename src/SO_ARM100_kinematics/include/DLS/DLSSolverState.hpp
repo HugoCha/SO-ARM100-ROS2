@@ -8,7 +8,6 @@ enum class DLSSolverState
 	Improving,
 	BestPossible,
 	Stalled,
-	MaxRestart,
 	MaxIterations,
 	Failed,
 	Unreachable

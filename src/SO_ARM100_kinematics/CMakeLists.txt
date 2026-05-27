@@ -52,6 +52,7 @@ if(BUILD_TESTING)
 
   add_library(${PROJECT_NAME}_test_utils STATIC
     test/Data/src/RobotModelTestData.cpp
+    test/Data/src/DLSGradientDescent.cpp
   )
 
   target_include_directories(${PROJECT_NAME}_test_utils PUBLIC

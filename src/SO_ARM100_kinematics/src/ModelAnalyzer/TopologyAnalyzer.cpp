@@ -33,9 +33,7 @@ KinematicTopology TopologyAnalyzer::Analyze( const Model::JointChain& chain, con
 		topology.Add( *wrist_group );
 
 	if ( planar_group )
-	{
 		topology.Add( *planar_group );
-	}
 
 	return topology;
 }

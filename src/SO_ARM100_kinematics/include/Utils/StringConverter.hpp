@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DLS/DLSSolver.hpp"
 #include <ostream>
 
 namespace SOArm100::Kinematics
@@ -60,5 +61,6 @@ enum class IKSolverState;
 std::ostream& operator << ( std::ostream& os, const IKProblem& obj );
 std::ostream& operator << ( std::ostream& os, const IKSolution& obj );
 std::ostream& operator << ( std::ostream& os, const IKSolverState& obj );
+std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters& obj );
 }
 }

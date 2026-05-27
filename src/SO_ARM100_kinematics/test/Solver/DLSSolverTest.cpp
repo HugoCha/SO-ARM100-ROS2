@@ -1,8 +1,10 @@
+#include "DLSGradientDescent.hpp"
 #include "Global.hpp"
 
 #include "DLS/DLSSolver.hpp"
 
 #include "RobotModelTestData.hpp"
+#include "DLSGradientDescent.hpp"
 #include "KinematicTestBase.hpp"
 
 #include "Model/KinematicModel.hpp"
@@ -11,9 +13,11 @@
 #include "Solver/IKSolverState.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <Eigen/src/Geometry/Quaternion.h>
+#include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
@@ -71,6 +75,30 @@ void SetUp() override
 void TearDown() override
 {
 	solver_.reset();
+}
+
+std::unique_ptr< Solver::DLSSolver > CreateSolver( Model::KinematicModelConstPtr model )
+{
+	Solver::DLSSolver::SolverParameters parameters;
+
+	parameters.error_tolerance = DEFAULT_TOLERANCE;
+
+	parameters.rotation_weight        = 1;
+	parameters.translation_weight     = 9;
+
+	parameters.max_iterations         = 100;
+	parameters.max_stalle_iterations  = 5;
+
+	parameters.min_step               = 0.05;
+	parameters.max_step               = 1.0;
+	parameters.line_search_factor     = 0.5;
+
+	parameters.min_damping            = 0.01;
+	parameters.max_damping            = 0.2;
+	parameters.max_dq                 = 0.5;
+	parameters.min_sv_tolerance       = 0.001;
+
+	return std::make_unique< Solver::DLSSolver >( model, parameters );
 }
 
 random_numbers::RandomNumberGenerator rng_;
@@ -553,5 +581,137 @@ TEST_F( DLSSolverTest, Configuration_GetAndSet )
 }
 
 // ------------------------------------------------------------
+// Test All Configurations
+// ------------------------------------------------------------
 
+TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
+{
+	int NUM_TEST = 100;
+	
+	for ( const auto& robot : Data::GetAllRobots() )
+	{
+		double average_iterations = 0;
+		double average_error = 0;
+		int k_successes = 0;
+		for ( int i = 0; i < NUM_TEST; ++i )
+		{
+			VecXd joints = robot.second->GetChain()->RandomValidJoints( rng_ );
+			VecXd good_seed = robot.second->GetChain()->RandomValidJointsNear( rng_, joints, 0.3 );
+
+			auto problem = CreateProblem( robot.second, good_seed, joints );
+			auto solver = CreateSolver( robot.second );
+			auto result = solver->Solve( problem, Solver::IKRunContext() );
+
+			average_iterations += result.iterations / ( double )NUM_TEST;
+
+			if ( !result.Success() )
+			{
+				Mat4d result_pose = ComputeFK( result.joints );
+
+				// std::cout 
+				// 		<< "Fail to converge for robot " << robot.first << std::endl
+				// 		<< "Iterations " << result.iterations << std::endl
+				// 		<< "Error " << result.error << std::endl
+				// 		<< "Joints = " << joints.transpose() << std::endl
+				// 		<< "Target = " << std::endl << problem.target << std::endl
+				// 		<< "Result = " << std::endl << result_pose << std::endl;
+			}
+			else 
+			{
+				k_successes++;
+			}
+			average_error += result.error / ( double )NUM_TEST;
+			average_iterations += result.iterations / ( double )NUM_TEST;
+		}
+
+		if ( average_error > error_tolerance )
+		{
+			std::cout << "Average error fail for robot " << robot.first 
+					  << " : " << average_error <<std::endl;
+		}
+		if ( average_iterations > 10 )
+		{
+			std::cout << "Average iteration fail for robot " << robot.first 
+					  << " : " << average_iterations <<std::endl;
+		}
+		if ( k_successes < 0.99 * NUM_TEST )
+		{
+			std::cout << "Fail to converge too many times for robot " << robot.first 
+					  << " : " << NUM_TEST - k_successes <<std::endl;
+		}
+	}
+}
+
+// ------------------------------------------------------------
+// Gradient Descent
+// ------------------------------------------------------------
+
+TEST_F( DLSSolverTest, SolverParameters_FindOptimal )
+{
+	auto initial_sp = Solver::DLSSolver::SolverParameters();
+
+    initial_sp.max_iterations = 200;
+    initial_sp.min_step = 0.1;
+    initial_sp.max_step = 0.9;
+    initial_sp.line_search_factor = 0.8;
+    initial_sp.min_damping = 0.05;
+    initial_sp.max_damping = 0.75;
+    initial_sp.max_dq = 0.75;
+	initial_sp.min_sv_tolerance = 0.001;
+    initial_sp.max_stalle_iterations = 3;
+    initial_sp.translation_weight  = 9;
+    initial_sp.rotation_weight = 1;
+
+	DLSGradientDescent descent( 500 );
+	DLSGradientDescent::Parameters p;
+	p.iterations = 1000;
+	// p.learning_rate = 0.5;
+	p.noise_percent = 1.0;
+	
+	//auto sp = initial_sp;
+	//auto sp = descent.Run( p );
+	auto sp = descent.RandomizedSearch( initial_sp, p );
+	double loss = descent.ComputeLoss( sp );
+	std::cout << "Loss with Randomized Batch 1 = " << loss << std::endl;
+	std::cout << "Parameters = " << sp << std::endl;
+
+	double avg_loss = 0.0;
+	for ( int i = 0; i < 10; i++ )
+	{
+		DLSGradientDescent descent( 1000 );
+		double loss = descent.ComputeLoss( sp );
+		std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+		avg_loss += loss / ( double )10;
+	}
+	std::cout << "Average Loss = " << avg_loss << std::endl;
+
+	// p.noise_percent = 0.25;
+	// sp = descent.RandomizedSearch( sp, p );
+	// loss = descent.ComputeLoss( sp );
+	// std::cout << "Loss with Randomized Batch 2 = " << loss << std::endl;
+	// std::cout << "Parameters = " << sp << std::endl;
+
+	// for ( int i = 0; i < 10; i++ )
+	// {
+	// 	DLSGradientDescent descent( 50 );
+	// 	loss = descent.ComputeLoss( sp );
+	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+	// }
+
+	// p.noise_percent = 0.125;
+	// sp = descent.RandomizedSearch( sp, p );
+	// loss = descent.ComputeLoss( sp );
+	// std::cout << "Loss with Randomized Batch 3 = " << loss << std::endl;
+	// std::cout << "Parameters = " << sp << std::endl;
+
+	// for ( int i = 0; i < 10; i++ )
+	// {
+	// 	DLSGradientDescent descent( 50 );
+	// 	loss = descent.ComputeLoss( sp );
+	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+	// }
+}
+
+// ------------------------------------------------------------
+	
 }

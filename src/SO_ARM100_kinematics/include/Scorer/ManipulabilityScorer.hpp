@@ -6,18 +6,10 @@
 
 namespace SOArm100::Kinematics::Scorer
 {
-class PoseErrorScorer : public IKSolutionScorer
+class ManipulabilityScorer : public IKSolutionScorer
 {
 public:
-struct ScorerParameters
-{
-double error_tolerance { SOArm100::Kinematics::error_tolerance };
-double violation_penalty { 1e3 };
-};
-
-PoseErrorScorer( 
-    Model::KinematicModelConstPtr model, 
-    ScorerParameters parameters );
+ManipulabilityScorer( Model::KinematicModelConstPtr model );
 
 virtual double Score(
 	const Solver::IKProblem& problem,
@@ -25,6 +17,9 @@ virtual double Score(
 
 private:
 Model::KinematicModelConstPtr model_;
-ScorerParameters parameters_;
+double max_manip_;
+
+static double ComputeMaxManipulability( Model::KinematicModelConstPtr model );
+static double ComputeManipulability( Model::KinematicModelConstPtr model, const VecXd& joints );
 };
 }

@@ -248,7 +248,6 @@ std::ostream& operator << ( std::ostream& os, const IKSolverState& obj )
 		case IKSolverState::BestPossible: os << "Best Possible"; break;
 		case IKSolverState::Converged: os << "Converged"; break;
 		case IKSolverState::MaxIterations: os << "Max Iterations"; break;
-		case IKSolverState::MaxRestart: os << "Max Restart"; break;
 		case IKSolverState::NotRun: os << "Not Run"; break;
 		case IKSolverState::Unreachable: os << "Unreachable"; break;
 	}
@@ -265,6 +264,27 @@ std::ostream& operator << ( std::ostream& os, const IKSolution& obj )
 	os << "Iter : " << obj.iterations << std::endl;
 	os << "Score: " << obj.score << std::endl;
 	os << "Joint: " << obj.joints.transpose();
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters& obj )
+{
+	os << "Solver Parameters" << std::endl;
+	os << "Max iter        = " << obj.max_iterations << std::endl;
+	os << "Max stalle iter = " << obj.max_stalle_iterations << std::endl;
+	os << "Error tol       = " << obj.error_tolerance << std::endl;
+	os << "Gradient tol    = " << obj.gradient_tolerance << std::endl;
+	os << "Min damping     = " << obj.min_damping << std::endl;
+	os << "Max damping     = " << obj.max_damping << std::endl;
+	os << "Min step        = " << obj.min_step << std::endl;
+	os << "Max step        = " << obj.max_step << std::endl;
+	os << "Line search     = " << obj.line_search_factor << std::endl;
+	os << "Min SV tol      = " << obj.min_sv_tolerance << std::endl;
+	os << "Max dq          = " << obj.max_dq << std::endl;
+	os << "Translation w   = " << obj.translation_weight << std::endl;
+	os << "Rotation w      = " << obj.rotation_weight << std::endl;
 	return os;
 }
 

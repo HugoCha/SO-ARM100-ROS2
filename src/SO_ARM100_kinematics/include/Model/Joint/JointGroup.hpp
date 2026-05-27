@@ -71,12 +71,19 @@ struct PrismaticBaseJointGroup : public JointGroup
 
 struct PlanarNRJointGroup : public JointGroup
 {
-	PlanarNRJointGroup( int start, int count, const Mat4d& home ) :
+	PlanarNRJointGroup( 
+		int start, 
+		int count, 
+		const Mat4d& home ) :
 		JointGroup( planarNR_name, EnumerateIndices( start, count ), home )
 	{
 	}
 
-	PlanarNRJointGroup( int sub_planar_index, int start, int count, const Mat4d& home ) :
+	PlanarNRJointGroup( 
+		int sub_planar_index, 
+		int start, 
+		int count, 
+		const Mat4d& home ) :
 		JointGroup( planarNR_name + std::to_string( sub_planar_index ), EnumerateIndices( start, count ), home )
 	{
 	}

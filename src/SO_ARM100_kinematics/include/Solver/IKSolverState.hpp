@@ -8,7 +8,6 @@ enum class IKSolverState
 {
 	Converged,
 	BestPossible,
-	MaxRestart,
 	MaxIterations,
 	NotRun,
 	Unreachable

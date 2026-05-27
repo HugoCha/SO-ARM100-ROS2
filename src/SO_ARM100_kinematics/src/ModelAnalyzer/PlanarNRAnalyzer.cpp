@@ -47,7 +47,10 @@ std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
 		planar_home = GetJointOriginTransform( chain, start_idx + N );
 	}
 
-	return PlanarNRJointGroup( start_idx, N, planar_home );
+	return PlanarNRJointGroup( 
+		start_idx, 
+		N, 
+		planar_home );
 }
 
 // ------------------------------------------------------------

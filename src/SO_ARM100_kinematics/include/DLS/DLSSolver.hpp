@@ -17,18 +17,18 @@ class DLSSolver : public Model::IKModelBase, public IKSolverBase
 public:
 struct SolverParameters
 {
-	int max_iterations{ 400 };
+	int max_iterations{ 150 };
 	double error_tolerance{ SOArm100::Kinematics::error_tolerance };
 	double gradient_tolerance { SOArm100::Kinematics::gradient_tolerance };
-	double min_step{ 0.05 };
-	double max_step{ 1.0 };
-	double line_search_factor { 0.5 };
-	double min_damping{ 0.001 };
-	double max_damping{ 0.8 };
-	double max_dq { 0.25 };
+	double min_step{ 0.1 };
+	double max_step{ 0.9 };
+	double line_search_factor { 0.85 };
+	double min_damping{ 0.05 };
+	double max_damping{ 0.45 };
+	double max_dq { 0.8 };
 	double min_sv_tolerance{ 0.001 };
-	int max_stalle_iterations{ 6 };
-	double translation_weight{ 10.0 };
+	int max_stalle_iterations{ 3 };
+	double translation_weight{ 9.0 };
 	double rotation_weight{ 1.0 };
 
 	[[nodiscard]] constexpr double RotationWeightSqrt() const noexcept {

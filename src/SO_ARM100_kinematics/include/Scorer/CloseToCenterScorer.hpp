@@ -5,10 +5,10 @@
 
 namespace SOArm100::Kinematics::Scorer
 {
-class CloseToSeedScorer : public IKSolutionScorer
+class CloseToCenterScorer : public IKSolutionScorer
 {
 public:
-CloseToSeedScorer( Model::KinematicModelConstPtr model );
+CloseToCenterScorer( Model::KinematicModelConstPtr model );
 
 virtual double Score(
 	const Solver::IKProblem& problem,

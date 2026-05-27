@@ -5,8 +5,10 @@
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <condition_variable>
+#include <iostream>
 
 namespace SOArm100::Kinematics::Solver
 {
@@ -43,22 +45,20 @@ IKSolution PipelineSolver::Solve(
 				problem,
 				context );
 
-			if ( solution.state != IKSolverState::NotRun )
-				solution.score = scorer_->Score( problem, solution );
-
 			{
 				std::lock_guard< std::mutex > lock( sync_params.mtx );
 				if ( solution.score < result.score )
 					result = solution;
-			}
+				//std::cout << "Solution Candidate = \n" << solution << std::endl;
 
-			if ( CanStopPipelines( solution ) )
-			{
-				sync_params.early_result = true;
-				StopPipelines( context );
-			}
+				if ( CanStopPipelines( solution ) )
+				{
+					sync_params.early_result = true;
+					StopPipelines( context );
+				}
 
-			sync_params.completed_count++;
+				sync_params.completed_count++;
+			}
 			sync_params.cv.notify_all();
 		};
 
@@ -117,7 +117,8 @@ IKSolution PipelineSolver::RunAndScorePipeline(
 {
 	auto solution = pipeline.get()->Run( problem, context );
 
-	if ( solution.state != IKSolverState::NotRun )
+	if ( solution.state != IKSolverState::NotRun && 
+		 solution.state != IKSolverState::Unreachable )
 		solution.score = scorer_->Score( problem, solution );
 
 	return solution;
@@ -149,6 +150,7 @@ void PipelineSolver::WaitPipelines(
 			} );
 		break;
 	}
+	lock.unlock();
 
 	for ( auto& t : pipeline_threads )
 	{
