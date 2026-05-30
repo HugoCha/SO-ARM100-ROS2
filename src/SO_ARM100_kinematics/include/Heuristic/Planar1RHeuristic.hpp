@@ -9,7 +9,7 @@ namespace SOArm100::Kinematics::Heuristic
 {
 class Joint;
 
-class Planar1RHeuristic : public Model::IKJointGroupModelBase, IIKHeuristic
+class Planar1RHeuristic : public Model::IKJointGroupModelBase, public IIKHeuristic
 {
 public:
 Planar1RHeuristic(

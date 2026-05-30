@@ -71,7 +71,7 @@ IKPresolution Planar1RHeuristic::Presolve(
 
 	// Unreachable
 	if ( D > L() )
-		return {{}, IKHeuristicState::Fail };
+		return {seed, IKHeuristicState::Fail };
 
     double value = SignedAngle( 
         reference_direction_, 

@@ -5,6 +5,7 @@
 #include "Model/IKModelBase.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/Distance.hpp"
 
 #include <stdexcept>
 
@@ -27,6 +28,7 @@ IKJointGroupModelBase::IKJointGroupModelBase(
 		successor_ = ComputeSuccessorJointGroup( model, group );
 		auto home_in_tip = ComputeHomeInTipTransform( model, group );
 		home_in_tip_inv_ = Inverse( home_in_tip );
+		group_max_reach_ = ComputeGroupMaxReach( model, group );
 	}
 	else
 	{
@@ -81,40 +83,41 @@ bool IKJointGroupModelBase::ComputeGroupJointStatesFK(
 	std::vector< Model::JointState >& states,
 	Mat4d& fk ) const
 {
-	// const int n_joints = joints.size();
-	// const int n_model_joints = GetChain()->GetActiveJointCount();
-	// const int n_group_joints = GetGroup().Size();
+	const int n_joints = joints.size();
+	const int n_model_joints = GetChain()->GetActiveJointCount();
+	const int n_group_joints = GetGroup().Size();
 
-	// if ( states.size() < n_group_joints )
-	// 	states.resize( GetGroup().Size() );
+	if ( states.size() < n_group_joints )
+		throw std::invalid_argument( "Joints state size mismatch" );
 
-	// if ( n_joints != n_model_joints )
-	// 	throw std::invalid_argument( "Joints size mismatch" );
+	if ( n_joints != n_model_joints )
+		throw std::invalid_argument( "Joints size mismatch" );
 
-	// if ( !GetChain()->WithinLimits( joints.topRows( GetGroup().LastIndex() + 1 ) ) )
-	// 	return false;
+	if ( !GetChain()->WithinLimits( joints.topRows( GetGroup().LastIndex() + 1 ) ) )
+		return false;
 
-	// Mat4d T_cumul = to_local_transform;
+	Mat4d T_cumul = to_local_transform;
 
-	// int state_index = 0;
-	// for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
-	// {
-	// 	const auto& joint = GetActiveJoint( i );
+	int state_index = 0;
+	for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
 
-	// 	if ( GetGroup().indices.contains( i ) )
-	// 	{
-	// 		states[state_index].pose  = joint->Pose( T_cumul );
-	// 		states[state_index].value = joints[i];
-	// 		state_index++;
-	// 	}
+		if ( GetGroup().indices.contains( i ) )
+		{
+			auto joint_pose = joint->Pose( T_cumul );
+			states[state_index].Origin()  = joint_pose.origin;
+			states[state_index].Axis()  = joint_pose.axis;
+			states[state_index].Value() = joints[i];
+			state_index++;
+		}
 
-	// 	const auto& twist = joint->GetTwist();
-	// 	T_cumul *= twist.ExponentialMatrix( joints[i] );
-	// }
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( joints[i] );
+	}
 
-	// fk.noalias() = T_cumul * GetGroup().tip_home;
-	// return true;
-	return false;
+	fk.noalias() = T_cumul * GetGroup().tip_home;
+	return true;
 }
 
 // ------------------------------------------------------------
@@ -256,6 +259,29 @@ Mat4d IKJointGroupModelBase::ComputeHomeInTipTransform(
 	const Model::JointGroup& group )
 {
 	return model->GetHomeConfiguration() * Inverse( group.tip_home );
+}
+
+// ------------------------------------------------------------
+
+double IKJointGroupModelBase::ComputeGroupMaxReach( 
+	const KinematicModelConstPtr& model, 
+	const JointGroup& group )
+{
+    double max_reach = 0.0;
+	const auto& chain = model->GetChain();
+    for ( int i = 0; i < group.Size() - 1; i++ )
+    {
+        auto joint = chain->GetActiveJoint( group.Index( i ) );
+        auto next_joint = chain->GetActiveJoint( group.Index( i + 1 ) );
+        max_reach += Utils::Distance( joint->Origin(), next_joint->Origin() );
+    }
+
+    auto last_joint = chain->GetActiveJoint( group.LastIndex() );
+    max_reach += Utils::Distance( 
+        last_joint->Origin(), 
+        Translation( group.tip_home ) );
+
+	return max_reach;
 }
 
 // ------------------------------------------------------------

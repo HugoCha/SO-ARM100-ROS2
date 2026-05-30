@@ -448,7 +448,7 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations )
 
 		auto result = CheckConvergenceNoFailure( model_, parameters, seed, joints );
 
-		avg_error+= result.score / ( double )kTrials;
+		avg_error+= result.error / ( double )kTrials;
 		avg_iter += result.iterations / ( double )kTrials;
 	}
 
@@ -477,7 +477,7 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations_AllRobots )
 
 			auto result = CheckConvergenceNoFailure( robot.second, parameters, seed, joints );
 
-			avg_error+= result.score / ( double )kTrials;
+			avg_error+= result.error / ( double )kTrials;
 			avg_iter += result.iterations / ( double )kTrials;
 		}
 

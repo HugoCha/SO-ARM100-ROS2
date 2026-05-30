@@ -77,9 +77,8 @@ const Vec3d TransformAxis( const Mat4d& transform ) const {
 
 const struct Pose Pose( const Mat4d& transform ) const {
 	struct Pose pose;
-	Vec4d origin_homogenous = link_->GetJointOrigin().block< 4, 1 >( 0, 3 );
 	pose.axis = Rotation( transform ) * Axis();
-	pose.origin = ( transform * origin_homogenous ).head( 3 );
+	pose.origin = ( transform * Origin().homogeneous() ).head( 3 );
 	return pose;
 }
 

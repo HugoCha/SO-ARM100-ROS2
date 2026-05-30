@@ -85,7 +85,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 
 	// Unreachable
 	if ( D > L1 + L2 || D < std::abs( L1 - L2 ) )
-		return {{}, IKHeuristicState::Fail }
+		return {seed, IKHeuristicState::Fail }
 	;
 
 	VecXd elbow_up_solution( 2 );
@@ -97,7 +97,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 	double elbow_up = M_PI - beta;
 	double elbow_down = -elbow_up;
 
-	// Soulder
+	// Shoulder
 	double alpha_target  = std::atan2( y_local, x_local );
 	double cos_alpha_int = ( L1 * L1 + D_squared - L2 * L2 ) / ( 2.0 * L1 * D );
 	double alpha_int = std::acos( cos_alpha_int );
@@ -111,8 +111,13 @@ IKPresolution Planar2RHeuristic::Presolve(
 	elbow_down_solution[1] = elbow_down;
 
 	VecXd planar_seed = GetGroup().GetGroupJoints( problem.seed );
-	if ( !ValidateAndSelectElbowConfiguration( planar_seed, elbow_up_solution, elbow_down_solution, planar_solution ) )
+	if ( !ValidateAndSelectElbowConfiguration( 
+			planar_seed, 
+			elbow_up_solution, 
+			elbow_down_solution, 
+			planar_solution ) )
 	{
+		GetGroup().SetGroupJoints( planar_solution, seed );
 		return { seed, IKHeuristicState::PartialSuccess };
 	}
 
@@ -154,9 +159,7 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 		return true;
 	}
 
-	double elbow_up_distance   = ( elbow_up - planar_seed ).cwiseAbs().sum();
-	double elbow_down_distance = ( elbow_down - planar_seed ).cwiseAbs().sum();
-	solution = elbow_up_distance < elbow_down_distance ? elbow_up : elbow_down;
+	solution = ( planar_seed[1] >= 0.0 ) ? elbow_up : elbow_down;
 	return true;
 }
 

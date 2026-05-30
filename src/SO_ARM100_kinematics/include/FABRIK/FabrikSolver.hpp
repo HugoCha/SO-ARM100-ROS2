@@ -2,8 +2,7 @@
 
 #include "Global.hpp"
 
-#include "Model/IKJointGroupModelBase.hpp"
-#include "Model/Joint/JointGroup.hpp"
+#include "Model/IKModelBase.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
@@ -15,7 +14,7 @@
 namespace SOArm100::Kinematics::Solver
 {
 class FABRIKSolver :
-	public Model::IKJointGroupModelBase,
+	public Model::IKModelBase,
 	public IKSolverBase
 {
 public:
@@ -38,11 +37,6 @@ struct SolverParameters
 
 explicit FABRIKSolver(
 	Model::KinematicModelConstPtr model,
-	SolverParameters parameters = SolverParameters() );
-
-explicit FABRIKSolver(
-	Model::KinematicModelConstPtr model,
-	Model::JointGroup joint_group,
 	SolverParameters parameters = SolverParameters() );
 
 ~FABRIKSolver() = default;

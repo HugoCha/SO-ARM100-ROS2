@@ -3,7 +3,6 @@
 #include "Global.hpp"
 
 #include "FABRIK/FabrikAnalyzer.hpp"
-#include "Model/IKJointGroupModelBase.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/Skeleton/ArticulationType.hpp"
 #include "Model/Skeleton/BoneState.hpp"
@@ -40,22 +39,9 @@ static rclcpp::Logger get_logger()
 
 FABRIKSolver::FABRIKSolver(
 	Model::KinematicModelConstPtr model,
-	Model::JointGroup group,
 	SolverParameters parameters ) :
-	Model::IKJointGroupModelBase( model, group ),
+	Model::IKModelBase( model ),
 	parameters_( parameters )
-{
-}
-
-// ------------------------------------------------------------
-
-FABRIKSolver::FABRIKSolver(
-	Model::KinematicModelConstPtr model,
-	SolverParameters parameters ) :
-	FABRIKSolver(
-		model,
-		Model::JointGroup::CreateFromRange( "full", 0, model->GetChain()->GetActiveJointCount(), model->GetHomeConfiguration() ),
-		parameters )
 {
 }
 
@@ -86,8 +72,7 @@ IKSolution FABRIKSolver::Solve(
 
 	Model::SkeletonState skeleton_state( skeleton );
 
-	Mat4d group_target = ComputeGroupWorldTarget( problem.seed, problem.target );
-	const Vec3d p_target = Translation( group_target );
+	const Vec3d p_target = Translation( problem.target );
 	const Vec3d p_base = skeleton->Articulation( 0 )->Center();
 
 	skeleton_state.SetState( problem.seed );
@@ -158,11 +143,8 @@ std::vector< Model::BoneState > FABRIKSolver::ComputeBoneStates(
 {
 	auto bone_states = skeleton_state.GetBoneStates();
 
-	// if ( skeleton_state.GetSkeleton()->ArticulationCount() > skeleton_state.GetSkeleton()->BonesCount() )
-	{
-		auto final_bone_state = Model::BoneState( bone_states.back().Origin() + bone_states.back().Direction(), Vec3d::Zero() );
-		bone_states.emplace_back( final_bone_state );
-	}
+	auto final_bone_state = Model::BoneState( bone_states.back().Origin() + bone_states.back().Direction(), Vec3d::Zero() );
+	bone_states.emplace_back( final_bone_state );
 
 	return bone_states;
 }
