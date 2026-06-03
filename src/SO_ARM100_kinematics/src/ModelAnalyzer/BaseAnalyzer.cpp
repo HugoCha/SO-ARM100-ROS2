@@ -27,6 +27,12 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 
 	if ( base_joint->IsRevolute() )
 	{
+		Vec3d p_tip_home = Translation( tip_home );
+
+		// If wrist center at home is along base axis
+		if ( p_tip_home.cross( base_joint->Axis() ).norm() < epsilon )
+			return std::nullopt;
+
 		return RevoluteBaseJointGroup( tip_home );
 	}
 	else if ( base_joint->IsPrismatic() )

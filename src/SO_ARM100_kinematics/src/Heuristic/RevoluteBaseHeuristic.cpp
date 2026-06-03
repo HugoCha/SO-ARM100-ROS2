@@ -9,6 +9,8 @@
 #include "Solver/IKProblem.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
+#include "Utils/StringConverter.hpp"
+#include <algorithm>
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -20,33 +22,55 @@ RevoluteBaseHeuristic::RevoluteBaseHeuristic(
 	const Model::JointGroup& revolute_base_group ) :
 	Model::IKJointGroupModelBase( model, revolute_base_group )
 {
-	reference_direction_ = ComputeReferenceDirection();
+	auto base_joint = GetBaseJoint();
+	
+	if ( !base_joint )
+	{
+		reference_direction_ = Vec3d::Zero();
+		return;
+	}
+	
+	const auto& base_link = base_joint->GetLink();
+	
+	Vec3d omega_b = base_joint->Axis();
+
+	Mat4d tip_home = GetGroup().tip_home;
+	Vec3d wc0 = Translation( tip_home );
+	Vec3d wc0_proj = ComputeDirection( tip_home );
+	
+	if ( wc0_proj.norm() > epsilon )
+	{
+		Vec3d omega_s = GetShoulderJoint()->Axis();
+
+		Vec3d O_b = base_joint->Origin();
+		Vec3d O_s = GetShoulderJoint()->Origin();
+
+		shoulder_offset_ = std::abs( omega_s.dot( O_s - O_b ) );
+	}
+	else
+	{
+		shoulder_offset_ = 0.0;
+	}
+
+	double beta0 = ComputeBeta( shoulder_offset_, wc0_proj );
+	auto correction = AngleAxis( -beta0, omega_b );
+	reference_direction_ = ( correction * wc0_proj ).normalized();
+	up_direction_ = omega_b.cross( reference_direction_ ).normalized();
 }
 
 // ------------------------------------------------------------
 
 const Model::Joint* RevoluteBaseHeuristic::GetBaseJoint() const
 {
-	return model_->GetChain()->GetActiveJoint( GetGroup().FirstIndex() ).get();
+	return GetChain()->GetActiveJoint( GetGroup().FirstIndex() ).get();
 }
 
 // ------------------------------------------------------------
 
-Vec3d RevoluteBaseHeuristic::ComputeReferenceDirection() const
+
+const Model::Joint* RevoluteBaseHeuristic::GetShoulderJoint() const
 {
-	auto base_joint = GetBaseJoint();
-	if ( !base_joint )
-		return Vec3d::Zero();
-
-	Mat4d tip_home = GetGroup().tip_home;
-	Vec3d reference_direction = ComputeDirection( tip_home );
-
-	if ( reference_direction.norm() < epsilon )
-	{
-		return Vec3d::Zero();
-	}
-
-	return reference_direction.normalized();
+	return GetChain()->GetActiveJoint( GetGroup().FirstIndex() + 1 ).get();
 }
 
 // ------------------------------------------------------------
@@ -56,12 +80,36 @@ Vec3d RevoluteBaseHeuristic::ComputeDirection( const Mat4d& T_tip ) const
 	const auto& p_tip = Translation( T_tip );
 	const auto& base_origin =  GetBaseJoint()->Origin();
 	const auto& base_axis = GetBaseJoint()->Axis();
-	Vec3d direction = ProjectPointOnPlane( p_tip, base_origin, base_axis );
+	Vec3d direction = ProjectPointOnPlane( p_tip, base_origin, base_axis ) - base_origin;
 
 	if ( direction.norm() < epsilon )
 		return Vec3d::Zero();
 
-	return direction.normalized();
+	return direction;
+}
+
+// ------------------------------------------------------------
+
+double RevoluteBaseHeuristic::ComputeAlpha(  
+	const Vec3d& ref_direction, 
+	const Vec3d& up_direction, 
+	const Vec3d& r_proj )
+{
+	Vec3d r_proj_dir = r_proj.normalized();
+	double s_theta = r_proj.dot( up_direction );
+	double c_theta = r_proj.dot( ref_direction );
+	return atan2( s_theta, c_theta );
+}
+
+// ------------------------------------------------------------
+
+double RevoluteBaseHeuristic::ComputeBeta( 
+	double shoulder_offset, 
+	const Vec3d& r_proj )
+{
+	return ( r_proj.norm() > epsilon ) ? 
+		std::asin( std::clamp( shoulder_offset / r_proj.norm(), -1.0, 1.0 ) ) : 
+		0.0;
 }
 
 // ------------------------------------------------------------
@@ -78,30 +126,74 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 
 	auto wrist_center = ComputeGroupWorldTarget( problem.seed, problem.target );
 
-	const Vec3d& omega = base_joint->Axis();
+	const Vec3d& p_wrist_center = Translation( wrist_center );
 	const Vec3d& r_proj = ComputeDirection( wrist_center );
+	double R = r_proj.norm();
 
-	if ( r_proj.norm() > epsilon )
+	if ( R > epsilon )
 	{
-		double s_theta = omega.dot( reference_direction_.cross( r_proj ) );
-		double c_theta = reference_direction_.dot( r_proj );
+		if ( R + epsilon < std::abs( shoulder_offset_ ) )
+		{
+			presolution.joints = problem.seed;
+			presolution.state = IKHeuristicState::Fail;
+			return presolution;
+		}
 
-		double theta = atan2( s_theta, c_theta );
-		const auto& candidates = EvaluateAngleCandidates( *base_joint, problem.seed[0], theta );
+		double alpha = ComputeAlpha( reference_direction_, up_direction_, r_proj );
+		double beta = ComputeBeta( shoulder_offset_, r_proj );
+
+		auto candidates = EvaluateCandidates( problem.seed[0], alpha, beta );
 		if ( !candidates.empty() )
 		{
 			presolution.joints = problem.seed;
-			presolution.joints[0] = candidates[0];
+			VecXd base_value( 1 );
+			base_value[0] = candidates[0];
+			GetGroup().SetGroupJoints( base_value, presolution.joints );
 			presolution.state = IKHeuristicState::Success;
 		}
 		else
 		{
-			presolution.joints = {};
+			presolution.joints = problem.seed;
 			presolution.state = IKHeuristicState::Fail;
 		}
 	}
 
+	std::cout << "Revolute = \n" << presolution << std::endl;
 	return presolution;
+}
+
+// ------------------------------------------------------------
+
+std::vector< double > RevoluteBaseHeuristic::EvaluateCandidates(
+	double seed,
+	double alpha,
+	double beta ) const
+{
+	const auto* base_joint = GetBaseJoint();
+	const auto& limits = base_joint->GetLimits();
+
+	double candidate1 = WrapAngle( alpha - beta );
+	double candidate2 = WrapAngle( alpha - beta + M_PI );
+
+	bool isvalid1 = limits.Within( candidate1 );
+	bool isvalid2 = limits.Within( candidate2 );
+
+	if ( isvalid1 && !isvalid2 )
+	{
+		return { candidate1 };
+	}
+	else if ( !isvalid1 && isvalid2 )
+	{
+		return { candidate2 };
+	}
+	else if ( !isvalid1 && !isvalid2 )
+	{
+		return {};
+	}
+
+	return std::abs( candidate1 - seed ) < std::abs( candidate2 - seed ) ?
+	       std::vector< double >{ candidate1, candidate2 } :
+	       std::vector< double >{ candidate2, candidate1 };
 }
 
 // ------------------------------------------------------------

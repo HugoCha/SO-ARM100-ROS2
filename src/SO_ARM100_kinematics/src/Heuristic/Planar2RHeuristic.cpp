@@ -9,6 +9,7 @@
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/MathUtils.hpp"
 
 #include <cmath>
 
@@ -22,7 +23,8 @@ Planar2RHeuristic::Planar2RHeuristic(
 	Model::JointGroup planar_group ) :
 	Model::IKJointGroupModelBase( model, planar_group ),
 	reference_direction_( ComputeReferenceDirection( model, planar_group ) ),
-	up_direction_( ComputeUpDirection( reference_direction_, model, planar_group ) )
+	up_direction_( ComputeUpDirection( reference_direction_, model, planar_group ) ),
+	elbow_offset_( ComputeElbowHomeOffset( model, planar_group ) )
 {
 }
 
@@ -32,9 +34,14 @@ Vec3d Planar2RHeuristic::ComputeReferenceDirection(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup planar_group )
 {
-	Vec3d p_shoulder = model->GetChain()->GetActiveJoint( planar_group.FirstIndex() )->Origin();
-	Vec3d p_elbow    = model->GetChain()->GetActiveJoint( planar_group.Index( 1 ) )->Origin();
-	return ( p_elbow - p_shoulder ).normalized();
+	auto shoulder_joint = model->GetChain()->GetActiveJoint( planar_group.FirstIndex() );
+	auto elbow_joint = model->GetChain()->GetActiveJoint( planar_group.Index( 1 ) );
+
+	Vec3d plane_normal = shoulder_joint->Axis();
+	Vec3d p_shoulder = shoulder_joint->Origin();
+	Vec3d p_elbow 	 = elbow_joint->Origin();
+
+	return ProjectPointOnPlane( p_elbow - p_shoulder, Vec3d::Zero(), plane_normal ).normalized();
 }
 
 // ------------------------------------------------------------
@@ -50,16 +57,52 @@ Vec3d Planar2RHeuristic::ComputeUpDirection(
 
 // ------------------------------------------------------------
 
+double Planar2RHeuristic::ComputeElbowHomeOffset(
+    Model::KinematicModelConstPtr model,
+    const Model::JointGroup planar_group )
+{
+    auto shoulder_joint = model->GetChain()->GetActiveJoint( planar_group.FirstIndex() );
+    auto elbow_joint    = model->GetChain()->GetActiveJoint( planar_group.Index( 1 ) );
+
+    Vec3d plane_normal = shoulder_joint->Axis();
+
+    Vec3d p_shoulder = shoulder_joint->Origin();
+    Vec3d p_elbow    = elbow_joint->Origin();
+    Vec3d p_tip      = Translation( planar_group.tip_home );
+
+    Vec3d v1 = ProjectPointOnPlane( p_elbow - p_shoulder, Vec3d::Zero(), plane_normal ).normalized();
+    Vec3d v2 = ProjectPointOnPlane( p_tip   - p_elbow,   Vec3d::Zero(), plane_normal ).normalized();
+
+    double c = v1.dot( v2 );
+    double s = plane_normal.dot( v1.cross( v2 ) );
+    return std::atan2( s, c );
+}
+
+// ------------------------------------------------------------
+
 double Planar2RHeuristic::L1() const
 {
-	return GetChain()->GetActiveJointLink( GetGroup().FirstIndex() ).GetLength();
+	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
+	auto elbow_joint = GetChain()->GetActiveJoint( GetGroup().Index( 1 ) );
+	Vec3d plane_normal = shoulder_joint->Axis();
+
+	Vec3d p_shoulder = shoulder_joint->Origin();
+	Vec3d p_elbow    = elbow_joint->Origin();
+	
+	return ProjectPointOnPlane( p_elbow - p_shoulder, Vec3d::Zero(), plane_normal ).norm();
 }
 
 // ------------------------------------------------------------
 
 double Planar2RHeuristic::L2() const
 {
-	return GetChain()->GetActiveJointLink( GetGroup().Index( 1 ) ).GetLength();
+	auto elbow_joint = GetChain()->GetActiveJoint( GetGroup().Index( 1 ) );
+	Vec3d plane_normal = elbow_joint->Axis();
+
+	Vec3d p_elbow    = elbow_joint->Origin();
+	Vec3d p_tip 	 = Translation( GetGroup().tip_home );
+
+	return ProjectPointOnPlane( p_tip - p_elbow, Vec3d::Zero(), plane_normal ).norm();
 }
 
 // ------------------------------------------------------------
@@ -70,11 +113,13 @@ IKPresolution Planar2RHeuristic::Presolve(
 {
 	VecXd seed = problem.seed;
 	VecXd planar_solution( 2 );
-
+	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 	auto T_group_target = ComputeGroupLocalTarget( seed, problem.target );
-
 	Vec3d p_group_target = Translation( T_group_target );
-	Vec3d wrist_dir = p_group_target;
+
+	Vec3d plane_point = shoulder_joint->Origin();
+	Vec3d plane_normal = shoulder_joint->Axis();
+	Vec3d wrist_dir = ProjectPointOnPlane( p_group_target, Vec3d::Zero(), plane_normal );
 
 	double x_local = wrist_dir.dot( reference_direction_ );
 	double y_local = wrist_dir.dot( up_direction_ );
@@ -85,22 +130,21 @@ IKPresolution Planar2RHeuristic::Presolve(
 
 	// Unreachable
 	if ( D > L1 + L2 || D < std::abs( L1 - L2 ) )
-		return {seed, IKHeuristicState::Fail }
-	;
+		return {seed, IKHeuristicState::Fail };
 
 	VecXd elbow_up_solution( 2 );
 	VecXd elbow_down_solution( 2 );
 
 	// Elbow
 	double cos_beta = ( L1 * L1 + L2 * L2 - D_squared ) / ( 2.0 * L1 * L2 );
-	double beta = std::acos( cos_beta );
-	double elbow_up = M_PI - beta;
-	double elbow_down = -elbow_up;
+	double beta = std::acos( std::clamp( cos_beta, -1.0, 1.0 ) );
+	double elbow_up = M_PI - ( beta + elbow_offset_ );
+	double elbow_down = -M_PI + beta + elbow_offset_;
 
 	// Shoulder
 	double alpha_target  = std::atan2( y_local, x_local );
 	double cos_alpha_int = ( L1 * L1 + D_squared - L2 * L2 ) / ( 2.0 * L1 * D );
-	double alpha_int = std::acos( cos_alpha_int );
+	double alpha_int = std::acos( std::clamp( cos_alpha_int, -1.0, 1.0 ) );
 	double shoulder_elbow_up = alpha_target - alpha_int;
 	double shoulder_elbow_down = alpha_target + alpha_int;
 
@@ -120,6 +164,9 @@ IKPresolution Planar2RHeuristic::Presolve(
 		GetGroup().SetGroupJoints( planar_solution, seed );
 		return { seed, IKHeuristicState::PartialSuccess };
 	}
+
+	
+	std::cout << "Planar solution = \n" << planar_solution << std::endl;
 
 	GetGroup().SetGroupJoints( planar_solution, seed );
 	return { seed, IKHeuristicState::Success };

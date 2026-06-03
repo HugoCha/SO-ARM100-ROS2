@@ -1266,7 +1266,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 		);
 
 	origin = next_origin;
-	next_origin = Vec3d( 0, 0, 1.5 );
+	next_origin = Vec3d( 0.5, 0, 1.0 );
 	axis = Vec3d::UnitY();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1277,7 +1277,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	// Wrist joints (2 revolute joints - 2R wrist)
 	origin = next_origin;
 	next_origin = origin;
-	next_origin.z() += 0.1;
+	next_origin.x() += 0.1;
 	axis = Vec3d::UnitX();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1299,7 +1299,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 
 Mat4d createRevolute_Planar2R_Wrist2R_5DOFsHome()
 {
-	return ToTransformMatrix( Vec3d( 0.1, 0, 1.4 ) );
+	return ToTransformMatrix( Vec3d( 0.7, 0, 0.9 ) );
 }
 
 // ------------------------------------------------------------
@@ -1308,11 +1308,11 @@ Model::KinematicTopology createRevolute_Planar2R_Wrist2R_5DOFsTopology( const Ma
 {
 	Model::KinematicTopology topology;
 
-	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0.1, 0, 1.5 ) );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0.6, 0, 1.0 ) );
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
-	Model::PlanarNRJointGroup planar_group( 0, 2, wrist_center );
-	Model::WristJointGroup wrist_group( 2, 2, home * Inverse( wrist_center ) );
+	Model::PlanarNRJointGroup planar_group( 1, 2, wrist_center );
+	Model::WristJointGroup wrist_group( 3, 2, home * Inverse( wrist_center ) );
 
 	topology.Add( base_group );
 	topology.Add( planar_group );
@@ -1350,7 +1350,7 @@ Model::Skeleton createRevolute_Planar2R_Wrist2R_5DOFsSkeleton(
 		std::make_shared< const Model::Articulation >(
 			Model::ArticulationType::Universal,
 			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 3 ), chain.GetActiveJoint(  4 ) },
-			Vec3d{ 0, 0, 1.5 }
+			Vec3d{ 0.6, 0, 1.0 }
 			)
 		);
 
@@ -1418,7 +1418,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 
 	// Base joint (revolute around Z-axis)
 	Vec3d origin      = Vec3d( 0, 0, 0.0 );
-	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
+	Vec3d next_origin = Vec3d( 0.5, 0, 0.1 );
 	Vec3d axis = Vec3d::UnitZ();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1428,7 +1428,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 
 	// Planar joints (2 revolute joints)
 	origin = next_origin;
-	next_origin = Vec3d( 0, 0, 1.0 );
+	next_origin = Vec3d( 1.0, 0, 0.1 );
 	axis = Vec3d::UnitY();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1437,7 +1437,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 		);
 
 	origin = next_origin;
-	next_origin = Vec3d( 0, 0, 1.5 );
+	next_origin = Vec3d( 1.5, 0, 0.1 );
 	axis = Vec3d::UnitY();
 	chain->Add(
 		Model::Twist( axis, origin ),
@@ -1475,7 +1475,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 
 Mat4d createRevolute_Planar2R_SphericalWrist_6DOFsHome()
 {
-	return ToTransformMatrix( Vec3d( 0.0, 0., 1.5 ) );
+	return ToTransformMatrix( Vec3d( 1.5, 0, 0.1 ) );
 }
 
 // ------------------------------------------------------------
@@ -1484,11 +1484,11 @@ Model::KinematicTopology createRevolute_Planar2R_SphericalWrist_6DOFsTopology( c
 {
 	Model::KinematicTopology topology;
 
-	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0., 0., 1.5 ) );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 1.5, 0, 0.1 ) );
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
-	Model::PlanarNRJointGroup planar_group( 0, 2, wrist_center );
-	Model::WristJointGroup wrist_group( 2, 3, home * Inverse( wrist_center ) );
+	Model::PlanarNRJointGroup planar_group( 1, 2, wrist_center );
+	Model::WristJointGroup wrist_group( 3, 3, home * Inverse( wrist_center ) );
 
 	topology.Add( base_group );
 	topology.Add( planar_group );
@@ -1508,8 +1508,16 @@ Model::Skeleton createRevolute_Planar2R_SphericalWrist_6DOFsSkeleton(
 
 	articulations.emplace_back(
 		std::make_shared< const Model::Articulation >(
-			Model::ArticulationType::Universal,
-			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ), chain.GetActiveJoint( 1 ) },
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 0 ) },
+			chain.GetActiveJoint( 0 )->Origin()
+			)
+		);
+
+	articulations.emplace_back(
+		std::make_shared< const Model::Articulation >(
+			Model::ArticulationType::Revolute,
+			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 1 ) },
 			chain.GetActiveJoint( 1 )->Origin()
 			)
 		);
@@ -1540,6 +1548,12 @@ Model::Skeleton createRevolute_Planar2R_SphericalWrist_6DOFsSkeleton(
 		std::make_shared< const Model::Bone >(
 			articulations[1]->Center(),
 			articulations[2]->Center() - articulations[1]->Center() )
+		);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			articulations[2]->Center(),
+			articulations[3]->Center() - articulations[2]->Center() )
 		);
 
 	double total_length = articulations[0]->Center().norm();
@@ -1638,7 +1652,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	axis = Vec3d::UnitZ();
 	chain->Add(
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0 ),
+		Model::Link( ToTransformMatrix( origin ), 0.1 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1661,7 +1675,7 @@ Model::KinematicTopology createURLike_6DOFsTopology( const Mat4d& home )
 	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0.5, 0.2, 0.6 ) );
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
-	Model::PlanarNRJointGroup planar_group( 0, 2, wrist_center );
+	Model::PlanarNRJointGroup planar_group( 1, 2, wrist_center );
 	Model::WristJointGroup wrist_group( 3, 2, home * Inverse( wrist_center ) );
 
 	topology.Add( base_group );

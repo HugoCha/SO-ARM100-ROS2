@@ -207,7 +207,6 @@ Mat4d IKJointGroupModelBase::GetAncestorInverseTransform( const VecXd& seed ) co
 		ancestor_joints,
 		ancestor_->tip_home,
 		T_ancestor );
-
 	return Inverse( T_ancestor );
 }
 

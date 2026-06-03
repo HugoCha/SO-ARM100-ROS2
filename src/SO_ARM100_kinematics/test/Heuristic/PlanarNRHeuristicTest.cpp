@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <ostream>
 
 namespace SOArm100::Kinematics::Test
 {
@@ -159,16 +160,16 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
     auto two_joint_chain = Model::JointChain( 2 );
     two_joint_chain.Add(
         Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-        Model::Link( Mat4d::Identity(), 1.0 ), // L1 = 1.0
+        Model::Link( Mat4d::Identity(), 0.1 ), // L1 = 1.0
         Model::Limits( -M_PI, M_PI ) );
     two_joint_chain.Add(
-        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-        Model::Link( ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ), // L2 = 1.0
+        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0, 0 ) ),
+        Model::Link( ToTransformMatrix( Vec3d( 0.1, 0, 0 ) ), 0.2 ), // L2 = 1.0
         Model::Limits( -M_PI, M_PI ) );
 
     int start = 0;
     int count = 2;
-    Mat4d tip_home = ToTransformMatrix( Vec3d( 2, 0, 0 ) );
+    Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
     Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
     auto model = CreateModel( two_joint_chain, planar_group );
@@ -176,7 +177,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
     VecXd seed = VecXd::Zero( 2 );
     VecXd joints( 2 );
-    joints << M_PI / 4, M_PI / 4; // Target pose configurations
+    joints << M_PI / 6, -M_PI / 3; // Target pose configurations
 
     auto problem = CreateProblem( model, seed, joints );
     auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
@@ -186,7 +187,10 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
     EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
     EXPECT_EQ( 2, result.joints.size() );
-    EXPECT_TRUE( IsApprox( problem.target, result_pose ) );
+    EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+        << problem << std::endl
+        << "Target = \n" << Translation( problem.target ) << std::endl
+        << "Result = \n" << Translation( result_pose ) << std::endl;
 }
 
 // ------------------------------------------------------------

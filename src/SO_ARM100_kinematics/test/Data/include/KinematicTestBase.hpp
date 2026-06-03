@@ -71,6 +71,19 @@ double PoseError(
 	return pose_error.norm();
 };
 
+double PoseError( 
+	Model::KinematicModelConstPtr model,
+	const Solver::IKProblem& problem,
+	const Heuristic::IKPresolution& presolution )
+{
+	Vec6d pose_error;
+	SOArm100::Kinematics::PoseError( 
+		problem.target, 
+		ComputeFK( model, presolution.joints ), 
+		pose_error );
+	return pose_error.norm();
+};
+
 double PositionError(
 	Model::KinematicModelConstPtr model,
 	const Solver::IKProblem& problem,

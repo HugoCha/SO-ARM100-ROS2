@@ -17,7 +17,6 @@
 
 #include <Eigen/src/Geometry/AngleAxis.h>
 #include <Eigen/src/Geometry/Quaternion.h>
-#include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>

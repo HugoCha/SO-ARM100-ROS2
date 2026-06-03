@@ -21,6 +21,7 @@ virtual IKPresolution Presolve(
 private:
 Vec3d reference_direction_;
 Vec3d up_direction_;
+double elbow_offset_;
 
 static Vec3d ComputeReferenceDirection(
 	Model::KinematicModelConstPtr model,
@@ -28,6 +29,10 @@ static Vec3d ComputeReferenceDirection(
 
 static Vec3d ComputeUpDirection(
 	const Vec3d& reference_direction,
+	Model::KinematicModelConstPtr model,
+	const Model::JointGroup planar_group );
+
+static double ComputeElbowHomeOffset(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup planar_group );
 

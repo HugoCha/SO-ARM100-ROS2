@@ -20,8 +20,5 @@ private:
 std::unique_ptr< IIKHeuristic > base_heuristic_;
 std::unique_ptr< IIKHeuristic > intermediate_heuristic_;
 std::unique_ptr< IIKHeuristic > wrist_heuristic_;
-
-static std::unique_ptr< IIKHeuristic > InitializeHeuristic(
-    Model::KinematicModelConstPtr model );
 };
 }
