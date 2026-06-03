@@ -4,6 +4,8 @@
 
 #include "Heuristic/IIKHeuristic.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
+#include "SphericalSolver/SphericalSolver.hpp"
+#include <memory>
 
 namespace SOArm100::Kinematics::Model
 {
@@ -26,6 +28,8 @@ virtual IKPresolution Presolve(
 	const Solver::IKRunContext& context ) const override;
 
 private:
+std::unique_ptr< Solver::SphericalSolver > spherical_solver_;
+
 Mat4d ComputeWristCenter(
 	const VecXd& seed,
 	const Mat4d& target ) const;

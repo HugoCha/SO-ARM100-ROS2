@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 namespace SOArm100::Kinematics::Model
@@ -73,6 +74,13 @@ const Joint* GetPreviousJoint( const Joint* joint ) const;
 		return false;
 
 	return WithinLimits( joints.data(), joints.size() );
+}
+
+[[nodiscard]] VecXd ClampLimits( const VecXd& joints ) const {
+	if ( joints.size() > GetActiveJointCount() )
+		throw std::invalid_argument( "Cannot clamp joints : invalid size." );
+
+	return ClampLimits( joints.data(), joints.size() );
 }
 
 [[nodiscard]] bool Empty() const {
@@ -192,6 +200,7 @@ bool ComputeJointPosesFK(
 	Mat4d& fk ) const noexcept;
 
 bool WithinLimits( const double* joints, int n_joints ) const;
+VecXd ClampLimits( const double* joints, int n_joints ) const;
 
 void Add( JointConstPtr joint );
 };

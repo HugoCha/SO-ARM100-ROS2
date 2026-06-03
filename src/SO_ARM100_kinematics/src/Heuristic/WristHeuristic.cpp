@@ -8,7 +8,12 @@
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicTopology/WristTopology.hpp"
 #include "Solver/IKProblem.hpp"
+#include "SphericalSolver/SphericalModel.hpp"
+#include "SphericalSolver/SphericalSolver.hpp"
+#include "SphericalSolver/SphericalSolution.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include <cassert>
+#include <memory>
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -18,8 +23,22 @@ namespace SOArm100::Kinematics::Heuristic
 WristHeuristic::WristHeuristic(
 	Model::KinematicModelConstPtr model,
 	Model::JointGroup wrist_group ) :
-	Model::IKJointGroupModelBase( model, wrist_group )
+	Model::IKJointGroupModelBase( model, wrist_group ),
+	spherical_solver_( nullptr )
 {
+	if ( GetWristTopology() == Model::WristTopology::Revolute3 )
+	{
+		auto spherical_model = Model::SphericalModel::ComputeModel(
+			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
+			model->GetChain()->GetActiveJoint( wrist_group.Index( 1 ) ),
+			model->GetChain()->GetActiveJoint( wrist_group.Index( 2 ) ) );
+		
+		Solver::SphericalSolver::SolverParameters params;
+
+		spherical_solver_ = std::make_unique< Solver::SphericalSolver >( 
+			*spherical_model, 
+			Solver::SphericalSolver::SolverParameters() );
+	}
 }
 
 // ------------------------------------------------------------
@@ -40,7 +59,7 @@ IKPresolution WristHeuristic::Presolve(
 	Mat4d wrist_center = ComputeWristCenter( problem.seed,  problem.target );
 	Mat4d wrist_target = Inverse( wrist_center ) * problem.target;
 	Mat3d R_wrist_target = Rotation( wrist_target );
-
+	std::cout << problem.seed << std::endl;
 	switch ( GetWristTopology() )
 	{
 	case Model::WristTopology::Revolute1:
@@ -109,7 +128,7 @@ IKPresolution WristHeuristic::SolveRevolute1( const VecXd& seed, const Mat3d& R_
 	return presolution;
 }
 
-// ------------------------------------------------------------
+// // ------------------------------------------------------------
 
 IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_target ) const
 {
@@ -157,12 +176,13 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 
 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
 	{
-		wrist_solution << q1;
+		wrist_solution[0] = q1;
 		presolution.state = IKHeuristicState::PartialSuccess;
 	}
 	else
 	{
-		wrist_solution << q1, q2;
+		wrist_solution[0] = q1;
+		wrist_solution[1] = q2;
 		presolution.state = IKHeuristicState::Success;
 	}
 
@@ -174,80 +194,98 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 
 IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_target ) const
 {
-	IKPresolution presolution { seed, IKHeuristicState::Fail };
-	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
+	assert( spherical_solver_ );
+	IKPresolution presolution;
+	presolution.joints = seed;
 
-	const Vec3d& e1 = GetActiveJoint( GetGroup().Index( 0 ) )->Axis();
-	const Vec3d& e2 = GetActiveJoint( GetGroup().Index( 1 ) )->Axis();
-	const Vec3d& e3 = GetActiveJoint( GetGroup().Index( 2 ) )->Axis();
+	auto wrist_seed = GetGroup().GetGroupJoints( seed );
+	auto spherical_solution = spherical_solver_->SolveFromRotation( R_target, wrist_seed );
 
-	Mat3d R = R_target;
+	presolution.error = spherical_solution.fk_error;
+	presolution.state = spherical_solution.reachable ? IKHeuristicState::Success : IKHeuristicState::Fail;
+	GetGroup().SetGroupJoints( spherical_solution.angles, presolution.joints );
 
-	// STEP 1: Solve q1 by aligning e3
-	Vec3d v  = e3;
-	Vec3d vp = R * e3;
-
-	Vec3d v_perp  = v  - e1.dot( v )  * e1;
-	Vec3d vp_perp = vp - e1.dot( vp ) * e1;
-
-	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
-	{
-		presolution.state = IKHeuristicState::PartialSuccess;
-		return presolution;
-	}
-
-	double q1 = atan2( e1.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
-
-	Mat3d R1 = AngleAxis( q1, e1 ).toRotationMatrix();
-	R = R1.transpose() * R;
-
-	// STEP 2: Solve q2 by aligning e3 again
-	v  = e3;
-	vp = R * e3;
-
-	v_perp  = v  - e2.dot( v )  * e2;
-	vp_perp = vp - e2.dot( vp ) * e2;
-
-	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
-	{
-		wrist_solution << q1;
-		presolution.state = IKHeuristicState::PartialSuccess;
-		GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
-		return presolution;
-	}
-
-	double q2 = atan2( e2.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
-
-	Mat3d R2 = AngleAxis( q2, e2 ).toRotationMatrix();
-	R = R2.transpose() * R;
-
-	// STEP 3: Extract q3 directly
-	Vec3d w = 0.5 * Vec3d(
-		R( 2, 1 ) - R( 1, 2 ),
-		R( 0, 2 ) - R( 2, 0 ),
-		R( 1, 0 ) - R( 0, 1 ) );
-
-	double q3 = atan2( e3.dot( w ), ( R.trace() - 1.0 ) * 0.5 );
-
-	Mat3d R_check =
-		AngleAxis( q1, e1 ).toRotationMatrix() *
-		AngleAxis( q2, e2 ).toRotationMatrix() *
-		AngleAxis( q3, e3 ).toRotationMatrix();
-
-	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
-	{
-		wrist_solution << q1, q2;
-		presolution.state = IKHeuristicState::PartialSuccess;
-	}
-	else
-	{
-		wrist_solution << q1, q2, q3;
-		presolution.state = IKHeuristicState::Success;
-	}
-
-	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
 	return presolution;
 }
+
+// ------------------------------------------------------------
+
+// IKPresolution WristHeuristic::SolveRevolute3( const VecXd& seed, const Mat3d& R_target ) const
+// {
+// 	IKPresolution presolution { seed, IKHeuristicState::Fail };
+// 	VecXd wrist_solution = GetGroup().GetGroupJoints( seed );
+
+// 	const Vec3d& e1 = GetActiveJoint( GetGroup().Index( 0 ) )->Axis();
+// 	const Vec3d& e2 = GetActiveJoint( GetGroup().Index( 1 ) )->Axis();
+// 	const Vec3d& e3 = GetActiveJoint( GetGroup().Index( 2 ) )->Axis();
+
+// 	Mat3d R = R_target;
+
+// 	// STEP 1: Solve q1 by aligning e3
+// 	Vec3d v  = e3;
+// 	Vec3d vp = R * e3;
+
+// 	Vec3d v_perp  = v  - e1.dot( v )  * e1;
+// 	Vec3d vp_perp = vp - e1.dot( vp ) * e1;
+
+// 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
+// 	{
+// 		presolution.state = IKHeuristicState::PartialSuccess;
+// 		return presolution;
+// 	}
+
+// 	double q1 = atan2( e1.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
+
+// 	Mat3d R1 = AngleAxis( q1, e1 ).toRotationMatrix();
+// 	R = R1.transpose() * R;
+
+// 	// STEP 2: Solve q2 by aligning e3 again
+// 	v  = e3;
+// 	vp = R * e3;
+
+// 	v_perp  = v  - e2.dot( v )  * e2;
+// 	vp_perp = vp - e2.dot( vp ) * e2;
+
+// 	if ( v_perp.norm() < epsilon || vp_perp.norm() < epsilon )
+// 	{
+// 		wrist_solution << q1;
+// 		presolution.state = IKHeuristicState::PartialSuccess;
+// 		GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
+// 		return presolution;
+// 	}
+
+// 	double q2 = atan2( e2.dot( v_perp.cross( vp_perp ) ), v_perp.dot( vp_perp ) );
+
+// 	Mat3d R2 = AngleAxis( q2, e2 ).toRotationMatrix();
+// 	R = R2.transpose() * R;
+
+// 	// STEP 3: Extract q3 directly
+// 	Vec3d w = 0.5 * Vec3d(
+// 		R( 2, 1 ) - R( 1, 2 ),
+// 		R( 0, 2 ) - R( 2, 0 ),
+// 		R( 1, 0 ) - R( 0, 1 ) );
+
+// 	double q3 = atan2( e3.dot( w ), ( R.trace() - 1.0 ) * 0.5 );
+
+// 	Mat3d R_check =
+// 		AngleAxis( q1, e1 ).toRotationMatrix() *
+// 		AngleAxis( q2, e2 ).toRotationMatrix() *
+// 		AngleAxis( q3, e3 ).toRotationMatrix();
+
+// 	if ( !R_check.isApprox( R_target, rotation_tolerance ) )
+// 	{
+// 		wrist_solution << q1, q2;
+// 		presolution.state = IKHeuristicState::PartialSuccess;
+// 	}
+// 	else
+// 	{
+// 		wrist_solution << q1, q2, q3;
+// 		presolution.state = IKHeuristicState::Success;
+// 	}
+
+// 	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );
+// 	return presolution;
+// }
 
 // ------------------------------------------------------------
 

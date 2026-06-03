@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Global.hpp"
 #include <algorithm>
 #include <cassert>
 #include <limits>
@@ -70,8 +71,9 @@ void RandomNear( random_numbers::RandomNumberGenerator& rng,
 		throw std::invalid_argument( "random pointer must not be null" );
 	margin_percent = std::clamp( margin_percent, 0.0, 1.0 );
 	double margin = margin_percent * Span();
-	double min = std::max( min_ + margin, seed - std::abs( distance ) );
-	double max = std::min( max_ - margin, seed + std::abs( distance ) );
+	double clamp = Clamp( seed );
+	double min = std::max( min_ + margin, clamp - std::abs( distance ) );
+	double max = std::min( max_ - margin, clamp + std::abs( distance ) );
 	*random = rng.uniformReal( min, max );
 }
 
@@ -87,8 +89,9 @@ void RandomNearWrapped(
 	const double span = Span();
 	const double d = std::min( std::abs( distance ), span / 2.0 );
 
-	double lo = seed - d;
-	double hi = seed + d;
+	double clamp = Clamp( seed );
+	double lo = clamp - d;
+	double hi = clamp + d;
 
 	double overflow_min = min_ - lo;
 	double overflow_max = hi - max_;
@@ -109,7 +112,7 @@ void RandomNearWrapped(
 
 	if ( total <= 0.0 )
 	{
-		*random = seed;
+		*random = clamp;
 		return;
 	}
 

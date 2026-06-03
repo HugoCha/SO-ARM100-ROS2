@@ -116,6 +116,7 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 {
 	auto model = Data::GetRevoluteBaseRobot();
 
+	// Test with wrist center align to base axis at home
 	Model::WristJointGroup wrist_y(
 		1,
 		1,
@@ -126,22 +127,22 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 		*model->GetChain(),
 		home_y,
 		wrist_y );
-	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
 
-	ASSERT_TRUE( base_group.has_value() );
-	EXPECT_EQ( expected_tip_home, base_group->tip_home );
+	ASSERT_FALSE( base_group.has_value() );
 
 	// Test with wrist center at (1, 0, 0)
 	Model::WristJointGroup wrist_x(
 		1,
 		1,
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
-	auto home_x = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	auto home_x = ToTransformMatrix( Vec3d( 1, 1, 1 ) );
 
 	base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		home_x,
 		wrist_x );
+
+	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 1, 1 ) );
 
 	ASSERT_TRUE( base_group.has_value() );
 	EXPECT_EQ( expected_tip_home, base_group->tip_home );

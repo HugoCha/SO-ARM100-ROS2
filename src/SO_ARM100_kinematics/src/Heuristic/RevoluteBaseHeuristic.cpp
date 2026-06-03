@@ -158,7 +158,6 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 		}
 	}
 
-	std::cout << "Revolute = \n" << presolution << std::endl;
 	return presolution;
 }
 

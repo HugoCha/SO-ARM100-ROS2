@@ -38,7 +38,6 @@ SphericalSolution SphericalSolver::SolveFromRotation(
         model_.GetJoint( 1 )->GetLimits().Center(),
         model_.GetJoint( 2 )->GetLimits().Center() ) );
 
-
 	for ( auto branch : branches )
 	{
 		const Vec3d& angles = branch;

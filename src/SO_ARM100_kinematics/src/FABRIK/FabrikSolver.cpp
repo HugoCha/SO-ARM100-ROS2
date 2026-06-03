@@ -165,7 +165,7 @@ void FABRIKSolver::BackwardPass(
 			bone_states[i+1].Origin() - bone_states[i].Origin();
 
 		// std::cout << "Bwd" << std::to_string( i ) << " : " 
-		// 	<< bone_states[i] << std::endl;
+		//	<< bone_states[i] << std::endl;
 
 		skeleton_state.ApplyConstraint( bone_states[i], i );
 

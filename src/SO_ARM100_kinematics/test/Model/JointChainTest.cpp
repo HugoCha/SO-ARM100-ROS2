@@ -74,15 +74,17 @@ TEST_F( JointChainTest, GetZYZRevoluteRobotJointChain )
 	ASSERT_EQ( chain.GetActiveJointCount(), 3 );
 
 	// Check each joint's properties
-	for ( int i = 0; i < 3; ++i )
-	{
-		const Model::Twist& twist = chain.GetActiveJointTwist( i );
-		const Model::Link& link = chain.GetActiveJointLink( i );
-		const Model::Limits& limits = chain.GetActiveJointLimits( i );
+	Model::Limits limits = chain.GetActiveJointLimits( 0 );
+	ASSERT_EQ( limits.Min(), -M_PI );
+	ASSERT_EQ( limits.Max(), M_PI );
 
-		ASSERT_EQ( limits.Min(), -M_PI );
-		ASSERT_EQ( limits.Max(), M_PI );
-	}
+	limits = chain.GetActiveJointLimits( 1 );
+	ASSERT_EQ( limits.Min(), -M_PI  / 2 );
+	ASSERT_EQ( limits.Max(), M_PI  / 2 );
+
+	limits = chain.GetActiveJointLimits( 2 );
+	ASSERT_EQ( limits.Min(), -M_PI  / 2 );
+	ASSERT_EQ( limits.Max(), M_PI / 2 );
 
 	// Check specific joint properties
 	const Model::Twist& twist1 = chain.GetActiveJointTwist( 0 );

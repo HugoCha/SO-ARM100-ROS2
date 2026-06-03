@@ -180,7 +180,7 @@ TEST_F( DLSSolverTest, SolveIK_HomePosition )
 TEST_F( DLSSolverTest, SolveIK_SimpleReachableTarget )
 {
 	VecXd thetas{ 3 };
-	thetas << -0.826677, -3.06708, -2.68162;
+	thetas << -0.826677, -1.06708, -0.68162;
 	VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_, thetas, 0.2 );
 
 	auto problem = CreateProblem( seed, thetas );
@@ -645,71 +645,71 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 // Gradient Descent
 // ------------------------------------------------------------
 
-TEST_F( DLSSolverTest, SolverParameters_FindOptimal )
-{
-	auto initial_sp = Solver::DLSSolver::SolverParameters();
+// TEST_F( DLSSolverTest, SolverParameters_FindOptimal )
+// {
+// 	auto initial_sp = Solver::DLSSolver::SolverParameters();
 
-    initial_sp.max_iterations = 200;
-    initial_sp.min_step = 0.1;
-    initial_sp.max_step = 0.9;
-    initial_sp.line_search_factor = 0.8;
-    initial_sp.min_damping = 0.05;
-    initial_sp.max_damping = 0.75;
-    initial_sp.max_dq = 0.75;
-	initial_sp.min_sv_tolerance = 0.001;
-    initial_sp.max_stalle_iterations = 3;
-    initial_sp.translation_weight  = 9;
-    initial_sp.rotation_weight = 1;
+//     initial_sp.max_iterations = 200;
+//     initial_sp.min_step = 0.1;
+//     initial_sp.max_step = 0.9;
+//     initial_sp.line_search_factor = 0.8;
+//     initial_sp.min_damping = 0.05;
+//     initial_sp.max_damping = 0.75;
+//     initial_sp.max_dq = 0.75;
+// 	initial_sp.min_sv_tolerance = 0.001;
+//     initial_sp.max_stalle_iterations = 3;
+//     initial_sp.translation_weight  = 9;
+//     initial_sp.rotation_weight = 1;
 
-	DLSGradientDescent descent( 500 );
-	DLSGradientDescent::Parameters p;
-	p.iterations = 1000;
-	// p.learning_rate = 0.5;
-	p.noise_percent = 1.0;
+// 	DLSGradientDescent descent( 500 );
+// 	DLSGradientDescent::Parameters p;
+// 	p.iterations = 1000;
+// 	// p.learning_rate = 0.5;
+// 	p.noise_percent = 1.0;
 	
-	//auto sp = initial_sp;
-	//auto sp = descent.Run( p );
-	auto sp = descent.RandomizedSearch( initial_sp, p );
-	double loss = descent.ComputeLoss( sp );
-	std::cout << "Loss with Randomized Batch 1 = " << loss << std::endl;
-	std::cout << "Parameters = " << sp << std::endl;
+// 	//auto sp = initial_sp;
+// 	//auto sp = descent.Run( p );
+// 	auto sp = descent.RandomizedSearch( initial_sp, p );
+// 	double loss = descent.ComputeLoss( sp );
+// 	std::cout << "Loss with Randomized Batch 1 = " << loss << std::endl;
+// 	std::cout << "Parameters = " << sp << std::endl;
 
-	double avg_loss = 0.0;
-	for ( int i = 0; i < 10; i++ )
-	{
-		DLSGradientDescent descent( 1000 );
-		double loss = descent.ComputeLoss( sp );
-		std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
-		avg_loss += loss / ( double )10;
-	}
-	std::cout << "Average Loss = " << avg_loss << std::endl;
+// 	double avg_loss = 0.0;
+// 	for ( int i = 0; i < 10; i++ )
+// 	{
+// 		DLSGradientDescent descent( 1000 );
+// 		double loss = descent.ComputeLoss( sp );
+// 		std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+// 		avg_loss += loss / ( double )10;
+// 	}
+// 	std::cout << "Average Loss = " << avg_loss << std::endl;
 
-	// p.noise_percent = 0.25;
-	// sp = descent.RandomizedSearch( sp, p );
-	// loss = descent.ComputeLoss( sp );
-	// std::cout << "Loss with Randomized Batch 2 = " << loss << std::endl;
-	// std::cout << "Parameters = " << sp << std::endl;
+// 	// p.noise_percent = 0.25;
+// 	// sp = descent.RandomizedSearch( sp, p );
+// 	// loss = descent.ComputeLoss( sp );
+// 	// std::cout << "Loss with Randomized Batch 2 = " << loss << std::endl;
+// 	// std::cout << "Parameters = " << sp << std::endl;
 
-	// for ( int i = 0; i < 10; i++ )
-	// {
-	// 	DLSGradientDescent descent( 50 );
-	// 	loss = descent.ComputeLoss( sp );
-	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
-	// }
+// 	// for ( int i = 0; i < 10; i++ )
+// 	// {
+// 	// 	DLSGradientDescent descent( 50 );
+// 	// 	loss = descent.ComputeLoss( sp );
+// 	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+// 	// }
 
-	// p.noise_percent = 0.125;
-	// sp = descent.RandomizedSearch( sp, p );
-	// loss = descent.ComputeLoss( sp );
-	// std::cout << "Loss with Randomized Batch 3 = " << loss << std::endl;
-	// std::cout << "Parameters = " << sp << std::endl;
+// 	// p.noise_percent = 0.125;
+// 	// sp = descent.RandomizedSearch( sp, p );
+// 	// loss = descent.ComputeLoss( sp );
+// 	// std::cout << "Loss with Randomized Batch 3 = " << loss << std::endl;
+// 	// std::cout << "Parameters = " << sp << std::endl;
 
-	// for ( int i = 0; i < 10; i++ )
-	// {
-	// 	DLSGradientDescent descent( 50 );
-	// 	loss = descent.ComputeLoss( sp );
-	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
-	// }
-}
+// 	// for ( int i = 0; i < 10; i++ )
+// 	// {
+// 	// 	DLSGradientDescent descent( 50 );
+// 	// 	loss = descent.ComputeLoss( sp );
+// 	// 	std::cout << "Loss with Batch " << i << " = " << loss << std::endl;
+// 	// }
+// }
 
 // ------------------------------------------------------------
 	

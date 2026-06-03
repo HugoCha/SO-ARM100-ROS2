@@ -79,7 +79,7 @@ IKSolution DLSSolver::Solve(
 	SolverBuffers buffers = SolverBuffers{ n_joints, type };
 	buffers.weights = InitializeWeightMatrix( parameters_.RotationWeightSqrt(), parameters_.TranslationWeightSqrt() );
 
-	VecXd seed = problem.seed;
+	VecXd seed = GetChain()->ClampLimits( problem.seed );
 	auto state = InitializeState( problem.target, seed, buffers );
 	auto history = InitializeHistory( state, seed );
 	auto seed_generator = InitializeSeedGenerator( state, seed );

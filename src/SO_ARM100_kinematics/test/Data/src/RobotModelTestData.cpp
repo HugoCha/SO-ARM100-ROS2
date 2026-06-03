@@ -1262,8 +1262,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
-		);
+		Model::Limits( -M_PI / 2, M_PI / 2 ) );
 
 	origin = next_origin;
 	next_origin = Vec3d( 0.5, 0, 1.0 );
@@ -1271,8 +1270,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
-		);
+		Model::Limits( -M_PI / 2, M_PI / 2 ) );
 
 	// Wrist joints (2 revolute joints - 2R wrist)
 	origin = next_origin;
@@ -1433,7 +1431,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
+		Model::Limits( -M_PI , M_PI )
 		);
 
 	origin = next_origin;
@@ -1442,7 +1440,7 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	// Wrist joints (3 revolute joints - spherical wrist)
@@ -1617,7 +1615,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	origin = next_origin;
@@ -1626,7 +1624,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	chain->Add(
 		Model::Twist( axis, origin ),
 		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	origin = next_origin;

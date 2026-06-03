@@ -96,6 +96,19 @@ bool JointChain::WithinLimits( const double* joints, int n_joints ) const
 
 // ------------------------------------------------------------
 
+VecXd JointChain::ClampLimits( const double* joints, int n_joints ) const
+{
+	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
+	VecXd clamped( n_joints );
+
+	for ( size_t i = 0; i < n_joints; i++ )
+		clamped[i] = GetActiveJointLimits( i ).Clamp( joints[i] );
+
+	return clamped;
+}
+
+// ------------------------------------------------------------
+
 VecXd JointChain::RandomValidJoints(
 	random_numbers::RandomNumberGenerator& rng,
 	double margin_percent ) const noexcept
