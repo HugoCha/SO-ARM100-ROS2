@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 
+#include "Model/Joint/JointGroup.hpp"
 #include "RobotModelTestData.hpp"
 #include "KinematicTestBase.hpp"
 
@@ -29,8 +30,9 @@ class TopologyHeuristicTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-    robot_name_ = "5-axis arm";
-    //robot_name_ = "Universal Robot";
+    //robot_name_ = "5-axis arm";
+    //robot_name_ = "6-axis arm";
+    robot_name_ = "Universal Robot";
     model_ = Data::GetAllRobots()[robot_name_];
 }
 
@@ -46,16 +48,13 @@ Heuristic::IKPresolution CheckPresolve(
     Model::KinematicModelConstPtr model,
     std::string robot_name,
     const VecXd& seed,
-    const VecXd& joints )
+    const VecXd& joints ) const
 {
     EXPECT_EQ( seed.size(), joints.size() );
     
     auto heuristic = Heuristic::TopologyHeuristic( model );
     auto problem = CreateProblem( model, seed, joints );
     
-    std::cout << problem << std::endl;
-    // std::cout << "Joints = \n" << joints << std::endl;
-
     auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
     
     EXPECT_EQ( result.joints.size(), joints.size() );
@@ -70,6 +69,8 @@ Heuristic::IKPresolution CheckPresolve(
         << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
         << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
         << "Pose     Error = \n" << error << std::endl
+        << "Joints = \n" << joints << std::endl
+        << problem << std::endl
         << result << std::endl;
 
     return result;
@@ -80,16 +81,13 @@ Heuristic::IKPresolution CheckPresolveNoFailure(
     std::string robot_name,
     const VecXd& seed,
     const VecXd& joints,
-    bool pSilent = true )
+    bool pSilent = true ) const
 {
     EXPECT_EQ( seed.size(), joints.size() );
     
     auto heuristic = Heuristic::TopologyHeuristic( model );
     auto problem = CreateProblem( model, seed, joints );
     
-    // std::cout << problem << std::endl;
-    // std::cout << "Joints = \n" << joints << std::endl;
-
     auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
     
     EXPECT_EQ( result.joints.size(), joints.size() );
@@ -106,6 +104,8 @@ Heuristic::IKPresolution CheckPresolveNoFailure(
             << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
             << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
             << "Pose     Error = \n" << error << std::endl
+            << "Joints = \n" << joints << std::endl
+            << problem << std::endl
             << result << std::endl;
     }
 
@@ -149,25 +149,31 @@ TEST_F( TopologyHeuristicTest, Presolve_Converges_FromJoints )
 {
     const int n_joints = model_->GetChain()->GetActiveJointCount();
 
-    VecXd joints( 5 ); //= model_->GetChain()->RandomValidJoints( rng_, 0.05 );
-    VecXd seed = VecXd::Ones( 5 ) * -M_PI; //= model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.3, 0.05 );
-    // joints << 0, -M_PI / 2, 0, 0, 0, 0;
+    VecXd joints = VecXd::Zero( n_joints ); //= model_->GetChain()->RandomValidJoints( rng_, 0.05 );
+    VecXd seed = VecXd::Ones( n_joints ) * -M_PI; //= model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.3, 0.05 );
+    seed[0] = 0;
     joints[0] = -M_PI / 3;
     joints[1] = -M_PI / 4;
     joints[2] = M_PI / 6;
-    joints[3] = 0;//M_PI / 6;
-    joints[4] = 0;//-M_PI / 12;
-    //joints[5] = -M_PI / 6;
+    joints[3] = M_PI / 6;
+    joints[4] = -M_PI / 12;
+    joints[5] = -M_PI / 6;
 
     auto result = CheckPresolve( model_, robot_name_, seed, joints );
     
-    Mat4d result_pose;
-    VecXd first_joints( 5 );
-    first_joints[0] = result.joints[0];
-    first_joints[1] = result.joints[1];
-    first_joints[2] = result.joints[2];
-    model_->ComputeFK( first_joints, result_pose );
-    std::cout << result_pose << std::endl;
+    // VecXd first_joints = VecXd::Zero( n_joints );
+    // first_joints[0] = result.joints[0];
+    // first_joints[1] = result.joints[1];
+    // first_joints[2] = result.joints[2];
+    // first_joints[3] = result.joints[3];
+    // Mat4d tcp_in_wrist = model_->GetTopology().Get( Model::planarNR_name )->tip_home;
+    // std::cout << "Result Joints " << std::endl << result.joints << std::endl;
+    // std::cout << "Target WC =" << std::endl;
+    // Mat4d target = ComputeFK( model_, joints );
+    // std::cout << Translation( target ) - Rotation( target ) * Translation( tcp_in_wrist ) << std::endl;
+    // std::cout << "Result WC =" << std::endl;
+    // Mat4d result_pose = ComputeFK( model_, first_joints );
+    // std::cout << Translation( result_pose ) - Rotation( target ) * Translation( tcp_in_wrist ) << std::endl;
     
     // Topology heuristic chains partial successes, so we expect at least a partial success
     // for a reachable target near the seed.
@@ -237,11 +243,11 @@ TEST_F( TopologyHeuristicTest, Presolve_UnreachableFarTarget )
     
     VecXd seed = VecXd::Zero( n_joints );
 
-    auto result = CheckPresolveFromTarget( model_, robot_name_, seed, target );
-
-    // Expecting either complete failure or a partial success (where the arm points at the target)
-    // but definitely NOT full success.
-    EXPECT_NE( result.state, Heuristic::IKHeuristicState::Success )
+    auto heuristic = Heuristic::TopologyHeuristic( model_ );
+    auto problem = CreateProblem( seed, target );
+    auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+    
+    EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Fail )
         << "Target at (100,0,0) is outside workspace, heuristic should not claim full success.";
 }
 
@@ -260,9 +266,11 @@ TEST_F( TopologyHeuristicTest, Presolve_UnreachableFarTarget_AllRobots )
 
         VecXd seed = VecXd::Zero( n_joints );
 
-        auto result = CheckPresolveFromTarget( robot.second, robot.first, seed, target );
-
-        EXPECT_NE( result.state, Heuristic::IKHeuristicState::Success )
+        auto heuristic = Heuristic::TopologyHeuristic( robot.second );
+        auto problem = CreateProblem( seed, target );
+        auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+        
+        EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Fail )
             << "Test Fail for " << robot.first << std::endl
             << "Target at (100,0,0) is outside workspace, heuristic should not claim full success.";
     }
@@ -283,8 +291,10 @@ TEST_F( TopologyHeuristicTest, Presolve_MaintainsValidJointVectorSize )
         VecXd joints = robot.second->GetChain()->RandomValidJoints( rng_, 0.2 );
         VecXd seed = VecXd::Zero( n_joints );
 
-        auto result = CheckPresolve( robot.second, robot.first, seed, joints );
-
+        auto heuristic = Heuristic::TopologyHeuristic( robot.second );
+        auto problem = CreateProblem( robot.second, seed, joints );
+        auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+        
         EXPECT_EQ( result.joints.size(), n_joints )
             << "Test Fail for " << robot.first << std::endl
             << "TopologyHeuristic corrupted the joint vector size during cascades.";

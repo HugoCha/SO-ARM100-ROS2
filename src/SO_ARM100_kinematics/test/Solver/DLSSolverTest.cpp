@@ -162,7 +162,7 @@ TEST_F( DLSSolverTest, SolveIK_HomePosition )
 	VecXd seed_joints{ 3 };
 	seed_joints << 0.0, 0.0, 0.0;
 
-	auto problem = CreateProblem( seed_joints, seed_joints );
+	auto problem = CreateProblem( model_, seed_joints, seed_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::Converged );
@@ -171,7 +171,7 @@ TEST_F( DLSSolverTest, SolveIK_HomePosition )
 	EXPECT_EQ( result.joints.size(), 3 );
 
 	// Verify the solution reaches the target
-	auto achieved_pose = ComputeFK( result.joints );
+	auto achieved_pose = ComputeFK( model_, result.joints );
 	EXPECT_TRUE( IsApprox( problem.target, achieved_pose ) );
 }
 
@@ -183,14 +183,14 @@ TEST_F( DLSSolverTest, SolveIK_SimpleReachableTarget )
 	thetas << -0.826677, -1.06708, -0.68162;
 	VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_, thetas, 0.2 );
 
-	auto problem = CreateProblem( seed, thetas );
+	auto problem = CreateProblem( model_, seed, thetas );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::Converged );
 	EXPECT_TRUE( result.Success() );
 
 	// Verify solution
-	auto achieved_pose = ComputeFK( result.joints );
+	auto achieved_pose = ComputeFK( model_, result.joints );
 	EXPECT_TRUE( IsApprox( achieved_pose, problem.target ) )
 	    << "Target = " << std::endl << problem.target.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
@@ -206,12 +206,12 @@ TEST_F( DLSSolverTest, SolveIK_RotatedConfiguration )
 	VecXd target_joints{ 3 };
 	target_joints << M_PI / 2, 0.0, 0.0;
 
-	auto problem = CreateProblem( Vec3d::Zero(), target_joints );
+	auto problem = CreateProblem( model_, Vec3d::Zero(), target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Solver::IKSolverState::Converged );
 
-	auto achieved_pose = ComputeFK( result.joints );
+	auto achieved_pose = ComputeFK( model_, result.joints );
 	EXPECT_TRUE( IsApprox( problem.target, achieved_pose ) )
 	    << "Target = " << std::endl << problem.target.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
@@ -227,13 +227,13 @@ TEST_F( DLSSolverTest, SolveIK_MultipleSolutions )
 	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 
-	auto problem = CreateProblem( Vec3d::Zero(), target_joints );
+	auto problem = CreateProblem( model_, Vec3d::Zero(), target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_TRUE( result.Success() );
 
 	// Verify it reaches the target (may be different joint config)
-	auto achieved_pose = ComputeFK( result.joints );
+	auto achieved_pose = ComputeFK( model_, result.joints );
 	EXPECT_TRUE( IsApprox( problem.target, achieved_pose ) )
 	    << "Target = " << std::endl << problem.target.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
@@ -246,18 +246,18 @@ TEST_F( DLSSolverTest, SolveIK_GoodSeedConvergesFaster )
 {
 	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
-	auto target_pose = ComputeFK( target_joints );
+	auto target_pose = ComputeFK( model_, target_joints );
 
 	// Test 1: Bad seed
 	Vec3d bad_seed = { -1.0, -1.0, -1.0 };
 
-	auto problem = CreateProblem( bad_seed, target_joints );
+	auto problem = CreateProblem( model_, bad_seed, target_joints );
 	auto result_bad = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Test 2: Good seed (close to target)
 	Vec3d good_seed = { 0.6, 0.4, -0.1 };
 
-	problem = CreateProblem( good_seed, target_joints );
+	problem = CreateProblem( model_, good_seed, target_joints );
 	auto result_good = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_TRUE( result_good.Success() );
@@ -299,12 +299,12 @@ TEST_F( DLSSolverTest, SolveIK_MaxIterationsReached )
 	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 
-	auto problem = CreateProblem( Vec3d::Zero(), target_joints );
+	auto problem = CreateProblem( model_, Vec3d::Zero(), target_joints );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 
 	std::cout << "target = " << std::endl << problem.target << std::endl;
 	std::cout << "seed = " << std::endl << problem.seed.transpose() << std::endl;
-	std::cout << "result = " << std::endl << ComputeFK( result.joints ) << std::endl;
+	std::cout << "result = " << std::endl << ComputeFK( model_, result.joints ) << std::endl;
 
 	EXPECT_GE( PoseError( model_, problem, result ), params.error_tolerance );
 	EXPECT_EQ( result.state, Solver::IKSolverState::MaxIterations );
@@ -337,7 +337,7 @@ TEST_F( DLSSolverTest, RandomRestart_RecoverFromBadSeed )
 	// Very bad seed (near joint limits)
 	Vec3d terrible_seed = { 3.0, 3.0, 3.0 };  // Out of bounds
 
-	auto problem = CreateProblem( terrible_seed, target_joints );
+	auto problem = CreateProblem( model_, terrible_seed, target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Should recover via random restart
@@ -360,7 +360,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 	VecXd target_joints( 3 );
 	target_joints << 0.3, 0.2, -0.1;
 
-	auto problem = CreateProblem( VecXd::Zero( 3 ), target_joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	if ( result.Success() )
@@ -382,7 +382,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Loose )
 	VecXd target_joints{ 3 };
 	target_joints << 0.3, 0.2, -0.1;
 
-	auto problem = CreateProblem( VecXd::Zero( 3 ), target_joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Should converge quickly with loose tolerance
@@ -400,7 +400,7 @@ TEST_F( DLSSolverTest, EdgeCase_ZeroLengthMove )
 	VecXd joints{ 3 };
 	joints << 0.5, 0.3, -0.2;
 
-	auto problem = CreateProblem( joints, joints );
+	auto problem = CreateProblem( model_, joints, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	EXPECT_TRUE( result.Success() );
@@ -415,9 +415,9 @@ TEST_F( DLSSolverTest, EdgeCase_JointLimits )
 	// Target requiring joints at limits
 	VecXd at_limit_joints{ 3 };
 	at_limit_joints << M_PI * 0.99, M_PI* 0.99, M_PI* 0.99;
-	auto target_pose = ComputeFK( at_limit_joints );
+	auto target_pose = ComputeFK( model_, at_limit_joints );
 
-	auto problem = CreateProblem( VecXd::Zero( 3 ), at_limit_joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), at_limit_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Should either converge or gracefully fail (not crash)
@@ -435,7 +435,7 @@ TEST_F( DLSSolverTest, EdgeCase_NearSingularTarget )
 	VecXd seed( 3 );
 	seed << 0.5, 0.5, 0.5;
 
-	auto problem = CreateProblem( seed, singular_joints );
+	auto problem = CreateProblem( model_, seed, singular_joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Should handle gracefully
@@ -458,7 +458,7 @@ TEST_F( DLSSolverTest, Performance_AverageIterations )
 	{
 		VecXd joints = model_->GetChain()->RandomValidJoints( rng_ );
 
-		auto problem = CreateProblem( seed, joints );
+		auto problem = CreateProblem( model_, seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 		if ( result.Success() )
@@ -495,12 +495,12 @@ TEST_F( DLSSolverTest, Robustness_BadSeedHigherIteration_RepeatedCalls )
 	{
 		VecXd joints = model_->GetChain()->RandomValidJoints( rng_ );
 
-		auto problem = CreateProblem( seed, joints );
+		auto problem = CreateProblem( model_, seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 		if ( !result.Success() )
 		{
-			result_pose = ComputeFK( result.joints );
+			result_pose = ComputeFK( model_, result.joints );
 		}
 
 		EXPECT_TRUE( result.Success() )
@@ -540,14 +540,14 @@ TEST_F( DLSSolverTest, Robustness_GoodSeed_RepeatedCalls )
 		VecXd joints = model_->GetChain()->RandomValidJoints( rng_ );
 		VecXd good_seed = model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.1 );
 
-		auto problem = CreateProblem( good_seed, joints );
+		auto problem = CreateProblem( model_, good_seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 		average_iterations += result.iterations / ( double )NUM_TEST;
 
 		if ( !result.Success() )
 		{
-			result_pose = ComputeFK( result.joints );
+			result_pose = ComputeFK( model_, result.joints );
 		}
 
 		EXPECT_TRUE( result.Success() )
@@ -605,7 +605,7 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 
 			if ( !result.Success() )
 			{
-				Mat4d result_pose = ComputeFK( result.joints );
+				Mat4d result_pose = ComputeFK( model_, result.joints );
 
 				// std::cout 
 				// 		<< "Fail to converge for robot " << robot.first << std::endl

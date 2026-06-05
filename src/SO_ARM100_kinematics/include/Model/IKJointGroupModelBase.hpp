@@ -33,28 +33,47 @@ Mat4d ComputeGroupLocalTarget( const VecXd& seed, const Mat4d& target ) const;
 Mat4d ComputeGroupWorldTarget( const VecXd& seed, const Mat4d& target ) const;
 
 bool ComputeGroupLocalJointStatesFK( const VecXd& joints, std::vector< Model::JointState >& joint_states, Mat4d& fk ) const {
-	return ComputeGroupJointStatesFK( joints, GetAncestorInverseTransform( joints ), joint_states, fk );
+	return ComputeGroupJointStatesFK( 
+		joints, 
+		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ), 
+		joint_states, 
+		fk );
 }
 
 bool ComputeGroupLocalJointPosesFK( const VecXd& joints, std::vector< Mat4d >& joint_poses, Mat4d& fk ) const {
-	return ComputeGroupJointPosesFK( joints, GetAncestorInverseTransform( joints ), joint_poses, fk );
+	return ComputeGroupJointPosesFK( 
+		joints, 
+		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ),
+		joint_poses, 
+		fk );
 }
 
 bool ComputeGroupLocalFK( const VecXd& joints, Mat4d& fk ) const {
-	return ComputeGroupFK( joints, GetAncestorInverseTransform( joints ), fk );
+	return ComputeGroupFK( 
+		joints, 
+		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ),
+		fk );
 }
 
 bool ComputeGroupWorldJointStatesFK( const VecXd& joints, std::vector< Model::JointState >& joint_states, Mat4d& fk ) const {
-	return ComputeGroupJointStatesFK( joints, Mat4d::Identity(), joint_states, fk );
+	return ComputeGroupJointStatesFK( 
+		joints, 
+		GetAncestorTransform( joints ), 
+		joint_states, 
+		fk );
 }
 bool ComputeGroupWorldJointPosesFK( const VecXd& joints, std::vector< Mat4d >& joint_poses, Mat4d& fk ) const {
-	return ComputeGroupJointPosesFK( joints, Mat4d::Identity(), joint_poses, fk );
+	return ComputeGroupJointPosesFK( 
+		joints, 
+		GetAncestorTransform( joints ), 
+		joint_poses, fk );
 }
 
 bool ComputeGroupWorldFK( const VecXd& joints, Mat4d& fk ) const {
 	return ComputeGroupFK( joints, Mat4d::Identity(), fk );
 }
 
+Mat4d GetAncestorTransform( const VecXd& seed ) const;
 Mat4d GetAncestorInverseTransform( const VecXd& seed ) const;
 Mat4d GetSuccessorInverseTransform() const {
 	return home_in_tip_inv_;
@@ -85,19 +104,19 @@ static double ComputeGroupMaxReach(
 
 bool ComputeGroupJointStatesFK(
 	const VecXd& joints,
-	const Mat4d& to_local_transform,
+	const Mat4d& initial_transform,
 	std::vector< Model::JointState >& joint_states,
 	Mat4d& fk ) const;
 
 bool ComputeGroupJointPosesFK(
 	const VecXd& joints,
-	const Mat4d& to_local_transform,
+	const Mat4d& initial_transform,
 	std::vector< Mat4d >& joint_poses,
 	Mat4d& fk ) const;
 
 bool ComputeGroupFK(
 	const VecXd& joints,
-	const Mat4d& to_local_transform,
+	const Mat4d& initial_transform,
 	Mat4d& fk ) const;
 };
 }

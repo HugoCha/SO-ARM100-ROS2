@@ -13,6 +13,7 @@
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
+#include "Solver/SolverHistory.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/StringConverter.hpp"

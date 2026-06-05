@@ -123,7 +123,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Success )
 	auto problem = CreateProblem( model_, seed, joints );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
-	auto result_pose = ComputeFK( result.joints );
+	auto result_pose = ComputeFK( model_, result.joints );
 
 	// Check that the solution is valid
 	EXPECT_TRUE( result.Success() ) << "IK should succeed for reachable target";
@@ -155,7 +155,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 		auto problem = CreateProblem( model_, seed, joints );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 	
-		auto result_pose = ComputeFK( result.joints );
+		auto result_pose = ComputeFK( model_, result.joints );
 		// Check that the solution is valid
 		if ( !result.Success() )
 		{

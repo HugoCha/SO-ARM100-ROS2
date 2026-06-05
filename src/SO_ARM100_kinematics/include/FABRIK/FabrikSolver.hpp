@@ -13,6 +13,8 @@
 
 namespace SOArm100::Kinematics::Solver
 {
+struct SolverHistory;
+
 class FABRIKSolver :
 	public Model::IKModelBase,
 	public IKSolverBase
@@ -57,14 +59,6 @@ void SetParameters( const SolverParameters& parameters ){
 	const IKRunContext& context ) const override;
 
 private:
-struct SolverHistory
-{
-int stalled_error_cnt;
-double last_non_stalled_error;
-VecXd best_joints;
-double best_error;
-};
-
 SolverParameters parameters_;
 
 std::vector< Model::BoneState >

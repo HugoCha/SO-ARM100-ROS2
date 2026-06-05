@@ -52,10 +52,10 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Success )
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, 0;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model_, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	Mat4d result_pose = ComputeFK( result.joints );
+	Mat4d result_pose = ComputeFK( model_, result.joints );
 
 	// Check that the solution is valid
 	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Success ) << "IK should succeed for reachable position";
@@ -81,7 +81,7 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Singularity )
 	VecXd joints( 3 );
 	joints << M_PI / 2, -M_PI / 2, 0;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model_, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::PartialSuccess )
@@ -110,7 +110,7 @@ TEST_F( RevoluteBaseHeuristicTest, IK_ReferenceDirection_Singularity )
 	VecXd joints( 3 );
 	joints << M_PI / 4, 0, 0;
 
-	auto problem = CreateProblem( seed, joints );
+	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Check that the solution is valid

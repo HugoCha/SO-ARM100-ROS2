@@ -11,6 +11,7 @@
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
 #include "Solver/SolverType.hpp"
+#include "Solver/SolverHistory.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/Dense>
@@ -89,7 +90,7 @@ IKSolution DLSSolver::Solve(
 		seed = seed_generator.Generate( problem );
 		state = InitializeState( problem.target, seed, buffers );
 		history = InitializeHistory( state, seed );
-		UpdateSeedGenerator( *state, history, seed_generator );
+		UpdateSeedGenerator( 0, *state, history, seed_generator );
 	}
 
 	for ( int iter = 0; iter < parameters_.max_iterations; ++iter )
@@ -112,8 +113,8 @@ IKSolution DLSSolver::Solve(
 		}
 		if ( solver_state == DLSSolverState::Stalled )
 		{
-			UpdateSeedGenerator( *state, history, seed_generator );
-			UpdateHistory( *state, history );
+			UpdateSeedGenerator( iter, *state, history, seed_generator );
+			UpdateHistory( iter, *state, history );
 			seed = seed_generator.Generate( problem );
 			state = InitializeState( problem.target, seed, buffers );
 			continue;
@@ -198,7 +199,7 @@ std::optional< DLSSolver::IterationState > DLSSolver::InitializeState(
 
 // ------------------------------------------------------------
 
-DLSSolver::SolverHistory DLSSolver::InitializeHistory(
+SolverHistory DLSSolver::InitializeHistory(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
 	SolverHistory history;
@@ -219,6 +220,7 @@ DLSSolver::SolverHistory DLSSolver::InitializeHistory(
 // ------------------------------------------------------------
 
 void DLSSolver::UpdateHistory(
+	int iteration,
 	const IterationState& state,
 	SolverHistory& history ) const
 {
@@ -226,7 +228,7 @@ void DLSSolver::UpdateHistory(
 	{
 		history.best_joints = state.joints;
 		history.best_error = state.error;
-		history.last_improvement_restart_index = history.restart_counter;
+		history.last_non_stalled_error_idx = history.restart_counter;
 	}
 	history.restart_counter++;
 }
@@ -256,17 +258,18 @@ Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 // ------------------------------------------------------------
 
 Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
+	int iteration,
 	const IterationState& state,
 	const SolverHistory& history ) const
 {
-	if ( history.restart_counter == 0 &&
+	if ( iteration == 0 &&
 	     state.error_reachable / state.error < 0.5 &&
 	     state.error >= 0.9 * history.best_error )
 	{
 		return Seed::IKRandomSeedGenerator::RandomType::NearCenterLimit;
 	}
 
-	int no_improvement_span = history.restart_counter - history.last_improvement_restart_index;
+	int no_improvement_span = iteration - history.last_non_stalled_error_idx;
 	if ( ( no_improvement_span <= 4 && history.best_error <= MediumError() ) ||
 	     ( no_improvement_span <= 8 && history.best_error <= SmallError() ) )
 	{
@@ -286,11 +289,12 @@ Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
 // ------------------------------------------------------------
 
 void DLSSolver::UpdateSeedGenerator(
+	int iteration,
 	const IterationState& state,
 	const SolverHistory& history,
 	Seed::IKRandomSeedGenerator& seed_generator ) const
 {
-	seed_generator.type = ChooseSeedRandomType( state, history );
+	seed_generator.type = ChooseSeedRandomType( iteration, state, history );
 
 	constexpr double min_distance = 0.05;
 	constexpr double max_distance = 0.3;
@@ -470,15 +474,6 @@ void DLSSolver::PrintBuffer( const SolverBuffers& buffers ) const
 	    << "Joints= " << buffers.joints.transpose() << std::endl
 	    << "Werror= " << buffers.weighted_error.transpose() << std::endl
 	    << "Rerror= " << buffers.weighted_error_reachable.transpose() << std::endl;
-}
-
-// ------------------------------------------------------------
-
-void DLSSolver::PrintHistory( const SolverHistory& history ) const
-{
-	std::cout << "History: best error = " << history.best_error
-	          << " restart idx = " << history.last_improvement_restart_index
-	          << " restart cnt = " << history.restart_counter << std::endl;
 }
 
 // ------------------------------------------------------------

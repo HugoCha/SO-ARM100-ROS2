@@ -12,6 +12,7 @@
 
 namespace SOArm100::Kinematics::Solver
 {
+struct SolverHistory;
 class DLSSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
@@ -136,14 +137,6 @@ struct IterationState {
 	int stalled_error_iter;
 };
 
-struct SolverHistory
-{
-	int last_improvement_restart_index{ 0 };
-	int restart_counter{ 0 };
-	VecXd best_joints{ 0 };
-	double best_error{ 0 };
-};
-
 SolverParameters parameters_;
 
 [[nodiscard]] static SolverType GetSolverType( SolverParameters parameters );
@@ -168,6 +161,7 @@ void PerformIteration(
 void WrapJoints( VecXd& joints ) const;
 
 void UpdateSeedJoints(
+	int iteration,
 	const Seed::IKRandomSeedGenerator::RandomParameters& seed_parameters,
 	const SolverHistory& history,
 	VecXd& seed_joints ) const;
@@ -178,6 +172,7 @@ bool UpdateBuffer(
 	SolverBuffers& buffers ) const;
 
 void UpdateHistory(
+	int iteration,
 	const IterationState& state,
 	SolverHistory& history ) const;
 
@@ -219,10 +214,12 @@ void UpdateErrorConvergence(
 	IterationState& state ) const;
 
 [[nodiscard]] Seed::IKRandomSeedGenerator::RandomType ChooseSeedRandomType(
+	int iteration,
 	const IterationState& state,
 	const SolverHistory& history ) const;
 
 void UpdateSeedGenerator(
+	int iteration,
 	const IterationState& state,
 	const SolverHistory& history,
 	Seed::IKRandomSeedGenerator& seed_generator ) const;

@@ -22,7 +22,6 @@ virtual IKPresolution Presolve(
 	const Solver::IKRunContext& context ) const override;
 
 private:
-Vec3d up_direction_;
 Vec3d reference_direction_;
 double shoulder_offset_;
 
@@ -37,8 +36,8 @@ static Model::Base3d ComputeBaseReference(
 	const Model::JointGroup& revolute_base_group );
 
 static double ComputeAlpha(	
+	const Vec3d& axis,
 	const Vec3d& ref_direction, 
-	const Vec3d& up_direction, 
 	const Vec3d& r_proj );
 
 static double ComputeBeta( 

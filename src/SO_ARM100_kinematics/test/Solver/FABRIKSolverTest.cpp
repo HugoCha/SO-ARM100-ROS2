@@ -30,7 +30,8 @@ class FABRIKSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	robot_name_ = "5-axis arm";
+	//robot_name_ = "5-axis arm";
+	robot_name_ = "Universal Robot";
 	model_ = Data::GetAllRobots()[robot_name_];
 }
 
@@ -678,7 +679,7 @@ TEST_F( FABRIKSolverTest, IK_SeedSizeMismatchFails )
 	const int n_joints = model_->GetChain()->GetActiveJointCount();
 	VecXd joints = VecXd::Zero( n_joints );
 
-	auto problem = CreateProblem( VecXd::Zero( n_joints + 1 ), joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( n_joints + 1 ), joints );
 	auto solver = Solver::FABRIKSolver( model_ );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 

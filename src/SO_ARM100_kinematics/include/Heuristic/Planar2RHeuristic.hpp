@@ -33,11 +33,15 @@ static Vec3d ComputeUpDirection(
 	const Model::JointGroup planar_group );
 
 static double ComputeElbowHomeOffset(
+	const Vec3d& reference_direction,
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup planar_group );
 
 double L1() const;
 double L2() const;
+
+VecXd ComputeElbowUpSolution( double x, double y, double L1, double L2 ) const;
+VecXd ComputeElbowDownSolution( double x, double y, double L1, double L2 ) const;
 
 bool ValidateAndSelectElbowConfiguration(
 	const VecXd& planar_seed,

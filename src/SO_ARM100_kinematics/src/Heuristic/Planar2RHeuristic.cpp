@@ -8,10 +8,9 @@
 #include "Model/Joint/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
+#include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
-
-#include <cmath>
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -24,7 +23,7 @@ Planar2RHeuristic::Planar2RHeuristic(
 	Model::IKJointGroupModelBase( model, planar_group ),
 	reference_direction_( ComputeReferenceDirection( model, planar_group ) ),
 	up_direction_( ComputeUpDirection( reference_direction_, model, planar_group ) ),
-	elbow_offset_( ComputeElbowHomeOffset( model, planar_group ) )
+	elbow_offset_( ComputeElbowHomeOffset( reference_direction_, model, planar_group ) )
 {
 }
 
@@ -58,6 +57,7 @@ Vec3d Planar2RHeuristic::ComputeUpDirection(
 // ------------------------------------------------------------
 
 double Planar2RHeuristic::ComputeElbowHomeOffset(
+	const Vec3d& reference_direction,
     Model::KinematicModelConstPtr model,
     const Model::JointGroup planar_group )
 {
@@ -66,16 +66,10 @@ double Planar2RHeuristic::ComputeElbowHomeOffset(
 
     Vec3d plane_normal = shoulder_joint->Axis();
 
-    Vec3d p_shoulder = shoulder_joint->Origin();
     Vec3d p_elbow    = elbow_joint->Origin();
     Vec3d p_tip      = Translation( planar_group.tip_home );
 
-    Vec3d v1 = ProjectPointOnPlane( p_elbow - p_shoulder, Vec3d::Zero(), plane_normal ).normalized();
-    Vec3d v2 = ProjectPointOnPlane( p_tip   - p_elbow,   Vec3d::Zero(), plane_normal ).normalized();
-
-    double c = v1.dot( v2 );
-    double s = plane_normal.dot( v1.cross( v2 ) );
-    return std::atan2( s, c );
+	return SignedAngle( p_tip - p_elbow, reference_direction, plane_normal );
 }
 
 // ------------------------------------------------------------
@@ -116,7 +110,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 	auto T_group_target = ComputeGroupLocalTarget( seed, problem.target );
 	Vec3d p_group_target = Translation( T_group_target );
-
+	
 	Vec3d plane_point = shoulder_joint->Origin();
 	Vec3d plane_normal = shoulder_joint->Axis();
 	Vec3d wrist_dir = ProjectPointOnPlane( p_group_target, Vec3d::Zero(), plane_normal );
@@ -132,33 +126,9 @@ IKPresolution Planar2RHeuristic::Presolve(
 	if ( D > L1 + L2 + epsilon || D - epsilon < std::abs( L1 - L2 ) )
 		return {seed, IKHeuristicState::Fail };
 
-	VecXd elbow_up_solution( 2 );
-	VecXd elbow_down_solution( 2 );
+	VecXd elbow_up_solution = ComputeElbowUpSolution( x_local, y_local, L1, L2 );
+	VecXd elbow_down_solution = ComputeElbowDownSolution( x_local, y_local, L1, L2 );
 
-	// Elbow
-	double cos_beta = ( L1 * L1 + L2 * L2 - D_squared ) / ( 2.0 * L1 * L2 );
-	double beta = std::acos( std::clamp( cos_beta, -1.0, 1.0 ) );
-	//double q2 = M_PI - beta;
-	double elbow_up   = -beta + elbow_offset_;
-	double elbow_down = beta + elbow_offset_;
-
-	// Shoulder
-	double alpha_target  = std::atan2( y_local, x_local );
-	//double cos_alpha_int = ( L1 * L1 + D_squared - L2 * L2 ) / ( 2.0 * L1 * D );
-	//double alpha_int = std::acos( std::clamp( cos_alpha_int, -1.0, 1.0 ) );
-	double alpha_int_up = std::atan2( L2 * std::sin( elbow_up ), ( L1 + L2 * std::cos( elbow_up ) ) );
-	double alpha_int_down = std::atan2( L2 * std::sin( elbow_down ), ( L1 + L2 * std::cos( elbow_down ) ) );
-	double shoulder_elbow_up = alpha_target + alpha_int_up;
-	double shoulder_elbow_down = alpha_target + alpha_int_down;
-
-	elbow_up_solution[0] = WrapAngle( shoulder_elbow_up );
-	elbow_up_solution[1] = WrapAngle( elbow_up );
-
-	elbow_down_solution[0] = WrapAngle( shoulder_elbow_down );
-	elbow_down_solution[1] = WrapAngle( elbow_down );
-
-	std::cout << "up   = \n" << elbow_down_solution << std::endl;
-	std::cout << "down = \n" << elbow_up_solution << std::endl;
 	VecXd planar_seed = GetGroup().GetGroupJoints( problem.seed );
 	if ( !ValidateAndSelectElbowConfiguration( 
 			planar_seed, 
@@ -167,11 +137,51 @@ IKPresolution Planar2RHeuristic::Presolve(
 			planar_solution ) )
 	{
 		GetGroup().SetGroupJoints( planar_solution, seed );
-		return { seed, IKHeuristicState::PartialSuccess };
+		return { seed, IKHeuristicState::Fail };
 	}
 	
 	GetGroup().SetGroupJoints( planar_solution, seed );
 	return { seed, IKHeuristicState::Success };
+}
+
+// ------------------------------------------------------------
+
+VecXd Planar2RHeuristic::ComputeElbowUpSolution( double x, double y, double L1, double L2 ) const
+{
+	VecXd up_solution( 2 );
+
+	double c2 = ( x * x + y * y - L1 * L1 - L2 * L2 ) / ( 2 * L1 * L2 );
+	double s2 = std::sqrt( std::max( 0.0, 1 - c2 * c2 ) );
+	double q2  = std::atan2( s2, c2 );
+
+	double gamma = std::atan2( y, x );
+	double beta  = std::atan2( L2 * s2, L1 + L2 * c2 );
+	double q1 = gamma - beta;
+
+	up_solution[0] = WrapAngle( q1 );
+	up_solution[1] = WrapAngle( q2 + elbow_offset_ );
+
+	return up_solution;
+}
+
+// ------------------------------------------------------------
+
+VecXd Planar2RHeuristic::ComputeElbowDownSolution( double x, double y, double L1, double L2 ) const
+{
+	VecXd down_solution( 2 );
+
+	double c2 = ( x * x + y * y - L1 * L1 - L2 * L2 ) / ( 2 * L1 * L2 );
+	double s2 = -std::sqrt( std::max( 0.0, 1 - c2 * c2 ) );
+	double q2  = std::atan2( s2, c2 );
+
+	double gamma = std::atan2( y, x );
+	double beta  = std::atan2( L2 * s2, L1 + L2 * c2 );
+	double q1 = gamma - beta;
+
+	down_solution[0] = WrapAngle( q1 );
+	down_solution[1] = WrapAngle( q2 + elbow_offset_ );
+
+	return down_solution;
 }
 
 // ------------------------------------------------------------
@@ -208,7 +218,10 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 		return true;
 	}
 
-	solution = ( planar_seed[1] >= 0.0 ) ? elbow_up : elbow_down;
+	solution = Utils::Distance( elbow_up, planar_seed ) < 
+			   Utils::Distance( elbow_down, planar_seed ) ?
+			   elbow_up : elbow_down;
+			   
 	return true;
 }
 

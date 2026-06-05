@@ -12,6 +12,7 @@
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicModel.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/StringConverter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
@@ -195,6 +196,62 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
 // ------------------------------------------------------------
 
+TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
+{
+    // Create a 2R chain in the XY plane (rotation about Z)
+    auto two_joint_chain = Model::JointChain( 2 );
+    two_joint_chain.Add(
+        Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
+        Model::Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ), // L1 = 1.0
+        Model::Limits( -M_PI, M_PI ) );
+    two_joint_chain.Add(
+        Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0., 0., 1.0 ) ),
+        Model::Link( ToTransformMatrix( Vec3d( 0., 0., 1.0 ) ), 0.6 ), // L2 = 1.0
+        Model::Limits( -M_PI, M_PI ) );
+
+    int start = 0;
+    int count = 2;
+    Mat4d tip_home = ToTransformMatrix( Vec3d( 0.6, 0.0, 1.0 ) );
+    Model::PlanarNRJointGroup planar_group( start, count, tip_home );
+
+    auto model = CreateModel( two_joint_chain, tip_home );
+    auto heuristic = Heuristic::Planar2RHeuristic( model, planar_group );
+
+    VecXd seed( 2 );
+    seed[0] = -M_PI;
+    seed[1] = 0;
+    VecXd joints( 2 );
+    joints << -M_PI / 2, 0; // Target pose configurations
+
+    auto problem = CreateProblem( model, seed, joints );
+    auto result1 = heuristic.Presolve( problem, Solver::IKRunContext() );
+    
+    Mat4d result_pose;
+    model->ComputeFK( result1.joints, result_pose );
+    EXPECT_EQ( Heuristic::IKHeuristicState::Success, result1.state );
+    EXPECT_EQ( 2, result1.joints.size() );
+    EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+    << problem << std::endl
+    << "Target = \n" << Translation( problem.target ) << std::endl
+    << "Result = \n" << Translation( result_pose ) << std::endl;
+    
+    seed[0] = M_PI;
+    seed[1] = -M_PI;
+    problem = CreateProblem( model, seed, joints );
+    auto result2 = heuristic.Presolve( problem, Solver::IKRunContext() );
+    result_pose = ComputeFK( model, result2.joints );
+    EXPECT_EQ( Heuristic::IKHeuristicState::Success, result2.state );
+    EXPECT_EQ( 2, result2.joints.size() );
+    EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+        << problem << std::endl
+        << "Target = \n" << Translation( problem.target ) << std::endl
+        << "Result = \n" << Translation( result_pose ) << std::endl;
+    
+    EXPECT_NE( result1.joints, result2.joints );
+}
+
+// ------------------------------------------------------------
+
 TEST_F( Planar2RHeuristicTest, ChooseClosestElbowConfiguration )
 {
     auto two_joint_chain = Model::JointChain( 2 );
@@ -338,9 +395,7 @@ TEST_F( Planar2RHeuristicTest, BothConfigurationsInvalid_PartialSuccess )
     auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
     // Expecting code fallback pathway where both configurations fail validation checks
-    EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
-    EXPECT_EQ( seed[0], result.joints[0] ); // Should revert the active joints back to seed data
-    EXPECT_EQ( seed[1], result.joints[1] );
+    EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
 }
 
 // ------------------------------------------------------------
@@ -388,7 +443,8 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 
     // Setup typical configuration solver parameters
     Heuristic::PlanarCCDHeuristic::SolverParameters params;
-    params.max_iterations = 100;
+    params.max_iterations = 1000;
+    params.max_stalled_iterations = 100;
     params.error_tolerance = 1e-4;
 
     auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
@@ -418,22 +474,31 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 {
     // Create a 3R planar joint chain (3 degrees of freedom)
     auto three_joint_chain = Model::JointChain( 3 );
-    three_joint_chain.Add(
-        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-        Model::Link( Mat4d::Identity(), 1.0 ),
-        Model::Limits( -M_PI / 2, M_PI / 2 ) );
-    three_joint_chain.Add(
-        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-        Model::Link( ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ),
-        Model::Limits( -M_PI / 2, M_PI / 2 ) );
-    three_joint_chain.Add(
-        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 2, 0, 0 ) ),
-        Model::Link( ToTransformMatrix( Vec3d( 2, 0, 0 ) ), 1.0 ),
-        Model::Limits( -M_PI / 2, M_PI / 2 ) );
+    Vec3d origin = Vec3d( 0, 0.2, 0.2 );;
+	Vec3d next_origin = Vec3d( 0, 0.2, 0.6 );
+	Vec3d axis = Vec3d::UnitY();
+	three_joint_chain.Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI ) );
+	origin = next_origin;
+	next_origin = Vec3d( 0.4, 0, 0.6 );
+	axis = Vec3d::UnitY();
+	three_joint_chain.Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI ) );
+	origin = next_origin;
+	next_origin = Vec3d( 0.4, 0.2, 0.6 );
+	axis = Vec3d::UnitY();
+	three_joint_chain.Add(
+		Model::Twist( axis, origin ),
+		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI ) );
 
     int start = 0;
     int count = 3;
-    Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
+    Mat4d tip_home = ToTransformMatrix( Vec3d( 0.5, 0.2, 0.6 ) );
     Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
     auto model = CreateModel( three_joint_chain, planar_group );
@@ -441,7 +506,8 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
     // Setup typical configuration solver parameters
     Heuristic::PlanarCCDHeuristic::SolverParameters params;
     params.max_iterations = 200;
-    params.error_tolerance = 1e-2;
+    params.max_stalled_iterations = 50;
+    params.error_tolerance = 5e-3;
 
     auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
     
@@ -458,7 +524,14 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
     {
         joints = model->GetChain()->RandomValidJoints( rng );
         seed = model->GetChain()->RandomValidJointsNear( rng, joints, 0.3 );
+        // Mat4d target;
+        // target << 
+        //       0.63565,         0,  0.771977,   0.38264,
+        //             0,         1,         0,       0.2,
+        //     -0.771977,         0,   0.63565, -0.608062,
+        //             0,         0,         0,         1;
 
+        //auto problem = CreateProblem( seed, target );
         auto problem = CreateProblem( model, seed, joints );
         auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
         
@@ -466,7 +539,8 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
         {
             Mat4d result_pose;
             model->ComputeFK( result.joints, result_pose );
-        
+            
+            std::cout << "Initial joints = " << joints.transpose() << std::endl;
             std::cout << problem << std::endl;
             std::cout << result << std::endl;
             std::cout << "Result = \n" << Translation( result_pose ) << std::endl;
@@ -525,7 +599,7 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
     auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
     // Should break loop early and fallback gracefully to partial success
-    EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
+    EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
     EXPECT_EQ( params.max_iterations, result.iterations );
     EXPECT_GE( result.error, params.error_tolerance );
 }

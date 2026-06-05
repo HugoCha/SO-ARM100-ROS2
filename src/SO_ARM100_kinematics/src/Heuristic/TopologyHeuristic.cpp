@@ -89,7 +89,7 @@ IKPresolution TopologyHeuristic::Presolve(
          !compute_heuristic( base_heuristic_.get() ) )
     {
         return { 
-            problem.seed, 
+            intermediate_problem.seed, 
             IKHeuristicState::Fail, 
             std::numeric_limits<double>::infinity(), 
             presolution.iterations };
@@ -98,7 +98,7 @@ IKPresolution TopologyHeuristic::Presolve(
     if ( !compute_heuristic( intermediate_heuristic_.get() ) )
     {
         return { 
-            problem.seed, 
+            intermediate_problem.seed, 
             IKHeuristicState::Fail, 
             std::numeric_limits<double>::infinity(), 
             presolution.iterations };
@@ -108,7 +108,7 @@ IKPresolution TopologyHeuristic::Presolve(
          !compute_heuristic( wrist_heuristic_.get() ) )
     {
         return { 
-            problem.seed, 
+            intermediate_problem.seed, 
             IKHeuristicState::Fail, 
             std::numeric_limits<double>::infinity(), 
             presolution.iterations };
