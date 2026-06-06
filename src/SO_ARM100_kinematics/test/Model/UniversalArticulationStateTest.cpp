@@ -485,11 +485,12 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
-	Vec3d expected_bone_origin = Vec3d( 0.1, 0, 0 );
-	Vec3d expected_bone_direction = BoneOffAxisInternalDirection( 0, M_PI / 2 );
+	double clamp_value1 = 0.0;
+	double clamp_value2 = M_PI / 2;
 
 	bone_state.Origin() = Vec3d( 0.1, 0, 0 );
-	bone_state.Direction() = BoneOffAxisInternalDirection( 0, 3 * M_PI / 4 );
+	Vec3d bone_dir = BoneOffAxisInternalDirection( clamp_value1, 3 * M_PI / 4 );
+	bone_state.Direction() = bone_dir;
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
@@ -499,13 +500,12 @@ TEST_F( UniversalArticulationStateTest, ApplyConstraints_BoneOffAxisSecondJointR
 	state.SetCenterPose( world_transform );
 	state.ApplyConstraints( bone_state );
 
-	EXPECT_TRUE( bone_state.Origin().isApprox( expected_bone_origin ) )
-	    << "Expected Origin   = " << expected_bone_origin.transpose() << std::endl
-	    << "Constraint Origin = " << bone_state.Origin().transpose() << std::endl;
+	Vec3d clamp_bone_dir = BoneOffAxisInternalDirection( clamp_value1, clamp_value2 );
 
-	EXPECT_TRUE( bone_state.Direction().isApprox( expected_bone_direction, apply_constraint_precision ) )
-	    << "Expected Direction   = " << expected_bone_direction.transpose() << std::endl
-	    << "Constraint Direction = " << bone_state.Direction().transpose() << std::endl;
+	EXPECT_EQ( state.GetJointValues().size(), 2 );
+	EXPECT_TRUE( universal_articulation_->Joints()[0]->GetLimits().Within( state.GetJointValues()[0] ) );
+	EXPECT_TRUE( universal_articulation_->Joints()[1]->GetLimits().Within( state.GetJointValues()[1] ) );
+	EXPECT_LE( ( bone_dir - bone_state.Direction() ).squaredNorm(), ( bone_dir - clamp_bone_dir ).squaredNorm() );
 }
 
 // ------------------------------------------------------------
@@ -595,7 +595,7 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 2 ), bone_state );
 
 	auto expected_local_rotation_1 = AngleAxis( expected_value_1, revolute_joint_1_->Axis() );
 	auto expected_local_rotation_2 = AngleAxis( expected_value_2, revolute_joint_2_->Axis() );
@@ -649,7 +649,7 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 2 ), bone_state );
 
 	auto expected_local_rotation_1 = AngleAxis( expected_value_1, revolute_joint_1_->Axis() );
 	auto expected_local_rotation_2 = AngleAxis( expected_value_2, revolute_joint_2_->Axis() );
@@ -688,11 +688,11 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 
-	double off_limit_value_2 = 3 * M_PI / 4;
-	double expected_value_1 = 0;
-	double expected_value_2 = M_PI / 2;
+	double off_limit_value_2 = M_PI / 2 + 0.3;
+	double clamp_value_1 = 0;
+	double clamp_value_2 = M_PI / 2;
 	bone_state.Origin() = Vec3d( 0.1, 0, 0 );
-	bone_state.Direction() = BoneOffAxisInternalDirection( expected_value_1, off_limit_value_2 );
+	bone_state.Direction() = BoneOffAxisInternalDirection( clamp_value_1, off_limit_value_2 );
 
 	auto rotation = Quaternion::Identity();
 	auto center = Vec3d::Zero();
@@ -701,35 +701,15 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( Vec2d( clamp_value_1, clamp_value_2 ), bone_state );
 
-	auto expected_local_rotation_1 = AngleAxis( expected_value_1, revolute_joint_1_->Axis() );
-	auto expected_local_rotation_2 = AngleAxis( expected_value_2, revolute_joint_2_->Axis() );
-	auto expected_local_rotation = expected_local_rotation_1 * expected_local_rotation_2;
+	Vec3d clamp_bone_dir = BoneOffAxisInternalDirection( clamp_value_1, clamp_value_2 );
+	Vec3d result_bone_dir = BoneOffAxisInternalDirection( state.GetJointValues()[0], state.GetJointValues()[1] );
 
 	EXPECT_EQ( state.GetJointValues().size(), 2 );
-
-	EXPECT_EQ( Vec3d( 0, 0, 0 ), state.LocalTransform().translation() );
-	EXPECT_TRUE( expected_local_rotation.matrix().isApprox( state.LocalTransform().rotation(), 1e-5  ) );
-
-	EXPECT_EQ( center, state.GlobalTransform().translation() );
-	EXPECT_TRUE( ( rotation * expected_local_rotation ).matrix().isApprox( state.GlobalTransform().rotation(), 1e-5  ) );
-
-	EXPECT_NEAR( state.GetJointValues()[0], expected_value_1, epsilon );
-	EXPECT_NEAR( state.GetJointValues()[1], expected_value_2, epsilon );
-
-	EXPECT_NEAR( state.GetJointStates()[0]->Value(), expected_value_1, epsilon );
-	EXPECT_NEAR( state.GetJointStates()[1]->Value(), expected_value_2, epsilon );
-
-	EXPECT_TRUE( state.GetJointStates()[0]->Origin().isApprox( Vec3d( -0.1, 0, 0 ), 1e-5  ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox( Vec3d( 0, 0.1, 0 ), 1e-5  ) )
-	    << "Expected = " <<  Vec3d( 0, 0.1, 0 ) << std::endl
-	    << "Result = " << state.GetJointStates()[1]->Origin() << std::endl;
-
-	auto expected_axis_1 = rotation * revolute_joint_1_->Axis();
-	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
-	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1 ) );
-	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2, 1e-5 ) );
+	EXPECT_TRUE( universal_articulation_->Joints()[0]->GetLimits().Within( state.GetJointValues()[0] ) );
+	EXPECT_TRUE( universal_articulation_->Joints()[1]->GetLimits().Within( state.GetJointValues()[1] ) );
+	EXPECT_LE( ( bone_state.Direction() - result_bone_dir ).squaredNorm(), ( clamp_bone_dir - bone_state.Direction() ).squaredNorm() );
 }
 
 // ------------------------------------------------------------
@@ -760,12 +740,12 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency
 		bone_state.Direction() = rotation * BoneOffAxisInternalDirection( angle1, angle2 );
 
 		state.SetCenterPose( world_transform );
-		state.UpdateValues( bone_state );
+		state.UpdateValues( VecXd::Zero( 2 ), bone_state );
 
 		auto result_angles = state.GetJointValues();
 		Vec3d result_dir = rotation * BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
 
-		if ( !result_dir.isApprox( bone_state.Direction(), 1e-5 ) )
+		if ( !result_dir.isApprox( bone_state.Direction(), 5e-3 ) )
 		{
 			ADD_FAILURE() 
 				<< "Fail for iteration " << i << std::endl

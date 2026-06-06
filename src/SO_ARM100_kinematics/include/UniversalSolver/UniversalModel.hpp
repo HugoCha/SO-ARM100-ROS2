@@ -6,6 +6,11 @@
 #include <optional>
 #include <vector>
 
+namespace SOArm100::Kinematics::Solver
+{
+struct UniversalSolution;
+}
+
 namespace SOArm100::Kinematics::Model
 {
 class UniversalModel
@@ -24,8 +29,8 @@ public:
 }
 
 Mat3d Recompose( const Vec2d& q ) const;
-std::vector< Vec2d > Decompose( const Mat3d& R_target ) const;
-std::vector< Vec2d > Decompose( const Vec3d& b0, const Vec3d& b1 ) const;
+std::vector< Solver::UniversalSolution > Decompose( const Mat3d& R_target ) const;
+std::vector< Solver::UniversalSolution > Decompose( const Vec3d& b0, const Vec3d& b1 ) const;
 
 private:
 std::vector< Model::JointConstPtr > joints_;
@@ -34,7 +39,7 @@ UniversalModel(
 	const Model::JointConstPtr& joint1,
 	const Model::JointConstPtr& joint2 );
 
-Vec2d ComputeSolution(
+Solver::UniversalSolution ComputeSolution(
     double theta0_sol,
     const Limits& l0,
     const Limits& l1,

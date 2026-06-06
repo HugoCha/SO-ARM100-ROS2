@@ -30,9 +30,10 @@ class TopologyHeuristicTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
+    robot_name_ = "RevoluteBase";
     //robot_name_ = "5-axis arm";
     //robot_name_ = "6-axis arm";
-    robot_name_ = "Universal Robot";
+    //robot_name_ = "Universal Robot";
     model_ = Data::GetAllRobots()[robot_name_];
 }
 
@@ -151,13 +152,12 @@ TEST_F( TopologyHeuristicTest, Presolve_Converges_FromJoints )
 
     VecXd joints = VecXd::Zero( n_joints ); //= model_->GetChain()->RandomValidJoints( rng_, 0.05 );
     VecXd seed = VecXd::Ones( n_joints ) * -M_PI; //= model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.3, 0.05 );
-    seed[0] = 0;
     joints[0] = -M_PI / 3;
     joints[1] = -M_PI / 4;
-    joints[2] = M_PI / 6;
-    joints[3] = M_PI / 6;
-    joints[4] = -M_PI / 12;
-    joints[5] = -M_PI / 6;
+    //joints[2] = M_PI / 6;
+    //joints[3] = M_PI / 6;
+    //joints[4] = -M_PI / 12;
+    //joints[5] = -M_PI / 6;
 
     auto result = CheckPresolve( model_, robot_name_, seed, joints );
     

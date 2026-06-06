@@ -502,7 +502,7 @@ TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTrans
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	EXPECT_EQ( state.GetJointValues().size(), 1 );
 	EXPECT_EQ( state.GetJointValues()[0], 0.5 );
@@ -535,7 +535,7 @@ TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOffAxisWithRotationTrans
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	EXPECT_EQ( state.GetJointValues().size(), 1 );
 	EXPECT_EQ( state.GetJointValues()[0], 1.0 );
@@ -568,7 +568,7 @@ TEST_F( PrismaticArticulationStateTest, UpdateValue_BoneOnAxisWithRotationTransl
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	EXPECT_EQ( state.GetJointValues().size(), 1 );
 	EXPECT_NEAR( state.GetJointValues()[0], 0.4, epsilon );

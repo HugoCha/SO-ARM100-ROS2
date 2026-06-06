@@ -14,6 +14,7 @@
 #include "Utils/KinematicsUtils.hpp"
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -26,7 +27,25 @@ WristHeuristic::WristHeuristic(
 	Model::IKJointGroupModelBase( model, wrist_group ),
 	spherical_solver_( nullptr )
 {
-	if ( GetWristTopology() == Model::WristTopology::Revolute3 )
+	if ( GetWristTopology() == Model::WristTopology::Revolute2 )
+	{
+		auto universal_model = Model::UniversalModel::ComputeModel(
+			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
+			model->GetChain()->GetActiveJoint( wrist_group.Index( 1 ) ) );
+		
+		Solver::UniversalSolver::SolverParameters params;
+		params.error_tol = 1e-3;
+
+		if ( !universal_model )
+		{
+			throw std::invalid_argument( "Wrist is not Universal" );
+		}
+
+		universal_solver_ = std::make_unique< Solver::UniversalSolver >( 
+			*universal_model, 
+			params );
+	}
+	else if ( GetWristTopology() == Model::WristTopology::Revolute3 )
 	{
 		auto spherical_model = Model::SphericalModel::ComputeModel(
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
@@ -34,10 +53,16 @@ WristHeuristic::WristHeuristic(
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 2 ) ) );
 		
 		Solver::SphericalSolver::SolverParameters params;
+		params.error_tol = 1e-3;
+
+		if ( !spherical_model )
+		{
+			throw std::invalid_argument( "Wrist is not Spherical" );
+		}
 
 		spherical_solver_ = std::make_unique< Solver::SphericalSolver >( 
 			*spherical_model, 
-			Solver::SphericalSolver::SolverParameters() );
+			params );
 	}
 }
 
@@ -178,13 +203,13 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 	Mat3d Rerr = R_check.transpose() * R_target;
 	AngleAxis aa_err( Rerr );
 
-	std::cout << "seed 1 = " << wrist_solution[0] << " seed 2 = " << wrist_solution[1] << std::endl;
-	std::cout << "q1 = " << q1 << " q2 = " << q2 << std::endl;
-	std::cout << "target =\n" << R_target << std::endl;
-	std::cout << "result =\n" << R_check << std::endl;
-	std::cout << "Rerror  =" << Rerr << std::endl;
-	std::cout << "AAerror  =" << aa_err.angle() * aa_err.axis() << std::endl;
-	std::cout << "Other Axis =" << e1.cross( e2 ) << std::endl;
+	// std::cout << "seed 1 = " << wrist_solution[0] << " seed 2 = " << wrist_solution[1] << std::endl;
+	// std::cout << "q1 = " << q1 << " q2 = " << q2 << std::endl;
+	// std::cout << "target =\n" << R_target << std::endl;
+	// std::cout << "result =\n" << R_check << std::endl;
+	// std::cout << "Rerror  =" << Rerr << std::endl;
+	// std::cout << "AAerror  =" << aa_err.angle() * aa_err.axis() << std::endl;
+	// std::cout << "Other Axis =" << e1.cross( e2 ) << std::endl;
 
 	if ( RotationError( R_target, R_check ) > rotation_tolerance )
 	{

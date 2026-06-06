@@ -151,7 +151,7 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex0_UpdatesArticulat
 	bone_state.Origin() = Vec3d( 0., 0., 0. );
 	bone_state.Direction() = Vec3d( 1, 0, 0 ).normalized() * skeleton_->Bone( 0 )->Length();
 
-	skeleton_state_->UpdateValue( bone_state, 0 );
+	skeleton_state_->UpdateValue( VecXd::Zero( joints.size() ), bone_state, 0 );
 
 	Vec3d expected_joints;
 	expected_joints[0] = ( 1 - Model::SkeletonState::DampingFactors()[Model::ArticulationType::Revolute] ) * M_PI / 6;
@@ -203,7 +203,7 @@ TEST_F( SkeletonStateTest, UpdateValue_WithValidBoneStateIndex1_UpdatesArticulat
 	bone_state.Origin() = skeleton_->Bone( 1 )->Origin();
 	bone_state.Direction() = Vec3d( 1, 0, 0 ).normalized() * skeleton_->Bone( 1 )->Length();
 
-	skeleton_state_->UpdateValue( bone_state, 1 );
+	skeleton_state_->UpdateValue( VecXd::Zero( joints.size() ), bone_state, 1 );
 
 	Vec3d expected_joints;
 	expected_joints[0] = M_PI / 6;
@@ -283,8 +283,8 @@ TEST_F( SkeletonStateTest, SetState_WithInvalidJoints_ThrowsException )
 TEST_F( SkeletonStateTest, UpdateValue_WithInvalidIndex_ThrowsException )
 {
 	auto bone_state = Model::BoneState( skeleton_->Bone( 0 ) );
-	EXPECT_THROW( skeleton_state_->UpdateValue( bone_state, -1 ), std::out_of_range );
-	EXPECT_THROW( skeleton_state_->UpdateValue( bone_state, skeleton_->ArticulationCount() ), std::out_of_range );
+	EXPECT_THROW( skeleton_state_->UpdateValue( VecXd::Zero( 3 ), bone_state, -1 ), std::out_of_range );
+	EXPECT_THROW( skeleton_state_->UpdateValue( VecXd::Zero( 3 ), bone_state, skeleton_->ArticulationCount() ), std::out_of_range );
 }
 
 // ------------------------------------------------------------

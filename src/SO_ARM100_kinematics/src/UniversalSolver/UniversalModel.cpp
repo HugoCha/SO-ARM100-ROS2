@@ -3,8 +3,11 @@
 #include "Global.hpp"
 
 #include "Model/Joint/Limits.hpp"
+#include "UniversalSolver/UniversalSolution.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
+
+#include <limits>
 
 namespace SOArm100::Kinematics::Model
 {
@@ -48,16 +51,26 @@ Mat3d UniversalModel::Recompose( const Vec2d& q ) const
 
 // ------------------------------------------------------------
 
-std::vector< Vec2d > UniversalModel::Decompose( const Mat3d& R_target ) const
+std::vector< Solver::UniversalSolution > UniversalModel::Decompose( const Mat3d& R_target ) const
 {
-    const Vec3d& a1 = joints_[0]->Axis();
-    const Vec3d& a2 = joints_[1]->Axis();
-    return {};
+    const Vec3d& a0 = joints_[0]->Axis();
+    const Vec3d& a1 = joints_[1]->Axis();
+
+    Vec3d t0 = a1.cross( a0 );
+    if ( t0.norm() < 1e-6 )
+        t0 = a0.unitOrthogonal();
+    t0.normalize();
+    Vec3d t1 = a1.cross( t0 ).normalized();
+
+    auto solsA = Decompose( t0, R_target * t0 );
+    auto solsB = Decompose( t1, R_target * t1 );
+
+    return { solsA[0], solsA[1], solsB[0], solsB[1] };
 }
 
 // ------------------------------------------------------------
 
-std::vector< Vec2d > UniversalModel::Decompose( const Vec3d& b0, const Vec3d& b1 ) const
+std::vector< Solver::UniversalSolution > UniversalModel::Decompose( const Vec3d& b0, const Vec3d& b1 ) const
 {
     auto joint0 = joints_[0];
 	auto joint1 = joints_[1];
@@ -67,6 +80,14 @@ std::vector< Vec2d > UniversalModel::Decompose( const Vec3d& b0, const Vec3d& b1
 
 	const Vec3d& a0 = joint0->Axis();
 	const Vec3d& a1 = joint1->Axis();
+
+    if ( b0.cross( a1 ).norm() < 1e-6 )
+    {
+        double theta0 = AngleAroundAxis( b0, b1, a0 );
+        return {
+            ComputeSolution( theta0, l0, l1, a0, a1, b0, b1 )
+        };
+    }
 
 	double A = a1.dot( b1 ) - ( a0.dot( b1 ) ) * ( a1.dot( a0 ) );
 	double B = -a1.dot( a0.cross( b1 ) );
@@ -84,7 +105,7 @@ std::vector< Vec2d > UniversalModel::Decompose( const Vec3d& b0, const Vec3d& b1
 
 // ------------------------------------------------------------
 
-Vec2d UniversalModel::ComputeSolution(
+Solver::UniversalSolution UniversalModel::ComputeSolution(
     double theta0_sol,
     const Limits& l0,
     const Limits& l1,
@@ -93,18 +114,40 @@ Vec2d UniversalModel::ComputeSolution(
     const Vec3d& b0,
     const Vec3d& b1 ) const
 {
-    Vec2d angles;
+    Solver::UniversalSolution solution;
+    solution.reachable = true;
+    solution.cost = std::numeric_limits< double >::infinity();
 
-	angles[0] = l0.Clamp( std::remainder( theta0_sol, 2 * M_PI ) );
-	auto rotation0 = AngleAxis( angles[0], a0 );
-
-	auto rotation0_sol = AngleAxis( theta0_sol, a0 );
-	Vec3d a1_prime = rotation0_sol * a1;
-	Vec3d b0_prime = rotation0_sol * b0;
+    theta0_sol = WrapAngle( theta0_sol );
+    solution.reachable &= l0.Within( theta0_sol );
+	solution.angles[0] = l0.Clamp( theta0_sol );
+	auto rotation0 = AngleAxis( solution.angles[0], a0 );
 	
-    angles[1] = l1.Clamp( AngleAroundAxis( b0_prime, b1, a1_prime ) );
+    Vec3d a1_prime = rotation0 * a1;
+	Vec3d b0_prime = rotation0 * b0;
+	
+    double sin_angle = b0_prime.cross( a1_prime ).norm();
+    if ( sin_angle < epsilon )
+    {
+        solution.angles[1] = l1.Center();
+        Vec3d local_direction = rotation0 * b0;
+        solution.local_rotation = rotation0;
+        solution.fk_error = Angle( local_direction.normalized(), b1.normalized() );
+    }
+    else
+    {
+        double theta1_sol = AngleAroundAxis( b0_prime, b1, a1_prime );
+        theta1_sol = WrapAngle( theta1_sol );
+        solution.reachable &= l1.Within( theta1_sol );
+        solution.angles[1] = l1.Clamp( theta1_sol );
 
-    return angles;
+        auto rotation1 = AngleAxis( solution.angles[1], a1_prime );
+        solution.local_rotation = rotation1 * rotation0;
+        Vec3d local_direction   = rotation1 * rotation0 * b0;
+        solution.fk_error = Angle( local_direction.normalized(), b1.normalized() );
+    }
+
+    return solution;
 }
 
 // ------------------------------------------------------------

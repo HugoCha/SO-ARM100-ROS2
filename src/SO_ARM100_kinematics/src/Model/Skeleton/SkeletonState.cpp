@@ -105,14 +105,20 @@ void SkeletonState::SetState( const VecXd& joints )
 
 // ------------------------------------------------------------
 
-void SkeletonState::UpdateValue( const BoneState& bone_state, int i )
+void SkeletonState::UpdateValue( 
+	const VecXd& seed,
+	const BoneState& bone_state, 
+	int i )
 {
 	const int n_joints = skeleton_->ArticulationCount();
 	if ( i < 0 || i >= n_joints )
 		throw std::out_of_range( "Index must match articulation index" );
 
 	auto type = articulation_states_[i]->GetArticulation()->GetType();
-	articulation_states_[i]->UpdateValues( bone_state, DampingFactors()[type] );
+	articulation_states_[i]->UpdateValues( 
+		GetArticulationJoints( seed, i),
+		bone_state, 
+		DampingFactors()[type] );
 
 	Iso3d transform;
 
@@ -133,6 +139,25 @@ void SkeletonState::ApplyConstraint( BoneState& bone_state, int i ) const
 		throw std::out_of_range( "Index must match articulation index" );
 
 	articulation_states_[i]->ApplyConstraints( bone_state );
+}
+
+// ------------------------------------------------------------
+
+VecXd SkeletonState::GetArticulationJoints( const VecXd& joints, int i ) const
+{
+	const int n_joints = skeleton_->JointCount();
+	if ( joints.size() != n_joints )
+		throw std::invalid_argument( "Invalid Joint size" );
+	if ( i < 0 || i >= skeleton_->ArticulationCount() )
+		throw std::invalid_argument( "Index out of range" );
+
+	int articulation_joint_cnt = skeleton_->Articulation( i )->JointCount();
+	int articulation_joint_start = 0;
+
+	for ( int articulation = 0; articulation < i; articulation++ )
+		articulation_joint_start += skeleton_->Articulation( articulation )->JointCount();
+
+	return joints.segment( articulation_joint_start, articulation_joint_cnt );
 }
 
 // ------------------------------------------------------------

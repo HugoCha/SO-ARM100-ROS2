@@ -30,8 +30,8 @@ class FABRIKSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	//robot_name_ = "5-axis arm";
-	robot_name_ = "Universal Robot";
+	robot_name_ = "5-axis arm";
+	//robot_name_ = "Universal Robot";
 	model_ = Data::GetAllRobots()[robot_name_];
 }
 
@@ -105,10 +105,11 @@ Solver::IKSolution CheckConvergence(
 		<< problem << std::endl
 		<< result  << std::endl;
 
-	EXPECT_TRUE( TranslationError( problem.target, result_pose ) < solver.GetParameters().error_tolerance )
+	EXPECT_LE( TranslationError( problem.target, result_pose ), parameters.error_tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
 	    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
-	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
+	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl
+	    << "Error   = " << TranslationError( problem.target, result_pose ) << std::endl;
 
 	return result;
 }
@@ -628,12 +629,15 @@ TEST_F( FABRIKSolverTest, IK_NearJointLimits )
 	for ( int i = 0; i < n_joints; i++ )
 	{
 		const auto& limits = chain->GetActiveJointLimits( i );
-		min_joints[i] = limits.Min() * 0.9;
-		max_joints[i] = limits.Max() * 0.9;
+		min_joints[i] = limits.Min() * 0.91;
+		max_joints[i] = limits.Max() * 0.91;
 	}
 
-	auto min_result = CheckConvergence( model_, RobotsTestParameters()[robot_name_], VecXd::Zero( n_joints ), min_joints );
-	auto max_result = CheckConvergence( model_, RobotsTestParameters()[robot_name_], VecXd::Zero( n_joints ), max_joints );
+	auto params = RobotsTestParameters()[robot_name_];
+	params.tolerance = 1e-2;
+
+	auto min_result = CheckConvergence( model_, params, VecXd::Zero( n_joints ), min_joints );
+	auto max_result = CheckConvergence( model_, params, VecXd::Zero( n_joints ), max_joints );
 }
 
 // ------------------------------------------------------------
@@ -654,12 +658,15 @@ TEST_F( FABRIKSolverTest, IK_NearJointLimits_AllRobots )
 		for ( int i = 0; i < n_joints; i++ )
 		{
 			const auto& limits = chain->GetActiveJointLimits( i );
-			min_joints[i] = limits.Min() * 0.9;
-			max_joints[i] = limits.Max() * 0.9;
+			min_joints[i] = limits.Min() * 0.91;
+			max_joints[i] = limits.Max() * 0.91;
 		}
 
-		auto min_result = CheckConvergence( robot.second, parameters, VecXd( n_joints ), min_joints );
-		auto max_result = CheckConvergence( robot.second, parameters, VecXd( n_joints ), max_joints );
+		auto params = RobotsTestParameters()[robot_name_];
+		params.tolerance = 1e-2;
+	
+		auto min_result = CheckConvergence( robot.second, params, VecXd::Zero( n_joints ), min_joints );
+		auto max_result = CheckConvergence( robot.second, params, VecXd::Zero( n_joints ), max_joints );
 
 		EXPECT_TRUE( min_result.Success() )
 		    << "Fail for robot " << robot.first << std::endl

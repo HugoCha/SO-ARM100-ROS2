@@ -75,6 +75,7 @@ void ForwardPass(
 	std::vector< Model::BoneState >& bone_states ) const;
 
 void UpdateValues(
+	const VecXd& seed,
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const;
 

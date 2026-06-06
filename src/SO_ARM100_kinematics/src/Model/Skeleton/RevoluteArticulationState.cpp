@@ -46,6 +46,7 @@ void RevoluteArticulationState::ApplyConstraints( BoneState& bone_state ) const
 // ------------------------------------------------------------
 
 void RevoluteArticulationState::UpdateValues( 
+	const VecXd& seed, 
 	const BoneState& bone_state, 
 	double damping_factor )
 {

@@ -122,7 +122,7 @@ IKSolution FABRIKSolver::Solve(
 
 		BackwardPass( p_target, skeleton_state, bone_states );
 		ForwardPass( p_base, skeleton_state, bone_states );
-		UpdateValues( skeleton_state, bone_states );
+		UpdateValues( problem.seed, skeleton_state, bone_states );
 	}
 
 	return { IKSolverState::MaxIterations, history.best_joints, history.best_error, parameters_.max_iterations };
@@ -211,6 +211,7 @@ void FABRIKSolver::ForwardPass(
 // ------------------------------------------------------------
 
 void FABRIKSolver::UpdateValues(
+	const VecXd& seed,
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const
 {
@@ -219,7 +220,7 @@ void FABRIKSolver::UpdateValues(
 	for ( int i = 0; i < n; i++ )
 	{
 		// std::cout << std::to_string( i ) << " : "<< bone_states[i] << std::endl;
-		skeleton_state.UpdateValue( bone_states[i], i );
+		skeleton_state.UpdateValue( seed, bone_states[i], i );
 	}
 	
 	// std::cout << std::to_string( n ) << " : "<< bone_states[n] << std::endl;

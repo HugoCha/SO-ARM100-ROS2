@@ -1,42 +1,28 @@
 #pragma once
 
-#include "Global.hpp"
-
 #include "ArticulationState.hpp"
-#include "Model/Skeleton/Bone.hpp"
+#include "UniversalSolver/UniversalSolver.hpp"
+
+namespace SOArm100::Kinematics::Solver
+{
+    struct UniversalSolution;
+}
 
 namespace SOArm100::Kinematics::Model
 {
 class Limits;
-
 class UniversalArticulationState : public ArticulationState
 {
 public:
 UniversalArticulationState( const Articulation* articulation );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const override;
-virtual void UpdateValues( const BoneState& bone_state, double damping_factor = 1.0 ) override;
+virtual void UpdateValues(
+    const VecXd& seed, 
+    const BoneState& bone_state, 
+    double damping_factor = 1.0 ) override;
 
 private:
-struct Solution
-{
-	double theta0;
-	double theta1;
-	AngleAxis rotation0;
-	AngleAxis rotation1;
-	Vec3d local_bone_direction;
-
-	double distance_to_solution;
-};
-
-Solution ComputeSolution(
-	double theta0_sol,
-	Model::BoneConstPtr bone,
-	const Limits& joint0_limits,
-	const Limits& joint1_limits,
-	const Vec3d& a0,
-	const Vec3d& a1,
-	const Vec3d& v0,
-	const Vec3d& v1 ) const;
+std::unique_ptr< Solver::UniversalSolver > solver_;
 };
 }

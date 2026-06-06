@@ -42,11 +42,13 @@ std::vector< BoneState > GetBoneStates() const;
 
 void SetState( const VecXd& joints );
 void ApplyConstraint( BoneState& bone_state, int i ) const;
-void UpdateValue( const BoneState& bone_state, int i );
+void UpdateValue( const VecXd& seed, const BoneState& bone_state, int i );
 
 private:
 const Model::Skeleton* skeleton_;
 std::vector< ArticulationStatePtr > articulation_states_;
+
+VecXd GetArticulationJoints( const VecXd& joints, int i ) const;
 
 static ArticulationStatePtr CreateArticulationState( const Articulation* articulation );
 };

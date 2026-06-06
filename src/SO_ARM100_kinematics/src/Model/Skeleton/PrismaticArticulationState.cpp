@@ -52,6 +52,7 @@ void PrismaticArticulationState::ApplyConstraints( BoneState& bone_state ) const
 // ------------------------------------------------------------
 
 void PrismaticArticulationState::UpdateValues( 
+	const VecXd& seed, 
 	const BoneState& bone_state, 
 	double damping_factor )
 {

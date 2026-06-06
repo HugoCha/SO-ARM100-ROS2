@@ -385,7 +385,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 	auto result_direction = BoneOffAxisInternalDirection(
 		state.GetJointValues()[0],
@@ -450,7 +450,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisSecondJointRotat
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 	auto result_direction = BoneOffAxisInternalDirection(
 		state.GetJointValues()[0],
@@ -517,7 +517,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisThirdJointRotati
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 	auto result_direction = BoneOffAxisInternalDirection(
 		state.GetJointValues()[0],
@@ -583,7 +583,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisCombinedRotation
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 	auto result_direction = BoneOffAxisInternalDirection(
 		state.GetJointValues()[0],
@@ -653,7 +653,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 	auto result_bone_dir = BoneOffAxisInternalDirection(
 		state.GetJointValues()[0],
@@ -728,7 +728,7 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisConsistency_Expe
 			initial_value_2,
 			initial_value_3 );
 
-		state.UpdateValues( bone_state );
+		state.UpdateValues( VecXd::Zero( 3 ), bone_state );
 
 		auto result_direction = rotation * BoneOffAxisInternalDirection(
 			state.GetJointValues()[0],

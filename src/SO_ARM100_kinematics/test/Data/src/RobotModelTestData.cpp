@@ -469,8 +469,8 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 		);
 
 	chain->Add(
-		{ Vec3d::UnitZ(), Vec3d( 1, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 1, 0, 1 ) ), 0.1 },
+		{ Vec3d::UnitZ(), Vec3d( 0, 1, 1 ) },
+		{ ToTransformMatrix( Vec3d( 0, 1, 1 ) ), 0.1 },
 		{ -M_PI, M_PI }
 		);
 

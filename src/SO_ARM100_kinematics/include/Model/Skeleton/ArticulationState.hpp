@@ -41,7 +41,10 @@ void SetState( const Iso3d& world_transform, const VecXd& values );
 void SetCenterPose( const Iso3d& world_transform );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const = 0;
-virtual void UpdateValues( const BoneState& bone_state, double damping_factor = 1.0 ) = 0;
+virtual void UpdateValues( 
+	const VecXd& seed, 
+	const BoneState& bone_state, 
+	double damping_factor = 1.0 ) = 0;
 
 protected:
 const Articulation* articulation_;

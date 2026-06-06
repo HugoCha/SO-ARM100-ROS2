@@ -416,7 +416,7 @@ TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTrans
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	double expected_value = -M_PI / 4;
 	EXPECT_EQ( state.GetJointValues().size(), 1 );
@@ -451,7 +451,7 @@ TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTrans
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	double expected_value = -M_PI / 2;
 	EXPECT_EQ( state.GetJointValues().size(), 1 );
@@ -486,7 +486,7 @@ TEST_F( RevoluteArticulationStateTest, UpdateValues_BoneOnAxisWithRotationTransl
 	world_transform.rotate( rotation );
 	state.SetCenterPose( world_transform );
 
-	state.UpdateValues( bone_state );
+	state.UpdateValues( VecXd::Zero( 1 ), bone_state );
 
 	double expected_value = 0;
 	EXPECT_EQ( state.GetJointValues().size(), 1 );

@@ -13,7 +13,7 @@ class UniversalSolver
 public:
 struct SolverParameters
 {
-double tolerance { 5e-2 };
+double error_tol { 5e-3 };
 double fk_error_penalty { 1e6 };
 };
 explicit UniversalSolver( const Model::UniversalModel& model, SolverParameters parameters );
@@ -38,13 +38,7 @@ Model::UniversalModel model_;
 double DeviationCost( const Vec2d& prefered, const Vec2d& angles ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
 double FKErrorCost( double fk_error ) const;
-
-UniversalSolution EvaluateSolution( 
-    const Vec2d& angles,
-    const Vec2d& prefered,
-	const Vec3d& b0,
-	const Vec3d& b1 ) const;
-
-double ComputeCost( double fk_error, const Vec2d& angles, const Vec2d& theta_pref ) const;
+double RotationErrorCost( const Mat3d& R_target, const Vec2d& angles ) const;
+double LimitCost( const Vec2d& angles ) const;
 };
 }

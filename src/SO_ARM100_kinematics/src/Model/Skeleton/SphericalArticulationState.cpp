@@ -63,8 +63,9 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 // ------------------------------------------------------------
 
 void SphericalArticulationState::UpdateValues( 
-	const BoneState& bone_state,
-	double damping_factor )
+	const VecXd& seed,
+    const BoneState& bone_state, 
+    double damping_factor )
 {
 	Vec3d angles;
 
@@ -73,7 +74,8 @@ void SphericalArticulationState::UpdateValues(
 
 	auto result = solver_->SolveAndOptimizeFromTwoVectors(
 		old_bone,
-		new_bone );
+		new_bone,
+		seed );
 
 	angles = result.angles;
 

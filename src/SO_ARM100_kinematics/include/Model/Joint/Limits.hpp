@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Global.hpp"
 #include <algorithm>
 #include <cassert>
 #include <limits>
