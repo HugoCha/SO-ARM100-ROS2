@@ -195,23 +195,23 @@ TEST_F( FabrikAnalyzerTest, Analyze_3ZRobot_HomeOnJointAxis_ReturnExpected )
 {
 	auto chain = Model::JointChain( 3 );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
-		Model::Link( Mat4d::Identity(), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
+	           Model::Link( "", Mat4d::Identity(), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
+	           Model::Limits()
+	           );
 
 	Mat4d home = ToTransformMatrix( Vec3d( 0, 0, 1.5 ) );
 
@@ -230,67 +230,67 @@ TEST_F( FabrikAnalyzerTest, Analyze_7DofsRobot_ReturnExpected )
 	Vec3d origin      = Vec3d( 0, 0, 0.0 );
 	Vec3d next_origin = Vec3d( 0, 0.2, 0.2 );
 	Vec3d axis = Vec3d::UnitZ();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI, M_PI )
+	            );
 
 	// Planar Joints 3 Y-axis revolute joints
 	origin = next_origin;
 	next_origin = Vec3d( 0, 0.2, 0.6 );
 	axis = Vec3d::UnitY();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI / 2, M_PI / 2 )
+	            );
 
 	origin = next_origin;
 	next_origin = Vec3d( 0.4, 0, 0.6 );
 	axis = Vec3d::UnitY();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI / 2, M_PI / 2 )
+	            );
 
 	// Wrist 2 revolute joints
 	origin = next_origin;
 	next_origin = Vec3d( 0.4, 0.2, 0.6 );
 	axis = Vec3d::UnitY();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI, M_PI )
+	            );
 
 	origin = next_origin;
 	next_origin = Vec3d( 0.5, 0.2, 0.6 );
 	axis = Vec3d::UnitX();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI, M_PI )
+	            );
 
 	origin = next_origin;
 	next_origin = Vec3d( 0.5, 0.2, 0.5 );
 	axis = Vec3d::UnitZ();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI, M_PI )
+	            );
 
 
 	origin = next_origin;
 	axis = Vec3d::UnitX();
-	chain->Add(
-		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	chain->Add( "",
+	            Model::Twist( axis, origin ),
+	            Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+	            Model::Limits( -M_PI, M_PI )
+	            );
 
 	Mat4d home = ToTransformMatrix( Vec3d( 0.5, 0.2, 0.4 ) );
 
@@ -312,23 +312,23 @@ TEST_F( FabrikAnalyzerTest, Analyze_3ZRobot_HomeDifferentLastJointAxis_ReturnExp
 {
 	auto chain = Model::JointChain( 3 );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
-		Model::Link( Mat4d::Identity(), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
+	           Model::Link( "", Mat4d::Identity(), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
+	           Model::Limits()
+	           );
 
 	Mat4d home = ToTransformMatrix( Vec3d( 0.1, 0, 1 ) );
 

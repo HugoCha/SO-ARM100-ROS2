@@ -25,7 +25,7 @@ UniversalArticulationState::UniversalArticulationState( const Articulation* arti
 	{
 		throw std::invalid_argument( "Joints axes must intersect in one point and be independant." );
 	}
-	
+
 	solver_ = std::make_unique< Solver::UniversalSolver >( *model, Solver::UniversalSolver::SolverParameters() );
 }
 
@@ -38,8 +38,8 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	const Vec3d& b0 = bone->Direction();
 	const Vec3d& b1 = world_transform_.rotation().inverse() * bone_state.Direction();
 
-	auto solution = solver_->SolveFromTwoVectors( 
-		b0, 
+	auto solution = solver_->SolveFromTwoVectors(
+		b0,
 		b1 );
 
 	Vec3d local_dir  = solution.local_rotation * bone->Direction();
@@ -49,9 +49,9 @@ void UniversalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 // ------------------------------------------------------------
 
-void UniversalArticulationState::UpdateValues( 
+void UniversalArticulationState::UpdateValues(
 	const VecXd& seed,
-	const BoneState& bone_state, 
+	const BoneState& bone_state,
 	double damping_factor )
 {
 	auto bone = bone_state.GetBone();

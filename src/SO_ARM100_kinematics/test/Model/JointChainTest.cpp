@@ -22,20 +22,23 @@ void SetUp() override {
 
 	// Create joints
 	joint_chain_->Add(
+		"joint1",
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0.5 ),
+		Model::Link( "link1", Mat4d::Identity(), 0.5 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	joint_chain_->Add(
+		"joint2",
 		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
+		Model::Link( "link2", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
 		Model::Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	joint_chain_->Add(
+		"joint3",
 		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.0 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0 ),
+		Model::Link( "link3", ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 	joint1_ = joint_chain_->GetJoints()[0];
@@ -136,6 +139,7 @@ TEST_F( JointChainTest, SubChainInvalidInputs )
 
 	// Test with invalid indices (joints not in the chain)
 	Model::JointConstPtr joint_not_in_chain = std::make_shared< const Model::Joint >(
+		"",
 		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
 		Model::Link(),
 		Model::Limits( -M_PI, M_PI )
@@ -158,7 +162,7 @@ TEST_F( JointChainTest, AddFunction )
 	Model::Link link;
 	Model::Limits limits( -M_PI, M_PI );
 
-	chain.Add( twist, link, limits );
+	chain.Add( "", twist, link, limits );
 
 	ASSERT_EQ( chain.GetJointCount(), 1 );
 	ASSERT_EQ( chain.GetActiveJointCount(), 1 );
@@ -219,8 +223,9 @@ TEST_F( JointChainTest, GetJointIndex_NonExistentJoint )
 {
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Model::Joint >(
+		"",
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( "", Mat4d::Identity(), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -252,8 +257,9 @@ TEST_F( JointChainTest, GetNextJoint_NonExistentJoint )
 {
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Model::Joint >(
+		"",
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( "", Mat4d::Identity(), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -296,8 +302,9 @@ TEST_F( JointChainTest, GetPreviousJoint_NonExistentJoint )
 {
 	// Create a joint not in the chain
 	auto other_joint = std::make_shared< Model::Joint >(
+		"",
 		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
+		Model::Link( "", Mat4d::Identity(), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 

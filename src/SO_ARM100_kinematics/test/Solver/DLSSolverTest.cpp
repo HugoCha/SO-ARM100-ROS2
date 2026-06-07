@@ -586,7 +586,7 @@ TEST_F( DLSSolverTest, Configuration_GetAndSet )
 TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 {
 	int NUM_TEST = 100;
-	
+
 	for ( const auto& robot : Data::GetAllRobots() )
 	{
 		double average_iterations = 0;
@@ -607,7 +607,7 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 			{
 				Mat4d result_pose = ComputeFK( model_, result.joints );
 
-				// std::cout 
+				// std::cout
 				// 		<< "Fail to converge for robot " << robot.first << std::endl
 				// 		<< "Iterations " << result.iterations << std::endl
 				// 		<< "Error " << result.error << std::endl
@@ -615,7 +615,7 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 				// 		<< "Target = " << std::endl << problem.target << std::endl
 				// 		<< "Result = " << std::endl << result_pose << std::endl;
 			}
-			else 
+			else
 			{
 				k_successes++;
 			}
@@ -625,18 +625,18 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 
 		if ( average_error > error_tolerance )
 		{
-			std::cout << "Average error fail for robot " << robot.first 
-					  << " : " << average_error <<std::endl;
+			std::cout << "Average error fail for robot " << robot.first
+			          << " : " << average_error << std::endl;
 		}
 		if ( average_iterations > 10 )
 		{
-			std::cout << "Average iteration fail for robot " << robot.first 
-					  << " : " << average_iterations <<std::endl;
+			std::cout << "Average iteration fail for robot " << robot.first
+			          << " : " << average_iterations << std::endl;
 		}
 		if ( k_successes < 0.99 * NUM_TEST )
 		{
-			std::cout << "Fail to converge too many times for robot " << robot.first 
-					  << " : " << NUM_TEST - k_successes <<std::endl;
+			std::cout << "Fail to converge too many times for robot " << robot.first
+			          << " : " << NUM_TEST - k_successes << std::endl;
 		}
 	}
 }
@@ -666,7 +666,7 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 // 	p.iterations = 1000;
 // 	// p.learning_rate = 0.5;
 // 	p.noise_percent = 1.0;
-	
+
 // 	//auto sp = initial_sp;
 // 	//auto sp = descent.Run( p );
 // 	auto sp = descent.RandomizedSearch( initial_sp, p );
@@ -712,5 +712,5 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 // }
 
 // ------------------------------------------------------------
-	
+
 }

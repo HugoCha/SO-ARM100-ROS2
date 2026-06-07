@@ -31,7 +31,7 @@ protected:
 void SetUp() override
 {
 	robot_name_ = "5-axis arm";
-	//robot_name_ = "Universal Robot";
+	// robot_name_ = "Universal Robot";
 	model_ = Data::GetAllRobots()[robot_name_];
 }
 
@@ -40,7 +40,7 @@ struct TestParameters
 	int max_iteration;
 	int max_stalled_iterations;
 	int avg_iteration;
-	double tolerance {5e-3};
+	double tolerance { 5e-3 };
 };
 
 std::string robot_name_;
@@ -70,17 +70,17 @@ std::map< std::string, TestParameters > RobotsTestParameters()
 {
 	return
 	    {
-			{ "ZYZ", TestParameters{ 30, 5, 20 } },
-			{ "RevoluteBase", TestParameters{ 30, 2, 2 } },
-	        {"PrismaticBase", TestParameters{ 30, 3, 20 }},
-	        {"Planar2R", TestParameters{ 500, 50, 15 }},
-	        {"Planar3R", TestParameters{ 50, 5, 15 }},
-	        {"Wrist1R", TestParameters{ 20, 2, 5 }},
-	        {"Wrist2R", TestParameters{ 20, 2, 5 }},
-	        {"Wrist3R", TestParameters{ 20, 2, 5 }},
-	        {"5-axis arm", TestParameters{ 200, 5, 20 }},
-	        {"6-axis arm", TestParameters{ 200, 5, 20 }},
-	        {"Universal Robot", TestParameters{ 200, 5, 20 }},
+			{ "ZYZ", TestParameters{ 30, 5, 20 }},
+			{ "RevoluteBase", TestParameters{ 30, 2, 2 }},
+			{ "PrismaticBase", TestParameters{ 30, 3, 20 }},
+			{ "Planar2R", TestParameters{ 500, 50, 15 }},
+			{ "Planar3R", TestParameters{ 50, 5, 15 }},
+			{ "Wrist1R", TestParameters{ 20, 2, 5 }},
+			{ "Wrist2R", TestParameters{ 20, 2, 5 }},
+			{ "Wrist3R", TestParameters{ 20, 2, 5 }},
+			{ "5-axis arm", TestParameters{ 200, 5, 20 }},
+			{ "6-axis arm", TestParameters{ 200, 5, 20 }},
+			{ "Universal Robot", TestParameters{ 200, 5, 20 }},
 		};
 }
 
@@ -101,9 +101,9 @@ Solver::IKSolution CheckConvergence(
 	EXPECT_EQ( result.joints.size(), joints.size() );
 	EXPECT_TRUE( result.Success() )
 	    << "Convergence failed" << std::endl
-		<< "Target joints = " << joints.transpose() << std::endl
-		<< problem << std::endl
-		<< result  << std::endl;
+	    << "Target joints = " << joints.transpose() << std::endl
+	    << problem << std::endl
+	    << result  << std::endl;
 
 	EXPECT_LE( TranslationError( problem.target, result_pose ), parameters.error_tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
@@ -129,8 +129,8 @@ Solver::IKSolution CheckConvergenceFromTarget(
 	EXPECT_EQ( result.joints.size(), seed.size() );
 	EXPECT_TRUE( result.Success() )
 	    << "Convergence failed" << std::endl
-		<< problem << std::endl
-		<< result  << std::endl;
+	    << problem << std::endl
+	    << result  << std::endl;
 
 	EXPECT_TRUE( TranslationError( problem.target, result_pose ) < solver.GetParameters().error_tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
@@ -159,20 +159,20 @@ Solver::IKSolution CheckConvergenceNoFailure(
 
 	if ( !result.Success() && !silent )
 	{
-		std::cout 
-			<< "------------------------------------------------------------" << std::endl
-			<< "Convergence failed" << std::endl
-			<< "------------------------------------------------------------" << std::endl
-			<< "Target joints = " << joints.transpose() << std::endl
-			<< problem << std::endl
-			<< result  << std::endl
-			<< "Joints  = " << result.joints.transpose() << "\n"
-			<< "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
-			<< "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
+		std::cout
+		    << "------------------------------------------------------------" << std::endl
+		    << "Convergence failed" << std::endl
+		    << "------------------------------------------------------------" << std::endl
+		    << "Target joints = " << joints.transpose() << std::endl
+		    << problem << std::endl
+		    << result  << std::endl
+		    << "Joints  = " << result.joints.transpose() << "\n"
+		    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
+		    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
 	}
 
 	result.score = PoseError( model_, problem, result );
-				
+
 	return result;
 }
 
@@ -188,26 +188,26 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 TEST_F( FABRIKSolverTest, IK_Converges_FromJoints )
 {
 	/*
-	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	   const int n_joints = model_->GetChain()->GetActiveJointCount();
 
-	VecXd joints( n_joints );
-	joints << 1.12032, 0.508416;
-	VecXd seed( n_joints );
-	seed << 1.39749, 0.564245;
+	   VecXd joints( n_joints );
+	   joints << 1.12032, 0.508416;
+	   VecXd seed( n_joints );
+	   seed << 1.39749, 0.564245;
 
-	Mat4d target;
-	model_->ComputeFK( joints, target );
-	std::cout << "Target = " << std::endl << target << std::endl;
+	   Mat4d target;
+	   model_->ComputeFK( joints, target );
+	   std::cout << "Target = " << std::endl << target << std::endl;
 
-	TestParameters parameters;
-	parameters.max_iteration = 1000;
-	parameters.max_stalled_iterations = 5;
-	parameters.tolerance = 1e-3;
+	   TestParameters parameters;
+	   parameters.max_iteration = 1000;
+	   parameters.max_stalled_iterations = 5;
+	   parameters.tolerance = 1e-3;
 
-	auto result = CheckConvergence( model_, parameters, seed, joints );
+	   auto result = CheckConvergence( model_, parameters, seed, joints );
 
-	std::cout << result << std::endl;
-	*/
+	   std::cout << result << std::endl;
+	 */
 }
 
 // ------------------------------------------------------------
@@ -215,14 +215,14 @@ TEST_F( FABRIKSolverTest, IK_Converges_FromJoints )
 TEST_F( FABRIKSolverTest, IK_Converges_FromTarget )
 {
 	/*
-	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	   const int n_joints = model_->GetChain()->GetActiveJointCount();
 
-	Mat4d target = ToTransformMatrix( Vec3d{1.6, 0., 1.1 } ); 
-	VecXd seed( n_joints );
-	seed << 0,0;
+	   Mat4d target = ToTransformMatrix( Vec3d{1.6, 0., 1.1 } );
+	   VecXd seed( n_joints );
+	   seed << 0,0;
 
-	CheckConvergenceFromTarget( model_, RobotsTestParameters()[robot_name_], seed, target );
-	*/
+	   CheckConvergenceFromTarget( model_, RobotsTestParameters()[robot_name_], seed, target );
+	 */
 }
 
 // ------------------------------------------------------------
@@ -306,7 +306,7 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge )
 	int successes = 0;
 	const auto& chain = model_->GetChain();
 	const int n_joints = chain->GetActiveJointCount();
-	
+
 	TestParameters parameters;
 	parameters.max_iteration = 500;
 	parameters.max_stalled_iterations = 50;
@@ -328,23 +328,23 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge )
 
 	for ( size_t s = 0; s < seeds.size(); s++ )
 	{
-		auto result = CheckConvergenceNoFailure( 
-			model_, 
-			parameters, 
-			seeds[s], 
+		auto result = CheckConvergenceNoFailure(
+			model_,
+			parameters,
+			seeds[s],
 			joints );
 
 		if ( result.Success() )
 			successes++;
 		else
 			std::cout
-				<< "Seed index " << s << " failed. "
-				<< "Seeds: " << seeds[s].transpose() << std::endl;
+			    << "Seed index " << s << " failed. "
+			    << "Seeds: " << seeds[s].transpose() << std::endl;
 	}
 
 	EXPECT_GE( successes, 0.1 * k_seeds )
-		<< "Test Fail for " << robot_name_ << std::endl
-		<< "Converge only " << successes << " on " << k_seeds << " trials." << std::endl;
+	    << "Test Fail for " << robot_name_ << std::endl
+	    << "Converge only " << successes << " on " << k_seeds << " trials." << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -365,7 +365,7 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge_AllRobots )
 		const auto& chain = robot.second->GetChain();
 		const int n_joints = chain->GetActiveJointCount();
 		VecXd joints = chain->RandomValidJoints( rng_, 0.1 );
-	
+
 		std::vector< VecXd > seeds = {
 			VecXd::Zero( n_joints ),
 			VecXd::Ones( n_joints ) * -M_PI / 4,
@@ -380,10 +380,10 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge_AllRobots )
 
 		for ( size_t s = 0; s < seeds.size(); s++ )
 		{
-			auto result = CheckConvergenceNoFailure( 
-				robot.second, 
-				parameters, 
-				seeds[s], 
+			auto result = CheckConvergenceNoFailure(
+				robot.second,
+				parameters,
+				seeds[s],
 				joints );
 
 			if ( result.Success() )
@@ -391,8 +391,8 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge_AllRobots )
 		}
 
 		EXPECT_GE( successes, 0.1 * k_seeds )
-			<< "Test Fail for " << robot.first << std::endl
-			<< "Converge only " << successes << " on " << k_seeds << " trials." << std::endl;
+		    << "Test Fail for " << robot.first << std::endl
+		    << "Converge only " << successes << " on " << k_seeds << " trials." << std::endl;
 	}
 }
 
@@ -450,7 +450,7 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations )
 
 		auto result = CheckConvergenceNoFailure( model_, parameters, seed, joints );
 
-		avg_error+= result.error / ( double )kTrials;
+		avg_error += result.error / ( double )kTrials;
 		avg_iter += result.iterations / ( double )kTrials;
 	}
 
@@ -479,22 +479,22 @@ TEST_F( FABRIKSolverTest, IK_AverageConsistency_RandomConfigurations_AllRobots )
 
 			auto result = CheckConvergenceNoFailure( robot.second, parameters, seed, joints );
 
-			avg_error+= result.error / ( double )kTrials;
+			avg_error += result.error / ( double )kTrials;
 			avg_iter += result.iterations / ( double )kTrials;
 		}
 
 		// Expect at least 99% success rate on reachable random targets
 		if ( avg_iter > RobotsTestParameters()[robot.first].avg_iteration )
 		{
-			ADD_FAILURE() 
-				<< "Fail for robot " << robot.first << std::endl
-		    	<< "Average iterations = " << avg_iter << std::endl;
+			ADD_FAILURE()
+			    << "Fail for robot " << robot.first << std::endl
+			    << "Average iterations = " << avg_iter << std::endl;
 		}
 		if ( avg_error > 5 * parameters.tolerance )
 		{
-			ADD_FAILURE() 
-				<< "Fail for robot " << robot.first << std::endl
-		    	<< "Average error = " << avg_error << std::endl;
+			ADD_FAILURE()
+			    << "Fail for robot " << robot.first << std::endl
+			    << "Average error = " << avg_error << std::endl;
 		}
 	}
 }
@@ -554,10 +554,10 @@ TEST_F( FABRIKSolverTest, IK_CheckConsistency_RandomConfigurations_AllRobots )
 
 		if ( successes < static_cast< int >( kTrials * 0.8 ) )
 		{
-			ADD_FAILURE() 
-				<< "Fail for robot " << robot.first << std::endl
-				<< "Success rate " << successes << "/" << kTrials
-				<< " is below 80% threshold.";
+			ADD_FAILURE()
+			    << "Fail for robot " << robot.first << std::endl
+			    << "Success rate " << successes << "/" << kTrials
+			    << " is below 80% threshold.";
 		}
 	}
 }
@@ -599,10 +599,10 @@ TEST_F( FABRIKSolverTest, IK_MaxStalledIterationRespected_AllRobots )
 	{
 		const auto& chain = robot.second->GetChain();
 		const int n_joints = chain->GetActiveJointCount();
-	
+
 		VecXd joints = chain->RandomValidJoints( rng_, 0.1 );
 		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3, 0.1 );
-	
+
 		auto result = CheckConvergenceNoFailure( robot.second, parameters, seed, joints );
 
 		EXPECT_NE( result.state, Solver::IKSolverState::MaxIterations );
@@ -611,8 +611,8 @@ TEST_F( FABRIKSolverTest, IK_MaxStalledIterationRespected_AllRobots )
 		    << "Iterations should be greater or equal than 0";
 		EXPECT_LT( result.iterations, parameters.max_iteration )
 		    << "Fail for robot " << robot.first << std::endl
-		    << "Iterations with max stalled iterations "  << parameters.max_stalled_iterations 
-			<< " should be lower than " << parameters.max_iteration;
+		    << "Iterations with max stalled iterations "  << parameters.max_stalled_iterations
+		    << " should be lower than " << parameters.max_iteration;
 	}
 }
 
@@ -664,7 +664,7 @@ TEST_F( FABRIKSolverTest, IK_NearJointLimits_AllRobots )
 
 		auto params = RobotsTestParameters()[robot_name_];
 		params.tolerance = 1e-2;
-	
+
 		auto min_result = CheckConvergence( robot.second, params, VecXd::Zero( n_joints ), min_joints );
 		auto max_result = CheckConvergence( robot.second, params, VecXd::Zero( n_joints ), max_joints );
 

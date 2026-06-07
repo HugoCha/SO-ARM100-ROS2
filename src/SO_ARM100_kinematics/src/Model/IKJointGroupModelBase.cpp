@@ -82,6 +82,8 @@ bool IKJointGroupModelBase::ComputeGroupJointStatesFK(
 	std::vector< Model::JointState >& states,
 	Mat4d& fk ) const
 {
+	fk.setIdentity();
+
 	const int n_joints = joints.size();
 	const int n_model_joints = GetChain()->GetActiveJointCount();
 	const int n_group_joints = GetGroup().Size();
@@ -202,7 +204,7 @@ Mat4d IKJointGroupModelBase::GetAncestorTransform( const VecXd& seed ) const
 	{
 		T_ancestor = GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform();
 	}
-	else 
+	else
 	{
 		VecXd ancestor_joints = ancestor_->GetGroupJoints( seed );
 		GetChain()->ComputeFK(
@@ -211,7 +213,7 @@ Mat4d IKJointGroupModelBase::GetAncestorTransform( const VecXd& seed ) const
 			T_ancestor );
 	}
 
-	return  T_ancestor;
+	return T_ancestor;
 }
 
 // ------------------------------------------------------------
@@ -273,23 +275,23 @@ Mat4d IKJointGroupModelBase::ComputeHomeInTipTransform(
 
 // ------------------------------------------------------------
 
-double IKJointGroupModelBase::ComputeGroupMaxReach( 
-	const KinematicModelConstPtr& model, 
+double IKJointGroupModelBase::ComputeGroupMaxReach(
+	const KinematicModelConstPtr& model,
 	const JointGroup& group )
 {
-    double max_reach = 0.0;
+	double max_reach = 0.0;
 	const auto& chain = model->GetChain();
-    for ( int i = 0; i < group.Size() - 1; i++ )
-    {
-        auto joint = chain->GetActiveJoint( group.Index( i ) );
-        auto next_joint = chain->GetActiveJoint( group.Index( i + 1 ) );
-        max_reach += Utils::Distance( joint->Origin(), next_joint->Origin() );
-    }
+	for ( int i = 0; i < group.Size() - 1; i++ )
+	{
+		auto joint = chain->GetActiveJoint( group.Index( i ) );
+		auto next_joint = chain->GetActiveJoint( group.Index( i + 1 ) );
+		max_reach += Utils::Distance( joint->Origin(), next_joint->Origin() );
+	}
 
-    auto last_joint = chain->GetActiveJoint( group.LastIndex() );
-    max_reach += Utils::Distance( 
-        last_joint->Origin(), 
-        Translation( group.tip_home ) );
+	auto last_joint = chain->GetActiveJoint( group.LastIndex() );
+	max_reach += Utils::Distance(
+		last_joint->Origin(),
+		Translation( group.tip_home ) );
 
 	return max_reach;
 }

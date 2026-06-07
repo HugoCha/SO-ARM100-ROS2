@@ -40,12 +40,12 @@ UniversalModel(
 	const Model::JointConstPtr& joint2 );
 
 Solver::UniversalSolution ComputeSolution(
-    double theta0_sol,
-    const Limits& l0,
-    const Limits& l1,
-    const Vec3d& a0,
-    const Vec3d& a1,
-    const Vec3d& b0,
-    const Vec3d& b1 ) const;
+	double theta0_sol,
+	const Limits& l0,
+	const Limits& l1,
+	const Vec3d& a0,
+	const Vec3d& a1,
+	const Vec3d& b0,
+	const Vec3d& b1 ) const;
 };
 }

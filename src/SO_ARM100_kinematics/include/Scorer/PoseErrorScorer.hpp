@@ -11,13 +11,13 @@ class PoseErrorScorer : public IKSolutionScorer
 public:
 struct ScorerParameters
 {
-double error_tolerance { SOArm100::Kinematics::error_tolerance };
-double violation_penalty { 1e3 };
+	double error_tolerance { SOArm100::Kinematics::error_tolerance };
+	double violation_penalty { 1e3 };
 };
 
-PoseErrorScorer( 
-    Model::KinematicModelConstPtr model, 
-    ScorerParameters parameters );
+PoseErrorScorer(
+	Model::KinematicModelConstPtr model,
+	ScorerParameters parameters );
 
 virtual double Score(
 	const Solver::IKProblem& problem,

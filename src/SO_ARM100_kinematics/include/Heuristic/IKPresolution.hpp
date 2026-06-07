@@ -11,8 +11,8 @@ struct IKPresolution
 	VecXd joints;
 	IKHeuristicState state;
 	double error;
-	int iterations {0};
-	
+	int iterations { 0 };
+
 	bool Sucess() const {
 		return state == IKHeuristicState::Success;
 	}

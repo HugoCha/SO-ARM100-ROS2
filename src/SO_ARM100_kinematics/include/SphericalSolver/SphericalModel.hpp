@@ -36,13 +36,13 @@ public:
 private:
 struct Cache
 {
-    double alpha;
-    double beta;
-    double gamma;
+	double alpha;
+	double beta;
+	double gamma;
 
-    double R;
-    double R_sq;
-    double phi;
+	double R;
+	double R_sq;
+	double phi;
 };
 
 std::vector< Model::JointConstPtr > joints_;
@@ -54,33 +54,33 @@ SphericalModel(
 	const Model::JointConstPtr& joint3 );
 
 [[nodiscard]] std::vector< Vec3d > ComputeClosest(
-    const Mat3d& R_target,
-    double K ) const;
+	const Mat3d& R_target,
+	double K ) const;
 
 [[nodiscard]] Vec3d ComputeSolution(
-    double theta2,
-    const Mat3d& R_target ) const;
+	double theta2,
+	const Mat3d& R_target ) const;
 
 [[nodiscard]] static double SolveTheta1(
-    const Mat3d& R_target,
-    const Mat3d& R_theta2,
-    const Vec3d& a1,
-    const Vec3d& a3 );
+	const Mat3d& R_target,
+	const Mat3d& R_theta2,
+	const Vec3d& a1,
+	const Vec3d& a3 );
 
 [[nodiscard]] static double SolveTheta3(
-    const Mat3d& R_target,
-    const Mat3d& R_theta2,
-    const Vec3d& a1,
-    const Vec3d& a3 );
+	const Mat3d& R_target,
+	const Mat3d& R_theta2,
+	const Vec3d& a1,
+	const Vec3d& a3 );
 
 [[nodiscard]] static double SolveSingleAxisEquation(
-    const Vec3d& axis,
-    const Vec3d& v,
-    const Vec3d& w );
+	const Vec3d& axis,
+	const Vec3d& v,
+	const Vec3d& w );
 
 [[nodiscard]] static Cache ComputeCache(
-    Model::JointConstPtr joint1,
-    Model::JointConstPtr joint2,
-    Model::JointConstPtr joint3 );
+	Model::JointConstPtr joint1,
+	Model::JointConstPtr joint2,
+	Model::JointConstPtr joint3 );
 };
 }

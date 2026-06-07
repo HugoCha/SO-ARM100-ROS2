@@ -393,8 +393,8 @@ TEST_F( SphericalArticulationStateTest, UpdateValues_BoneOffAxisFirstJointRotati
 		state.GetJointValues()[2] );
 
 	EXPECT_TRUE( result_direction.isApprox( bone_state.Direction(), 1e-5 ) )
-		<< "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
-		<< "Result Direction = " << std::endl << result_direction << std::endl;
+	    << "Expect Direction = " << std::endl << bone_state.Direction() << std::endl
+	    << "Result Direction = " << std::endl << result_direction << std::endl;
 
 	auto expected_local_rotation_1 = AngleAxis( state.GetJointValues()[0], revolute_joint_1_->Axis() );
 	auto expected_local_rotation_2 = AngleAxis( state.GetJointValues()[1], revolute_joint_2_->Axis() );

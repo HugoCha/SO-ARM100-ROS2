@@ -13,23 +13,23 @@ class UniversalSolver
 public:
 struct SolverParameters
 {
-double error_tol { 5e-3 };
-double fk_error_penalty { 1e6 };
+	double error_tol { 5e-3 };
+	double fk_error_penalty { 1e6 };
 };
 explicit UniversalSolver( const Model::UniversalModel& model, SolverParameters parameters );
 
 const Model::UniversalModel& GetModel() const {
-    return model_;
+	return model_;
 }
 
 [[nodiscard]] UniversalSolution SolveFromRotation(
 	const Mat3d& R_target,
-    std::optional< Vec2d > theta_pref = std::nullopt ) const;
+	std::optional< Vec2d > theta_pref = std::nullopt ) const;
 
 [[nodiscard]] UniversalSolution SolveFromTwoVectors(
-    const Vec3d& p_tcp_local,
-    const Vec3d& p_target,
-    std::optional< Vec2d > theta_pref = std::nullopt ) const;
+	const Vec3d& p_tcp_local,
+	const Vec3d& p_target,
+	std::optional< Vec2d > theta_pref = std::nullopt ) const;
 
 private:
 SolverParameters parameters_;

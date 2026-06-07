@@ -32,8 +32,7 @@ namespace SOArm100::Kinematics::Solver
 
 static rclcpp::Logger get_logger()
 {
-	static rclcpp::Logger logger = rclcpp::get_logger( "DLSSolver" );
-	return logger;
+	return Logger::get().get_child( "DLSSolver" );
 }
 
 // ------------------------------------------------------------

@@ -1,13 +1,16 @@
-#include "KinematicsSolver.hpp"
+#include "RobotArmKinematicsSolver.hpp"
 
 #include "Global.hpp"
-#include "PipelineSolver/PipelineSolver.hpp"
+
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/Twist.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "Model/ReachableSpace/SkeletonTotalLengthReachableSpace.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
+#include "PipelineSolver/PipelineSolver.hpp"
+#include "PipelineSolver/PipelineSolverInitializer.hpp"
+#include "PipelineSolver/PipelineSolverParameters.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Utils/Converter.hpp"
@@ -32,32 +35,31 @@ namespace SOArm100::Kinematics
 
 static rclcpp::Logger get_logger()
 {
-	static rclcpp::Logger logger = rclcpp::get_logger( "KinematicsSolver" );
-	return logger;
+	return Logger::get();
 }
 
 // ------------------------------------------------------------
 
-KinematicsSolver::KinematicsSolver() :
+RobotArmKinematicsSolver::RobotArmKinematicsSolver() :
 	model_( nullptr )
 {
 }
 
 // ------------------------------------------------------------
 
-void KinematicsSolver::Initialize(
+bool RobotArmKinematicsSolver::Initialize(
 	const moveit::core::RobotModelConstPtr& robot_model,
 	const std::string& group_name,
 	const std::string& base_frame,
 	const std::vector< std::string >& tip_frames,
 	double search_discretization )
 {
-	RCLCPP_INFO( get_logger(), "Initializing KinematicsSolver for group: %s",
+	RCLCPP_INFO( get_logger(), "Initializing RobotArmKinematicsSolver for group: %s",
 	             group_name.c_str() );
 
 	if ( !AreValidInitializeParameters( robot_model, group_name, base_frame, tip_frames, search_discretization ) )
 	{
-		return;
+		return false;
 	}
 
 	moveit::core::RobotState state( robot_model );
@@ -80,7 +82,7 @@ void KinematicsSolver::Initialize(
 		{
 			child_transform = state.getGlobalLinkTransform( child_joints[0]->getChildLinkModel() );
 		}
-		Model::Link link( joint_transform.matrix(), child_transform.matrix() );
+		Model::Link link( link_model->getName(), joint_transform.matrix(), child_transform.matrix() );
 
 		Model::Limits limits;
 		const auto& bounds = parent_joint->getVariableBounds();
@@ -109,7 +111,7 @@ void KinematicsSolver::Initialize(
 			twist = Model::Twist( prismatic_joint_model->getAxis() );
 		}
 
-		joint_chain->Add( twist, link, limits );
+		joint_chain->Add( parent_joint->getName(), twist, link, limits );
 	}
 
 	auto joint_chain_const = std::make_shared< const Model::JointChain >( *joint_chain );
@@ -126,22 +128,39 @@ void KinematicsSolver::Initialize(
 		topology,
 		skeleton,
 		std::move( reachable_space ) );
+
+	InitializeSolver( model_ );
+	return true;
 }
 
 // ------------------------------------------------------------
 
-void KinematicsSolver::Initialize(
+void RobotArmKinematicsSolver::InitializeSolver( const Model::KinematicModelConstPtr& model )
+{
+	Solver::PipelineSolverParameters parameters;
+	parameters.strategy = Solver::PipelineCompletionStrategy::WaitForAcceptableResult;
+	parameters.min_score_threshold = 0.25;
+
+	solver_ = std::move( Solver::PipelineSolverInitializer::Initialize( model, parameters ) );
+}
+
+// ------------------------------------------------------------
+
+bool RobotArmKinematicsSolver::Initialize(
 	Model::KinematicModelConstPtr model,
-	const Solver::PipelineSolver& solver,
+	std::unique_ptr< Solver::PipelineSolver > solver,
 	double search_discretization )
 {
 	model_ = model;
+	solver_ = std::move( solver );
+	return true;
 }
+
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::ForwardKinematic(
-	const std::span< const double >& joints,
+bool RobotArmKinematicsSolver::ForwardKinematic(
+	const std::vector< double >& joints,
 	geometry_msgs::msg::Pose& pose ) const
 {
 	Mat4d T_end;
@@ -155,7 +174,7 @@ bool KinematicsSolver::ForwardKinematic(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::ForwardKinematic(
+bool RobotArmKinematicsSolver::ForwardKinematic(
 	const VecXd& joints,
 	Mat4d& pose ) const
 {
@@ -170,9 +189,11 @@ bool KinematicsSolver::ForwardKinematic(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::InverseKinematic(
+bool RobotArmKinematicsSolver::InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints,
+	const std::span< const double >& consistency_limits,
+	long timeout_ms,
 	std::vector< double >& joints ) const
 {
 	if ( !model_ || !solver_ )
@@ -188,15 +209,19 @@ bool KinematicsSolver::InverseKinematic(
 	return InverseKinematic(
 		ToTransformMatrix( target_pose ),
 		ToVecXd( seed_joints ),
+		ToVecXd( consistency_limits ),
+		timeout_ms,
 		joints.data(),
 		n_joints );
 }
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::InverseKinematic(
+bool RobotArmKinematicsSolver::InverseKinematic(
 	const Mat4d& target,
 	const VecXd& seed,
+	const VecXd& consistency,
+	long timeout_ms,
 	VecXd& joints ) const
 {
 	if ( !model_ || !solver_ )
@@ -212,15 +237,19 @@ bool KinematicsSolver::InverseKinematic(
 	return InverseKinematic(
 		target,
 		seed,
+		consistency,
+		timeout_ms,
 		joints.data(),
 		n_joints );
 }
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::InverseKinematic(
+bool RobotArmKinematicsSolver::InverseKinematic(
 	const Mat4d& target,
 	const VecXd& seed,
+	const VecXd& consistency,
+	long timeout_ms,
 	double* joints,
 	int n_joints ) const
 {
@@ -233,9 +262,10 @@ bool KinematicsSolver::InverseKinematic(
 	Solver::IKProblem problem {
 		target,
 		seed,
+		consistency,
 		translation_tolerance,
 		rotation_tolerance,
-		timeout };
+		timeout_ms };
 
 	Solver::IKRunContext context;
 
@@ -247,7 +277,7 @@ bool KinematicsSolver::InverseKinematic(
 
 // ------------------------------------------------------------
 
-bool KinematicsSolver::AreValidInitializeParameters(
+bool RobotArmKinematicsSolver::AreValidInitializeParameters(
 	const moveit::core::RobotModelConstPtr& robot_model,
 	const std::string& group_name,
 	const std::string& base_frame,

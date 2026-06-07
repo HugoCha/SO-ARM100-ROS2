@@ -48,8 +48,8 @@ double value_;
 JointConstPtr joint_;
 };
 
-VecXd GetJointValues( 
-    const std::vector< Model::JointState >& states );
+VecXd GetJointValues(
+	const std::vector< Model::JointState >& states );
 
 using JointStatePtr = std::shared_ptr< JointState >;
 using JointStateConstPtr = std::shared_ptr< const JointState >;

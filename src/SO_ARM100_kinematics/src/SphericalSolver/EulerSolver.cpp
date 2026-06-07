@@ -46,7 +46,7 @@ SphericalSolution EulerSolver::SolveFromRotation( const Mat3d& R_target ) const
 	}
 
 	auto best_branch = euler_branches[0].cost < euler_branches[1].cost ?
-		   euler_branches[0] : euler_branches[1];
+	                   euler_branches[0] : euler_branches[1];
 
 	bool all_in = CheckLimits( best_branch.angles );
 
@@ -66,7 +66,7 @@ SphericalSolution EulerSolver::SolveFromRotation( const Mat3d& R_target ) const
 
 // ------------------------------------------------------------
 
-SphericalSolution EulerSolver::SolveFromTwoVectors( 	
+SphericalSolution EulerSolver::SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target ) const
 {
@@ -115,17 +115,17 @@ SphericalSolution EulerSolver::SolveFromTwoVectors(
 			       euler_branches[0] : euler_branches[1];
 		};
 
-	auto infinite_penalty_cost = [&]( double phi ){ 
-		return cost_fn( std::numeric_limits<double>::infinity(), phi ); 
-	};
+	auto infinite_penalty_cost = [&]( double phi ){
+									 return cost_fn( std::numeric_limits< double >::infinity(), phi );
+								 };
 
 	auto best_coarse_branch = FirstSolutionSearch( infinite_penalty_cost );
-	
+
 	if ( std::isinf( best_coarse_branch.cost ) )
 	{
-		auto lest_violation_penalty_cost = [&]( double phi ){ 
-			return cost_fn( 1.0, phi ); 
-		};
+		auto lest_violation_penalty_cost = [&]( double phi ){
+											   return cost_fn( 1.0, phi );
+										   };
 		best_coarse_branch = GridSearch( lest_violation_penalty_cost );
 	}
 

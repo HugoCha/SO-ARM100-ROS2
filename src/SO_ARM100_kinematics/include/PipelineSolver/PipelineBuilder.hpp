@@ -10,7 +10,7 @@ namespace SOArm100::Kinematics::Solver
 {
 class IKPipeline;
 
-class PipelineBuilder 
+class PipelineBuilder
 {
 public:
 PipelineBuilder& WithSeedGenerator( std::unique_ptr< const Seed::IIKSeedGenerator > gen );

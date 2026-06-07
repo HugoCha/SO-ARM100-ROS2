@@ -14,10 +14,10 @@ public:
 SphericalArticulationState( const Articulation* articulation );
 
 virtual void ApplyConstraints( BoneState& bone_state ) const override;
-virtual void UpdateValues( 
-    const VecXd& seed,
-    const BoneState& bone_state, 
-    double damping_factor = 1.0 ) override;
+virtual void UpdateValues(
+	const VecXd& seed,
+	const BoneState& bone_state,
+	double damping_factor = 1.0 ) override;
 
 private:
 std::unique_ptr< Solver::SphericalSolver > solver_;

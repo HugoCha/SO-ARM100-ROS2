@@ -37,12 +37,12 @@ const SolverParameters& GetParameters() const {
 SolverParameters& GetParameters(){
 	return parameters_;
 }
-	
+
 [[nodiscard]] SphericalSolution SolveFromRotation(
 	const Mat3d& R_target ) const;
-	
+
 // Returns first found solution
-[[nodiscard]] SphericalSolution SolveFromTwoVectors( 	
+[[nodiscard]] SphericalSolution SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target ) const;
 

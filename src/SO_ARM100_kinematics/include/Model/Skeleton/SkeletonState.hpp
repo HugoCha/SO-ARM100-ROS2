@@ -22,7 +22,7 @@ const Model::Skeleton* GetSkeleton() const {
 	return skeleton_;
 }
 
-static constexpr std::map< Model::ArticulationType, double > DampingFactors() 
+static constexpr std::map< Model::ArticulationType, double > DampingFactors()
 {
 	return {
 		{ Model::ArticulationType::Prismatic, 1.0 },

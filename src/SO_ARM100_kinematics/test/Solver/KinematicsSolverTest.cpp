@@ -1,4 +1,4 @@
-#include "KinematicsSolver.hpp"
+#include "RobotArmKinematicsSolver.hpp"
 
 #include "RobotModelTestData.hpp"
 
@@ -44,7 +44,7 @@ void TearDown() override
 }
 
 protected:
-KinematicsSolver solver_;
+RobotArmKinematicsSolver solver_;
 };
 
 // ------------------------------------------------------------
@@ -52,7 +52,7 @@ KinematicsSolver solver_;
 
 TEST_F( KinematicsSolverTest, Initialize_JointChainInitializationCorrect )
 {
-	KinematicsSolver solver;
+	RobotArmKinematicsSolver solver;
 	solver.Initialize(
 		Data::GetZYZRevoluteRobotMoveitModel(),
 		"arm",

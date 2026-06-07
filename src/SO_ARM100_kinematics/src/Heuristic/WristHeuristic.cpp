@@ -32,7 +32,7 @@ WristHeuristic::WristHeuristic(
 		auto universal_model = Model::UniversalModel::ComputeModel(
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 1 ) ) );
-		
+
 		Solver::UniversalSolver::SolverParameters params;
 		params.error_tol = 1e-3;
 
@@ -41,8 +41,8 @@ WristHeuristic::WristHeuristic(
 			throw std::invalid_argument( "Wrist is not Universal" );
 		}
 
-		universal_solver_ = std::make_unique< Solver::UniversalSolver >( 
-			*universal_model, 
+		universal_solver_ = std::make_unique< Solver::UniversalSolver >(
+			*universal_model,
 			params );
 	}
 	else if ( GetWristTopology() == Model::WristTopology::Revolute3 )
@@ -51,7 +51,7 @@ WristHeuristic::WristHeuristic(
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 1 ) ),
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 2 ) ) );
-		
+
 		Solver::SphericalSolver::SolverParameters params;
 		params.error_tol = 1e-3;
 
@@ -60,8 +60,8 @@ WristHeuristic::WristHeuristic(
 			throw std::invalid_argument( "Wrist is not Spherical" );
 		}
 
-		spherical_solver_ = std::make_unique< Solver::SphericalSolver >( 
-			*spherical_model, 
+		spherical_solver_ = std::make_unique< Solver::SphericalSolver >(
+			*spherical_model,
 			params );
 	}
 }
@@ -199,7 +199,7 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 	Mat3d R_check =
 		AngleAxis( q1, e1 ).toRotationMatrix() *
 		AngleAxis( q2, e2 ).toRotationMatrix();
-	
+
 	Mat3d Rerr = R_check.transpose() * R_target;
 	AngleAxis aa_err( Rerr );
 
@@ -219,7 +219,7 @@ IKPresolution WristHeuristic::SolveRevolute2( const VecXd& seed, const Mat3d& R_
 	{
 		presolution.state = IKHeuristicState::Success;
 	}
-	
+
 	wrist_solution[0] = q1;
 	wrist_solution[1] = q2;
 	GetGroup().SetGroupJoints( wrist_solution, presolution.joints );

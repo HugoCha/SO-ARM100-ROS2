@@ -15,9 +15,9 @@ IKPipeline( std::unique_ptr< const Seed::IIKSeedGenerator > seed_generator,
             std::unique_ptr< const Heuristic::IIKHeuristic > heuristic,
             std::unique_ptr< const IIKSolver > solver );
 
-IKSolution Run( 
-    const IKProblem& problem, 
-    const IKRunContext& context ) const;
+IKSolution Run(
+	const IKProblem& problem,
+	const IKRunContext& context ) const;
 
 private:
 std::unique_ptr< const Seed::IIKSeedGenerator > seed_generator_;

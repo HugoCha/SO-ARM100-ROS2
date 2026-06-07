@@ -105,9 +105,9 @@ void SkeletonState::SetState( const VecXd& joints )
 
 // ------------------------------------------------------------
 
-void SkeletonState::UpdateValue( 
+void SkeletonState::UpdateValue(
 	const VecXd& seed,
-	const BoneState& bone_state, 
+	const BoneState& bone_state,
 	int i )
 {
 	const int n_joints = skeleton_->ArticulationCount();
@@ -115,9 +115,9 @@ void SkeletonState::UpdateValue(
 		throw std::out_of_range( "Index must match articulation index" );
 
 	auto type = articulation_states_[i]->GetArticulation()->GetType();
-	articulation_states_[i]->UpdateValues( 
-		GetArticulationJoints( seed, i),
-		bone_state, 
+	articulation_states_[i]->UpdateValues(
+		GetArticulationJoints( seed, i ),
+		bone_state,
 		DampingFactors()[type] );
 
 	Iso3d transform;

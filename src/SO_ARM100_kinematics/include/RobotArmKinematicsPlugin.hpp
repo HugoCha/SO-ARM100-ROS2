@@ -1,10 +1,12 @@
 #pragma once
 
+#include "RobotArmKinematicsSolver.hpp"
+
 #include <moveit/kinematics_base/kinematics_base.hpp>
 
 namespace SOArm100::Kinematics
 {
-class SOArm100AnalyticKinematicsPlugin : public kinematics::KinematicsBase
+class RobotArmKinematicsPlugin : public kinematics::KinematicsBase
 {
 public:
 bool getPositionFK(
@@ -74,6 +76,11 @@ bool initialize(
 private:
 std::vector< std::string > joint_names_;
 std::vector< std::string > link_names_;
+
+bool initialized_;
+RobotArmKinematicsSolver solver_;
+
+static bool TimedOut( std::chrono::time_point< std::chrono::steady_clock > start_time, long timeout_ms );
 };
 
 }

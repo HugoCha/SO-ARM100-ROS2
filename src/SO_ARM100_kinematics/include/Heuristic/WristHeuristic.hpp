@@ -16,8 +16,8 @@ enum class WristTopology;
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class WristHeuristic : 
-	public Model::IKJointGroupModelBase, 
+class WristHeuristic :
+	public Model::IKJointGroupModelBase,
 	public IIKHeuristic
 {
 public:

@@ -17,15 +17,15 @@ JointState::JointState( const JointConstPtr& joint ) :
 
 // ------------------------------------------------------------
 
-VecXd GetJointValues( 
-    const std::vector< Model::JointState >& states )
+VecXd GetJointValues(
+	const std::vector< Model::JointState >& states )
 {
 	VecXd joints( states.size() );
 
-    for ( int i = 0; i < states.size(); i++ )
-        joints[i] = states[i].Value();
+	for ( int i = 0; i < states.size(); i++ )
+		joints[i] = states[i].Value();
 
-    return joints;
+	return joints;
 }
 
 // ------------------------------------------------------------

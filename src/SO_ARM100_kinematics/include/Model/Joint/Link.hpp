@@ -9,7 +9,8 @@ namespace SOArm100::Kinematics::Model
 class Link
 {
 public:
-Link( const Mat4d& origin, double length ) :
+Link( const std::string& name, const Mat4d& origin, double length ) :
+	name_( name ),
 	joint_origin_transform_( origin ),
 	joint_origin_position_( Translation( origin ) ),
 	length_( length )
@@ -17,18 +18,22 @@ Link( const Mat4d& origin, double length ) :
 }
 
 Link() :
-	Link( Mat4d::Identity(), 0 )
+	Link( "", Mat4d::Identity(), 0 )
 {
 }
 
-Link( const Mat4d& origin, const Mat4d& child_origin ) :
-	Link( origin, ( Translation( child_origin ) - Translation( origin ) ).norm() )
+Link( const std::string& name, const Mat4d& origin, const Mat4d& child_origin ) :
+	Link( name, origin, ( Translation( child_origin ) - Translation( origin ) ).norm() )
 {
 }
 
 Link( const Link& link ) :
-	Link( link.joint_origin_transform_, link.length_ )
+	Link( link.GetName(), link.GetJointOriginTransform(), link.GetLength() )
 {
+}
+
+const std::string& GetName() const {
+	return name_;
 }
 
 [[nodiscard]] const Vec3d& GetJointOrigin() const {
@@ -44,6 +49,7 @@ Link( const Link& link ) :
 }
 
 private:
+std::string name_;
 const Mat4d joint_origin_transform_;
 const Vec3d joint_origin_position_;
 const double length_;

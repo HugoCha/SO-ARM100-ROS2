@@ -32,11 +32,11 @@ Vec3d Planar1RHeuristic::ComputeReferenceDirection(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup planar_group )
 {
-    const auto& chain = model->GetChain();
-    const int n_joints = chain->GetActiveJointCount();
-	
-    Vec3d p1 = chain->GetActiveJoint( planar_group.FirstIndex() )->Origin();
-    Vec3d p2 = Translation( planar_group.tip_home );
+	const auto& chain = model->GetChain();
+	const int n_joints = chain->GetActiveJointCount();
+
+	Vec3d p1 = chain->GetActiveJoint( planar_group.FirstIndex() )->Origin();
+	Vec3d p2 = Translation( planar_group.tip_home );
 
 	return ( p2 - p1 ).normalized();
 }
@@ -45,15 +45,15 @@ Vec3d Planar1RHeuristic::ComputeReferenceDirection(
 
 Model::JointConstPtr Planar1RHeuristic::GetJoint() const
 {
-    return GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
+	return GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 }
 
 // ------------------------------------------------------------
 
 double Planar1RHeuristic::L() const
 {
-    const auto& link = GetJoint()->GetLink();
-    return link.GetLength();
+	const auto& link = GetJoint()->GetLink();
+	return link.GetLength();
 }
 
 // ------------------------------------------------------------
@@ -71,23 +71,24 @@ IKPresolution Planar1RHeuristic::Presolve(
 
 	// Unreachable
 	if ( D > L() )
-		return {seed, IKHeuristicState::Fail };
+		return { seed, IKHeuristicState::Fail }
+	;
 
-    double value = SignedAngle( 
-        reference_direction_, 
-        p_group_target, 
-        GetJoint()->Axis() );
+	double value = SignedAngle(
+		reference_direction_,
+		p_group_target,
+		GetJoint()->Axis() );
 
-    if ( !GetJoint()->GetLimits().Within( value ) )
-    {
-        planar_solution[0] = GetJoint()->GetLimits().Clamp( value );
-        GetGroup().SetGroupJoints( planar_solution, seed );
-        return { seed, IKHeuristicState::PartialSuccess };
-    }
+	if ( !GetJoint()->GetLimits().Within( value ) )
+	{
+		planar_solution[0] = GetJoint()->GetLimits().Clamp( value );
+		GetGroup().SetGroupJoints( planar_solution, seed );
+		return { seed, IKHeuristicState::PartialSuccess };
+	}
 
-    planar_solution[0] = value;
-    GetGroup().SetGroupJoints( planar_solution, seed );
-    return { seed, IKHeuristicState::Success };
+	planar_solution[0] = value;
+	GetGroup().SetGroupJoints( planar_solution, seed );
+	return { seed, IKHeuristicState::Success };
 }
 
 // ------------------------------------------------------------

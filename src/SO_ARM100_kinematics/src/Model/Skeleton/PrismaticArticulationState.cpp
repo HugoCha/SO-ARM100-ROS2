@@ -29,15 +29,15 @@ void PrismaticArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	Vec3d axis = rotation * joint->Axis();
 
 	// Slide
-	Vec3d slide_axis = ProjectPointOnAxis( 
-		bone_state.Origin() + bone_state.Direction(), 
-		origin, 
+	Vec3d slide_axis = ProjectPointOnAxis(
+		bone_state.Origin() + bone_state.Direction(),
+		origin,
 		axis );
 
 	// Compute Bone portion on slide axis
-	Vec3d bone_on_axis = ProjectPointOnAxis( 
-		origin + rotation * bone->Direction(), 
-		origin, 
+	Vec3d bone_on_axis = ProjectPointOnAxis(
+		origin + rotation * bone->Direction(),
+		origin,
 		axis );
 
 	slide_axis -= bone_on_axis;
@@ -51,9 +51,9 @@ void PrismaticArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 // ------------------------------------------------------------
 
-void PrismaticArticulationState::UpdateValues( 
-	const VecXd& seed, 
-	const BoneState& bone_state, 
+void PrismaticArticulationState::UpdateValues(
+	const VecXd& seed,
+	const BoneState& bone_state,
 	double damping_factor )
 {
 	auto joint = articulation_->Joints()[0];
@@ -65,15 +65,15 @@ void PrismaticArticulationState::UpdateValues(
 	Vec3d axis = rotation * joint->Axis();
 
 	// Slide
-	Vec3d slide_axis = ProjectPointOnAxis( 
-		bone_state.Origin() + bone_state.Direction(), 
-		origin, 
+	Vec3d slide_axis = ProjectPointOnAxis(
+		bone_state.Origin() + bone_state.Direction(),
+		origin,
 		axis );
 
 	// Compute Bone portion on slide axis
-	Vec3d bone_on_axis = ProjectPointOnAxis( 
-		origin + rotation * bone->Direction(), 
-		origin, 
+	Vec3d bone_on_axis = ProjectPointOnAxis(
+		origin + rotation * bone->Direction(),
+		origin,
 		axis );
 
 	slide_axis -= bone_on_axis;

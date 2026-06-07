@@ -8,8 +8,8 @@
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class RevoluteBaseHeuristic : 
-	public Model::IKJointGroupModelBase, 
+class RevoluteBaseHeuristic :
+	public Model::IKJointGroupModelBase,
 	public IIKHeuristic
 {
 public:
@@ -31,17 +31,17 @@ const Model::Joint* GetShoulderJoint() const;
 Vec3d ComputeDirection( const Mat4d& T_tip ) const;
 
 
-static Model::Base3d ComputeBaseReference( 
+static Model::Base3d ComputeBaseReference(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& revolute_base_group );
 
-static double ComputeAlpha(	
+static double ComputeAlpha(
 	const Vec3d& axis,
-	const Vec3d& ref_direction, 
+	const Vec3d& ref_direction,
 	const Vec3d& r_proj );
 
-static double ComputeBeta( 
-	double shoulder_offset, 
+static double ComputeBeta(
+	double shoulder_offset,
 	const Vec3d& r_proj );
 
 std::vector< double > EvaluateCandidates( double seed, double alpha, double beta ) const;

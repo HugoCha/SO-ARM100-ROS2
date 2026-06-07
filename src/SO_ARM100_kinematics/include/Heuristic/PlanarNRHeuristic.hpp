@@ -6,8 +6,8 @@
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class PlanarNRHeuristic : 
-	public Model::IKJointGroupModelBase, 
+class PlanarNRHeuristic :
+	public Model::IKJointGroupModelBase,
 	public IIKHeuristic
 {
 public:
@@ -23,7 +23,7 @@ private:
 std::unique_ptr< IIKHeuristic > planar_heuristic_;
 
 static std::unique_ptr< IIKHeuristic > InitializePlanarHeuristic(
-    Model::KinematicModelConstPtr model,
+	Model::KinematicModelConstPtr model,
 	Model::JointGroup planar_group );
 };
 }

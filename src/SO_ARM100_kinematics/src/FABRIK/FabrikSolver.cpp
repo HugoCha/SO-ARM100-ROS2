@@ -82,12 +82,12 @@ IKSolution FABRIKSolver::Solve(
 	// std::cout << "Seed          = " << problem.seed.transpose() << std::endl;
 	// std::cout << "Target        = " << p_target.transpose() << std::endl;
 	// std::cout << *model_->GetSkeleton() << std::endl;
-	
+
 	SolverHistory history;
 
-	history.best_error = std::numeric_limits<double>::max();
+	history.best_error = std::numeric_limits< double >::max();
 	history.best_joints = problem.seed;
-	history.last_non_stalled_error = std::numeric_limits<double>::max();
+	history.last_non_stalled_error = std::numeric_limits< double >::max();
 	history.stalled_error_cnt = 0;
 
 	double error;
@@ -96,8 +96,8 @@ IKSolution FABRIKSolver::Solve(
 		// std::cout << "--------------------- Iteration " << iter << " ---------------------" << std::endl;
 		// std::cout << skeleton_state << std::endl;
 		auto bone_states = ComputeBoneStates( skeleton_state );
-		auto tip_position = bone_states.back().Origin(); 
-		
+		auto tip_position = bone_states.back().Origin();
+
 		error = Utils::Distance( p_target, tip_position );
 		UpdateHistory( skeleton_state.GetJointValues(), error, history );
 		// std::cout << "joints= " << skeleton_state.GetJointValues().transpose() << std::endl;
@@ -139,7 +139,7 @@ bool FABRIKSolver::HasFixedBaseOrigin() const
 
 // ------------------------------------------------------------
 
-std::vector< Model::BoneState > FABRIKSolver::ComputeBoneStates( 
+std::vector< Model::BoneState > FABRIKSolver::ComputeBoneStates(
 	const Model::SkeletonState& skeleton_state ) const
 {
 	auto bone_states = skeleton_state.GetBoneStates();
@@ -162,18 +162,18 @@ void FABRIKSolver::BackwardPass(
 
 	for ( int i = n - 1; i >= 0; i-- )
 	{
-		bone_states[i].Direction() = 
-			bone_states[i+1].Origin() - bone_states[i].Origin();
+		bone_states[i].Direction() =
+			bone_states[i + 1].Origin() - bone_states[i].Origin();
 
-		// std::cout << "Bwd" << std::to_string( i ) << " : " 
+		// std::cout << "Bwd" << std::to_string( i ) << " : "
 		//	<< bone_states[i] << std::endl;
 
 		skeleton_state.ApplyConstraint( bone_states[i], i );
 
 		bone_states[i].Origin() =
-			bone_states[i+1].Origin() - bone_states[i].Direction();
+			bone_states[i + 1].Origin() - bone_states[i].Direction();
 
-		// std::cout << "Bwd" << std::to_string( i ) << " : " 
+		// std::cout << "Bwd" << std::to_string( i ) << " : "
 		// 		  << bone_states[i] << std::endl;
 	}
 }
@@ -195,12 +195,12 @@ void FABRIKSolver::ForwardPass(
 		bone_states[i].Direction() =
 			bone_states[i + 1].Origin() - bone_states[i].Origin();
 
-		// std::cout << "Fwd" << std::to_string( i ) << " : " 
+		// std::cout << "Fwd" << std::to_string( i ) << " : "
 		// 	<< bone_states[i] << std::endl;
-		
+
 		skeleton_state.ApplyConstraint( bone_states[i], i );
-		
-		// std::cout << "Fwd" << std::to_string( i ) << " : " 
+
+		// std::cout << "Fwd" << std::to_string( i ) << " : "
 		// 	<< bone_states[i] << std::endl;
 
 		bone_states[i + 1].Origin() =
@@ -222,14 +222,14 @@ void FABRIKSolver::UpdateValues(
 		// std::cout << std::to_string( i ) << " : "<< bone_states[i] << std::endl;
 		skeleton_state.UpdateValue( seed, bone_states[i], i );
 	}
-	
+
 	// std::cout << std::to_string( n ) << " : "<< bone_states[n] << std::endl;
-	bone_states[n].Origin() = bone_states[n-1].Origin() + bone_states[n-1].Direction();
+	bone_states[n].Origin() = bone_states[n - 1].Origin() + bone_states[n - 1].Direction();
 }
 
 // ------------------------------------------------------------
 
-void FABRIKSolver::UpdateHistory( 
+void FABRIKSolver::UpdateHistory(
 	const VecXd& joints,
 	double error,
 	SolverHistory& history ) const

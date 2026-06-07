@@ -23,7 +23,7 @@
 #include "Solver/IKSolverState.hpp"
 #include <string>
 
-namespace  SOArm100::Kinematics 
+namespace  SOArm100::Kinematics
 {
 
 // ============================================================
@@ -231,9 +231,9 @@ namespace Solver
 std::ostream& operator << ( std::ostream& os, const IKProblem& obj )
 {
 	os << "IKProblem" << std::endl;
-	os << "rotation tol: " << obj.rotation_tolerance 
+	os << "rotation tol: " << obj.rotation_tolerance
 	   << " translation tol: " << obj.position_tolerance
-	   << " timeout(ms): " << obj.timeout << std::endl;
+	   << " timeout(ms): " << obj.timeout_ms << std::endl;
 	os << "Seed: " << obj.seed.transpose() << std::endl;
 	os << "Target: " << std::endl << obj.target;
 	return os;
@@ -243,13 +243,13 @@ std::ostream& operator << ( std::ostream& os, const IKProblem& obj )
 
 std::ostream& operator << ( std::ostream& os, const IKSolverState& obj )
 {
-	switch ( obj ) 
+	switch ( obj )
 	{
-		case IKSolverState::BestPossible: os << "Best Possible"; break;
-		case IKSolverState::Converged: os << "Converged"; break;
-		case IKSolverState::MaxIterations: os << "Max Iterations"; break;
-		case IKSolverState::NotRun: os << "Not Run"; break;
-		case IKSolverState::Unreachable: os << "Unreachable"; break;
+	case IKSolverState::BestPossible: os << "Best Possible"; break;
+	case IKSolverState::Converged: os << "Converged"; break;
+	case IKSolverState::MaxIterations: os << "Max Iterations"; break;
+	case IKSolverState::NotRun: os << "Not Run"; break;
+	case IKSolverState::Unreachable: os << "Unreachable"; break;
 	}
 	return os;
 }
@@ -296,7 +296,7 @@ std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters&
 // Heurisitic
 // ============================================================
 
-namespace Heuristic 
+namespace Heuristic
 {
 
 // ------------------------------------------------------------
@@ -315,11 +315,11 @@ std::ostream& operator << ( std::ostream& os, const IKPresolution& obj )
 
 std::ostream& operator << ( std::ostream& os, const IKHeuristicState& obj )
 {
-	switch ( obj ) 
+	switch ( obj )
 	{
-		case IKHeuristicState::Success: os << "Sucess"; break;
-		case IKHeuristicState::PartialSuccess: os << "Partial Success"; break;
-		case IKHeuristicState::Fail: os << "Fail"; break;
+	case IKHeuristicState::Success: os << "Sucess"; break;
+	case IKHeuristicState::PartialSuccess: os << "Partial Success"; break;
+	case IKHeuristicState::Fail: os << "Fail"; break;
 	}
 	return os;
 }

@@ -9,14 +9,14 @@ namespace SOArm100::Kinematics::Test
 {
 struct Scenarii
 {
-VecXd seed;
-Mat4d target;
+	VecXd seed;
+	Mat4d target;
 };
 
 struct Scenario
 {
-std::vector< Scenarii > scenario;
-std::shared_ptr< Solver::DLSSolver > solver;
+	std::vector< Scenarii > scenario;
+	std::shared_ptr< Solver::DLSSolver > solver;
 };
 
 class DLSGradientDescent
@@ -24,11 +24,11 @@ class DLSGradientDescent
 public:
 struct Parameters
 {
-int iterations {100};
-double noise_percent {0.0};
-double h {1e-5};
-double learning_rate {0.1};
-double gradient_tolerance{1e-4};
+	int iterations { 100 };
+	double noise_percent { 0.0 };
+	double h { 1e-5 };
+	double learning_rate { 0.1 };
+	double gradient_tolerance{ 1e-4 };
 };
 
 DLSGradientDescent( int num_scenario );

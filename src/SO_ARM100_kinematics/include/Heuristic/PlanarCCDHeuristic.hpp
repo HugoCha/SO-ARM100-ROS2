@@ -24,8 +24,8 @@ struct SolverParameters
 	int max_iterations;
 	double error_tolerance;
 
-	SolverParameters( 
-		int max_iterations = 50, 
+	SolverParameters(
+		int max_iterations = 50,
 		int max_stalled_iterations = 5,
 		double error_tolerance = 5e-3 ) :
 		max_iterations( max_iterations ),
@@ -57,15 +57,15 @@ std::vector< Model::JointState > InitializeJointStates() const;
 bool IsUnreachable( const Vec3d& p_local_target ) const;
 
 void CCD( const Vec3d& p_local_target, SolverBuffer& buffer ) const;
-void UpdateBuffer(     
-	const Vec3d& p_local_target, 
-    const VecXd& joints, 
-    SolverBuffer& buffer ) const;
+void UpdateBuffer(
+	const Vec3d& p_local_target,
+	const VecXd& joints,
+	SolverBuffer& buffer ) const;
 
-void UpdateHistory(     
-	int iteration, 
-    const SolverBuffer& buffer, 
-    Solver::SolverHistory& history ) const;
+void UpdateHistory(
+	int iteration,
+	const SolverBuffer& buffer,
+	Solver::SolverHistory& history ) const;
 };
 }
 }

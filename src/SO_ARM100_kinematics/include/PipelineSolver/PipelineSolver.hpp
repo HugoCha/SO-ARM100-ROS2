@@ -2,6 +2,7 @@
 
 #include "IKPipeline.hpp"
 #include "Model/IKModelBase.hpp"
+#include "PipelineSolverParameters.hpp"
 #include "Scorer/IKSolutionScorer.hpp"
 #include "Solver/IKSolverBase.hpp"
 
@@ -18,24 +19,19 @@ class IKRunContext;
 class PipelineSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
-enum class PipelineCompletionStrategy
-{
-    ReturnFirstSuccess,
-    WaitForAcceptableResult,
-    WaitForAllResults
-};
-
-struct SolverParameters
-{
-PipelineCompletionStrategy strategy{PipelineCompletionStrategy::WaitForAllResults};
-double min_score_threshold {0.0};
-};
-
-PipelineSolver( 
+PipelineSolver(
 	Model::KinematicModelConstPtr model,
-	std::vector< std::unique_ptr< const Solver::IKPipeline > >&& pipelines, 
+	std::vector< std::unique_ptr< const Solver::IKPipeline >>&& pipelines,
 	std::unique_ptr< Scorer::IKSolutionScorer >&& scorer,
-	const SolverParameters& parameters );
+	const PipelineSolverParameters& parameters );
+
+PipelineSolverParameters& Parameters(){
+	return parameters_;
+}
+
+const PipelineSolverParameters& Parameters() const {
+	return parameters_;
+}
 
 virtual IKSolution Solve(
 	const IKProblem& problem,
@@ -50,24 +46,26 @@ struct SynchronizationParameters
 	bool early_result = false;
 };
 
-std::vector< std::unique_ptr< const Solver::IKPipeline > > pipelines_;
+std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines_;
 std::unique_ptr< Scorer::IKSolutionScorer > scorer_;
-SolverParameters parameters_;
+PipelineSolverParameters parameters_;
 
 std::vector< std::thread > StartPipelines(
-	auto worker,	
+	auto worker,
 	const IKProblem& problem,
 	const IKRunContext& context ) const;
 
-IKSolution RunAndScorePipeline( 
+IKSolution RunAndScorePipeline(
 	const std::unique_ptr< const Solver::IKPipeline >& pipeline,
 	const IKProblem& problem,
 	const IKRunContext& context ) const;
 
 bool CanStopPipelines( const IKSolution& solution ) const;
 
-void WaitPipelines( 
+void WaitPipelines(
 	std::vector< std::thread >& pipeline_threads,
+	const IKProblem& problem,
+	const IKRunContext& context,
 	SynchronizationParameters& sync_params ) const;
 
 void StopPipelines( const IKRunContext& context ) const;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Logger.hpp"
+
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <Eigen/src/Geometry/Quaternion.h>

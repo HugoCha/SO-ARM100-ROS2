@@ -209,8 +209,8 @@ void CheckConfiguration(
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
 
-    EXPECT_LE( result.fk_error, 1e-4 );
-    EXPECT_EQ( result.reachable, true );
+	EXPECT_LE( result.fk_error, 1e-4 );
+	EXPECT_EQ( result.reachable, true );
 }
 
 // ------------------------------------------------------------
@@ -241,8 +241,8 @@ void CheckConfigurationForAngles(
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
 
-    EXPECT_LE( result.fk_error, 1e-4 );
-    EXPECT_EQ( result.reachable, true );
+	EXPECT_LE( result.fk_error, 1e-4 );
+	EXPECT_EQ( result.reachable, true );
 }
 
 // ------------------------------------------------------------
@@ -427,12 +427,12 @@ TEST_F( EulerSolverTest, Solve_Dir_TargetOutsideLimits_ReturnsBestEffort )
 
 TEST_F( EulerSolverTest, Solve_Mat_Identity_ReturnsNearZeroAngles )
 {
-    Vec3d seed = Vec3d::Zero();
+	Vec3d seed = Vec3d::Zero();
 
-    auto result = solver_->SolveFromRotation( Mat3d::Identity() );
+	auto result = solver_->SolveFromRotation( Mat3d::Identity() );
 
-    EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
-        << "Angles: " << result.angles.transpose();
+	EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
+	    << "Angles: " << result.angles.transpose();
 }
 
 // ------------------------------------------------------------
@@ -442,11 +442,11 @@ TEST_F( EulerSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 	// Build R from known angles and verify the solver recovers them
 	const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
 	Mat3d R_target = ( AngleAxis( a1, Vec3d::UnitZ() )
-	                 * AngleAxis( a2, Vec3d::UnitY() )
-	                 * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
+	                   * AngleAxis( a2, Vec3d::UnitY() )
+	                   * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
 
 	Vec3d seed = Vec3d::Zero();
-    auto result = solver_->SolveFromRotation( R_target );
+	auto result = solver_->SolveFromRotation( R_target );
 
 	// // The matrix overload uses a3 as the tracked direction.
 	// // Error is defined on that direction, so check via ApplyAngles on UnitZ.

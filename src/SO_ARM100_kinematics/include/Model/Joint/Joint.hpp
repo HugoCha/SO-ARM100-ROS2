@@ -18,13 +18,18 @@ class Joint
 public:
 Joint( const Joint& joint ) :
 	Joint(
+		joint.GetName(),
 		Twist( joint.GetTwist() ),
 		Link( joint.GetLink() ),
 		Limits( joint.GetLimits() ) )
 {
 }
 
-Joint( const Twist& twist, const Link& link, const Limits& limits ) :
+Joint( const std::string& name,
+       const Twist& twist,
+       const Link& link,
+       const Limits& limits ) :
+	name_( name ),
 	twist_( std::make_unique< const Twist >( twist ) ),
 	link_( std::make_unique< const Link >( link ) ),
 	limits_( std::make_unique< const Limits >( limits ) ),
@@ -32,8 +37,9 @@ Joint( const Twist& twist, const Link& link, const Limits& limits ) :
 {
 }
 
-Joint( const Link& link ) :
+Joint( const std::string& name, const Link& link ) :
 	Joint(
+		name,
 		Twist( Vec3d::Zero(), Vec3d::Zero() ),
 		link,
 		Limits( -std::numeric_limits< double >::infinity(), std::numeric_limits< double >::infinity() ) )
@@ -45,6 +51,10 @@ Joint& operator = ( Joint&& ) = default;
 
 JointType GetType() const {
 	return type_;
+}
+
+const std::string& GetName() const {
+	return name_;
 }
 
 const Twist& GetTwist() const {
@@ -95,6 +105,7 @@ bool IsFixed() const {
 }
 
 private:
+std::string name_;
 JointType type_;
 
 std::unique_ptr< const Twist > twist_;

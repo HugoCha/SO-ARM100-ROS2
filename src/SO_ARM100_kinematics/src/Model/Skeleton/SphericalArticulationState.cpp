@@ -28,9 +28,9 @@ SphericalArticulationState::SphericalArticulationState( const Articulation* arti
 	{
 		throw std::invalid_argument( "Joints axes must intersect in one point and be independant." );
 	}
-	
-	solver_ = std::make_unique< Solver::SphericalSolver >( 
-		*model, 
+
+	solver_ = std::make_unique< Solver::SphericalSolver >(
+		*model,
 		Solver::SphericalSolver::SolverParameters() );
 }
 
@@ -43,14 +43,14 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 	Vec3d new_bone = world_transform_.rotation().inverse() * bone_state.Direction();
 
 	auto result = solver_->SolveFromTwoVectors( old_bone, new_bone );
-	
+
 	if ( !result.reachable )
 	{
-		auto local_rotation = 
-			AngleAxis( result.angles[2], articulation_->Joints()[2]->Axis() ) * 
-			AngleAxis( result.angles[1], articulation_->Joints()[1]->Axis() ) * 
+		auto local_rotation =
+			AngleAxis( result.angles[2], articulation_->Joints()[2]->Axis() ) *
+			AngleAxis( result.angles[1], articulation_->Joints()[1]->Axis() ) *
 			AngleAxis( result.angles[0], articulation_->Joints()[0]->Axis() );
-		
+
 		Vec3d bone_dir = world_transform_.rotation() * local_rotation * bone->Direction();
 		bone_state.Direction() = bone_dir.normalized() * bone->Length();
 	}
@@ -62,10 +62,10 @@ void SphericalArticulationState::ApplyConstraints( BoneState& bone_state ) const
 
 // ------------------------------------------------------------
 
-void SphericalArticulationState::UpdateValues( 
+void SphericalArticulationState::UpdateValues(
 	const VecXd& seed,
-    const BoneState& bone_state, 
-    double damping_factor )
+	const BoneState& bone_state,
+	double damping_factor )
 {
 	Vec3d angles;
 

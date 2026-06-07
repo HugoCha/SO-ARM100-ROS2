@@ -232,8 +232,8 @@ TEST_F( UniversalArticulationStateTest, SetState_WithValue_UpdatesPoseAndValueCo
 	EXPECT_EQ( expected_values[1], state.GetJointStates()[1]->Value() );
 	EXPECT_TRUE( state.GetJointStates()[1]->Origin().isApprox(
 					 Vec3d( 0, 0, 0.1 ) ) )
-				<< "Result   Origin " << 1 << " = " << state.GetJointStates()[1]->Origin().transpose() << std::endl
-				<< "Expected Origin " << 1 << " = " << Vec3d( 0, 0, 0.1 ).transpose() << std::endl;
+	    << "Result   Origin " << 1 << " = " << state.GetJointStates()[1]->Origin().transpose() << std::endl
+	    << "Expected Origin " << 1 << " = " << Vec3d( 0, 0, 0.1 ).transpose() << std::endl;
 	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox(
 					 rotation * local_rotation_1 * revolute_joint_2_->Axis() ) );
 }
@@ -624,8 +624,8 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisWithRotationTran
 	auto expected_axis_2 = rotation * expected_local_rotation_1 * revolute_joint_2_->Axis();
 	EXPECT_TRUE( state.GetJointStates()[0]->Axis().isApprox( expected_axis_1, 1e-5 ) );
 	EXPECT_TRUE( state.GetJointStates()[1]->Axis().isApprox( expected_axis_2, 1e-5 ) )
-		<< "Expected Axis = " << std::endl << expected_axis_2 << std::endl
-		<< "Result Axis   = " << std::endl << state.GetJointStates()[1]->Axis() << std::endl;
+	    << "Expected Axis = " << std::endl << expected_axis_2 << std::endl
+	    << "Result Axis   = " << std::endl << state.GetJointStates()[1]->Axis() << std::endl;
 }
 
 // ------------------------------------------------------------
@@ -725,18 +725,18 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency
 	auto center = Vec3d( 1, 1, 1 );
 	world_transform.translate( center );
 	world_transform.rotate( rotation );
-	
-	
+
+
 	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 	auto bone_state = Model::BoneState( bone_off_axis_ );
 	bone_state.Origin() = Vec3d( 0.0, 0, 0 );
-	
+
 	double angle1, angle2;
-	
+
 	for ( int i = 0; i < kTrial; i++ )
 	{
-		revolute_joint_1_->GetLimits().Random( rng, &angle1 );
-		revolute_joint_2_->GetLimits().Random( rng, &angle2 );
+		revolute_joint_1_->GetLimits().Random( rng, & angle1 );
+		revolute_joint_2_->GetLimits().Random( rng, & angle2 );
 		bone_state.Direction() = rotation * BoneOffAxisInternalDirection( angle1, angle2 );
 
 		state.SetCenterPose( world_transform );
@@ -747,19 +747,19 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency
 
 		if ( !result_dir.isApprox( bone_state.Direction(), 5e-3 ) )
 		{
-			ADD_FAILURE() 
-				<< "Fail for iteration " << i << std::endl
-				<< "Original angles = " << angle1 << " " << angle2 << std::endl
-				<< "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
-				<< "Original dir    = " << bone_state.Direction().transpose()  << std::endl
-				<< "Result dir      = " << result_dir.transpose() << std::endl
-				<< "Diff            = " << ( bone_state.Direction() - result_dir ).transpose() << std::endl
-				<< "Error           = " << ( bone_state.Direction() - result_dir ).norm() << std::endl;
+			ADD_FAILURE()
+			    << "Fail for iteration " << i << std::endl
+			    << "Original angles = " << angle1 << " " << angle2 << std::endl
+			    << "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
+			    << "Original dir    = " << bone_state.Direction().transpose()  << std::endl
+			    << "Result dir      = " << result_dir.transpose() << std::endl
+			    << "Diff            = " << ( bone_state.Direction() - result_dir ).transpose() << std::endl
+			    << "Error           = " << ( bone_state.Direction() - result_dir ).norm() << std::endl;
 
 			fail++;
 		}
 	}
-	
+
 	EXPECT_EQ( fail, 0 );
 }
 
@@ -768,51 +768,51 @@ TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOffAxisCheckConsistency
 TEST_F( UniversalArticulationStateTest, UpdateValues_BoneOnAxisCheckConsistency_ExpectedResult )
 {
 	/*
-	const int kTrial = 100;
-	random_numbers::RandomNumberGenerator rng;
-	int fail = 0;
+	   const int kTrial = 100;
+	   random_numbers::RandomNumberGenerator rng;
+	   int fail = 0;
 
-	auto state = Model::UniversalArticulationState( universal_articulation_.get() );
+	   auto state = Model::UniversalArticulationState( universal_articulation_.get() );
 
-	auto rotation = Quaternion::Identity();
-	auto center = Vec3d::Zero();
-	Iso3d world_transform = Iso3d::Identity();
-	world_transform.translate( center );
-	world_transform.rotate( rotation );
+	   auto rotation = Quaternion::Identity();
+	   auto center = Vec3d::Zero();
+	   Iso3d world_transform = Iso3d::Identity();
+	   world_transform.translate( center );
+	   world_transform.rotate( rotation );
 
-	auto bone_state = Model::BoneState( bone_on_axis_ );
-	bone_state.Origin() = Vec3d( 0.0, 0, 0 );
-	
-	double angle1, angle2;
+	   auto bone_state = Model::BoneState( bone_on_axis_ );
+	   bone_state.Origin() = Vec3d( 0.0, 0, 0 );
+
+	   double angle1, angle2;
 
 
-	for ( int i = 0; i < kTrial; i++ )
-	{
-		revolute_joint_1_->GetLimits().Random( rng, &angle1 );
-		revolute_joint_2_->GetLimits().Random( rng, &angle2 );
-		bone_state.Direction() = BoneOffAxisInternalDirection( angle1, angle2 );
+	   for ( int i = 0; i < kTrial; i++ )
+	   {
+	    revolute_joint_1_->GetLimits().Random( rng, &angle1 );
+	    revolute_joint_2_->GetLimits().Random( rng, &angle2 );
+	    bone_state.Direction() = BoneOffAxisInternalDirection( angle1, angle2 );
 
-		state.SetCenterPose( world_transform );
-		state.UpdateValues( bone_state );
+	    state.SetCenterPose( world_transform );
+	    state.UpdateValues( bone_state );
 
-		auto result_angles = state.GetJointValues();
-		Vec3d result_dir = BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
+	    auto result_angles = state.GetJointValues();
+	    Vec3d result_dir = BoneOffAxisInternalDirection( result_angles[0], result_angles[1] );
 
-		if ( !result_dir.isApprox( bone_state.Direction() ) )
-		{
-			ADD_FAILURE() 
-				<< "Fail for iteration " << i << std::endl
-				<< "Original angles = " << angle1 << " " << angle2 << std::endl
-				<< "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
-				<< "Original dir    = " << bone_state.Direction().transpose()  << std::endl
-				<< "Original dir    = " << result_dir.transpose() << std::endl;
+	    if ( !result_dir.isApprox( bone_state.Direction() ) )
+	    {
+	        ADD_FAILURE()
+	            << "Fail for iteration " << i << std::endl
+	            << "Original angles = " << angle1 << " " << angle2 << std::endl
+	            << "Result   angles = " << result_angles[0] << " " << result_angles[1] << std::endl
+	            << "Original dir    = " << bone_state.Direction().transpose()  << std::endl
+	            << "Original dir    = " << result_dir.transpose() << std::endl;
 
-			fail++;
-		}
-	}
-	
-	EXPECT_EQ( fail, 0 );
-	*/
+	        fail++;
+	    }
+	   }
+
+	   EXPECT_EQ( fail, 0 );
+	 */
 }
 
 // ------------------------------------------------------------

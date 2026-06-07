@@ -27,10 +27,10 @@ template< typename T >
 	const Vec3d& origin,
 	const Vec3d& axis );
 
-	[[nodiscard]] double Angle( const Vec3d& V1, const Vec3d& V2 );
-	[[nodiscard]] double SignedAngle( const Vec3d& V1, const Vec3d& V2, const Vec3d& normal );
-	[[nodiscard]] double AngleAroundAxis( const Vec3d& V1, const Vec3d& V2, const Vec3d& axis );
-	[[nodiscard]] double WrapAngle( double angle, double lo = -M_PI, double hi = M_PI );
+[[nodiscard]] double Angle( const Vec3d& V1, const Vec3d& V2 );
+[[nodiscard]] double SignedAngle( const Vec3d& V1, const Vec3d& V2, const Vec3d& normal );
+[[nodiscard]] double AngleAroundAxis( const Vec3d& V1, const Vec3d& V2, const Vec3d& axis );
+[[nodiscard]] double WrapAngle( double angle, double lo = -M_PI, double hi = M_PI );
 
 [[nodiscard]] double OrthogonalityError( const Mat3d& Q );
 

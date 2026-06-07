@@ -95,8 +95,11 @@ const Joint* GetPreviousJoint( const Joint* joint ) const;
 	return active_joints_.size();
 }
 
-void Add( const Twist& twist, const Link& link, const Limits& limits ){
-	Add( std::make_shared< const Joint >( twist, link, limits ) );
+void Add( const std::string& joint_name,
+          const Twist& twist,
+          const Link& link,
+          const Limits& limits ){
+	Add( std::make_shared< const Joint >( joint_name, twist, link, limits ) );
 }
 
 bool ComputeFK(
@@ -190,7 +193,7 @@ bool ComputeJointStatesFK(
 	int n_joints,
 	const Mat4d& home_configuration,
 	std::vector< JointState >& joint_states,
-	Mat4d& fk ) const noexcept;
+	Mat4d& fk ) const;
 
 bool ComputeJointPosesFK(
 	const double* thetas,

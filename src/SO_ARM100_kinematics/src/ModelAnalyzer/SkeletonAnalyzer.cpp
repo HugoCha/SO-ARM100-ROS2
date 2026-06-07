@@ -193,12 +193,13 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 {
 	const int n_joints = joints.size();
 	if ( n_joints == 1 )
-		return { joints[0] };
+		return { joints[0] }
+	;
 
 	std::vector< JointConstPtr > filtered_joints;
 	int i = 0;
 
-	auto can_filter_joint = 
+	auto can_filter_joint =
 		[]( JointConstPtr joint1, JointConstPtr joint2 ) -> bool
 		{
 			if ( !joint1->Axis().isApprox( joint2->Axis() ) )

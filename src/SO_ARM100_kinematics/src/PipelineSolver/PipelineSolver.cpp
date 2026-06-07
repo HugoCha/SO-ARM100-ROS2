@@ -8,7 +8,6 @@
 #include "Utils/StringConverter.hpp"
 
 #include <condition_variable>
-#include <iostream>
 
 namespace SOArm100::Kinematics::Solver
 {
@@ -19,7 +18,7 @@ PipelineSolver::PipelineSolver(
 	Model::KinematicModelConstPtr model,
 	std::vector< std::unique_ptr< const Solver::IKPipeline >>&& pipelines,
 	std::unique_ptr< Scorer::IKSolutionScorer >&& scorer,
-	const SolverParameters& parameters ) :
+	const PipelineSolverParameters& parameters ) :
 	Model::IKModelBase( model ),
 	pipelines_( std::move( pipelines ) ),
 	scorer_( std::move( scorer ) ),
@@ -49,7 +48,6 @@ IKSolution PipelineSolver::Solve(
 				std::lock_guard< std::mutex > lock( sync_params.mtx );
 				if ( solution.score < result.score )
 					result = solution;
-				//std::cout << "Solution Candidate = \n" << solution << std::endl;
 
 				if ( CanStopPipelines( solution ) )
 				{
@@ -63,7 +61,7 @@ IKSolution PipelineSolver::Solve(
 		};
 
 	auto pipeline_threads = StartPipelines( worker, problem, context );
-	WaitPipelines( pipeline_threads, sync_params );
+	WaitPipelines( pipeline_threads, problem, context, sync_params );
 
 	return result;
 }
@@ -117,8 +115,8 @@ IKSolution PipelineSolver::RunAndScorePipeline(
 {
 	auto solution = pipeline.get()->Run( problem, context );
 
-	if ( solution.state != IKSolverState::NotRun && 
-		 solution.state != IKSolverState::Unreachable )
+	if ( solution.state != IKSolverState::NotRun &&
+	     solution.state != IKSolverState::Unreachable )
 		solution.score = scorer_->Score( problem, solution );
 
 	return solution;
@@ -128,28 +126,37 @@ IKSolution PipelineSolver::RunAndScorePipeline(
 
 void PipelineSolver::WaitPipelines(
 	std::vector< std::thread >& pipeline_threads,
+	const IKProblem& problem,
+	const IKRunContext& context,
 	SynchronizationParameters& sync_params ) const
 {
 	std::unique_lock< std::mutex > lock( sync_params.mtx );
+	auto timeout { std::chrono::milliseconds( problem.timeout_ms ) };
+	bool completed = true;
 	switch ( parameters_.strategy )
 	{
 	case PipelineCompletionStrategy::ReturnFirstSuccess:
 	case PipelineCompletionStrategy::WaitForAcceptableResult:
-		sync_params.cv.wait(
+		completed = sync_params.cv.wait_for(
 			lock,
+			timeout,
 			[&]{
 				return sync_params.early_result ||
 				       sync_params.completed_count == pipelines_.size();
 			} );
 		break;
 	case PipelineCompletionStrategy::WaitForAllResults:
-		sync_params.cv.wait(
+		completed = sync_params.cv.wait_for(
 			lock,
+			timeout,
 			[&]{
 				return sync_params.completed_count == pipelines_.size();
 			} );
 		break;
 	}
+
+	if ( !completed )
+		StopPipelines( context );
 	lock.unlock();
 
 	for ( auto& t : pipeline_threads )

@@ -33,39 +33,39 @@ Mat4d ComputeGroupLocalTarget( const VecXd& seed, const Mat4d& target ) const;
 Mat4d ComputeGroupWorldTarget( const VecXd& seed, const Mat4d& target ) const;
 
 bool ComputeGroupLocalJointStatesFK( const VecXd& joints, std::vector< Model::JointState >& joint_states, Mat4d& fk ) const {
-	return ComputeGroupJointStatesFK( 
-		joints, 
-		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ), 
-		joint_states, 
+	return ComputeGroupJointStatesFK(
+		joints,
+		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ),
+		joint_states,
 		fk );
 }
 
 bool ComputeGroupLocalJointPosesFK( const VecXd& joints, std::vector< Mat4d >& joint_poses, Mat4d& fk ) const {
-	return ComputeGroupJointPosesFK( 
-		joints, 
+	return ComputeGroupJointPosesFK(
+		joints,
 		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ),
-		joint_poses, 
+		joint_poses,
 		fk );
 }
 
 bool ComputeGroupLocalFK( const VecXd& joints, Mat4d& fk ) const {
-	return ComputeGroupFK( 
-		joints, 
+	return ComputeGroupFK(
+		joints,
 		Inverse( GetActiveJoint( GetGroup().FirstIndex() )->OriginTransform() ),
 		fk );
 }
 
 bool ComputeGroupWorldJointStatesFK( const VecXd& joints, std::vector< Model::JointState >& joint_states, Mat4d& fk ) const {
-	return ComputeGroupJointStatesFK( 
-		joints, 
-		GetAncestorTransform( joints ), 
-		joint_states, 
+	return ComputeGroupJointStatesFK(
+		joints,
+		GetAncestorTransform( joints ),
+		joint_states,
 		fk );
 }
 bool ComputeGroupWorldJointPosesFK( const VecXd& joints, std::vector< Mat4d >& joint_poses, Mat4d& fk ) const {
-	return ComputeGroupJointPosesFK( 
-		joints, 
-		GetAncestorTransform( joints ), 
+	return ComputeGroupJointPosesFK(
+		joints,
+		GetAncestorTransform( joints ),
 		joint_poses, fk );
 }
 
@@ -98,8 +98,8 @@ static Mat4d ComputeHomeInTipTransform(
 	Model::KinematicModelConstPtr model,
 	const Model::JointGroup& group );
 
-static double ComputeGroupMaxReach( 	
-	const KinematicModelConstPtr& model, 
+static double ComputeGroupMaxReach(
+	const KinematicModelConstPtr& model,
 	const JointGroup& group );
 
 bool ComputeGroupJointStatesFK(

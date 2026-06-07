@@ -98,9 +98,9 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
 	Model::JointChain joint_chain( 1 );
 	Model::Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
-	Model::Link link( Mat4d::Identity(), 0 );
+	Model::Link link( "", Mat4d::Identity(), 0 );
 	Model::Limits limits( -M_PI, M_PI );
-	joint_chain.Add( twist, link, limits ); // Pure rotation around z-axis
+	joint_chain.Add( "",  twist, link, limits ); // Pure rotation around z-axis
 
 	VecXd joint_angles( 1 );
 	joint_angles << 0.0;
@@ -120,15 +120,15 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
 	Model::JointChain joint_chain( 2 );
 
-	joint_chain.Add(
-		{ Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
-		{},
-		{ -M_PI, M_PI } );
+	joint_chain.Add( "",
+	                 { Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
+	                 {},
+	                 { -M_PI, M_PI } );
 
-	joint_chain.Add(
-		{ Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) },
-		{},
-		{ -M_PI, M_PI } );
+	joint_chain.Add( "",
+	                 { Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) },
+	                 {},
+	                 { -M_PI, M_PI } );
 
 	VecXd joint_angles( 2 );
 	joint_angles << 0.0, 0.0;
@@ -291,8 +291,9 @@ static Model::JointConstPtr MakeRevoluteJoint(
 	const Vec3d& point_on_axis = Vec3d::Zero() )
 {
 	return std::make_shared< const Model::Joint >(
+		"",
 		Model::Twist( axis, point_on_axis ),
-		Model::Link( ToTransformMatrix( point_on_axis ), 0 ),
+		Model::Link( "", ToTransformMatrix( point_on_axis ), 0 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 }
@@ -548,6 +549,7 @@ TEST_F( AxesIndependentTest, SingleJoint_ZeroAxis_ReturnsFalse )
 	// A zero-length axis: use the prismatic Twist constructor (linear only)
 	// and build a joint manually so the axis stays zero.
 	auto joint = std::make_shared< const Model::Joint >(
+		"",
 		Model::Twist( Vec3d::Zero() ),   // prismatic with zero linear → axis = (0,0,0)
 		Model::Link(),
 		Model::Limits( -M_PI, M_PI )

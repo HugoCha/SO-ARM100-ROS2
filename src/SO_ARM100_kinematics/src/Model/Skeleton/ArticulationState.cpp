@@ -93,7 +93,7 @@ void ArticulationState::SetJointInternalState(
 {
 	auto joint = joint_state->GetJoint();
 	auto internal_transform = world_transform_ * internal_local_transform;
-	
+
 	joint_state->Origin() =
 		internal_transform.translation() +
 		internal_transform.rotation() * ( joint->Origin() - articulation_->Center() );

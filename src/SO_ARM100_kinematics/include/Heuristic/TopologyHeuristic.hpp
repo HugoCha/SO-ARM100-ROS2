@@ -7,7 +7,7 @@
 
 namespace SOArm100::Kinematics::Heuristic
 {
-class TopologyHeuristic : public Model::IKModelBase, IIKHeuristic
+class TopologyHeuristic : public Model::IKModelBase, public IIKHeuristic
 {
 public:
 TopologyHeuristic( Model::KinematicModelConstPtr model );

@@ -157,16 +157,16 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 	Vec3d origin = Vec3d::Zero();
 	Vec3d axis = Vec3d::UnitY(); // Rotation around Y-axis
 	Model::Twist twist_y( axis, origin );
-	Model::Link link_y( Mat4d::Identity(), 1 );
+	Model::Link link_y( "", Mat4d::Identity(), 1 );
 	Model::Limits limits_y( -M_PI, M_PI );
-	joint_chain_y.Add( twist_y, link_y, limits_y );
+	joint_chain_y.Add( "", twist_y, link_y, limits_y );
 
 	origin = Vec3d::UnitZ();
 	axis = Vec3d::UnitZ(); // Rotation around Z-axis
 	Model::Twist twist_z( axis, origin );
-	Model::Link link_z( ToTransformMatrix( origin ), 1 );
+	Model::Link link_z( "", ToTransformMatrix( origin ), 1 );
 	Model::Limits limits_z( -M_PI, M_PI );
-	joint_chain_y.Add( twist_z, link_z, limits_z );
+	joint_chain_y.Add( "", twist_z, link_z, limits_z );
 
 	Mat4d home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 

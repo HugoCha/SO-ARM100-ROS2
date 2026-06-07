@@ -42,7 +42,7 @@ std::ostream& operator << ( std::ostream& os, const Twist& obj );
 }
 
 // Heuristic
-namespace Heuristic 
+namespace Heuristic
 {
 enum class IKHeuristicState;
 struct IKPresolution;

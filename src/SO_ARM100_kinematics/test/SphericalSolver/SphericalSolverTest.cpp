@@ -25,35 +25,35 @@ class SphericalSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-    // Standard Orthogonal Axes (Orthogonal Wrist Layout)
-    joint_x_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 2, M_PI );
-    joint_y_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 2, M_PI );
-    joint_z_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 2, M_PI );
+	// Standard Orthogonal Axes (Orthogonal Wrist Layout)
+	joint_x_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 2, M_PI );
+	joint_y_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 2, M_PI );
+	joint_z_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 2, M_PI );
 
-    // Tight Limits Setup for Bounds Validation
-    joint_x_tight_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
-    joint_y_tight_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
-    joint_z_tight_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
+	// Tight Limits Setup for Bounds Validation
+	joint_x_tight_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
+	joint_y_tight_ = MakeRevoluteJoint( Vec3d::UnitY(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
+	joint_z_tight_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI / 6, M_PI / 6 );
 
-    // Non-Orthogonal Arbitrary Axes Layout
-    Vec3d non_ortho_ax2 = Vec3d( 1.0, 1.0, 0.0 ).normalized(); // 45 degrees to X and Y
-    joint_non_ortho_1_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI, M_PI );
-    joint_non_ortho_2_ = MakeRevoluteJoint( non_ortho_ax2,    Vec3d::Zero(), -M_PI, M_PI );
-    joint_non_ortho_3_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI, M_PI );
+	// Non-Orthogonal Arbitrary Axes Layout
+	Vec3d non_ortho_ax2 = Vec3d( 1.0, 1.0, 0.0 ).normalized(); // 45 degrees to X and Y
+	joint_non_ortho_1_ = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero(), -M_PI, M_PI );
+	joint_non_ortho_2_ = MakeRevoluteJoint( non_ortho_ax2,    Vec3d::Zero(), -M_PI, M_PI );
+	joint_non_ortho_3_ = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero(), -M_PI, M_PI );
 
-    // Solvers Setup
-    auto model_orthogonal = Model::SphericalModel::ComputeModel( joint_z_, joint_y_, joint_x_ );
-    auto model_tight = Model::SphericalModel::ComputeModel( joint_z_tight_, joint_y_tight_, joint_x_tight_ );
-    auto model_non_ortho = Model::SphericalModel::ComputeModel( joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ );
+	// Solvers Setup
+	auto model_orthogonal = Model::SphericalModel::ComputeModel( joint_z_, joint_y_, joint_x_ );
+	auto model_tight = Model::SphericalModel::ComputeModel( joint_z_tight_, joint_y_tight_, joint_x_tight_ );
+	auto model_non_ortho = Model::SphericalModel::ComputeModel( joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ );
 
-    EXPECT_TRUE( model_orthogonal.has_value() );
-    EXPECT_TRUE( model_tight.has_value() );
-    EXPECT_TRUE( model_non_ortho.has_value() );
+	EXPECT_TRUE( model_orthogonal.has_value() );
+	EXPECT_TRUE( model_tight.has_value() );
+	EXPECT_TRUE( model_non_ortho.has_value() );
 
-    parameters_ = Solver::SphericalSolver::SolverParameters();
-    solver_orthogonal_ = std::make_unique< Solver::SphericalSolver >( *model_orthogonal, parameters_ );
-    solver_tight_      = std::make_unique< Solver::SphericalSolver >( *model_tight, parameters_ );
-    solver_non_ortho_  = std::make_unique< Solver::SphericalSolver >( *model_non_ortho, parameters_ );
+	parameters_ = Solver::SphericalSolver::SolverParameters();
+	solver_orthogonal_ = std::make_unique< Solver::SphericalSolver >( *model_orthogonal, parameters_ );
+	solver_tight_      = std::make_unique< Solver::SphericalSolver >( *model_tight, parameters_ );
+	solver_non_ortho_  = std::make_unique< Solver::SphericalSolver >( *model_non_ortho, parameters_ );
 }
 
 void TearDown() override {
@@ -139,13 +139,13 @@ std::vector< ConfigurationCase > AllOrthogonalConfigurations() const
 
 // ------------------------------------------------------------
 
-Mat3d ComputeFK( 
-    const std::span< const Model::JointConstPtr >& joints, 
-    const Vec3d& angles ) const
+Mat3d ComputeFK(
+	const std::span< const Model::JointConstPtr >& joints,
+	const Vec3d& angles ) const
 {
-    return ( AngleAxis( angles[0], joints[0]->Axis() ) *
-             AngleAxis( angles[1], joints[1]->Axis() ) *
-             AngleAxis( angles[2], joints[2]->Axis() ) ).toRotationMatrix();
+	return ( AngleAxis( angles[0], joints[0]->Axis() ) *
+	         AngleAxis( angles[1], joints[1]->Axis() ) *
+	         AngleAxis( angles[2], joints[2]->Axis() ) ).toRotationMatrix();
 }
 
 // ------------------------------------------------------------
@@ -155,7 +155,7 @@ Vec3d ApplyAngles(
 	const Vec3d& old_dir,
 	const Vec3d& angles ) const
 {
-	return ComputeFK( model.GetJoints(), angles) * old_dir;
+	return ComputeFK( model.GetJoints(), angles ) * old_dir;
 }
 
 // ------------------------------------------------------------
@@ -202,8 +202,8 @@ void CheckConfiguration(
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
 
-    EXPECT_LE( result.fk_error, 1e-4 );
-    EXPECT_EQ( result.reachable, true );
+	EXPECT_LE( result.fk_error, 1e-4 );
+	EXPECT_EQ( result.reachable, true );
 }
 
 // ------------------------------------------------------------
@@ -234,8 +234,8 @@ void CheckConfigurationForAngles(
 	    << "Got dir:      " << recovered.transpose()  << "\n"
 	    << "Angles:       " << result.angles.transpose();
 
-    EXPECT_LE( result.fk_error, 1e-4 );
-    EXPECT_EQ( result.reachable, true );
+	EXPECT_LE( result.fk_error, 1e-4 );
+	EXPECT_EQ( result.reachable, true );
 }
 
 // ------------------------------------------------------------
@@ -278,14 +278,14 @@ Solver::SphericalSolver::SolverParameters parameters_;
 
 TEST_F( SphericalSolverTest, Solve_IdentityMatrix_ReturnsNearZeroAngles )
 {
-    Mat3d R_target = Mat3d::Identity();
+	Mat3d R_target = Mat3d::Identity();
 
-    auto result = solver_orthogonal_->SolveFromRotation( R_target );
+	auto result = solver_orthogonal_->SolveFromRotation( R_target );
 
-    EXPECT_TRUE( result.reachable );
-    EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
-    EXPECT_TRUE( result.angles.isZero( 1e-4 ) ) 
-        << "Expected near-zero angles, got: " << result.angles.transpose();
+	EXPECT_TRUE( result.reachable );
+	EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
+	EXPECT_TRUE( result.angles.isZero( 1e-4 ) )
+	    << "Expected near-zero angles, got: " << result.angles.transpose();
 }
 
 // ============================================================
@@ -294,18 +294,18 @@ TEST_F( SphericalSolverTest, Solve_IdentityMatrix_ReturnsNearZeroAngles )
 
 TEST_F( SphericalSolverTest, Solve_OrthogonalValidRotation_MatchesTargetExactly )
 {
-    Vec3d expected_angles( M_PI / 4, -M_PI / 6, M_PI / 3 );
-    std::vector< Model::JointConstPtr > joints = { joint_z_, joint_y_, joint_x_ };
-    Mat3d R_target = ComputeFK( joints, expected_angles );
+	Vec3d expected_angles( M_PI / 4, -M_PI / 6, M_PI / 3 );
+	std::vector< Model::JointConstPtr > joints = { joint_z_, joint_y_, joint_x_ };
+	Mat3d R_target = ComputeFK( joints, expected_angles );
 
-    auto result = solver_orthogonal_->SolveFromRotation( R_target );
+	auto result = solver_orthogonal_->SolveFromRotation( R_target );
 
-    EXPECT_TRUE( result.reachable );
-    EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
-    
-    Mat3d R_result = ComputeFK( joints, result.angles );
-    EXPECT_TRUE( R_result.isApprox( R_target, 1e-4 ) )
-        << "Target Orientation:\n" << R_target << "\nResult Orientation:\n" << R_result;
+	EXPECT_TRUE( result.reachable );
+	EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
+
+	Mat3d R_result = ComputeFK( joints, result.angles );
+	EXPECT_TRUE( R_result.isApprox( R_target, 1e-4 ) )
+	    << "Target Orientation:\n" << R_target << "\nResult Orientation:\n" << R_result;
 }
 
 // ============================================================
@@ -314,18 +314,18 @@ TEST_F( SphericalSolverTest, Solve_OrthogonalValidRotation_MatchesTargetExactly 
 
 TEST_F( SphericalSolverTest, Solve_NonOrthogonalValidRotation_MatchesTargetExactly )
 {
-    Vec3d expected_angles( 0.3, -0.5, 0.2 );
-    std::vector< Model::JointConstPtr > joints = { joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ };
-    Mat3d R_target = ComputeFK( joints, expected_angles );
+	Vec3d expected_angles( 0.3, -0.5, 0.2 );
+	std::vector< Model::JointConstPtr > joints = { joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ };
+	Mat3d R_target = ComputeFK( joints, expected_angles );
 
-    auto result = solver_non_ortho_->SolveFromRotation( R_target );
+	auto result = solver_non_ortho_->SolveFromRotation( R_target );
 
-    EXPECT_TRUE( result.reachable );
-    EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
-    
-    Mat3d R_result = ComputeFK( joints, result.angles );
-    EXPECT_TRUE( R_result.isApprox( R_target, 1e-4 ) )
-        << "Target Orientation:\n" << R_target << "\nResult Orientation:\n" << R_result;
+	EXPECT_TRUE( result.reachable );
+	EXPECT_NEAR( result.fk_error, 0.0, 1e-4 );
+
+	Mat3d R_result = ComputeFK( joints, result.angles );
+	EXPECT_TRUE( R_result.isApprox( R_target, 1e-4 ) )
+	    << "Target Orientation:\n" << R_target << "\nResult Orientation:\n" << R_result;
 }
 
 // ============================================================
@@ -334,23 +334,23 @@ TEST_F( SphericalSolverTest, Solve_NonOrthogonalValidRotation_MatchesTargetExact
 
 TEST_F( SphericalSolverTest, Solve_TargetOutsideJointLimits_ReturnsClampedBestEffort )
 {
-    // Generate orientation out-of-reach for tight limits (requires 45°/30°, limit is 30°)
-    Vec3d unreachable_angles( M_PI / 4, M_PI / 6, 0.0 ); 
-    std::vector< Model::JointConstPtr > joints = { joint_z_tight_, joint_y_tight_, joint_x_tight_ };
-    Mat3d R_target = ComputeFK( joints, unreachable_angles );
+	// Generate orientation out-of-reach for tight limits (requires 45°/30°, limit is 30°)
+	Vec3d unreachable_angles( M_PI / 4, M_PI / 6, 0.0 );
+	std::vector< Model::JointConstPtr > joints = { joint_z_tight_, joint_y_tight_, joint_x_tight_ };
+	Mat3d R_target = ComputeFK( joints, unreachable_angles );
 
-    auto result = solver_tight_->SolveFromRotation( R_target );
+	auto result = solver_tight_->SolveFromRotation( R_target );
 
-    // The configuration should be flagged unreachable due to limit violations
-    EXPECT_FALSE( result.reachable );
-    EXPECT_GT( result.fk_error, 1e-4 );
+	// The configuration should be flagged unreachable due to limit violations
+	EXPECT_FALSE( result.reachable );
+	EXPECT_GT( result.fk_error, 1e-4 );
 
-    // Verify all returned values strictly respect specified joint boundaries
-    for ( int i = 0; i < 3; ++i )
-    {
-        EXPECT_GE( result.angles[i], -M_PI / 6 - epsilon ) << "Joint " << i << " broke minimum boundary limit.";
-        EXPECT_LE( result.angles[i],  M_PI / 6 + epsilon ) << "Joint " << i << " broke maximum boundary limit.";
-    }
+	// Verify all returned values strictly respect specified joint boundaries
+	for ( int i = 0; i < 3; ++i )
+	{
+		EXPECT_GE( result.angles[i], -M_PI / 6 - epsilon ) << "Joint " << i << " broke minimum boundary limit.";
+		EXPECT_LE( result.angles[i],  M_PI / 6 + epsilon ) << "Joint " << i << " broke maximum boundary limit.";
+	}
 }
 
 // ============================================================
@@ -359,26 +359,26 @@ TEST_F( SphericalSolverTest, Solve_TargetOutsideJointLimits_ReturnsClampedBestEf
 
 TEST_F( SphericalSolverTest, Solve_StructuralFailure_TriggersComputeClosestFallback )
 {
-    // For non-orthogonal/skewed configurations, some mathematical orientations 
-    // are completely impossible to reach regardless of limits (discriminant K^2 > R_sq)
-    // Create an extreme orientation inversion to force structural failure
-    Mat3d R_target = ( Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitX() ) ).toRotationMatrix();
+	// For non-orthogonal/skewed configurations, some mathematical orientations
+	// are completely impossible to reach regardless of limits (discriminant K^2 > R_sq)
+	// Create an extreme orientation inversion to force structural failure
+	Mat3d R_target = ( Quaternion::FromTwoVectors( Vec3d::UnitZ(), Vec3d::UnitX() ) ).toRotationMatrix();
 
-    auto result = solver_non_ortho_->SolveFromRotation( R_target );
+	auto result = solver_non_ortho_->SolveFromRotation( R_target );
 
-    // Should gracefully execute fallback without exceptions or NaNs
-    EXPECT_GE( result.fk_error, 1e-1 );
-    EXPECT_FALSE( result.reachable );
-    EXPECT_FALSE( std::isnan( result.angles.x() ) );
-    EXPECT_FALSE( std::isnan( result.angles.y() ) );
-    EXPECT_FALSE( std::isnan( result.angles.z() ) );
+	// Should gracefully execute fallback without exceptions or NaNs
+	EXPECT_GE( result.fk_error, 1e-1 );
+	EXPECT_FALSE( result.reachable );
+	EXPECT_FALSE( std::isnan( result.angles.x() ) );
+	EXPECT_FALSE( std::isnan( result.angles.y() ) );
+	EXPECT_FALSE( std::isnan( result.angles.z() ) );
 
-    // Check that structural limits clamp the angles properly
-    for ( int i = 0; i < 3; ++i )
-    {
-        const auto& limit = solver_non_ortho_ -> SolveFromRotation(R_target); // Confirm output validation boundary
-        EXPECT_TRUE( std::isfinite( result.angles[i] ) );
-    }
+	// Check that structural limits clamp the angles properly
+	for ( int i = 0; i < 3; ++i )
+	{
+		const auto& limit = solver_non_ortho_->SolveFromRotation( R_target ); // Confirm output validation boundary
+		EXPECT_TRUE( std::isfinite( result.angles[i] ) );
+	}
 }
 
 // ============================================================
@@ -387,35 +387,35 @@ TEST_F( SphericalSolverTest, Solve_StructuralFailure_TriggersComputeClosestFallb
 
 TEST_F( SphericalSolverTest, Solve_RandomValidAngles_AllConfigurationsPass )
 {
-    random_numbers::RandomNumberGenerator rng;
-    std::vector< Model::JointConstPtr > joints = { joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ };
-    
-    const int ITERATIONS = 50;
-    int execution_failures = 0;
+	random_numbers::RandomNumberGenerator rng;
+	std::vector< Model::JointConstPtr > joints = { joint_non_ortho_1_, joint_non_ortho_2_, joint_non_ortho_3_ };
 
-    Vec3d random_angles;
+	const int ITERATIONS = 50;
+	int execution_failures = 0;
 
-    for ( int i = 0; i < ITERATIONS; ++i )
-    {
-        joints[0]->GetLimits().Random( rng, &random_angles[0] );
-        joints[1]->GetLimits().Random( rng, &random_angles[1] );
-        joints[2]->GetLimits().Random( rng, &random_angles[2] );
+	Vec3d random_angles;
 
-        Mat3d R_target = ComputeFK( joints, random_angles );
-        auto result = solver_non_ortho_->SolveFromRotation( R_target );
+	for ( int i = 0; i < ITERATIONS; ++i )
+	{
+		joints[0]->GetLimits().Random( rng, & random_angles[0] );
+		joints[1]->GetLimits().Random( rng, & random_angles[1] );
+		joints[2]->GetLimits().Random( rng, & random_angles[2] );
 
-        Mat3d R_result = ComputeFK( joints, result.angles );
-        if ( !result.reachable || result.fk_error > 1e-3 || RotationError( R_target, R_result ) > 1e-3 )
-        {
-            ++execution_failures;
-            ADD_FAILURE()
-                << "Random sweep structural mismatch at loop index: " << i << "\n"
-                << "Seeded Angles: " << random_angles.transpose() << "\n"
-                << "Solved Angles: " << result.angles.transpose() << "\n"
-                << "Task Error Value: " << result.fk_error;
-        }
-    }
-    EXPECT_EQ( execution_failures, 0 );
+		Mat3d R_target = ComputeFK( joints, random_angles );
+		auto result = solver_non_ortho_->SolveFromRotation( R_target );
+
+		Mat3d R_result = ComputeFK( joints, result.angles );
+		if ( !result.reachable || result.fk_error > 1e-3 || RotationError( R_target, R_result ) > 1e-3 )
+		{
+			++execution_failures;
+			ADD_FAILURE()
+			    << "Random sweep structural mismatch at loop index: " << i << "\n"
+			    << "Seeded Angles: " << random_angles.transpose() << "\n"
+			    << "Solved Angles: " << result.angles.transpose() << "\n"
+			    << "Task Error Value: " << result.fk_error;
+		}
+	}
+	EXPECT_EQ( execution_failures, 0 );
 }
 
 // ------------------------------------------------------------
@@ -569,11 +569,11 @@ TEST_F( SphericalSolverTest, Solve_Mat_KnownRotation_ErrorNearZero )
 	// Build R from known angles and verify the solver recovers them
 	const double a1 = M_PI / 4, a2 = M_PI / 6, a3 = 0.0;
 	Mat3d R_target = ( AngleAxis( a1, Vec3d::UnitZ() )
-	                 * AngleAxis( a2, Vec3d::UnitY() )
-	                 * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
+	                   * AngleAxis( a2, Vec3d::UnitY() )
+	                   * AngleAxis( a3, Vec3d::UnitX() ) ).toRotationMatrix();
 
 	Vec3d seed = Vec3d::Zero();
-    auto result = solver_orthogonal_->SolveFromRotation( R_target );
+	auto result = solver_orthogonal_->SolveFromRotation( R_target );
 
 	// // The matrix overload uses a3 as the tracked direction.
 	// // Error is defined on that direction, so check via ApplyAngles on UnitZ.
@@ -635,7 +635,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_NonOrthogonalRandomDirections_DirectionAl
 	const int ITER = 100;
 	int failures = 0;
 
-    const auto& model = solver_non_ortho_->GetModel();
+	const auto& model = solver_non_ortho_->GetModel();
 	const auto& limit0 = model.GetJoint( 0 )->GetLimits();
 	const auto& limit1 = model.GetJoint( 1 )->GetLimits();
 	const auto& limit2 = model.GetJoint( 2 )->GetLimits();
@@ -677,7 +677,7 @@ TEST_F( SphericalSolverTest, Solve_Dir_OrthogonalRandomDirections_DirectionAlway
 	const int ITER = 100;
 	int failures = 0;
 
-    const auto& model = solver_orthogonal_->GetModel();
+	const auto& model = solver_orthogonal_->GetModel();
 	const auto& limit0 = model.GetJoint( 0 )->GetLimits();
 	const auto& limit1 = model.GetJoint( 1 )->GetLimits();
 	const auto& limit2 = model.GetJoint( 2 )->GetLimits();

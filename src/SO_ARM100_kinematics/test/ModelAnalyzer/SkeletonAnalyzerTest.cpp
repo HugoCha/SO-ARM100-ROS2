@@ -39,10 +39,10 @@ void MakeAzimuthChain( double link_length, int count, Model::JointChain& chain, 
 	for ( int i = 0; i < count; i++ )
 	{
 		Vec3d axis = i % 2 == 0 ? Vec3d::UnitZ() : Vec3d::UnitY();
-		chain.Add(
-			Model::Twist( axis, origin ),
-			Model::Link( ToTransformMatrix( origin ), link_length ),
-			Model::Limits( -M_PI, M_PI ) );
+		chain.Add( "",
+		           Model::Twist( axis, origin ),
+		           Model::Link( "", ToTransformMatrix( origin ), link_length ),
+		           Model::Limits( -M_PI, M_PI ) );
 
 		if ( i % 2 == 0 )
 		{
@@ -280,23 +280,23 @@ TEST_F( ArticulationTest, AnalyzeArticulations_3ZRobot_HomeOnJointAxis_ReturnExp
 {
 	auto chain = Model::JointChain( 3 );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
-		Model::Link( Mat4d::Identity(), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
+	           Model::Link( "", Mat4d::Identity(), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
+	           Model::Limits()
+	           );
 
-	chain.Add(
-		Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
-		Model::Limits()
-		);
+	chain.Add( "",
+	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
+	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
+	           Model::Limits()
+	           );
 
 	Mat4d home = ToTransformMatrix( Vec3d( 0, 0, 1.5 ) );
 

@@ -15,8 +15,8 @@ namespace SOArm100::Kinematics::Solver
 // ------------------------------------------------------------
 
 SphericalSolver::SphericalSolver( const Model::SphericalModel& model, SolverParameters parameters ) :
-    model_( model ),
-    parameters_( parameters )
+	model_( model ),
+	parameters_( parameters )
 {
 }
 
@@ -24,35 +24,35 @@ SphericalSolver::SphericalSolver( const Model::SphericalModel& model, SolverPara
 
 SphericalSolution SphericalSolver::SolveFromRotation(
 	const Mat3d& R_target,
-    std::optional< Vec3d > theta_pref ) const
+	std::optional< Vec3d > theta_pref ) const
 {
-    SphericalSolution out{};
+	SphericalSolution out{};
 
 	const auto& branches = model_.Decompose( R_target );
 
 	SphericalSolutionBranch best_branch;
-    best_branch.cost = std::numeric_limits<double>::infinity();
+	best_branch.cost = std::numeric_limits< double >::infinity();
 
 	const Vec3d prefered = theta_pref.value_or( Vec3d(
-        model_.GetJoint( 0 )->GetLimits().Center(),
-        model_.GetJoint( 1 )->GetLimits().Center(),
-        model_.GetJoint( 2 )->GetLimits().Center() ) );
+													model_.GetJoint( 0 )->GetLimits().Center(),
+													model_.GetJoint( 1 )->GetLimits().Center(),
+													model_.GetJoint( 2 )->GetLimits().Center() ) );
 
 	for ( auto branch : branches )
 	{
 		const Vec3d& angles = branch;
 		double cost = 0.0;
-        
-        cost += DeviationCost( prefered, angles );
+
+		cost += DeviationCost( prefered, angles );
 		cost += LimitViolationCost( angles, 1e6 );
 		cost += RotationErrorCost( R_target, angles );
 
-        if ( cost < best_branch.cost )
-        {
-            best_branch.angles = angles;
-            best_branch.cost = cost;
-            best_branch.phi = 0.0;
-        }
+		if ( cost < best_branch.cost )
+		{
+			best_branch.angles = angles;
+			best_branch.cost = cost;
+			best_branch.phi = 0.0;
+		}
 	}
 
 	bool all_in = CheckLimits( best_branch.angles );
@@ -73,7 +73,7 @@ SphericalSolution SphericalSolver::SolveFromRotation(
 
 // ------------------------------------------------------------
 
-SphericalSolution SphericalSolver::SolveFromTwoVectors( 	
+SphericalSolution SphericalSolver::SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target ) const
 {
@@ -88,12 +88,12 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 		return out;
 	}
 
-    const Vec3d& p_tcp_local_c = p_tcp_local.normalized();
-    const Vec3d& p_target_c = p_target.normalized();
+	const Vec3d& p_tcp_local_c = p_tcp_local.normalized();
+	const Vec3d& p_target_c = p_target.normalized();
 
-    const Mat3d R_base = Eigen::Quaterniond::FromTwoVectors( p_tcp_local_c, p_target_c ).toRotationMatrix();
+	const Mat3d R_base = Eigen::Quaterniond::FromTwoVectors( p_tcp_local_c, p_target_c ).toRotationMatrix();
 
-    const Vec3d free_axis = p_target_c;
+	const Vec3d free_axis = p_target_c;
 
 	auto cost_fn =
 		[&]( double limit_violation_penalty, double fk_error_violation_penalty, double phi ) -> SphericalSolutionBranch
@@ -103,38 +103,38 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 
 			const auto& branches = model_.Decompose( R_canonical );
 
-            SphericalSolutionBranch best_local{};
-            best_local.cost = std::numeric_limits<double>::infinity();
+			SphericalSolutionBranch best_local{};
+			best_local.cost = std::numeric_limits< double >::infinity();
 
-            for ( const auto& angles : branches )
-            {
-                double cost = 0.0;
+			for ( const auto& angles : branches )
+			{
+				double cost = 0.0;
 
-                cost += LimitViolationCost( angles, limit_violation_penalty );
-                cost += FKErrorCost( p_tcp_local_c, p_target_c, angles ) * fk_error_violation_penalty;
+				cost += LimitViolationCost( angles, limit_violation_penalty );
+				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles ) * fk_error_violation_penalty;
 
-                if ( cost < best_local.cost )
-                {
-                    best_local.angles = angles;
-                    best_local.cost   = cost;
-                    best_local.phi    = phi;
-                }
-            }
+				if ( cost < best_local.cost )
+				{
+					best_local.angles = angles;
+					best_local.cost   = cost;
+					best_local.phi    = phi;
+				}
+			}
 
-            return best_local;
+			return best_local;
 		};
 
-	auto infinite_penalty_cost = [&]( double phi ){ 
-		return cost_fn( std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), phi ); 
-	};
+	auto infinite_penalty_cost = [&]( double phi ){
+									 return cost_fn( std::numeric_limits< double >::infinity(), std::numeric_limits< double >::infinity(), phi );
+								 };
 
 	auto best_coarse_branch = FirstSolutionSearch( infinite_penalty_cost );
-	
+
 	if ( std::isinf( best_coarse_branch.cost ) )
 	{
-		auto least_violation_penalty_cost = [&]( double phi ){ 
-			return cost_fn( 1e6, 1.0, phi ); 
-		};
+		auto least_violation_penalty_cost = [&]( double phi ){
+												return cost_fn( 1e6, 1.0, phi );
+											};
 		best_coarse_branch = GridSearch( least_violation_penalty_cost );
 	}
 
@@ -175,12 +175,12 @@ SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 		return out;
 	}
 
-    const Vec3d& p_tcp_local_c = p_tcp_local.normalized();
-    const Vec3d& p_target_c = p_target.normalized();
+	const Vec3d& p_tcp_local_c = p_tcp_local.normalized();
+	const Vec3d& p_target_c = p_target.normalized();
 
-    Mat3d R_base = Eigen::Quaterniond::FromTwoVectors( p_tcp_local_c, p_target_c ).toRotationMatrix();
-    
-    const Vec3d free_axis = p_target_c;
+	Mat3d R_base = Eigen::Quaterniond::FromTwoVectors( p_tcp_local_c, p_target_c ).toRotationMatrix();
+
+	const Vec3d free_axis = p_target_c;
 
 	const Vec3d prefered = theta_pref.value_or( Vec3d(
 													model_.GetJoint( 0 )->GetLimits().Center(),
@@ -197,27 +197,27 @@ SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 
 			const auto& branches = model_.Decompose( R_canonical );
 
-            SphericalSolutionBranch best_local{};
-            best_local.cost = std::numeric_limits<double>::infinity();
+			SphericalSolutionBranch best_local{};
+			best_local.cost = std::numeric_limits< double >::infinity();
 
-            for ( const auto& angles : branches )
-            {
-                double cost = 0.0;
+			for ( const auto& angles : branches )
+			{
+				double cost = 0.0;
 
-                cost += DeviationCost( prefered, angles );
-                cost += LimitViolationCost( angles, parameters_.limit_penalty );
-                cost += SingularityCost( R_canonical );
-                cost += FKErrorCost( p_tcp_local_c, p_target_c, angles );
+				cost += DeviationCost( prefered, angles );
+				cost += LimitViolationCost( angles, parameters_.limit_penalty );
+				cost += SingularityCost( R_canonical );
+				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles );
 
-                if ( cost < best_local.cost )
-                {
-                    best_local.angles = angles;
-                    best_local.cost   = cost;
-                    best_local.phi    = phi;
-                }
-            }
+				if ( cost < best_local.cost )
+				{
+					best_local.angles = angles;
+					best_local.cost   = cost;
+					best_local.phi    = phi;
+				}
+			}
 
-            return best_local;
+			return best_local;
 		};
 
 	auto best_coarse_branch = GridSearch( cost_fn );
@@ -225,7 +225,7 @@ SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 		cost_fn,
 		best_coarse_branch.phi - dphi,
 		best_coarse_branch.phi + dphi );
-    
+
 	const Mat3d R_opt  = Eigen::AngleAxisd( best_branch.phi, free_axis ) * R_base;
 
 	bool all_in = CheckLimits( best_branch.angles );
@@ -254,9 +254,9 @@ double SphericalSolver::DeviationCost( const Vec3d& prefered, const Vec3d& angle
 
 // ------------------------------------------------------------
 
-double SphericalSolver::LimitViolationCost( 
-    const Vec3d& angles, 
-    double violation_weight ) const
+double SphericalSolver::LimitViolationCost(
+	const Vec3d& angles,
+	double violation_weight ) const
 {
 	double cost = 0.0;
 
@@ -288,23 +288,23 @@ double SphericalSolver::SingularityCost( const Mat3d& R_canonical ) const
 
 // ------------------------------------------------------------
 
-double SphericalSolver::RotationErrorCost( 
-    const Mat3d& R_target, 
-    const Vec3d& angles ) const
+double SphericalSolver::RotationErrorCost(
+	const Mat3d& R_target,
+	const Vec3d& angles ) const
 {
-    Mat3d R_fk = model_.Recompose( angles );
-    return std::abs( RotationError( R_target, R_fk ) );
+	Mat3d R_fk = model_.Recompose( angles );
+	return std::abs( RotationError( R_target, R_fk ) );
 }
 
 
 // ------------------------------------------------------------
 
-double SphericalSolver::FKErrorCost( 
-    const Vec3d& p_tcp, 
-    const Vec3d& p_target, 
-    const Vec3d& angles ) const
+double SphericalSolver::FKErrorCost(
+	const Vec3d& p_tcp,
+	const Vec3d& p_target,
+	const Vec3d& angles ) const
 {
-    const Mat3d R_fk      = model_.Recompose( angles );
+	const Mat3d R_fk      = model_.Recompose( angles );
 	const Vec3d p_fk      = R_fk * p_tcp;
 	return ( p_fk - p_target ).norm();
 }

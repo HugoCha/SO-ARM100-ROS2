@@ -250,11 +250,11 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 	Vec3d origin1 = Vec3d( 0.0, 0, 0.0 );
 	Vec3d origin2 = Vec3d( 0.5, 0, 0.0 );
 	Vec3d origin3 = Vec3d( 1.0, 0, 0.0 );
-	Model::Link link1( ToTransformMatrix( origin1 ), 0.5 );
+	Model::Link link1( "link1", ToTransformMatrix( origin1 ), 0.5 );
 
 	Model::Limits limits1( -M_PI, M_PI );
 
-	joint_chain.Add( twist1, link1, limits1 );
+	joint_chain.Add( "joint1", twist1, link1, limits1 );
 
 	// Joint 2: Axe Y après translation de 0.5m en X
 	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
@@ -262,11 +262,11 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 	Vec3d point2( 0.5, 0, 0 );        // Position à home
 	Model::Twist twist2( axis2, point2 );
 
-	Model::Link link2( ToTransformMatrix( origin2 ), 0.5 );
+	Model::Link link2( "link2", ToTransformMatrix( origin2 ), 0.5 );
 
 	Model::Limits limits2( -M_PI / 2, M_PI / 2 );
 
-	joint_chain.Add( twist2, link2, limits2 );
+	joint_chain.Add( "joint2", twist2, link2, limits2 );
 
 	// Joint 3: Axe Z après translation totale de 1.0m en X
 	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
@@ -274,11 +274,11 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 	Vec3d point3( 1.0, 0, 0 );        // Position à home
 	Model::Twist twist3( axis3, point3 );
 
-	Model::Link link3( ToTransformMatrix( origin3 ), 0 );
+	Model::Link link3( "link3", ToTransformMatrix( origin3 ), 0 );
 
 	Model::Limits limits3( -M_PI / 2, M_PI / 2 );
 
-	joint_chain.Add( twist3, link3, limits3 );
+	joint_chain.Add( "joint3", twist3, link3, limits3 );
 
 	return joint_chain;
 }
@@ -457,20 +457,23 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 3 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitZ(), Vec3d::Zero() },
-		{ Mat4d::Identity(), 1 },
+		{ "link1", Mat4d::Identity(), 1 },
 		{ -M_PI, M_PI }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
 		{ -M_PI, M_PI }
 		);
 
 	chain->Add(
+		"joint3",
 		{ Vec3d::UnitZ(), Vec3d( 0, 1, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 1, 1 ) ), 0.1 },
+		{ "link3", ToTransformMatrix( Vec3d( 0, 1, 1 ) ), 0.1 },
 		{ -M_PI, M_PI }
 		);
 
@@ -579,14 +582,16 @@ std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 1 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX() },
-		{ Mat4d::Identity(), 1 },
+		{ "link1", Mat4d::Identity(), 1 },
 		{ 0, 1 }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
 		{ -M_PI, M_PI }
 		);
 
@@ -697,14 +702,16 @@ std::unique_ptr< const Model::JointChain > createPlanar2RJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 2 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX(), Vec3d::Zero() },
-		{ Mat4d::Identity(), 0.5 },
+		{ "link1", Mat4d::Identity(), 0.5 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 0.5 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -812,20 +819,23 @@ std::unique_ptr< const Model::JointChain > createPlanar3RJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 3 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX(), Vec3d::Zero() },
-		{ Mat4d::Identity(), 0.5 },
+		{ "link1", Mat4d::Identity(), 0.5 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 0.5 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint3",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0.1 },
+		{ "link3", ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0.1 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -941,8 +951,9 @@ std::unique_ptr< const Model::JointChain > createWrist1RJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 1 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
+		{ "link1", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -987,10 +998,10 @@ Model::Skeleton createWrist1RSkeleton(
 		);
 
 	bones.emplace_back(
-	std::make_shared< const Model::Bone >(
-		chain.GetActiveJoint( 0 )->Origin(),
-		Translation( home ) - chain.GetActiveJoint( 0 )->Origin() )
-	);
+		std::make_shared< const Model::Bone >(
+			chain.GetActiveJoint( 0 )->Origin(),
+			Translation( home ) - chain.GetActiveJoint( 0 )->Origin() )
+		);
 
 	double total_length = 0.0;
 	for ( int i = 0; i < bones.size(); i++ )
@@ -1036,14 +1047,16 @@ std::unique_ptr< const Model::JointChain > createWrist2RJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 2 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ "link1", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -1138,20 +1151,23 @@ std::unique_ptr< const Model::JointChain > createSphericalWristJointChain()
 	auto chain = std::make_unique< Model::JointChain >( 3 );
 
 	chain->Add(
+		"joint1",
 		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ "link1", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint2",
 		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
+		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.0 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
 	chain->Add(
+		"joint3",
 		{ Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) },
-		{ ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.1 },
+		{ "link3", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0.1 },
 		{ -M_PI / 2, M_PI / 2 }
 		);
 
@@ -1250,8 +1266,9 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	Vec3d next_origin = Vec3d( 0, 0, 0.5 );
 	Vec3d axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint1",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link1", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1260,19 +1277,21 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	next_origin = Vec3d( 0, 0, 1.0 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint2",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		//Model::Limits( -M_PI / 2, M_PI / 2 ) );
+		Model::Link( "link2", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		// Model::Limits( -M_PI / 2, M_PI / 2 ) );
 		Model::Limits( -M_PI, M_PI ) );
 
 	origin = next_origin;
 	next_origin = Vec3d( 0.5, 0, 1.0 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint3",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link3", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI ) );
-		//Model::Limits( -M_PI / 2, M_PI / 2 ) );
+	// Model::Limits( -M_PI / 2, M_PI / 2 ) );
 
 	// Wrist joints (2 revolute joints - 2R wrist)
 	origin = next_origin;
@@ -1280,16 +1299,18 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_Wrist2R_5DOFs
 	next_origin.x() += 0.1;
 	axis = Vec3d::UnitX();
 	chain->Add(
+		"joint4",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link4", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	origin = next_origin;
 	axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint5",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0.1 ),
+		Model::Link( "link5", ToTransformMatrix( origin ), 0.1 ),
 		Model::Limits( -M_PI, M_PI ) );
 
 	return chain;
@@ -1421,8 +1442,9 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	Vec3d next_origin = Vec3d( 0.5, 0, 0.1 );
 	Vec3d axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint1",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link1", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1431,17 +1453,19 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	next_origin = Vec3d( 1.0, 0, 0.1 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint2",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI , M_PI )
+		Model::Link( "link2", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Limits( -M_PI, M_PI )
 		);
 
 	origin = next_origin;
 	next_origin = Vec3d( 1.5, 0, 0.1 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint3",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link3", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1449,22 +1473,25 @@ std::unique_ptr< const Model::JointChain > createRevolute_Planar2R_SphericalWris
 	origin = next_origin;
 	axis = Vec3d::UnitX();
 	chain->Add(
+		"joint4",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link4", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint5",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link5", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint6",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0. ),
+		Model::Link( "link6", ToTransformMatrix( origin ), 0. ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1605,8 +1632,9 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	Vec3d next_origin = Vec3d( 0, 0.2, 0.2 );
 	Vec3d axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint1",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link1", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1615,8 +1643,9 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	next_origin = Vec3d( 0, 0.2, 0.6 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint2",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link2", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1624,8 +1653,9 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	next_origin = Vec3d( 0.4, 0, 0.6 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint3",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link3", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1633,8 +1663,9 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	next_origin = Vec3d( 0.4, 0.2, 0.6 );
 	axis = Vec3d::UnitY();
 	chain->Add(
+		"joint4",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link4", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1643,16 +1674,18 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 	next_origin = Vec3d( 0.5, 0.2, 0.6 );
 	axis = Vec3d::UnitX();
 	chain->Add(
+		"joint5",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
+		Model::Link( "link5", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
 	origin = next_origin;
 	axis = Vec3d::UnitZ();
 	chain->Add(
+		"joint6",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0.1 ),
+		Model::Link( "link6", ToTransformMatrix( origin ), 0.1 ),
 		Model::Limits( -M_PI, M_PI )
 		);
 
@@ -1790,20 +1823,20 @@ Model::KinematicModelConstPtr Data::GetURLikeRobot()
 
 std::map< std::string, Model::KinematicModelConstPtr > Data::GetAllRobots()
 {
-	return 
-	{
-		{"ZYZ", GetZYZRevoluteRobot()},
-		{"RevoluteBase", GetRevoluteBaseRobot()},
-		{"PrismaticBase", GetPrismaticBaseRobot()},
-		{"Planar2R", GetPlanar2RRobot()},
-		{"Planar3R", GetPlanar3RRobot()},
-		{"Wrist1R", GetWrist1RRobot()},
-		{"Wrist2R", GetWrist2RRobot()},
-		{"Wrist3R", GetSphericalWristRobot()},
-		{"5-axis arm", GetRevolute_Planar2R_Wrist2R_5DOFsRobot()},
-		{"6-axis arm", GetRevolute_Planar2R_SphericalWrist_6DOFsRobot()},
-		{"Universal Robot", GetURLikeRobot()},
-	};
+	return
+	    {
+			{ "ZYZ", GetZYZRevoluteRobot() },
+			{ "RevoluteBase", GetRevoluteBaseRobot() },
+			{ "PrismaticBase", GetPrismaticBaseRobot() },
+			{ "Planar2R", GetPlanar2RRobot() },
+			{ "Planar3R", GetPlanar3RRobot() },
+			{ "Wrist1R", GetWrist1RRobot() },
+			{ "Wrist2R", GetWrist2RRobot() },
+			{ "Wrist3R", GetSphericalWristRobot() },
+			{ "5-axis arm", GetRevolute_Planar2R_Wrist2R_5DOFsRobot() },
+			{ "6-axis arm", GetRevolute_Planar2R_SphericalWrist_6DOFsRobot() },
+			{ "Universal Robot", GetURLikeRobot() },
+		};
 }
 
 // ------------------------------------------------------------

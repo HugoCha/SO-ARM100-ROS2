@@ -24,15 +24,15 @@ RevoluteBaseHeuristic::RevoluteBaseHeuristic(
 {
 	auto base_joint = GetBaseJoint();
 	auto shoulder_joint = GetShoulderJoint();
-	
+
 	if ( !base_joint || !shoulder_joint )
 	{
 		reference_direction_ = Vec3d::Zero();
 		return;
 	}
-	
+
 	const auto& base_link = base_joint->GetLink();
-	
+
 	Vec3d omega_b = base_joint->Axis();
 	Vec3d omega_s = shoulder_joint->Axis();
 	Vec3d O_b = base_joint->Origin();
@@ -75,9 +75,9 @@ Vec3d RevoluteBaseHeuristic::ComputeDirection( const Mat4d& T_tip ) const
 
 // ------------------------------------------------------------
 
-double RevoluteBaseHeuristic::ComputeAlpha(  
+double RevoluteBaseHeuristic::ComputeAlpha(
 	const Vec3d& axis,
-	const Vec3d& ref_direction, 
+	const Vec3d& ref_direction,
 	const Vec3d& r_proj )
 {
 	return SignedAngle( ref_direction, r_proj, axis );
@@ -85,13 +85,13 @@ double RevoluteBaseHeuristic::ComputeAlpha(
 
 // ------------------------------------------------------------
 
-double RevoluteBaseHeuristic::ComputeBeta( 
-	double shoulder_offset, 
+double RevoluteBaseHeuristic::ComputeBeta(
+	double shoulder_offset,
 	const Vec3d& r_proj )
 {
-	return ( r_proj.norm() > epsilon ) ? 
-		std::asin( std::clamp( shoulder_offset / r_proj.norm(), -1.0, 1.0 ) ) : 
-		0.0;
+	return ( r_proj.norm() > epsilon ) ?
+	       std::asin( std::clamp( shoulder_offset / r_proj.norm(), -1.0, 1.0 ) ) :
+	       0.0;
 }
 
 // ------------------------------------------------------------
@@ -141,7 +141,7 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 			presolution.state = IKHeuristicState::Fail;
 		}
 	}
-	
+
 	return presolution;
 }
 
@@ -162,7 +162,7 @@ std::vector< double > RevoluteBaseHeuristic::EvaluateCandidates(
 		candidate1 = WrapAngle( alpha );
 		candidate2 = WrapAngle( alpha + M_PI );
 	}
-	else 
+	else
 	{
 		candidate1 = WrapAngle( alpha + M_PI - beta );
 		candidate2 = WrapAngle( alpha + beta );

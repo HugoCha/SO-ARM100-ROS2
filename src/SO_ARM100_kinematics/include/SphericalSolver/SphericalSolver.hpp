@@ -20,7 +20,7 @@ struct SolverParameters
 	double singularity_tol { 0.05 };  ///< cos(θ₂) threshold for gimbal lock
 	double limit_penalty { 1e6 };   ///< quadratic penalty weight for limits
 	double singularity_penalty { 1e4 };  ///< penalty weight for singular configs
-    double error_tol {1e-4};
+	double error_tol { 1e-4 };
 };
 
 explicit SphericalSolver( const Model::SphericalModel& model, SolverParameters parameters );
@@ -34,12 +34,12 @@ SolverParameters& GetParameters(){
 }
 
 const Model::SphericalModel& GetModel() const {
-    return model_;
+	return model_;
 }
 
 [[nodiscard]] SphericalSolution SolveFromRotation(
 	const Mat3d& R_target,
-    std::optional< Vec3d > theta_pref = std::nullopt ) const;
+	std::optional< Vec3d > theta_pref = std::nullopt ) const;
 
 // Returns first found solution
 [[nodiscard]] SphericalSolution SolveFromTwoVectors(

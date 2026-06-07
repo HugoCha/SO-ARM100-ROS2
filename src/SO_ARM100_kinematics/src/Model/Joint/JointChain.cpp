@@ -247,31 +247,37 @@ bool JointChain::ComputeJointStatesFK(
 	int n_joints,
 	const Mat4d& home_configuration,
 	std::vector< JointState >& joint_states,
-	Mat4d& fk ) const noexcept
+	Mat4d& fk ) const
 {
-	// fk.setIdentity();
-	// n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
+	const int n_model_joints = GetActiveJointCount();
+	fk.setIdentity();
 
-	// if ( !WithinLimits( thetas, n_joints ) )
-	// 	return false;
+	if ( n_joints != n_model_joints )
+		throw std::invalid_argument( "Joints size mismatch" );
 
-	// if ( joint_states.size() < n_joints )
-	// 	joint_states.resize( n_joints );
+	if ( joint_states.size() != n_model_joints )
+		throw std::invalid_argument( "Joints state size mismatch" );
 
-	// Mat4d T_cumul = Mat4d::Identity();
+	if ( !WithinLimits( thetas, n_joints ) )
+		return false;
 
-	// for ( size_t i = 0; i < n_joints; i++ )
-	// {
-	// 	const auto& joint = GetActiveJoint( i );
-	// 	const auto& twist = joint->GetTwist();
-	// 	auto joint_pose  = joint->Pose( T_cumul );
-	// 	joint_states[i].SetState( joint_pose.origin, joint_pose.axis, thetas[i] );
-	// 	T_cumul *= twist.ExponentialMatrix( thetas[i] );
-	// }
+	Mat4d T_cumul = Mat4d::Identity();
 
-	// fk.noalias() = T_cumul * home_configuration;
-	// return true;
-	return false;
+	for ( size_t i = 0; i < n_joints; i++ )
+	{
+		const auto& joint = GetActiveJoint( i );
+
+		auto joint_pose  = joint->Pose( T_cumul );
+		joint_states[i].Origin() = joint_pose.origin;
+		joint_states[i].Axis() = joint_pose.axis;
+		joint_states[i].Value() = thetas[i];
+
+		const auto& twist = joint->GetTwist();
+		T_cumul *= twist.ExponentialMatrix( thetas[i] );
+	}
+
+	fk.noalias() = T_cumul * home_configuration;
+	return true;
 }
 
 // ------------------------------------------------------------

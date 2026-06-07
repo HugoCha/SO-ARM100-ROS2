@@ -26,8 +26,8 @@ struct SolverParameters
 	int max_stalled_iterations;
 	double error_tolerance;
 
-	SolverParameters( 
-		int max_iterations = 50, 
+	SolverParameters(
+		int max_iterations = 50,
 		int max_stalled_iterations = 3,
 		double error_tolerance = 5e-3 ) :
 		max_iterations( max_iterations ),
@@ -62,7 +62,7 @@ private:
 SolverParameters parameters_;
 
 std::vector< Model::BoneState >
-	ComputeBoneStates( const Model::SkeletonState& skeleton_state ) const;
+ComputeBoneStates( const Model::SkeletonState& skeleton_state ) const;
 
 void BackwardPass(
 	const Vec3d& p_target,
@@ -79,7 +79,7 @@ void UpdateValues(
 	Model::SkeletonState& skeleton_state,
 	std::vector< Model::BoneState >& bone_states ) const;
 
-void UpdateHistory( 
+void UpdateHistory(
 	const VecXd& joints,
 	double error,
 	SolverHistory& history ) const;

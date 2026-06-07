@@ -76,10 +76,10 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 {
 	// Create a joint chain with a single revolute joint
 	auto single_joint_chain = Model::JointChain( 1 );
-	single_joint_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 1 ),
-		Model::Limits( -M_PI, M_PI ) );
+	single_joint_chain.Add( "",
+	                        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                        Model::Link( "", Mat4d::Identity(), 1 ),
+	                        Model::Limits( -M_PI, M_PI ) );
 
 	int start = 0;
 	int count = 1;
@@ -110,10 +110,10 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 TEST_F( WristHeuristicTest, SolveRevolute1_Unreachable )
 {
 	auto single_joint_chain = Model::JointChain( 1 );
-	single_joint_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 1 ),
-		Model::Limits( -M_PI, M_PI ) );
+	single_joint_chain.Add( "",
+	                        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                        Model::Link( "", Mat4d::Identity(), 1 ),
+	                        Model::Limits( -M_PI, M_PI ) );
 
 	int start = 0;
 	int count = 1;
@@ -146,16 +146,16 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 {
 	// Create a joint chain with two revolute joints
 	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
-	two_joint_chain.Add(
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 1 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	two_joint_chain.Add( "",
+	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                     Model::Link( "", Mat4d::Identity(), 0 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
+	two_joint_chain.Add( "",
+	                     Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
+	                     Model::Link( "", Mat4d::Identity(), 1 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
 
 	int start = 0;
 	int count = 2;

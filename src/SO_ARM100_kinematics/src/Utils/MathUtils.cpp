@@ -142,7 +142,7 @@ double WrapAngle( double angle, double lo, double hi )
 		angle -= 2 * M_PI;
 	while ( angle < lo )
 		angle += 2 * M_PI;
-	
+
 	return angle;
 }
 

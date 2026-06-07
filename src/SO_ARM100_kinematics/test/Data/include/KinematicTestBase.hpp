@@ -17,7 +17,7 @@ namespace SOArm100::Kinematics::Test
 class KinematicTestBase : public ::testing::Test
 {
 public:
-Mat4d ComputeFK( 
+Mat4d ComputeFK(
 	Model::KinematicModelConstPtr model,
 	const VecXd& joints ) const
 {
@@ -41,33 +41,34 @@ Solver::IKProblem CreateProblem( const VecXd& seed, Mat4d target  ) const
 	return {
 	    target,
 	    seed,
+	    VecXd::Zero( seed.size() ),
 	    translation_tolerance,
 	    rotation_tolerance,
 	    100 };
 }
 
-double PoseError( 
+double PoseError(
 	Model::KinematicModelConstPtr model,
 	const Solver::IKProblem& problem,
 	const Solver::IKSolution& solution ) const
 {
 	Vec6d pose_error;
-	SOArm100::Kinematics::PoseError( 
-		problem.target, 
-		ComputeFK( model, solution.joints ), 
+	SOArm100::Kinematics::PoseError(
+		problem.target,
+		ComputeFK( model, solution.joints ),
 		pose_error );
 	return pose_error.norm();
 };
 
-double PoseError( 
+double PoseError(
 	Model::KinematicModelConstPtr model,
 	const Solver::IKProblem& problem,
 	const Heuristic::IKPresolution& presolution ) const
 {
 	Vec6d pose_error;
-	SOArm100::Kinematics::PoseError( 
-		problem.target, 
-		ComputeFK( model, presolution.joints ), 
+	SOArm100::Kinematics::PoseError(
+		problem.target,
+		ComputeFK( model, presolution.joints ),
 		pose_error );
 	return pose_error.norm();
 };
@@ -77,8 +78,8 @@ double PositionError(
 	const Solver::IKProblem& problem,
 	const Solver::IKSolution& solution ) const
 {
-	return TranslationError( 
-		problem.target, 
+	return TranslationError(
+		problem.target,
 		ComputeFK( model, solution.joints ) );
 };
 
@@ -130,8 +131,9 @@ Model::JointConstPtr MakeRevoluteJoint(
 	double max   =  M_PI / 2 ) const
 {
 	return std::make_shared< const Model::Joint >(
+		"",
 		Model::Twist( axis, origin ),
-		Model::Link( ToTransformMatrix( origin ), 0 ),
+		Model::Link( "", ToTransformMatrix( origin ), 0 ),
 		Model::Limits( min, max )
 		);
 }
@@ -143,8 +145,9 @@ Model::JointConstPtr MakePrismaticJoint(
 	double max = 1.0 ) const
 {
 	return std::make_shared< const Model::Joint >(
+		"",
 		Model::Twist( axis ),
-		Model::Link( ToTransformMatrix( origin ), 0 ),
+		Model::Link( "", ToTransformMatrix( origin ), 0 ),
 		Model::Limits( min, max ) );
 }
 

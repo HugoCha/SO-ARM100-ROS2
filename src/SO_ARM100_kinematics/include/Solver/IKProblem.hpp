@@ -9,10 +9,11 @@ struct IKProblem
 	Mat4d target;
 
 	VecXd seed;
+	VecXd consistency;
 
 	double position_tolerance;
 	double rotation_tolerance;
 
-	double timeout;
+	long timeout_ms;
 };
 }

@@ -39,11 +39,11 @@ TEST_F( WristAnalyzerTest, Analyze_OneAxisRevoluteWrist )
 	Model::JointChain one_axis_chain( 1 );
 
 	// Joint 1: Rotation around Z-axis
-	one_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	one_axis_chain.Add( "",
+	                    Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                    Model::Link( "", Mat4d::Identity(), 0 ),
+	                    Model::Limits( -M_PI, M_PI )
+	                    );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
 
@@ -64,18 +64,18 @@ TEST_F( WristAnalyzerTest, Analyze_TwoAxisRevoluteWrist )
 	Model::JointChain two_axis_chain( 2 );
 
 	// Joint 1: Rotation around Z-axis
-	two_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	two_axis_chain.Add( "",
+	                    Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                    Model::Link( "", Mat4d::Identity(), 0 ),
+	                    Model::Limits( -M_PI, M_PI )
+	                    );
 
 	// Joint 2: Rotation around Y-axis (orthogonal to joint 1)
-	two_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	two_axis_chain.Add( "",
+	                    Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
+	                    Model::Link( "", Mat4d::Identity(), 0 ),
+	                    Model::Limits( -M_PI, M_PI )
+	                    );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
 
@@ -96,25 +96,25 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisRevoluteWrist )
 	Model::JointChain three_axis_chain( 3 );
 
 	// Joint 1: Rotation around Z-axis
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                      Model::Link( "", Mat4d::Identity(), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	// Joint 2: Rotation around Y-axis (orthogonal to joint 1)
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) ),
+	                      Model::Link( "", Mat4d::Identity(), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	// Joint 3: Rotation around X-axis (orthogonal to joints 1 and 2)
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
+	                      Model::Link( "", Mat4d::Identity(), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
 
@@ -135,32 +135,32 @@ TEST_F( WristAnalyzerTest, Analyze_FourAxisChain_ThreeAxisRevoluteWrist )
 	Model::JointChain four_axis_chain( 4 );
 
 	// Joint 1: Rotation around Z-axis
-	four_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0.5 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	four_axis_chain.Add( "",
+	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.0, 0, 0 ) ),
+	                     Model::Link( "", Mat4d::Identity(), 0.5 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
 
 	// Joint 2: Rotation around Y-axis (orthogonal to joint 1)
-	four_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	four_axis_chain.Add( "",
+	                     Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.5, 0, 0 ) ),
+	                     Model::Link( "", ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
 
 	// Joint 3: Rotation around X-axis (orthogonal to joints 1 and 2)
-	four_axis_chain.Add(
-		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	four_axis_chain.Add( "",
+	                     Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.5, 0, 0 ) ),
+	                     Model::Link( "", ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
 
 	// Joint 4: Rotation around Z-axis
-	four_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.5, 0, 0 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	four_axis_chain.Add( "",
+	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.5, 0, 0 ) ),
+	                     Model::Link( "", ToTransformMatrix( Vec3d( 0.5, 0, 0 ) ), 0 ),
+	                     Model::Limits( -M_PI, M_PI )
+	                     );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
 
@@ -181,25 +181,25 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisWrist_WithOffset )
 	Model::JointChain three_axis_chain( 3 );
 
 	// Joint 1: Rotation around Z-axis with offset
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0.1, 0.1 ) ),
+	                      Model::Link( "", ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	// Joint 2: Rotation around Y-axis with offset
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
+	                      Model::Link( "", ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	// Joint 3: Rotation around X-axis with offset
-	three_axis_chain.Add(
-		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
-		Model::Link( ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	three_axis_chain.Add( "",
+	                      Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0.1, 0.1, 0.1 ) ),
+	                      Model::Link( "", ToTransformMatrix( Vec3d( 0.1, 0.1, 0.1 ) ), 0 ),
+	                      Model::Limits( -M_PI, M_PI )
+	                      );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.1, 0.1 ) );
 
@@ -220,25 +220,25 @@ TEST_F( WristAnalyzerTest, Analyze_ThreeAxisWrist_WithNonOrthogonalAxes )
 	Model::JointChain non_orthogonal_chain( 3 );
 
 	// Joint 1: Rotation around Z-axis
-	non_orthogonal_chain.Add(
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	non_orthogonal_chain.Add( "",
+	                          Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
+	                          Model::Link( "", Mat4d::Identity(), 0 ),
+	                          Model::Limits( -M_PI, M_PI )
+	                          );
 
 	// Joint 2: Rotation around an axis close to Y-axis but not exactly orthogonal to Z
-	non_orthogonal_chain.Add(
-		Model::Twist( Vec3d( 0.1, 1.0, 0.1 ).normalized(), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	non_orthogonal_chain.Add( "",
+	                          Model::Twist( Vec3d( 0.1, 1.0, 0.1 ).normalized(), Vec3d( 0, 0, 0 ) ),
+	                          Model::Link( "", Mat4d::Identity(), 0 ),
+	                          Model::Limits( -M_PI, M_PI )
+	                          );
 
 	// Joint 3: Rotation around an axis close to X-axis but not exactly orthogonal to Z and Y
-	non_orthogonal_chain.Add(
-		Model::Twist( Vec3d( 1.0, 0.1, 0.1 ).normalized(), Vec3d( 0, 0, 0 ) ),
-		Model::Link( Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	non_orthogonal_chain.Add( "",
+	                          Model::Twist( Vec3d( 1.0, 0.1, 0.1 ).normalized(), Vec3d( 0, 0, 0 ) ),
+	                          Model::Link( "", Mat4d::Identity(), 0 ),
+	                          Model::Limits( -M_PI, M_PI )
+	                          );
 
 	Mat4d home_config = ToTransformMatrix( Vec3d( 0.5, 0.0, 0.0 ) );
 
