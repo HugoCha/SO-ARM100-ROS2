@@ -202,6 +202,30 @@ void PoseError(
 // ------------------------------------------------------------
 
 void WeightedPoseError(
+	const Vec6d& pose_error,
+	double rotation_weight,
+	double translation_weight,
+	VecXd& weighted_error ) noexcept
+{
+	assert( rotation_weight > 0 || translation_weight > 0 );
+	assert( weighted_error.size() >= 3 && ( rotation_weight <= 0 || translation_weight <= 0 ) ||
+	        weighted_error.size() == 6 && rotation_weight > 0 && translation_weight > 0 );
+
+	weighted_error.setZero();
+
+	if ( rotation_weight > 0 )
+	{
+		weighted_error.head( 3 ).noalias() = rotation_weight * pose_error.head( 3 );
+	}
+	if ( translation_weight > 0 )
+	{
+		weighted_error.tail( 3 ).noalias() = translation_weight * pose_error.tail( 3 );
+	}
+}
+
+// ------------------------------------------------------------
+
+void WeightedPoseError(
 	const Mat4d& target,
 	const Mat4d& current,
 	double rotation_weight,
@@ -219,8 +243,7 @@ void WeightedPoseError(
 	if ( rotation_weight > 0 )
 	{
 		AngleAxis aa( Rotation( T_error ) );
-		weighted_error.head( 3 ).noalias() =
-			rotation_weight * ( aa.axis() * aa.angle() );
+		weighted_error.head( 3 ).noalias() = rotation_weight * ( aa.axis() * aa.angle() );
 	}
 	if ( translation_weight > 0 )
 	{
@@ -331,11 +354,11 @@ double TranslationError( const Mat4d& target, const Mat4d& result ) noexcept
 bool IsApprox(
 	const Mat4d& target,
 	const Mat4d& result,
-	double rotation_tol,
-	double translation_tol ) noexcept
+	double tol ) noexcept
 {
-	return RotationError( target, result ) <= rotation_tol &&
-	       TranslationError( target, result ) <= translation_tol;
+	Vec6d error;
+	PoseError( target, result, error );
+	return error.norm() <= tol;
 }
 
 // ------------------------------------------------------------

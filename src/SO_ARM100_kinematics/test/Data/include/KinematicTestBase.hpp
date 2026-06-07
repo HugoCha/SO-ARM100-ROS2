@@ -29,21 +29,24 @@ Mat4d ComputeFK(
 Solver::IKProblem CreateProblem(
 	Model::KinematicModelConstPtr model,
 	const VecXd& seed,
-	const VecXd& joints ) const
+	const VecXd& joints,
+	double tolerance =  SOArm100::Kinematics::error_tolerance ) const
 {
 	Mat4d fk;
 	model->ComputeFK( joints, fk );
-	return CreateProblem( seed, fk );
+	return CreateProblem( seed, fk, tolerance );
 }
 
-Solver::IKProblem CreateProblem( const VecXd& seed, Mat4d target  ) const
+Solver::IKProblem CreateProblem( 
+	const VecXd& seed, 
+	Mat4d target, 
+	double tolerance =  SOArm100::Kinematics::error_tolerance ) const
 {
 	return {
 	    target,
 	    seed,
 	    VecXd::Zero( seed.size() ),
-	    translation_tolerance,
-	    rotation_tolerance,
+	    tolerance,
 	    100 };
 }
 

@@ -2,9 +2,8 @@
 
 #include "Global.hpp"
 
-#include "PipelineSolver/PipelineSolver.hpp"
 #include "Model/KinematicModel.hpp"
-#include "PipelineSolver/PipelineSolverParameters.hpp"
+#include "Solver/IIKSolver.hpp"
 
 #include <moveit/kinematics_base/kinematics_base.hpp>
 #include <geometry_msgs/geometry_msgs/msg/pose.hpp>
@@ -37,34 +36,40 @@ virtual bool Initialize(
 
 virtual bool Initialize(
 	Model::KinematicModelConstPtr model,
-	std::unique_ptr< Solver::PipelineSolver > solver,
+	std::unique_ptr< Solver::IIKSolver > getIK_solver,
+	std::unique_ptr< Solver::IIKSolver > searchIK_solver,
 	double search_discretization );
-
-Solver::PipelineSolverParameters& Parameters(){
-	return solver_->Parameters();
-}
-
-const Solver::PipelineSolverParameters& Parameters() const {
-	return solver_->Parameters();
-}
 
 Model::KinematicModelConstPtr GetModel() const {
 	return model_;
 }
 
 [[nodiscard]] bool ForwardKinematic(
-	const std::vector< double >& joints,
+	const std::span< const double >& joints,
 	geometry_msgs::msg::Pose& pose ) const;
 
 [[nodiscard]] bool ForwardKinematic(
 	const VecXd& joints,
 	Mat4d& pose ) const;
 
+[[nodiscard]] bool ForwardKinematic(
+	const std::span< const std::string >& link_names,
+	const std::span< const double >& joints,
+	std::vector< geometry_msgs::msg::Pose >& poses,
+	geometry_msgs::msg::Pose& tip_pose ) const;
+
+[[nodiscard]] bool ForwardKinematic(
+	const std::span< const std::string >& link_names,
+	const VecXd& joints,
+	std::vector< Mat4d >& poses,
+	Mat4d& tip_pose ) const;
+
 [[nodiscard]] bool InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints,
 	const std::span< const double >& consistency_limits,
 	long timeout_ms,
+	double tolerance,
 	std::vector< double >& joints ) const;
 
 [[nodiscard]] bool InverseKinematic(
@@ -72,17 +77,21 @@ Model::KinematicModelConstPtr GetModel() const {
 	const VecXd& seed,
 	const VecXd& consistency,
 	long timeout_ms,
+	double tolerance,
 	VecXd& joints ) const;
 
 private:
 Model::KinematicModelConstPtr model_;
-std::unique_ptr< Solver::PipelineSolver > solver_;
+
+std::unique_ptr< Solver::IIKSolver > getIK_solver_;
+std::unique_ptr< Solver::IIKSolver > searchIK_solver_;
 
 [[nodiscard]] bool InverseKinematic(
 	const Mat4d& target,
 	const VecXd& seed,
 	const VecXd& consistency,
 	long timeout_ms,
+	double tolerance,
 	double* joints,
 	int n_joints ) const;
 
@@ -93,6 +102,6 @@ std::unique_ptr< Solver::PipelineSolver > solver_;
 	const std::vector< std::string >& tip_frames,
 	double search_discretization ) const noexcept;
 
-void InitializeSolver( const Model::KinematicModelConstPtr& model );
+void InitializeSolvers( const Model::KinematicModelConstPtr& model );
 };
 }

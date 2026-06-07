@@ -22,15 +22,12 @@ struct SolverParameters
 {
 	int max_stalled_iterations;
 	int max_iterations;
-	double error_tolerance;
 
 	SolverParameters(
 		int max_iterations = 50,
-		int max_stalled_iterations = 5,
-		double error_tolerance = 5e-3 ) :
+		int max_stalled_iterations = 5 ) :
 		max_iterations( max_iterations ),
-		max_stalled_iterations( max_stalled_iterations ),
-		error_tolerance( error_tolerance )
+		max_stalled_iterations( max_stalled_iterations )
 	{
 	}
 };
@@ -64,6 +61,7 @@ void UpdateBuffer(
 
 void UpdateHistory(
 	int iteration,
+	const Solver::IKProblem& problem,
 	const SolverBuffer& buffer,
 	Solver::SolverHistory& history ) const;
 };

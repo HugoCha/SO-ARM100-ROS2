@@ -11,9 +11,12 @@ struct IKProblem
 	VecXd seed;
 	VecXd consistency;
 
-	double position_tolerance;
-	double rotation_tolerance;
+	double tolerance;
 
 	long timeout_ms;
+
+	bool CanReSeed() const {
+		return timeout_ms != 0;
+	}
 };
 }

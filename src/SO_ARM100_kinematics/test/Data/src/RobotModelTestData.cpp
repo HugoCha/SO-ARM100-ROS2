@@ -20,6 +20,7 @@
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
+#include <cctype>
 #include <cmath>
 #include <Eigen/Dense>
 #include <memory>
@@ -241,10 +242,8 @@ Mat4d Data::GetZYZRevoluteRobotTransform( double theta1, double theta2, double t
 Model::JointChain createZYZRevoluteRobotJointChain()
 {
 	Model::JointChain joint_chain( 3 );
-	// // Configuration HOME (tous les angles à 0)
-	// Joint 1: Axe Z à l'origine
-	Vec3d axis1( 0, 0, 1 );           // Axe Z
-	Vec3d point1( 0, 0, 0 );          // Origine
+	Vec3d axis1( 0, 0, 1 );
+	Vec3d point1( 0, 0, 0 );
 	Model::Twist twist1( axis1, point1 );
 
 	Vec3d origin1 = Vec3d( 0.0, 0, 0.0 );
@@ -256,10 +255,8 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	joint_chain.Add( "joint1", twist1, link1, limits1 );
 
-	// Joint 2: Axe Y après translation de 0.5m en X
-	// À la home: le joint 2 est en (0.5, 0, 0) avec axe Y
-	Vec3d axis2( 0, 1, 0 );           // Axe Y dans repère spatial
-	Vec3d point2( 0.5, 0, 0 );        // Position à home
+	Vec3d axis2( 0, 1, 0 );
+	Vec3d point2( 0.5, 0, 0 );
 	Model::Twist twist2( axis2, point2 );
 
 	Model::Link link2( "link2", ToTransformMatrix( origin2 ), 0.5 );
@@ -268,10 +265,8 @@ Model::JointChain createZYZRevoluteRobotJointChain()
 
 	joint_chain.Add( "joint2", twist2, link2, limits2 );
 
-	// Joint 3: Axe Z après translation totale de 1.0m en X
-	// À la home: le joint 3 est en (1.0, 0, 0) avec axe Z
-	Vec3d axis3( 0, 0, 1 );           // Axe Z dans repère spatial
-	Vec3d point3( 1.0, 0, 0 );        // Position à home
+	Vec3d axis3( 0, 0, 1 );
+	Vec3d point3( 1.0, 0, 0 );
 	Model::Twist twist3( axis3, point3 );
 
 	Model::Link link3( "link3", ToTransformMatrix( origin3 ), 0 );
@@ -301,11 +296,14 @@ Model::KinematicTopology createZYZRevoluteRobotTopology()
 {
 	Model::KinematicTopology topology;
 	Mat4d home = createZYZRevoluteRobotHome();
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 1, 0, 0 ) );
 
-	Model::RevoluteBaseJointGroup base_group( home );
-	Model::WristJointGroup wrist_group( 2, 1, home );
+	Model::RevoluteBaseJointGroup base_group( wrist_center );
+	Model::PlanarNRJointGroup planar_group( 1, 1, wrist_center );
+	Model::WristJointGroup wrist_group( 2, 1, home * Inverse( wrist_center ), wrist_center );
 
 	topology.Add( base_group );
+	topology.Add( planar_group );
 	topology.Add( wrist_group );
 
 	return topology;
@@ -472,8 +470,8 @@ std::unique_ptr< const Model::JointChain > createRevoluteBaseJointChain()
 
 	chain->Add(
 		"joint3",
-		{ Vec3d::UnitZ(), Vec3d( 0, 1, 1 ) },
-		{ "link3", ToTransformMatrix( Vec3d( 0, 1, 1 ) ), 0.1 },
+		{ Vec3d::UnitY(), Vec3d( 1, 0, 1 ) },
+		{ "link3", ToTransformMatrix( Vec3d( 1, 0, 1 ) ), 0.1 },
 		{ -M_PI, M_PI }
 		);
 
@@ -493,15 +491,20 @@ Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::RevoluteBaseJointGroup base_group(
-		ToTransformMatrix( Vec3d( 1, 0, 1 ) ) );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+
+	Model::RevoluteBaseJointGroup base_group( wrist_center );
+	
+	Model::PlanarNRJointGroup planar_group( 1, 1, wrist_center );
 
 	Model::WristJointGroup wrist_group(
-		1,
 		2,
-		ToTransformMatrix( Vec3d( 0, 0, 0.1 ) ) );
+		1,
+		ToTransformMatrix( Vec3d( 0, 0, -0.1 ) ),
+		wrist_center  );
 
 	topology.Add( base_group );
+	topology.Add( planar_group );
 	topology.Add( wrist_group );
 
 	return topology;
@@ -528,14 +531,21 @@ Model::Skeleton createRevoluteBaseSkeleton(
 		std::make_shared< const Model::Articulation >(
 			Model::ArticulationType::Revolute,
 			std::vector< Model::JointConstPtr > { chain.GetActiveJoint( 2 ) },
-			Translation( home )
+			chain.GetActiveJoint( 2 )->Origin()
 			)
 		);
+
 
 	bones.emplace_back(
 		std::make_shared< const Model::Bone >(
 			articulations[0]->Center(),
-			Translation( home ) - articulations[0]->Center() )
+			articulations[1]->Center() - articulations[0]->Center() )
+		);
+
+	bones.emplace_back(
+		std::make_shared< const Model::Bone >(
+			articulations[1]->Center(),
+			Translation( home ) - articulations[1]->Center() )
 		);
 
 	double total_length = articulations[0]->Center().norm();
@@ -610,10 +620,14 @@ Mat4d createPrismaticBaseHome()
 Model::KinematicTopology createPrismaticBaseTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
+	
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
 
-	Model::PrismaticBaseJointGroup base_group( home );
+	Model::PrismaticBaseJointGroup base_group( wrist_center );
+	Model::WristJointGroup wrist_group( 1, 1, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( base_group );
+	topology.Add( wrist_group );
 
 	return topology;
 }
@@ -730,10 +744,13 @@ Mat4d createPlanar2RHome()
 Model::KinematicTopology createPlanar2RTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 0.5 ) );
 
-	Model::PlanarNRJointGroup planar_group( 0, 2, home );
+	Model::PlanarNRJointGroup planar_group( 0, 1, wrist_center );
+	Model::WristJointGroup wrist_group( 1, 1, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( planar_group );
+	topology.Add( wrist_group );
 
 	return topology;
 }
@@ -855,9 +872,13 @@ Model::KinematicTopology createPlanar3RTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::PlanarNRJointGroup planar_group( 0, 3, Mat4d::Identity() );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1.0 ) );
+
+	Model::PlanarNRJointGroup planar_group( 0, 2, wrist_center );
+	Model::WristJointGroup wrist_group( 2, 1, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( planar_group );
+	topology.Add( wrist_group );
 
 	return topology;
 }
@@ -973,7 +994,8 @@ Model::KinematicTopology createWrist1RTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::WristJointGroup wrist_group( 0, 1, home );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
+	Model::WristJointGroup wrist_group( 0, 1, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( wrist_group );
 
@@ -1076,7 +1098,9 @@ Model::KinematicTopology createWrist2RTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::WristJointGroup wrist_group( 0, 2, home );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
+
+	Model::WristJointGroup wrist_group( 0, 2, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( wrist_group );
 
@@ -1187,7 +1211,8 @@ Model::KinematicTopology createSphericalWristTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
 
-	Model::WristJointGroup wrist_group( 0, 3, home );
+	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
+	Model::WristJointGroup wrist_group( 0, 3, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( wrist_group );
 
@@ -1333,7 +1358,7 @@ Model::KinematicTopology createRevolute_Planar2R_Wrist2R_5DOFsTopology( const Ma
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
 	Model::PlanarNRJointGroup planar_group( 1, 2, wrist_center );
-	Model::WristJointGroup wrist_group( 3, 2, home * Inverse( wrist_center ) );
+	Model::WristJointGroup wrist_group( 3, 2, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( base_group );
 	topology.Add( planar_group );
@@ -1515,7 +1540,7 @@ Model::KinematicTopology createRevolute_Planar2R_SphericalWrist_6DOFsTopology( c
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
 	Model::PlanarNRJointGroup planar_group( 1, 2, wrist_center );
-	Model::WristJointGroup wrist_group( 3, 3, home * Inverse( wrist_center ) );
+	Model::WristJointGroup wrist_group( 3, 3, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( base_group );
 	topology.Add( planar_group );
@@ -1709,7 +1734,7 @@ Model::KinematicTopology createURLike_6DOFsTopology( const Mat4d& home )
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
 	Model::PlanarNRJointGroup planar_group( 1, 3, wrist_center );
-	Model::WristJointGroup wrist_group( 4, 2, home * Inverse( wrist_center ) );
+	Model::WristJointGroup wrist_group( 4, 2, home * Inverse( wrist_center ), wrist_center  );
 
 	topology.Add( base_group );
 	topology.Add( planar_group );

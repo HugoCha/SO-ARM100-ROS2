@@ -29,12 +29,84 @@ namespace SOArm100::Kinematics::Solver
 {
 
 // ------------------------------------------------------------
+// Logger
+// ------------------------------------------------------------
 
 static rclcpp::Logger get_logger()
 {
 	return Logger::get().get_child( "DLSSolver" );
 }
 
+// ------------------------------------------------------------
+// Solver Buffer
+// ------------------------------------------------------------
+
+struct DLSSolver::SolverBuffers {
+	SolverType type;
+
+	MatXd weights;
+	MatXd jacobian;
+	MatXd jacobian_psi;
+	MatXd weighted_jacobian;
+	Eigen::JacobiSVD< MatXd > svd;
+	VecXd weighted_error;
+	VecXd weighted_error_reachable;
+	MatXd damped;
+	VecXd gradient;
+	VecXd dq;
+	Mat4d fk;
+	VecXd joints;
+	Eigen::LDLT< MatXd > ldlt_solver;
+
+	[[nodiscard]] inline int GetSize() const noexcept {
+		return joints.size();
+	}
+
+	explicit SolverBuffers( int n_joints, SolverType solver_type ) :
+		type( solver_type )
+	{
+		jacobian.resize( 6, n_joints );
+		jacobian_psi.resize( n_joints, n_joints );
+		damped.resize( n_joints, n_joints );
+		joints.resize( n_joints );
+		dq.resize( n_joints );
+		gradient.resize( n_joints );
+
+		if ( type == SolverType::Full )
+		{
+			weighted_jacobian.resize( 6, n_joints );
+			weighted_error.resize( 6 );
+			weighted_error_reachable.resize( 6 );
+			weights.resize( 6, 6 );
+		}
+		else
+		{
+			weighted_jacobian.resize( 3, n_joints );
+			weighted_error.resize( 3 );
+			weighted_error_reachable.resize( 3 );
+			weights.resize( 3, 6 );
+		}
+	}
+};
+
+// ------------------------------------------------------------
+// Iteration State
+// ------------------------------------------------------------
+
+struct DLSSolver::IterationState {
+	VecXd joints;
+	double error;
+	double error_reachable;
+	double error_unreachable;
+	double gradient;
+	double step;
+	double damping;
+	int fk_failures;
+	int stalled_error_iter;
+};
+
+// ------------------------------------------------------------
+// DLS Solver
 // ------------------------------------------------------------
 
 DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
@@ -86,6 +158,9 @@ IKSolution DLSSolver::Solve(
 
 	if ( !state )
 	{
+		if ( !problem.CanReSeed() )
+			return { IKSolverState::NotRun, {}};
+
 		seed = seed_generator.Generate( problem );
 		state = InitializeState( problem.target, seed, buffers );
 		history = InitializeHistory( state, seed );
@@ -100,7 +175,7 @@ IKSolution DLSSolver::Solve(
 			return { IKSolverState::NotRun, history.best_joints, history.best_error, iter };
 		}
 
-		auto solver_state = EvaluateConvergence( *state, iter );
+		auto solver_state = EvaluateConvergence( problem, *state, iter );
 
 		if ( solver_state == DLSSolverState::Converged )
 		{
@@ -112,6 +187,11 @@ IKSolution DLSSolver::Solve(
 		}
 		if ( solver_state == DLSSolverState::Stalled )
 		{
+			if ( !problem.CanReSeed() )
+			{
+				return { IKSolverState::BestPossible, history.best_joints, history.best_error, iter };
+			}
+
 			UpdateSeedGenerator( iter, *state, history, seed_generator );
 			UpdateHistory( iter, *state, history );
 			seed = seed_generator.Generate( problem );
@@ -119,7 +199,7 @@ IKSolution DLSSolver::Solve(
 			continue;
 		}
 
-		PerformIteration( problem.target, *state, buffers );
+		PerformIteration( problem, *state, buffers );
 	}
 
 	return { IKSolverState::MaxIterations, history.best_joints, history.best_error, parameters_.max_iterations };
@@ -238,7 +318,7 @@ Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const
 {
 	Seed::IKRandomSeedGenerator::RandomParameters random_parameters;
-	auto random_type = Seed::IKRandomSeedGenerator::RandomType::Near;
+	auto random_type = Model::RandomType::Near;
 
 	random_parameters.margin_percent = 0.1;
 	if ( !state )
@@ -256,7 +336,7 @@ Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 
 // ------------------------------------------------------------
 
-Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
+Model::RandomType DLSSolver::ChooseSeedRandomType(
 	int iteration,
 	const IterationState& state,
 	const SolverHistory& history ) const
@@ -265,24 +345,24 @@ Seed::IKRandomSeedGenerator::RandomType DLSSolver::ChooseSeedRandomType(
 	     state.error_reachable / state.error < 0.5 &&
 	     state.error >= 0.9 * history.best_error )
 	{
-		return Seed::IKRandomSeedGenerator::RandomType::NearCenterLimit;
+		return Model::RandomType::NearCenterLimit;
 	}
 
 	int no_improvement_span = iteration - history.last_non_stalled_error_idx;
 	if ( ( no_improvement_span <= 4 && history.best_error <= MediumError() ) ||
 	     ( no_improvement_span <= 8 && history.best_error <= SmallError() ) )
 	{
-		return Seed::IKRandomSeedGenerator::RandomType::Near;
+		return Model::RandomType::Near;
 	}
 
 	if ( ( state.error_reachable / state.error > 0.35 && state.error < 0.9 * history.best_error ) ||
 	     state.error < 0.7 * history.best_error ||
 	     ( no_improvement_span <= 3 && history.best_error <= MediumError() && state.error <= LargeError() ) )
 	{
-		return Seed::IKRandomSeedGenerator::RandomType::Near;
+		return Model::RandomType::Near;
 	}
 
-	return Seed::IKRandomSeedGenerator::RandomType::Random;
+	return Model::RandomType::Random;
 }
 
 // ------------------------------------------------------------
@@ -329,7 +409,7 @@ void DLSSolver::UpdateSeedGenerator(
 // ------------------------------------------------------------
 
 void DLSSolver::PerformIteration(
-	const Mat4d& target,
+	const IKProblem& problem,
 	IterationState& state,
 	SolverBuffers& buffers ) const
 {
@@ -344,14 +424,14 @@ void DLSSolver::PerformIteration(
 		buffers.weighted_jacobian,
 		buffers.jacobian_psi,
 		buffers.dq );
-	LineSearch( target, state, buffers );
+	LineSearch( problem.target, state, buffers );
 
 	const double error = buffers.weighted_error_reachable.norm();
-	UpdateErrorConvergence( state.error_reachable, error, state );
+	UpdateErrorConvergence( problem, state.error_reachable, error, state );
 
 	// PrintIteration( state, buffers );
 
-	if ( state.error_reachable - error > parameters_.error_tolerance )
+	if ( state.error_reachable - error > problem.tolerance )
 	{
 		state.joints = buffers.joints;
 		state.error = buffers.weighted_error.norm();
@@ -499,11 +579,12 @@ bool DLSSolver::UpdateBuffer(
 // ------------------------------------------------------------
 
 void DLSSolver::UpdateErrorConvergence(
+	const IKProblem& problem,
 	double last_error,
 	double current_error,
 	IterationState& state ) const
 {
-	if ( last_error - current_error <= parameters_.error_tolerance )
+	if ( last_error - current_error <= problem.tolerance )
 	{
 		state.stalled_error_iter++;
 	}
@@ -576,16 +657,17 @@ void DLSSolver::UpdateDeltaQ(
 // ------------------------------------------------------------
 
 DLSSolverState DLSSolver::EvaluateConvergence(
+	const IKProblem& problem,
 	const IterationState& state,
 	int iteration ) const noexcept
 {
-	if ( state.error <= parameters_.error_tolerance )
+	if ( state.error <= problem.tolerance )
 	{
 		return DLSSolverState::Converged;
 	}
 
-	if ( state.error_reachable < parameters_.error_tolerance &&
-	     state.error_unreachable > parameters_.error_tolerance &&
+	if ( state.error_reachable < problem.tolerance &&
+	     state.error_unreachable > problem.tolerance &&
 	     state.gradient < parameters_.gradient_tolerance &&
 	     state.stalled_error_iter > 0 )
 	{
@@ -601,7 +683,7 @@ DLSSolverState DLSSolver::EvaluateConvergence(
 	double reachable_ratio = state.error_reachable / state.error;
 
 	if ( ( state.gradient < parameters_.gradient_tolerance &&
-	       state.error_reachable > parameters_.error_tolerance ) ||
+	       state.error_reachable > problem.tolerance ) ||
 	     ( unreachable_ratio  > 0.75 ) ||
 	     ( unreachable_ratio  > 0.5 && reachable_ratio < 0.5 ) ||
 	     ( state.stalled_error_iter > 0 && state.damping >= parameters_.max_damping && state.step <= parameters_.min_step ) ||

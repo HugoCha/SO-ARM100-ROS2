@@ -110,7 +110,8 @@ TEST_F( IKJointGroupModelBaseTest, GetSuccessor_NoSuccessor )
 	Model::WristJointGroup wrist(
 		3,
 		3,
-		model_->GetHomeConfiguration() );
+		model_->GetHomeConfiguration(),
+		Mat4d::Identity() );
 
 	Model::IKJointGroupModelBase heuristic(
 		model_,

@@ -124,11 +124,12 @@ random_numbers::RandomNumberGenerator rng_;
 TEST_F( PipelineSolverTest, InverseKinematic_Success )
 {
 	// Target joints
-	VecXd joints( 5 );
+	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	VecXd joints( n_joints );
 	joints << M_PI, M_PI / 2, M_PI / 3, M_PI / 4, M_PI / 5;
 
 	// Seed joints
-	VecXd seed( 5 );
+	VecXd seed( n_joints );
 	seed << 0.1, 0.1, 0.1, 0.1, 0.1;
 
 	auto problem = CreateProblem( model_, seed, joints );
@@ -242,15 +243,16 @@ TEST_F( PipelineSolverTest, InverseKinematic_Unreachable )
 TEST_F( PipelineSolverTest, InverseKinematic_WithDifferentSeedJoints )
 {
 	// Target joints
-	VecXd joints( 5 );
+	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	VecXd joints( n_joints );
 	joints << M_PI / 2, M_PI / 2, M_PI / 3, M_PI / 4, M_PI / 5;
 	auto target_pose = ComputeFK( model_, joints );
 
 	// Test with different seed joints
-	std::vector< Eigen::Vector< double, 5 >> seed_joints_list = {
-		{ 0, 0, 0, 0, 0 },
-		{ M_PI / 4, M_PI / 4, M_PI / 4, M_PI / 4, M_PI / 4 },
-		{ -M_PI / 4, -M_PI / 4, -M_PI / 4, -M_PI / 4, -M_PI / 4 },
+	std::vector< VecXd > seed_joints_list = {
+		VecXd::Zero( n_joints ),
+		VecXd::Ones( n_joints ) * M_PI / 4,
+		VecXd::Ones( n_joints ) * -M_PI / 4,
 	};
 
 	for ( const auto& seed_joints : seed_joints_list )

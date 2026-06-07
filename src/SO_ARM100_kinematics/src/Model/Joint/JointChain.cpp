@@ -285,28 +285,43 @@ bool JointChain::ComputeJointStatesFK(
 bool JointChain::ComputeJointPosesFK(
 	const double* thetas,
 	int n_joints,
+	const std::span< const std::string >& link_names,
 	const Mat4d& home_configuration,
 	std::vector< Mat4d >& joint_poses,
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
-	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
+	
+	if ( n_joints != GetActiveJointCount() )
+		return false;
 
 	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
-	if ( joint_poses.size() < n_joints )
-		joint_poses.resize( n_joints );
+	if ( joint_poses.size() != link_names.size() )
+		joint_poses.resize( link_names.size() );
 
 	Mat4d T_cumul = Mat4d::Identity();
+
+	std::vector< Mat4d > all_poses( n_joints );
+	std::map< std::string, int > link_pose_index;
+	std::set< std::string > link_names_set( link_names.begin(), link_names.end() );
 
 	for ( size_t i = 0; i < n_joints; i++ )
 	{
 		const auto& joint = GetActiveJoint( i );
+		const auto& link = joint->GetLink();
 		const auto& twist = joint->GetTwist();
-		joint_poses[i].noalias() = T_cumul * joint->OriginTransform();
+
+		if ( link_names_set.contains( link.GetName() ) )
+			link_pose_index[ link.GetName() ] = i;
+
+		all_poses[i].noalias() = T_cumul * joint->OriginTransform();
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
 	}
+
+	for ( int i = 0; i < link_names.size(); i++ )
+		joint_poses[i] = all_poses[link_pose_index[link_names[i]]];
 
 	fk.noalias() = T_cumul * home_configuration;
 	return true;

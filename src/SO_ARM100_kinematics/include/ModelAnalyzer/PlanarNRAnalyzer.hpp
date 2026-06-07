@@ -8,11 +8,12 @@ namespace SOArm100::Kinematics::Model
 {
 class JointChain;
 class JointGroup;
+class PlanarNRJointGroup;
 
 class PlanarNRAnalyzer
 {
 public:
-static std::optional< JointGroup > Analyze(
+static std::optional< PlanarNRJointGroup > Analyze(
 	const JointChain& chain,
 	const Mat4d& home,
 	int start_idx,

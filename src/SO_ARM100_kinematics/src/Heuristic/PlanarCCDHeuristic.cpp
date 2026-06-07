@@ -72,9 +72,9 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 	for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
 	{
 		UpdateBuffer( p_local_target, buffer.joints, buffer );
-		UpdateHistory( iter, buffer, history );
+		UpdateHistory( iter, problem, buffer, history );
 
-		if ( buffer.error < parameters_.error_tolerance )
+		if ( buffer.error < problem.tolerance )
 		{
 			return {
 			    buffer.joints,
@@ -86,7 +86,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 		{
 			return {
 			    history.best_joints,
-			    history.best_error < parameters_.error_tolerance * 10 ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail,
+			    history.best_error < problem.tolerance * 10 ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail,
 			    history.best_error,
 			    iter
 			};
@@ -123,7 +123,7 @@ bool PlanarCCDHeuristic::IsUnreachable( const Vec3d& p_local_target ) const
 	const auto& first_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 	double distance = Utils::Distance( first_joint->Origin(), p_local_target );
 	double max_reach = GroupMaxReach();
-	return distance > 1.025 * max_reach;
+	return distance > 1.1 * max_reach;
 }
 
 // ------------------------------------------------------------
@@ -174,10 +174,11 @@ void PlanarCCDHeuristic::UpdateBuffer(
 
 void PlanarCCDHeuristic::UpdateHistory(
 	int iteration,
+    const Solver::IKProblem& problem,
 	const SolverBuffer& buffer,
 	Solver::SolverHistory& history ) const
 {
-	const int stalled_tolerance = parameters_.error_tolerance / 2.0;
+	const int stalled_tolerance = problem.tolerance / 2.0;
 	if ( buffer.error - history.last_non_stalled_error < stalled_tolerance )
 	{
 		history.stalled_error_cnt++;

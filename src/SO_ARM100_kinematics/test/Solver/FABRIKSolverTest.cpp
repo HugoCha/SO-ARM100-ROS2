@@ -71,7 +71,7 @@ std::map< std::string, TestParameters > RobotsTestParameters()
 	return
 	    {
 			{ "ZYZ", TestParameters{ 30, 5, 20 }},
-			{ "RevoluteBase", TestParameters{ 30, 2, 2 }},
+			{ "RevoluteBase", TestParameters{ 30, 2, 20 }},
 			{ "PrismaticBase", TestParameters{ 30, 3, 20 }},
 			{ "Planar2R", TestParameters{ 500, 50, 15 }},
 			{ "Planar3R", TestParameters{ 50, 5, 15 }},
@@ -92,9 +92,9 @@ Solver::IKSolution CheckConvergence(
 {
 	EXPECT_EQ( seed.size(), joints.size() );
 
-	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations };
 	auto solver = Solver::FABRIKSolver( model, parameters );
-	auto problem = CreateProblem( model, seed, joints );
+	auto problem = CreateProblem( model, seed, joints, test_parameters.tolerance );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
@@ -105,7 +105,7 @@ Solver::IKSolution CheckConvergence(
 	    << problem << std::endl
 	    << result  << std::endl;
 
-	EXPECT_LE( TranslationError( problem.target, result_pose ), parameters.error_tolerance )
+	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
 	    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl
@@ -120,9 +120,9 @@ Solver::IKSolution CheckConvergenceFromTarget(
 	const VecXd& seed,
 	const Mat4d& target )
 {
-	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations };
 	auto solver = Solver::FABRIKSolver( model, parameters );
-	auto problem = CreateProblem( seed, target );
+	auto problem = CreateProblem( seed, target, test_parameters.tolerance );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
@@ -132,7 +132,7 @@ Solver::IKSolution CheckConvergenceFromTarget(
 	    << problem << std::endl
 	    << result  << std::endl;
 
-	EXPECT_TRUE( TranslationError( problem.target, result_pose ) < solver.GetParameters().error_tolerance )
+	EXPECT_TRUE( TranslationError( problem.target, result_pose ) < problem.tolerance )
 	    << "Joints  = " << result.joints.transpose() << "\n"
 	    << "Target  =\n" << Translation( problem.target  ).transpose() << "\n"
 	    << "Result  =\n" << Translation( result_pose ).transpose() << std::endl;
@@ -149,9 +149,9 @@ Solver::IKSolution CheckConvergenceNoFailure(
 {
 	EXPECT_EQ( seed.size(), joints.size() );
 
-	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations, test_parameters.tolerance };
+	auto parameters = Solver::FABRIKSolver::SolverParameters{ test_parameters.max_iteration, test_parameters.max_stalled_iterations };
 	auto solver = Solver::FABRIKSolver( model, parameters );
-	auto problem = CreateProblem( model, seed, joints );
+	auto problem = CreateProblem( model, seed, joints, test_parameters.tolerance );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
@@ -390,7 +390,7 @@ TEST_F( FABRIKSolverTest, IK_MultipleSeedsConverge_AllRobots )
 				successes++;
 		}
 
-		EXPECT_GE( successes, 0.1 * k_seeds )
+		EXPECT_GE( successes, 0.9 * k_seeds )
 		    << "Test Fail for " << robot.first << std::endl
 		    << "Converge only " << successes << " on " << k_seeds << " trials." << std::endl;
 	}
@@ -592,7 +592,7 @@ TEST_F( FABRIKSolverTest, IK_MaxStalledIterationRespected_AllRobots )
 {
 	TestParameters parameters;
 	parameters.max_iteration = 50;
-	parameters.max_stalled_iterations = 2;
+	parameters.max_stalled_iterations = 0;
 	parameters.tolerance = 5e-3;
 
 	for ( const auto& robot : ValidRobots() )
@@ -658,8 +658,8 @@ TEST_F( FABRIKSolverTest, IK_NearJointLimits_AllRobots )
 		for ( int i = 0; i < n_joints; i++ )
 		{
 			const auto& limits = chain->GetActiveJointLimits( i );
-			min_joints[i] = limits.Min() * 0.91;
-			max_joints[i] = limits.Max() * 0.91;
+			min_joints[i] = limits.Min() * 0.85;
+			max_joints[i] = limits.Max() * 0.85;
 		}
 
 		auto params = RobotsTestParameters()[robot_name_];

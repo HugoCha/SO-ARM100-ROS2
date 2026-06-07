@@ -37,6 +37,20 @@ JointChain& operator = ( JointChain&& ) = default;
 	return active_joints_;
 }
 
+[[nodiscard]] std::vector< std::string > GetJointNames() const {
+	std::vector< std::string > joint_names( GetJointCount() );
+	for ( int i = 0; i < GetJointCount(); i++ )
+		joint_names[i] = joints_[i]->GetName();
+	return joint_names;
+}
+
+[[nodiscard]] std::vector< std::string > GetLinkNames() const {
+	std::vector< std::string > link_names( GetJointCount() );
+	for ( int i = 0; i < GetJointCount(); i++ )
+		link_names[i] = joints_[i]->GetLink().GetName();
+	return link_names;
+}
+
 JointConstPtr GetActiveJoint( int i ) const {
 	if ( i < 0 || i >= static_cast< int >( active_joints_.size() ) )
 		throw std::out_of_range( "Invalid active joint index" );
@@ -138,7 +152,7 @@ bool ComputeJointPosesFK(
 	std::vector< Mat4d >& joints_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, joints_fk, fk );
 }
 
 bool ComputeJointPosesFK(
@@ -147,7 +161,27 @@ bool ComputeJointPosesFK(
 	std::vector< Mat4d >& joints_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), home_configuration, joints_fk, fk );
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, joints_fk, fk );
+}
+
+bool ComputeJointPosesFK(
+	const std::span< const double >& thetas,
+	const std::span< const std::string > link_names,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const
+{
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, joints_fk, fk );
+}
+
+bool ComputeJointPosesFK(
+	const VecXd& thetas,
+	const std::span< const std::string > link_names,
+	const Mat4d& home_configuration,
+	std::vector< Mat4d >& joints_fk,
+	Mat4d& fk ) const
+{
+	return ComputeJointPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, joints_fk, fk );
 }
 
 [[nodiscard]] VecXd RandomValidJoints(
@@ -198,6 +232,7 @@ bool ComputeJointStatesFK(
 bool ComputeJointPosesFK(
 	const double* thetas,
 	int n_joints,
+	const std::span< const std::string >& link_names,
 	const Mat4d& home_configuration,
 	std::vector< Mat4d >& joints_fk,
 	Mat4d& fk ) const noexcept;

@@ -16,14 +16,26 @@ namespace SOArm100::Kinematics::Model
 std::optional< JointGroup > BaseAnalyzer::Analyze(
 	const JointChain& joint_chain,
 	const Mat4d& home,
-	const std::optional< JointGroup >& wrist_group  )
+	const std::optional< PlanarNRJointGroup >& planar_group,
+	const std::optional< WristJointGroup >& wrist_group  )
 {
 	if ( !wrist_group ||
 	     joint_chain.GetActiveJointCount() <= 1 )
 		return std::nullopt;
-
+	
+	if ( !planar_group )
+	{
+		if ( wrist_group->FirstIndex() != 1 )
+			return std::nullopt;
+	}
+	else
+	{
+		if ( planar_group->FirstIndex() == 0 )
+			return std::nullopt;
+	}
+	
 	auto base_joint = joint_chain.GetActiveJoint( 0 );
-	Mat4d tip_home = home * Inverse( wrist_group->tip_home );
+	Mat4d tip_home = wrist_group->GetWristCenter();
 
 	if ( base_joint->IsRevolute() )
 	{

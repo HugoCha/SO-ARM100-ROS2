@@ -91,10 +91,18 @@ struct PlanarNRJointGroup : public JointGroup
 
 struct WristJointGroup : public JointGroup
 {
-	WristJointGroup( int start, int count, const Mat4d& home ) :
-		JointGroup( wrist_name, EnumerateIndices( start, count ), home )
+	WristJointGroup( int start, int count, const Mat4d& home, const Mat4d& wrist_center ) :
+		JointGroup( wrist_name, EnumerateIndices( start, count ), home ),
+		wrist_center_( wrist_center )
 	{
 	}
+
+	const Mat4d& GetWristCenter() const {
+		return wrist_center_;
+	}
+
+private:
+Mat4d wrist_center_;
 };
 
 }

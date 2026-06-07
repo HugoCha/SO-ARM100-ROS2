@@ -8,11 +8,12 @@ namespace SOArm100::Kinematics::Model
 {
 class JointChain;
 class JointGroup;
+class WristJointGroup;
 
 class WristAnalyzer
 {
 public:
-static std::optional< JointGroup > Analyze(
+static std::optional< WristJointGroup > Analyze(
 	const JointChain& chain,
 	const Mat4d& home );
 

@@ -7,6 +7,7 @@
 #include "Model/Geometry/Pose.hpp"
 #include "Model/Joint/Joint.hpp"
 #include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointGroup.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Model/Joint/JointType.hpp"
 #include "Model/Joint/Limits.hpp"
@@ -21,6 +22,7 @@
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
+
 #include <string>
 
 namespace  SOArm100::Kinematics
@@ -116,6 +118,24 @@ std::ostream& operator << ( std::ostream& os, const JointChain& obj )
 		if ( i < obj.GetJointCount() - 1 )
 			os << std::endl;
 	}
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const JointGroup& obj )
+{
+	os << "Joint Group " << obj.name << std::endl;
+	os << "Indices: ";
+	bool first = true;
+	for ( const auto& index : obj.indices )
+	{
+		if ( !first )
+			os << ", ";
+		first = false;
+		os << index;
+	}
+	os << "\nGroup Home:\n" << obj.tip_home;
 	return os;
 }
 
@@ -231,8 +251,7 @@ namespace Solver
 std::ostream& operator << ( std::ostream& os, const IKProblem& obj )
 {
 	os << "IKProblem" << std::endl;
-	os << "rotation tol: " << obj.rotation_tolerance
-	   << " translation tol: " << obj.position_tolerance
+	os << "tol: " << obj.tolerance
 	   << " timeout(ms): " << obj.timeout_ms << std::endl;
 	os << "Seed: " << obj.seed.transpose() << std::endl;
 	os << "Target: " << std::endl << obj.target;
@@ -274,7 +293,6 @@ std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters&
 	os << "Solver Parameters" << std::endl;
 	os << "Max iter        = " << obj.max_iterations << std::endl;
 	os << "Max stalle iter = " << obj.max_stalle_iterations << std::endl;
-	os << "Error tol       = " << obj.error_tolerance << std::endl;
 	os << "Gradient tol    = " << obj.gradient_tolerance << std::endl;
 	os << "Min damping     = " << obj.min_damping << std::endl;
 	os << "Max damping     = " << obj.max_damping << std::endl;

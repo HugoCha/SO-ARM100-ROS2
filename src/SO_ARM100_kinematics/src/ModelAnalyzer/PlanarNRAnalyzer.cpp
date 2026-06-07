@@ -17,7 +17,7 @@ Mat4d GetJointOriginTransform( JointChain chain, int index );
 
 // ------------------------------------------------------------
 
-std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
+std::optional< PlanarNRJointGroup > PlanarNRAnalyzer::Analyze(
 	const JointChain& chain,
 	const Mat4d& home,
 	int start_idx,
@@ -25,7 +25,10 @@ std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
 {
 	const int n_joints = chain.GetActiveJointCount();
 
-	if ( start_idx < 0 || start_idx + N > n_joints )
+	if ( start_idx < 0 || start_idx + N > n_joints || N <= 0 )
+		return std::nullopt;
+
+	if ( !chain.GetActiveJoint( start_idx )->IsRevolute() )
 		return std::nullopt;
 
 	auto axis = GetJointAxis( chain, start_idx );
@@ -36,21 +39,10 @@ std::optional< JointGroup > PlanarNRAnalyzer::Analyze(
 			return std::nullopt;
 	}
 
-	Mat4d planar_home;
-
-	if ( start_idx + N >= n_joints )
-	{
-		planar_home = home;
-	}
-	else
-	{
-		planar_home = GetJointOriginTransform( chain, start_idx + N );
-	}
-
 	return PlanarNRJointGroup(
 		start_idx,
 		N,
-		planar_home );
+		home );
 }
 
 // ------------------------------------------------------------

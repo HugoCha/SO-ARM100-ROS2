@@ -24,15 +24,12 @@ struct SolverParameters
 {
 	int max_iterations;
 	int max_stalled_iterations;
-	double error_tolerance;
 
 	SolverParameters(
 		int max_iterations = 50,
-		int max_stalled_iterations = 3,
-		double error_tolerance = 5e-3 ) :
+		int max_stalled_iterations = 3 ) :
 		max_iterations( max_iterations ),
-		max_stalled_iterations( max_stalled_iterations ),
-		error_tolerance( error_tolerance )
+		max_stalled_iterations( max_stalled_iterations )
 	{
 	}
 };
@@ -80,6 +77,7 @@ void UpdateValues(
 	std::vector< Model::BoneState >& bone_states ) const;
 
 void UpdateHistory(
+	const IKProblem& problem,
 	const VecXd& joints,
 	double error,
 	SolverHistory& history ) const;

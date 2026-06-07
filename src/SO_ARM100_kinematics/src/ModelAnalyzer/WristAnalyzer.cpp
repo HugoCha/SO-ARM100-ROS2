@@ -4,6 +4,7 @@
 
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/Joint/JointChain.hpp"
+#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>
@@ -18,7 +19,7 @@ const Mat4d ComputeTCPinWrist( const Vec3d& wrist_center, const Mat4d& home_conf
 
 // ------------------------------------------------------------
 
-std::optional< JointGroup > WristAnalyzer::Analyze(
+std::optional< WristJointGroup > WristAnalyzer::Analyze(
 	const JointChain& chain,
 	const Mat4d& home )
 {
@@ -49,7 +50,8 @@ std::optional< JointGroup > WristAnalyzer::Analyze(
 	return WristJointGroup(
 		wrist_start,
 		wrist_count,
-		wrist_tip );
+		wrist_tip,
+		ToTransformMatrix( wrist_center ) );
 }
 
 // ------------------------------------------------------------

@@ -281,6 +281,7 @@ double IKJointGroupModelBase::ComputeGroupMaxReach(
 {
 	double max_reach = 0.0;
 	const auto& chain = model->GetChain();
+
 	for ( int i = 0; i < group.Size() - 1; i++ )
 	{
 		auto joint = chain->GetActiveJoint( group.Index( i ) );

@@ -1,4 +1,3 @@
-#include "DLSGradientDescent.hpp"
 #include "Global.hpp"
 
 #include "DLS/DLSSolver.hpp"
@@ -52,8 +51,6 @@ void SetUp() override
 	// Initialize solver with default parameters
 	Solver::DLSSolver::SolverParameters parameters;
 
-	parameters.error_tolerance = DEFAULT_TOLERANCE;
-
 	parameters.rotation_weight        = 1;
 	parameters.translation_weight     = 10;
 
@@ -80,13 +77,11 @@ std::unique_ptr< Solver::DLSSolver > CreateSolver( Model::KinematicModelConstPtr
 {
 	Solver::DLSSolver::SolverParameters parameters;
 
-	parameters.error_tolerance = DEFAULT_TOLERANCE;
-
 	parameters.rotation_weight        = 1;
 	parameters.translation_weight     = 9;
 
 	parameters.max_iterations         = 100;
-	parameters.max_stalle_iterations  = 5;
+	parameters.max_stalle_iterations  = 8;
 
 	parameters.min_step               = 0.05;
 	parameters.max_step               = 1.0;
@@ -113,7 +108,6 @@ TEST_F( DLSSolverTest, ConstructorWithValidParameters )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.max_iterations = 200;
-	params.error_tolerance = 1e-5;
 	params.min_damping = 0.001;
 	params.max_damping = 1.0;
 
@@ -126,17 +120,6 @@ TEST_F( DLSSolverTest, ConstructorWithInvalidParameters )
 {
 	Solver::DLSSolver::SolverParameters params;
 	params.max_iterations = -1;  // Invalid
-	params.error_tolerance = 1e-5;
-
-	EXPECT_THROW( Solver::DLSSolver solver( model_, params ), std::invalid_argument );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( DLSSolverTest, ConstructorInvalidNegativeTolerance )
-{
-	Solver::DLSSolver::SolverParameters params;
-	params.error_tolerance = -0.01;  // Invalid
 
 	EXPECT_THROW( Solver::DLSSolver solver( model_, params ), std::invalid_argument );
 }
@@ -191,10 +174,14 @@ TEST_F( DLSSolverTest, SolveIK_SimpleReachableTarget )
 
 	// Verify solution
 	auto achieved_pose = ComputeFK( model_, result.joints );
-	EXPECT_TRUE( IsApprox( achieved_pose, problem.target ) )
+	EXPECT_TRUE( IsApprox( 
+		achieved_pose, 
+		problem.target, 
+		problem.tolerance ) )
 	    << "Target = " << std::endl << problem.target.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
-	    << "Joints = " << std::endl << result.joints.matrix() << std::endl;
+	    << "Joints = " << std::endl << result.joints.matrix() << std::endl
+		<< "error = " << PoseError( model_, problem, result ) << " > " << problem.tolerance;
 	EXPECT_LT( result.iterations, 10 );
 }
 
@@ -292,21 +279,21 @@ TEST_F( DLSSolverTest, SolveIK_MaxIterationsReached )
 	// Use very strict parameters to force max iterations
 	Solver::DLSSolver::SolverParameters params;
 	params.max_iterations = 5;  // Very low
-	params.error_tolerance = 1e-10;  // Very strict
+	double error_tolerance = 1e-10;  // Very strict
 
 	Solver::DLSSolver solver( model_, params );
 
 	VecXd target_joints{ 3 };
 	target_joints << 0.5, 0.3, -0.2;
 
-	auto problem = CreateProblem( model_, Vec3d::Zero(), target_joints );
+	auto problem = CreateProblem( model_, Vec3d::Zero(), target_joints, error_tolerance );
 	auto result = solver.Solve( problem, Solver::IKRunContext() );
 
 	std::cout << "target = " << std::endl << problem.target << std::endl;
 	std::cout << "seed = " << std::endl << problem.seed.transpose() << std::endl;
 	std::cout << "result = " << std::endl << ComputeFK( model_, result.joints ) << std::endl;
 
-	EXPECT_GE( PoseError( model_, problem, result ), params.error_tolerance );
+	EXPECT_GE( PoseError( model_, problem, result ), error_tolerance );
 	EXPECT_EQ( result.state, Solver::IKSolverState::MaxIterations );
 	EXPECT_EQ( result.iterations, params.max_iterations );
 }
@@ -352,20 +339,20 @@ TEST_F( DLSSolverTest, RandomRestart_RecoverFromBadSeed )
 TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 {
 	Solver::DLSSolver::SolverParameters params;
-	params.error_tolerance = 1e-6;  // Very strict
-	params.max_iterations = 200;
+	double error_tolerance = 1e-6;  // Very strict
+	params.max_iterations = 500;
 
 	Solver::DLSSolver solver( model_, params );
 
 	VecXd target_joints( 3 );
 	target_joints << 0.3, 0.2, -0.1;
 
-	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints, error_tolerance );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	if ( result.Success() )
 	{
-		EXPECT_LT( PoseError( model_, problem, result ), 1e-6 );
+		EXPECT_LT( PoseError( model_, problem, result ), error_tolerance );
 	}
 }
 
@@ -374,7 +361,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 TEST_F( DLSSolverTest, ConvergenceTolerance_Loose )
 {
 	Solver::DLSSolver::SolverParameters params;
-	params.error_tolerance = 1e-2;  // Loose
+	double error_tolerance = 1e-2;  // Loose
 	params.max_iterations = 50;
 
 	Solver::DLSSolver solver( model_, params );
@@ -382,7 +369,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Loose )
 	VecXd target_joints{ 3 };
 	target_joints << 0.3, 0.2, -0.1;
 
-	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints );
+	auto problem = CreateProblem( model_, VecXd::Zero( 3 ), target_joints, error_tolerance );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 	// Should converge quickly with loose tolerance
@@ -569,14 +556,12 @@ TEST_F( DLSSolverTest, Configuration_GetAndSet )
 {
 	Solver::DLSSolver::SolverParameters new_params;
 	new_params.max_iterations = 150;
-	new_params.error_tolerance = 1e-5;
 
 	solver_->SetParameters( new_params );
 
 	const auto& retrieved_params = solver_->GetParameters();
 
 	EXPECT_EQ( retrieved_params.max_iterations, 150 );
-	EXPECT_DOUBLE_EQ( retrieved_params.error_tolerance, 1e-5 );
 }
 
 // ------------------------------------------------------------

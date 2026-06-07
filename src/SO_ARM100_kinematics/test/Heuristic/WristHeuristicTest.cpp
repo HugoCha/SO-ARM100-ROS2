@@ -46,7 +46,7 @@ TEST_F( WristHeuristicTest, SolveRobotWrist )
 	int start = 3;
 	int count = 3;
 	Mat4d tip_home = model->GetHomeConfiguration();
-	Model::WristJointGroup wrist_group( start, count, tip_home );
+	Model::WristJointGroup wrist_group( start, count, tip_home, ToTransformMatrix( Vec3d( 1.5, 0, 0.1 ) ) );
 
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
 
@@ -85,7 +85,7 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 	int count = 1;
 	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
-	Model::WristJointGroup wrist_group( start, count, tip_home );
+	Model::WristJointGroup wrist_group( start, count, tip_home, ToTransformMatrix( Vec3d( 0,0,0) ) );
 
 	auto model = CreateModel( single_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
@@ -119,7 +119,7 @@ TEST_F( WristHeuristicTest, SolveRevolute1_Unreachable )
 	int count = 1;
 	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
-	Model::WristJointGroup wrist_group( start, count, tip_home );
+	Model::WristJointGroup wrist_group( start, count, tip_home, ToTransformMatrix( Vec3d( 0,0,0) ) );
 
 	auto model = CreateModel( single_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
@@ -161,7 +161,7 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 	int count = 2;
 	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) );
-	Model::WristJointGroup wrist_group( start, count, tip_home );
+	Model::WristJointGroup wrist_group( start, count, tip_home, ToTransformMatrix( Vec3d( 0,0,0) ) );
 
 	auto model = CreateModel( two_joint_chain, wrist_group );
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
@@ -192,7 +192,7 @@ TEST_F( WristHeuristicTest, SolveRevolute3 )
 	int count = 3;
 	Mat4d tip_home =
 		ToTransformMatrix( Vec3d( 0, 0, 1 ) );
-	Model::WristJointGroup wrist_group( start, count, tip_home );
+	Model::WristJointGroup wrist_group( start, count, tip_home, ToTransformMatrix( Vec3d( 0,0,1) ) );
 
 	auto heuristic = Heuristic::WristHeuristic( model, wrist_group );
 

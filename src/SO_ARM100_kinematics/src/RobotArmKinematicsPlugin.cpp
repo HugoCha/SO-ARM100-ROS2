@@ -1,4 +1,5 @@
 #include "RobotArmKinematicsPlugin.hpp"
+#include "Global.hpp"
 
 #include <chrono>
 #include <Eigen/Dense>
@@ -30,8 +31,8 @@ bool RobotArmKinematicsPlugin::getPositionFK(
 	const std::vector< double >& joint_angles,
 	std::vector< geometry_msgs::msg::Pose >& poses ) const
 {
-	return false;
-	// return solver.ForwardKinematic( joint_angles, poses );
+	geometry_msgs::msg::Pose tip_pose;
+	return solver_.ForwardKinematic( link_names, joint_angles, poses, tip_pose );
 }
 
 // ------------------------------------------------------------
@@ -91,6 +92,7 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 			ik_seed_state,
 			consistency_limits,
 			timeout_ms,
+			error_tolerance,
 			solution );
 
 		if ( result )
@@ -125,7 +127,6 @@ bool RobotArmKinematicsPlugin::getPositionIK(
 	const kinematics::KinematicsQueryOptions& options ) const
 {
 	std::vector< double > consistency_limits;
-
 	return searchPositionIK(
 		ik_pose,
 		ik_seed_state,

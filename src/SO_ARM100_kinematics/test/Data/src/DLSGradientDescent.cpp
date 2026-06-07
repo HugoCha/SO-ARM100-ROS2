@@ -220,8 +220,8 @@ double DLSGradientDescent::ComputeLoss( const Solver::DLSSolver::SolverParameter
 	Solver::IKRunContext context;
 	double loss = 0;
 
-	auto cost = [&]( const Solver::IKSolution& solution ){
-					return solution.error / p.error_tolerance +
+	auto cost = [&]( const Solver::IKProblem& problem, const Solver::IKSolution& solution ){
+					return solution.error / error_tolerance +
 					       solution.iterations / ( double )p.max_iterations +
 					       ( solution.Success() ? 0.0 : 10.0 );
 				};
@@ -240,7 +240,7 @@ double DLSGradientDescent::ComputeLoss( const Solver::DLSSolver::SolverParameter
 			problem.target = s.target;
 
 			solution = robot_scenarii.solver->Solve( problem, context );
-			robot_loss += cost( solution );
+			robot_loss += cost( problem, solution );
 		}
 
 		robot_loss /= ( double )robot_scenarii.scenario.size();

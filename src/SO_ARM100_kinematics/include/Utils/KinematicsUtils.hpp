@@ -52,6 +52,12 @@ void Manipulability( const MatXd& jacobian, MatXd& manipulability ) noexcept;
 
 void PoseError( const Mat4d& target, const Mat4d& current, Vec6d& pose_error ) noexcept;
 void WeightedPoseError(
+	const Vec6d& pose_error,
+	double rotation_weight,
+	double translation_weight,
+	VecXd& weighted_error ) noexcept;
+
+void WeightedPoseError(
 	const Mat4d& target,
 	const Mat4d& current,
 	double rotation_weight,
@@ -83,8 +89,7 @@ void POE(
 [[nodiscard]] bool IsApprox(
 	const Mat4d& target,
 	const Mat4d& result,
-	double rotation_tol = rotation_tolerance,
-	double translation_tol = translation_tolerance ) noexcept;
+	double tol = error_tolerance ) noexcept;
 
 [[nodiscard]] std::vector< double > EvaluateAngleCandidates(
 	const Model::Joint& joint,

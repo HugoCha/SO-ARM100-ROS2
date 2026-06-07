@@ -1,5 +1,6 @@
 #include "RobotArmKinematicsSolver.hpp"
 
+#include "DLS/DLSSolver.hpp"
 #include "Global.hpp"
 
 #include "Model/Joint/JointChain.hpp"
@@ -11,6 +12,7 @@
 #include "PipelineSolver/PipelineSolver.hpp"
 #include "PipelineSolver/PipelineSolverInitializer.hpp"
 #include "PipelineSolver/PipelineSolverParameters.hpp"
+#include "Solver/IIKSolver.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Utils/Converter.hpp"
@@ -129,30 +131,35 @@ bool RobotArmKinematicsSolver::Initialize(
 		skeleton,
 		std::move( reachable_space ) );
 
-	InitializeSolver( model_ );
+	InitializeSolvers( model_ );
 	return true;
 }
 
 // ------------------------------------------------------------
 
-void RobotArmKinematicsSolver::InitializeSolver( const Model::KinematicModelConstPtr& model )
+void RobotArmKinematicsSolver::InitializeSolvers( const Model::KinematicModelConstPtr& model )
 {
-	Solver::PipelineSolverParameters parameters;
-	parameters.strategy = Solver::PipelineCompletionStrategy::WaitForAcceptableResult;
-	parameters.min_score_threshold = 0.25;
+	Solver::DLSSolver::SolverParameters dls_params;
+	getIK_solver_ = std::make_unique< Solver::DLSSolver >( model, dls_params );
 
-	solver_ = std::move( Solver::PipelineSolverInitializer::Initialize( model, parameters ) );
+	Solver::PipelineSolverParameters pipeline_params;
+	pipeline_params.strategy = Solver::PipelineCompletionStrategy::WaitForAcceptableResult;
+	pipeline_params.min_score_threshold = 0.25;
+
+	searchIK_solver_ = std::move( Solver::PipelineSolverInitializer::Initialize( model, pipeline_params ) );
 }
 
 // ------------------------------------------------------------
 
 bool RobotArmKinematicsSolver::Initialize(
 	Model::KinematicModelConstPtr model,
-	std::unique_ptr< Solver::PipelineSolver > solver,
+	std::unique_ptr< Solver::IIKSolver > getIK_solver,
+	std::unique_ptr< Solver::IIKSolver > searchIK_solver,
 	double search_discretization )
 {
 	model_ = model;
-	solver_ = std::move( solver );
+	getIK_solver_ = std::move( getIK_solver );
+	searchIK_solver_ = std::move( searchIK_solver );
 	return true;
 }
 
@@ -160,13 +167,13 @@ bool RobotArmKinematicsSolver::Initialize(
 // ------------------------------------------------------------
 
 bool RobotArmKinematicsSolver::ForwardKinematic(
-	const std::vector< double >& joints,
-	geometry_msgs::msg::Pose& pose ) const
+	const std::span< const double >& joints,
+	geometry_msgs::msg::Pose& tip_pose ) const
 {
 	Mat4d T_end;
 	if ( ForwardKinematic( ToVecXd( joints ), T_end ) )
 	{
-		pose = ToPoseMsg( T_end );
+		tip_pose = ToPoseMsg( T_end );
 		return true;
 	}
 	return false;
@@ -189,16 +196,70 @@ bool RobotArmKinematicsSolver::ForwardKinematic(
 
 // ------------------------------------------------------------
 
+bool RobotArmKinematicsSolver::ForwardKinematic(
+	const std::span< const std::string >& link_names,
+	const std::span< const double >& joints,
+	std::vector< geometry_msgs::msg::Pose >& poses,
+	geometry_msgs::msg::Pose& tip_pose ) const
+{
+	if ( !model_  )
+	{
+		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
+		return false;
+	}
+
+	std::vector< Mat4d > poses_mat( link_names.size() );
+	Mat4d tip_pose_mat;
+	bool success = ForwardKinematic( link_names, ToVecXd( joints ), poses_mat, tip_pose_mat );
+
+	if ( poses.size() != poses_mat.size() )
+		poses.resize( poses_mat.size() );
+
+	for ( int i = 0; i < poses.size(); i++ )
+		poses[i] = ToPoseMsg( poses_mat[i] );
+
+	tip_pose = ToPoseMsg( tip_pose_mat );
+
+	return success;
+}
+
+// ------------------------------------------------------------
+
+bool RobotArmKinematicsSolver::ForwardKinematic(
+	const std::span< const std::string >& link_names,
+	const VecXd& joints,
+	std::vector< Mat4d >& poses,
+	Mat4d& tip_pose ) const
+{
+	if ( !model_  )
+	{
+		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
+		return false;
+	}
+
+	const auto& chain = model_->GetChain();
+	const auto& home = model_->GetHomeConfiguration();
+
+	return chain->ComputeJointPosesFK( 
+		joints, 
+		home, 
+		poses, 
+		tip_pose );
+}
+
+// ------------------------------------------------------------
+
 bool RobotArmKinematicsSolver::InverseKinematic(
 	const geometry_msgs::msg::Pose& target_pose,
 	const std::span< const double >& seed_joints,
 	const std::span< const double >& consistency_limits,
 	long timeout_ms,
+	double tolerance,
 	std::vector< double >& joints ) const
 {
-	if ( !model_ || !solver_ )
+	if ( !model_ )
 	{
-		RCLCPP_ERROR( get_logger(), "Solver or Joint model not initialized." );
+		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
 
@@ -211,6 +272,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		ToVecXd( seed_joints ),
 		ToVecXd( consistency_limits ),
 		timeout_ms,
+		tolerance,
 		joints.data(),
 		n_joints );
 }
@@ -222,11 +284,12 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	const VecXd& seed,
 	const VecXd& consistency,
 	long timeout_ms,
+	double tolerance,
 	VecXd& joints ) const
 {
-	if ( !model_ || !solver_ )
+	if ( !model_ )
 	{
-		RCLCPP_ERROR( get_logger(), "Solver or Joint model not initialized." );
+		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
 
@@ -239,6 +302,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		seed,
 		consistency,
 		timeout_ms,
+		tolerance,
 		joints.data(),
 		n_joints );
 }
@@ -250,9 +314,16 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	const VecXd& seed,
 	const VecXd& consistency,
 	long timeout_ms,
+	double tolerance,
 	double* joints,
 	int n_joints ) const
 {
+	if ( !getIK_solver_ || !searchIK_solver_ )
+	{
+		RCLCPP_ERROR( get_logger(), "Solver not initialized." );
+		return false;
+	}
+
 	if ( seed.size() != n_joints )
 	{
 		RCLCPP_ERROR( get_logger(), "Wrong seed size." );
@@ -263,13 +334,16 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		target,
 		seed,
 		consistency,
-		translation_tolerance,
-		rotation_tolerance,
+		tolerance,
 		timeout_ms };
 
 	Solver::IKRunContext context;
+	Solver::IKSolution solution;
 
-	auto solution = solver_->Solve( problem, context );
+	solution = ( timeout_ms == 0 ) ? 
+		getIK_solver_->Solve( problem, context ) :
+		searchIK_solver_->Solve( problem, context );
+
 	joints = solution.joints.data();
 
 	return solution.Success();

@@ -3,6 +3,7 @@
 #include "Global.hpp"
 
 #include "IIKSeedGenerator.hpp"
+#include "Model/Joint/RandomType.hpp"
 #include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics::Seed
@@ -10,14 +11,6 @@ namespace SOArm100::Kinematics::Seed
 class IKRandomSeedGenerator : public IIKSeedGenerator
 {
 public:
-enum class RandomType
-{
-	Random,
-	Near,
-	NearWrapLimit,
-	NearCenterLimit
-};
-
 struct RandomParameters
 {
 	double distance { 0.1 };
@@ -25,14 +18,14 @@ struct RandomParameters
 	double min_limit_span{ 4 * M_PI / 5 };
 };
 
-RandomType type;
+Model::RandomType type;
 RandomParameters parameters;
 
 IKRandomSeedGenerator( Model::KinematicModelConstPtr model );
 
 IKRandomSeedGenerator(
 	Model::KinematicModelConstPtr model,
-	RandomType type,
+	Model::RandomType type,
 	RandomParameters parameters );
 
 virtual VecXd Generate( const Solver::IKProblem& problem ) const override;

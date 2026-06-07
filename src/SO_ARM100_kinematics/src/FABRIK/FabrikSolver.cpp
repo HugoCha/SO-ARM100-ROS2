@@ -99,13 +99,13 @@ IKSolution FABRIKSolver::Solve(
 		auto tip_position = bone_states.back().Origin();
 
 		error = Utils::Distance( p_target, tip_position );
-		UpdateHistory( skeleton_state.GetJointValues(), error, history );
+		UpdateHistory( problem, skeleton_state.GetJointValues(), error, history );
 		// std::cout << "joints= " << skeleton_state.GetJointValues().transpose() << std::endl;
 		// std::cout << "Error = " << error << std::endl;
 		// std::cout << "Tip position = " << tip_position.transpose() << std::endl;
 		// std::cout << "Pose Error = " << ( p_target - tip_position ).transpose() << std::endl;
 
-		if ( error < parameters_.error_tolerance )
+		if ( error < problem.tolerance )
 		{
 			return { IKSolverState::Converged, history.best_joints, history.best_error, iter };
 		}
@@ -230,6 +230,7 @@ void FABRIKSolver::UpdateValues(
 // ------------------------------------------------------------
 
 void FABRIKSolver::UpdateHistory(
+	const IKProblem& problem,
 	const VecXd& joints,
 	double error,
 	SolverHistory& history ) const
@@ -240,7 +241,7 @@ void FABRIKSolver::UpdateHistory(
 		history.best_joints = joints;
 	}
 
-	if ( history.last_non_stalled_error - error  <= parameters_.error_tolerance * 0.1 )
+	if ( history.last_non_stalled_error - error  <= problem.tolerance * 0.1 )
 	{
 		history.stalled_error_cnt++;
 	}

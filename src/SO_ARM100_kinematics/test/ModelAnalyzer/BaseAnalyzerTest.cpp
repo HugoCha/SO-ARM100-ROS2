@@ -39,14 +39,16 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_ValidInput )
 	Model::WristJointGroup wrist(
 		1,
 		2,
-		ToTransformMatrix( Vec3d( 0, 0, -0.1 ) ) );
+		ToTransformMatrix( Vec3d( 0, 0, -0.1 ) ),
+		ToTransformMatrix( Vec3d( 0, 1, 1 ) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		model->GetHomeConfiguration(),
+		std::nullopt,
 		wrist );
 
-	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 1, 1 ) );
 
 	EXPECT_TRUE( base_group.has_value() );
 	EXPECT_EQ( 0, base_group->FirstIndex() );
@@ -64,11 +66,13 @@ TEST_F( BaseAnalyzerTest, AnalyzePrismaticBase_ValidInput )
 	Model::WristJointGroup wrist(
 		1,
 		1,
-		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ),
+		ToTransformMatrix( Vec3d( 0, 0, 1 ) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		model->GetHomeConfiguration(),
+		std::nullopt,
 		wrist );
 
 	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
@@ -90,6 +94,7 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_NoWristModel )
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		model->GetHomeConfiguration(),
+		std::nullopt,
 		std::nullopt );
 
 	EXPECT_FALSE( base_group.has_value() );
@@ -100,11 +105,12 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_NoWristModel )
 TEST_F( BaseAnalyzerTest, Analyze_EmptyJointChain )
 {
 	auto empty_model = Model::KinematicModel::Empty();
-	Model::WristJointGroup wrist( 1, 1, Mat4d::Identity() );
+	Model::WristJointGroup wrist( 1, 1, Mat4d::Identity(), Mat4d::Identity()  );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		*empty_model.GetChain(),
 		empty_model.GetHomeConfiguration(),
+		std::nullopt,
 		std::nullopt );
 
 	EXPECT_FALSE( base_group.has_value() );
@@ -120,12 +126,14 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 	Model::WristJointGroup wrist_y(
 		1,
 		1,
-		ToTransformMatrix( Vec3d( 0, 1, 0 ) ) );
+		ToTransformMatrix( Vec3d( 0, 1, 0 ) ),
+		ToTransformMatrix( Vec3d( 0, 0, 1 ) ) );
 	auto home_y = ToTransformMatrix( Vec3d( 0, 1, 1 ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		home_y,
+		std::nullopt,
 		wrist_y );
 
 	ASSERT_FALSE( base_group.has_value() );
@@ -134,12 +142,14 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 	Model::WristJointGroup wrist_x(
 		1,
 		1,
-		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ),
+		ToTransformMatrix( Vec3d( 0, 1, 1 ) ) );
 	auto home_x = ToTransformMatrix( Vec3d( 1, 1, 1 ) );
 
 	base_group = Model::BaseAnalyzer::Analyze(
 		*model->GetChain(),
 		home_x,
+		std::nullopt,
 		wrist_x );
 
 	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 1, 1 ) );
@@ -173,11 +183,13 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 	Model::WristJointGroup wrist(
 		1,
 		1,
-		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ),
+		ToTransformMatrix( Vec3d( 0,0, 1) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		joint_chain_y,
 		home,
+		std::nullopt,
 		wrist );
 
 	Mat4d expected_tip_home = ToTransformMatrix( Vec3d( 0, 0, 1 ) );

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "Global.hpp"
 #include "RobotModelTestData.hpp"
 
 #include "Model/Joint/JointGroup.hpp"
@@ -157,7 +158,7 @@ TEST_F( JointGroupTest, PlanarNRJointGroup )
 TEST_F( JointGroupTest, WristJointGroup )
 {
 	Mat4d home = Mat4d::Identity();
-	Model::WristJointGroup group( 0, 3, home );
+	Model::WristJointGroup group( 0, 3, home, Mat4d::Identity() );
 
 	// Check if the group is correctly created
 	ASSERT_EQ( group.name, Model::wrist_name );

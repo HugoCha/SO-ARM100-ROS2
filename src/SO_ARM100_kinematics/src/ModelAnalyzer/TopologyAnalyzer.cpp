@@ -1,11 +1,13 @@
 #include "ModelAnalyzer/TopologyAnalyzer.hpp"
 
+#include "Global.hpp"
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "ModelAnalyzer/BaseAnalyzer.hpp"
 #include "ModelAnalyzer/PlanarNRAnalyzer.hpp"
 #include "ModelAnalyzer/WristAnalyzer.hpp"
+#include <optional>
 
 namespace SOArm100::Kinematics::Model
 {
@@ -17,14 +19,24 @@ KinematicTopology TopologyAnalyzer::Analyze( const Model::JointChain& chain, con
 	KinematicTopology topology;
 
 	auto wrist_group = WristAnalyzer::Analyze( chain, home );
-	auto base_group = BaseAnalyzer::Analyze( chain, home, wrist_group );
 
-	int planar_analyze_start = base_group  ? base_group->indices.size() : 0;
+	int planar_analyze_start = 0;
 	int planar_analyze_count = wrist_group ?
-	                           wrist_group->FirstIndex() - planar_analyze_start :
-	                           chain.GetActiveJointCount() - planar_analyze_start;
+	                           wrist_group->FirstIndex():
+	                           chain.GetActiveJointCount();
+	Mat4d planar_home = wrist_group ? 
+		wrist_group->GetWristCenter()  :
+		home;
 
-	auto planar_group = PlanarNRAnalyzer::Analyze( chain, home, planar_analyze_start, planar_analyze_count );
+	auto planar_group = PlanarNRAnalyzer::Analyze( chain, planar_home, planar_analyze_start, planar_analyze_count );
+	if ( !planar_group.has_value() )
+	{
+		planar_analyze_start = 1;
+		planar_analyze_count -= 1;
+		planar_group = PlanarNRAnalyzer::Analyze( chain, planar_home, planar_analyze_start, planar_analyze_count );
+	}
+
+	auto base_group = BaseAnalyzer::Analyze( chain, home, planar_group, wrist_group );
 
 	if ( base_group )
 		topology.Add( *base_group );

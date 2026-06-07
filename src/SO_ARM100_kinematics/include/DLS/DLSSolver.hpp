@@ -2,24 +2,35 @@
 
 #include "Global.hpp"
 
-#include "DLS/DLSSolverState.hpp"
 #include "Model/IKModelBase.hpp"
-#include "Seed/IKRandomSeedGenerator.hpp"
+#include "Solver/IKProblem.hpp"
 #include "Solver/IKSolverBase.hpp"
-#include "Solver/SolverType.hpp"
 
 #include <Eigen/src/SVD/JacobiSVD.h>
 
+
+namespace SOArm100::Kinematics::Model
+{
+enum class RandomType;
+}
+
+namespace SOArm100::Kinematics::Seed
+{
+class IKRandomSeedGenerator;
+}
+
 namespace SOArm100::Kinematics::Solver
 {
+enum class DLSSolverState;
+enum class SolverType;
 struct SolverHistory;
+
 class DLSSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
 struct SolverParameters
 {
 	int max_iterations{ 150 };
-	double error_tolerance{ SOArm100::Kinematics::error_tolerance };
 	double gradient_tolerance { SOArm100::Kinematics::gradient_tolerance };
 	double min_step{ 0.1 };
 	double max_step{ 0.9 };
@@ -77,65 +88,8 @@ virtual IKSolution Solve(
 	const IKRunContext& context ) const override;
 
 private:
-struct SolverBuffers {
-	SolverType type;
-
-	MatXd weights;
-	MatXd jacobian;
-	MatXd jacobian_psi;
-	MatXd weighted_jacobian;
-	Eigen::JacobiSVD< MatXd > svd;
-	VecXd weighted_error;
-	VecXd weighted_error_reachable;
-	MatXd damped;
-	VecXd gradient;
-	VecXd dq;
-	Mat4d fk;
-	VecXd joints;
-	Eigen::LDLT< MatXd > ldlt_solver;
-
-	[[nodiscard]] inline int GetSize() const noexcept {
-		return joints.size();
-	}
-
-	explicit SolverBuffers( int n_joints, SolverType solver_type ) :
-		type( solver_type )
-	{
-		jacobian.resize( 6, n_joints );
-		jacobian_psi.resize( n_joints, n_joints );
-		damped.resize( n_joints, n_joints );
-		joints.resize( n_joints );
-		dq.resize( n_joints );
-		gradient.resize( n_joints );
-
-		if ( type == SolverType::Full )
-		{
-			weighted_jacobian.resize( 6, n_joints );
-			weighted_error.resize( 6 );
-			weighted_error_reachable.resize( 6 );
-			weights.resize( 6, 6 );
-		}
-		else
-		{
-			weighted_jacobian.resize( 3, n_joints );
-			weighted_error.resize( 3 );
-			weighted_error_reachable.resize( 3 );
-			weights.resize( 3, 6 );
-		}
-	}
-};
-
-struct IterationState {
-	VecXd joints;
-	double error;
-	double error_reachable;
-	double error_unreachable;
-	double gradient;
-	double step;
-	double damping;
-	int fk_failures;
-	int stalled_error_iter;
-};
+struct SolverBuffers;
+struct IterationState;
 
 SolverParameters parameters_;
 
@@ -154,17 +108,11 @@ SolverParameters parameters_;
 	const std::optional< IterationState >& state, const VecXd& initial_joints ) const;
 
 void PerformIteration(
-	const Mat4d& target,
+	const IKProblem& problem,
 	IterationState& state,
 	SolverBuffers& buffers ) const;
 
 void WrapJoints( VecXd& joints ) const;
-
-void UpdateSeedJoints(
-	int iteration,
-	const Seed::IKRandomSeedGenerator::RandomParameters& seed_parameters,
-	const SolverHistory& history,
-	VecXd& seed_joints ) const;
 
 bool UpdateBuffer(
 	const Mat4d& target,
@@ -182,6 +130,7 @@ void LineSearch(
 	SolverBuffers& buffers ) const;
 
 [[nodiscard]] DLSSolverState EvaluateConvergence(
+	const IKProblem& problem,
 	const IterationState& state,
 	int iteration ) const noexcept;
 
@@ -209,11 +158,12 @@ void UpdateDeltaQ(
 void ClampDeltaQ( VecXd& dq ) const;
 
 void UpdateErrorConvergence(
+	const IKProblem& problem,
 	double last_error,
 	double current_error,
 	IterationState& state ) const;
 
-[[nodiscard]] Seed::IKRandomSeedGenerator::RandomType ChooseSeedRandomType(
+[[nodiscard]] Model::RandomType ChooseSeedRandomType(
 	int iteration,
 	const IterationState& state,
 	const SolverHistory& history ) const;
@@ -247,6 +197,5 @@ void PrintBuffer( const SolverBuffers& buffers ) const;
 	return parameters_.rotation_weight * large_rotation_error +
 	       parameters_.translation_weight * large_translation_error;
 }
-
 };
 }

@@ -26,7 +26,7 @@ static constexpr std::map< Model::ArticulationType, double > DampingFactors()
 {
 	return {
 		{ Model::ArticulationType::Prismatic, 1.0 },
-		{ Model::ArticulationType::Revolute,  0.6 },
+		{ Model::ArticulationType::Revolute,  0.75 },
 		{ Model::ArticulationType::Universal, 1.0 },
 		{ Model::ArticulationType::Spherical, 1.0 },
 	};

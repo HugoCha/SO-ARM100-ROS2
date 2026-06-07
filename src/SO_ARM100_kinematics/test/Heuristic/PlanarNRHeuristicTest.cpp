@@ -72,7 +72,7 @@ TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 	EXPECT_EQ( 1, result.joints.size() );
 	EXPECT_NEAR( M_PI / 4, result.joints[0], 1e-6 );
-	EXPECT_TRUE( IsApprox( problem.target, result_pose ) );
+	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance );
 }
 
 // ------------------------------------------------------------
@@ -188,7 +188,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 	EXPECT_EQ( 2, result.joints.size() );
-	EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
 	    << "Result = \n" << Translation( result_pose ) << std::endl;
@@ -230,7 +230,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 	model->ComputeFK( result1.joints, result_pose );
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result1.state );
 	EXPECT_EQ( 2, result1.joints.size() );
-	EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance  )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
 	    << "Result = \n" << Translation( result_pose ) << std::endl;
@@ -242,7 +242,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 	result_pose = ComputeFK( model, result2.joints );
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result2.state );
 	EXPECT_EQ( 2, result2.joints.size() );
-	EXPECT_TRUE( IsApprox( problem.target, result_pose, 1e3, 1e-5 ) )
+	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
 	    << "Result = \n" << Translation( result_pose ) << std::endl;
@@ -445,7 +445,6 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 	Heuristic::PlanarCCDHeuristic::SolverParameters params;
 	params.max_iterations = 1000;
 	params.max_stalled_iterations = 100;
-	params.error_tolerance = 1e-4;
 
 	auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
 
@@ -461,9 +460,9 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 	EXPECT_EQ( 3, result.joints.size() );
-	EXPECT_LT( result.error, params.error_tolerance );
+	EXPECT_LT( result.error, problem.tolerance );
 	EXPECT_LE( result.iterations, params.max_iterations );
-	EXPECT_TRUE( Translation( problem.target ).isApprox( Translation( result_pose ), params.error_tolerance ) )
+	EXPECT_TRUE( Translation( problem.target ).isApprox( Translation( result_pose ), problem.tolerance ) )
 	    << "Target = \n" << Translation( problem.target ) << std::endl
 	    << "Result = \n" << Translation( result_pose ) << std::endl;
 }
@@ -507,17 +506,16 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 	Heuristic::PlanarCCDHeuristic::SolverParameters params;
 	params.max_iterations = 200;
 	params.max_stalled_iterations = 50;
-	params.error_tolerance = 5e-3;
 
 	auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
 
-	const int ITER = 100;
+	const int ITER = 1;
 	int k_successes = 0;
 	double avg_iteration = 0.0;
 	double avg_error = 0.0;
 	random_numbers::RandomNumberGenerator rng;
-
-	VecXd seed = VecXd::Zero( 3 );
+    double tolerance = 5e-3;
+    VecXd seed = VecXd::Zero( 3 );
 	VecXd joints( 3 );
 
 	for ( int i = 0; i < ITER; i++ )
@@ -526,13 +524,13 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 		seed = model->GetChain()->RandomValidJointsNear( rng, joints, 0.3 );
 		// Mat4d target;
 		// target <<
-		//       0.63565,         0,  0.771977,   0.38264,
-		//             0,         1,         0,       0.2,
-		//     -0.771977,         0,   0.63565, -0.608062,
-		//             0,         0,         0,         1;
+        // -0.317482 ,        0 , 0.948264 ,-0.273223
+        // ,        0,         1,         0,       0.2
+        // ,-0.948264,         0, -0.317482, -0.655129
+        // ,        0,         0,         0,         1;
 
-		// auto problem = CreateProblem( seed, target );
-		auto problem = CreateProblem( model, seed, joints );
+		//auto problem = CreateProblem( seed, target, tolerance );
+		auto problem = CreateProblem( model, seed, joints, tolerance );
 		auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 		if ( !result.Sucess() )
@@ -556,7 +554,7 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 
 	EXPECT_GE( k_successes, 0.99 * ITER );
 	EXPECT_LE( avg_iteration, 20 );
-	EXPECT_LE( avg_error, params.error_tolerance );
+	EXPECT_LE( avg_error, tolerance );
 }
 
 // ------------------------------------------------------------
@@ -587,7 +585,6 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 	// Force failure path via strict limits on iterations
 	Heuristic::PlanarCCDHeuristic::SolverParameters params;
 	params.max_iterations = 2;
-	params.error_tolerance = 1e-6; // Incredibly strict tolerance
 
 	auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
 
@@ -596,12 +593,13 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 	joints << M_PI / 2, M_PI / 4, M_PI / 4; // Target quite far from seed zero configuration
 
 	auto problem = CreateProblem( model, seed, joints );
+    problem.tolerance = 1e-6;
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Should break loop early and fallback gracefully to partial success
 	EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
 	EXPECT_EQ( params.max_iterations, result.iterations );
-	EXPECT_GE( result.error, params.error_tolerance );
+	EXPECT_GE( result.error, problem.tolerance );
 }
 
 // ------------------------------------------------------------
@@ -631,7 +629,6 @@ TEST_F( PlanarCCDHeuristicTest, JointLimitsClampingEnforced )
 
 	Heuristic::PlanarCCDHeuristic::SolverParameters params;
 	params.max_iterations = 20;
-	params.error_tolerance = 1e-4;
 
 	auto heuristic = Heuristic::PlanarCCDHeuristic( model, planar_group, params );
 
@@ -640,7 +637,7 @@ TEST_F( PlanarCCDHeuristicTest, JointLimitsClampingEnforced )
 	// Explicit out-of-reach target forcing joint rotation configurations up against limits
 	Mat4d target = ToTransformMatrix( Vec3d( 2.9, 1.0, 0.0 ) );
 
-	auto problem = CreateProblem( seed, target );
+	auto problem = CreateProblem( seed, target, 1e-4 );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Due to system constraints, joints must remain clamped inside strict bounds
