@@ -100,13 +100,13 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution{ problem.seed, IKHeuristicState::PartialSuccess };
+	IKPresolution presolution{ problem.seed, IKHeuristicState::Fail };
 	if ( reference_direction_.norm() < epsilon )
 		return presolution;
 
 	auto base_joint = GetBaseJoint();
 
-	auto wrist_center = ComputeGroupWorldTarget( problem.seed, problem.target );
+	auto wrist_center = ComputeGroupLocalTarget( problem.seed, problem.target );
 
 	const Vec3d& p_wrist_center = Translation( wrist_center );
 	const Vec3d& r_proj = ComputeDirection( wrist_center );
@@ -115,42 +115,48 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	if ( R > epsilon )
 	{
 		if ( R + epsilon < std::abs( shoulder_offset_ ) )
-		{
-			presolution.joints = problem.seed;
-			presolution.state = IKHeuristicState::Fail;
 			return presolution;
-		}
 
 		const Vec3d& omega_b = base_joint->Axis();
 
 		double alpha = ComputeAlpha( omega_b, reference_direction_, r_proj );
 		double beta = ComputeBeta( shoulder_offset_, r_proj );
 
-		auto candidates = EvaluateCandidates( problem.seed[0], alpha, beta );
-		if ( !candidates.empty() )
+		double fk_error;
+		Vec1d best_candidate;
+		if ( !ValidateAndSelectCandidate( 
+			p_wrist_center, 
+			problem.seed, 
+			alpha, 
+			beta, 
+			fk_error, 
+			best_candidate ) )
 		{
-			presolution.joints = problem.seed;
-			VecXd base_value( 1 );
-			base_value[0] = candidates[0];
-			GetGroup().SetGroupJoints( base_value, presolution.joints );
-			presolution.state = IKHeuristicState::Success;
+			presolution.state = fk_error < 2 * problem.tolerance ? 
+				IKHeuristicState::PartialSuccess : 
+				IKHeuristicState::Fail;
 		}
 		else
 		{
-			presolution.joints = problem.seed;
-			presolution.state = IKHeuristicState::Fail;
+			presolution.state = IKHeuristicState::Success;
 		}
-	}
 
+		presolution.error = fk_error;
+		GetGroup().SetGroupJoints( best_candidate, presolution.joints );
+	}
+	
 	return presolution;
 }
 
 // ------------------------------------------------------------
 
-std::vector< double > RevoluteBaseHeuristic::EvaluateCandidates(
-	double seed,
+bool RevoluteBaseHeuristic::ValidateAndSelectCandidate(
+	const Vec3d& p_target,
+	const VecXd& seed,
 	double alpha,
-	double beta ) const
+	double beta,
+	double& fk_error,
+	Vec1d& best_candidate ) const
 {
 	const auto* base_joint = GetBaseJoint();
 	const auto& limits = base_joint->GetLimits();
@@ -171,22 +177,44 @@ std::vector< double > RevoluteBaseHeuristic::EvaluateCandidates(
 	bool isvalid1 = limits.Within( candidate1 );
 	bool isvalid2 = limits.Within( candidate2 );
 
+	if ( !isvalid1 && !isvalid2 )
+	{
+		double clamp_candidate1 = limits.Clamp( candidate1 );
+		double clamp_candidate2 = limits.Clamp( candidate2 );
+
+		double fk_error1 = std::abs( clamp_candidate1 - candidate1 );
+		double fk_error2 = std::abs( clamp_candidate2 - candidate2 );
+
+		if ( fk_error < fk_error2 )
+		{
+			best_candidate[0] = candidate1;
+			fk_error = fk_error1;
+		}
+		else
+		{
+			best_candidate[0] = candidate2;
+			fk_error = fk_error2;
+		}
+		return false;
+	}
+	
 	if ( isvalid1 && !isvalid2 )
 	{
-		return { candidate1 };
+		best_candidate[0] = candidate1;
 	}
 	else if ( !isvalid1 && isvalid2 )
 	{
-		return { candidate2 };
+		best_candidate[0] = candidate2;
 	}
-	else if ( !isvalid1 && !isvalid2 )
+	else
 	{
-		return {};
+		best_candidate[0] = std::abs( candidate1 - seed[0] ) < std::abs( candidate2 - seed[0] ) ?
+			   candidate1 :
+			   candidate2;
 	}
 
-	return std::abs( candidate1 - seed ) < std::abs( candidate2 - seed ) ?
-	       std::vector< double >{ candidate1, candidate2 } :
-	       std::vector< double >{ candidate2, candidate1 };
+	fk_error = 0.0;
+	return true;
 }
 
 // ------------------------------------------------------------

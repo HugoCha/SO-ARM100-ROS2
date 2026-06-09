@@ -105,10 +105,10 @@ IKPresolution Planar2RHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	VecXd seed = problem.seed;
-	VecXd planar_solution( 2 );
+	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
+
 	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
-	auto T_group_target = ComputeGroupLocalTarget( seed, problem.target );
+	auto T_group_target = ComputeGroupLocalTarget( problem.seed, problem.target );
 	Vec3d p_group_target = Translation( T_group_target );
 
 	Vec3d plane_point = shoulder_joint->Origin();
@@ -123,26 +123,34 @@ IKPresolution Planar2RHeuristic::Presolve(
 	double L2 = Planar2RHeuristic::L2();
 
 	// Unreachable
-	if ( D > L1 + L2 + epsilon || D - epsilon < std::abs( L1 - L2 ) )
-		return { seed, IKHeuristicState::Fail }
-	;
+	if ( D > ( L1 + L2 ) * 1.01 || D * 1.01 < std::abs( L1 - L2 ) )
+		return presolution;
 
 	VecXd elbow_up_solution = ComputeElbowUpSolution( x_local, y_local, L1, L2 );
 	VecXd elbow_down_solution = ComputeElbowDownSolution( x_local, y_local, L1, L2 );
 
+	double fk_error;
 	VecXd planar_seed = GetGroup().GetGroupJoints( problem.seed );
+	VecXd planar_solution( 2 );
 	if ( !ValidateAndSelectElbowConfiguration(
+			 p_group_target,
+			 problem.seed,
 			 planar_seed,
 			 elbow_up_solution,
 			 elbow_down_solution,
+			 fk_error,
 			 planar_solution ) )
 	{
-		GetGroup().SetGroupJoints( planar_solution, seed );
-		return { seed, IKHeuristicState::Fail };
+		presolution.state = fk_error < 10 * problem.tolerance ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail;
+	}
+	else
+	{
+		presolution.state = IKHeuristicState::Success; 
 	}
 
-	GetGroup().SetGroupJoints( planar_solution, seed );
-	return { seed, IKHeuristicState::Success };
+	presolution.error = fk_error;
+	GetGroup().SetGroupJoints( planar_solution, presolution.joints );
+	return presolution;
 }
 
 // ------------------------------------------------------------
@@ -188,9 +196,12 @@ VecXd Planar2RHeuristic::ComputeElbowDownSolution( double x, double y, double L1
 // ------------------------------------------------------------
 
 bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
+	const Vec3d& p_local_target,
+	const VecXd& seed,
 	const VecXd& planar_seed,
 	const VecXd& elbow_up,
 	const VecXd& elbow_down,
+	double& fk_error,
 	VecXd& solution ) const
 {
 	const auto& shoulder_limits =
@@ -205,24 +216,44 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 
 	if ( !elbow_up_valid && !elbow_down_valid )
 	{
-		solution = planar_seed;
+		VecXd clamp_elbow_up(2), clamp_elbow_down(2);
+
+		clamp_elbow_up[0] = shoulder_limits.Clamp( elbow_up[0] );
+		clamp_elbow_up[1] = elbow_limits.Clamp( elbow_up[1] );
+		
+		clamp_elbow_down[0] = shoulder_limits.Clamp( elbow_down[0] );
+		clamp_elbow_down[1] = elbow_limits.Clamp( elbow_down[1] );
+
+		double clamp_elbow_up_error = ComputeLocalPositionError( p_local_target, seed, clamp_elbow_up );
+		double clamp_elbow_down_error = ComputeLocalPositionError( p_local_target, seed, clamp_elbow_down );
+		if ( clamp_elbow_up_error < clamp_elbow_down_error )
+		{
+			solution = clamp_elbow_up;
+			fk_error = clamp_elbow_up_error;
+		}
+		else
+		{
+			solution = clamp_elbow_down;
+			fk_error = clamp_elbow_down_error;
+		}
 		return false;
 	}
 	else if ( !elbow_up_valid )
 	{
 		solution = elbow_down;
-		return true;
 	}
 	else if ( !elbow_down_valid )
 	{
 		solution = elbow_up;
-		return true;
+	}
+	else
+	{
+		solution = Utils::Distance( elbow_up, planar_seed ) <
+		Utils::Distance( elbow_down, planar_seed ) ?
+		elbow_up : elbow_down;
 	}
 
-	solution = Utils::Distance( elbow_up, planar_seed ) <
-	           Utils::Distance( elbow_down, planar_seed ) ?
-	           elbow_up : elbow_down;
-
+	fk_error = ComputeLocalPositionError( p_local_target, seed, solution );
 	return true;
 }
 

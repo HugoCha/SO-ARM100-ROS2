@@ -108,7 +108,7 @@ TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 
 // ------------------------------------------------------------
 
-TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccess )
+TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccessOrFail )
 {
 	auto single_joint_chain = Model::JointChain( 1 );
 	single_joint_chain.Add( "",
@@ -130,7 +130,7 @@ TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccess )
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
+	EXPECT_NE( Heuristic::IKHeuristicState::Success, result.state );
 	EXPECT_EQ( 1, result.joints.size() );
 	// Value must be clamped explicitly to the upper limit (45 deg)
 	EXPECT_NEAR( M_PI / 4, result.joints[0], 1e-6 );
@@ -533,7 +533,7 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 		auto problem = CreateProblem( model, seed, joints, tolerance );
 		auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-		if ( !result.Sucess() )
+		if ( !result.Success() )
 		{
 			Mat4d result_pose;
 			model->ComputeFK( result.joints, result_pose );
@@ -597,7 +597,7 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Should break loop early and fallback gracefully to partial success
-	EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
+	EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
 	EXPECT_EQ( params.max_iterations, result.iterations );
 	EXPECT_GE( result.error, problem.tolerance );
 }

@@ -8,16 +8,16 @@
 
 namespace SOArm100::Kinematics::Solver
 {
-class IKPipeline
+class IKPipeline : public IIKSolver
 {
 public:
 IKPipeline( std::unique_ptr< const Seed::IIKSeedGenerator > seed_generator,
             std::unique_ptr< const Heuristic::IIKHeuristic > heuristic,
             std::unique_ptr< const IIKSolver > solver );
 
-IKSolution Run(
+virtual IKSolution Solve(
 	const IKProblem& problem,
-	const IKRunContext& context ) const;
+	const IKRunContext& context ) const override;
 
 private:
 std::unique_ptr< const Seed::IIKSeedGenerator > seed_generator_;

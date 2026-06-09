@@ -600,7 +600,7 @@ std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
 
 	chain->Add(
 		"joint2",
-		{ Vec3d::UnitY(), Vec3d( 0, 0, 1 ) },
+		{ Vec3d::UnitX(), Vec3d( 0, 0, 1 ) },
 		{ "link2", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 1 },
 		{ -M_PI, M_PI }
 		);
@@ -612,7 +612,7 @@ std::unique_ptr< const Model::JointChain > createPrismaticBaseJointChain()
 
 Mat4d createPrismaticBaseHome()
 {
-	return ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	return ToTransformMatrix( Vec3d( 0, 1, 1 ) );
 }
 
 // ------------------------------------------------------------
@@ -1660,7 +1660,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint1",
 		Model::Twist( axis, origin ),
 		Model::Link( "link1", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
+		Model::Limits( - 4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	// Planar Joints 3 Y-axis revolute joints
@@ -1671,7 +1671,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint2",
 		Model::Twist( axis, origin ),
 		Model::Link( "link2", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
+		Model::Limits( -M_PI / 2, M_PI / 2 )
 		);
 
 	origin = next_origin;
@@ -1681,7 +1681,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint3",
 		Model::Twist( axis, origin ),
 		Model::Link( "link3", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
+		Model::Limits( - 4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	origin = next_origin;
@@ -1691,7 +1691,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint4",
 		Model::Twist( axis, origin ),
 		Model::Link( "link4", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
+		Model::Limits( -4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	// Wrist 2 revolute joints
@@ -1702,7 +1702,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint5",
 		Model::Twist( axis, origin ),
 		Model::Link( "link5", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( -M_PI, M_PI )
+		Model::Limits( -4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	origin = next_origin;

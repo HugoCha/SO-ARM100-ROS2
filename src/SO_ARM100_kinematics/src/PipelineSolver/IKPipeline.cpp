@@ -26,7 +26,7 @@ IKPipeline::IKPipeline(
 
 // ------------------------------------------------------------
 
-IKSolution IKPipeline::Run(
+IKSolution IKPipeline::Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {

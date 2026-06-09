@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 
+#include "DLSSolverParameters.hpp"
 #include "Model/IKModelBase.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKSolverBase.hpp"
@@ -28,58 +29,20 @@ struct SolverHistory;
 class DLSSolver : public Model::IKModelBase, public IKSolverBase
 {
 public:
-struct SolverParameters
-{
-	int max_iterations{ 150 };
-	double gradient_tolerance { SOArm100::Kinematics::gradient_tolerance };
-	double min_step{ 0.1 };
-	double max_step{ 0.9 };
-	double line_search_factor { 0.85 };
-	double min_damping{ 0.05 };
-	double max_damping{ 0.45 };
-	double max_dq { 0.8 };
-	double min_sv_tolerance{ 0.001 };
-	int max_stalle_iterations{ 3 };
-	double translation_weight{ 9.0 };
-	double rotation_weight{ 1.0 };
-
-	[[nodiscard]] constexpr double RotationWeightSqrt() const noexcept {
-		return sqrt( rotation_weight );
-	}
-
-	[[nodiscard]] constexpr double TranslationWeightSqrt() const noexcept {
-		return sqrt( translation_weight );
-	}
-
-	[[nodiscard]] constexpr double AdaptativeDampingCoefficient() const noexcept {
-		return -std::log( 0.99 ) / ( min_sv_tolerance * min_sv_tolerance );
-	}
-
-	[[nodiscard]] constexpr bool IsValid() const noexcept {
-		return max_iterations > 0 &&
-		       error_tolerance > 0 &&
-		       min_step > 0 && min_step <= max_step &&
-		       min_damping > 0 && min_damping <= max_damping &&
-		       ( translation_weight > 0 || rotation_weight > 0 ) &&
-		       ( translation_weight >= 0 && rotation_weight >= 0 );
-	}
-};
-
-public:
 explicit DLSSolver( Model::KinematicModelConstPtr model );
 explicit DLSSolver(
 	Model::KinematicModelConstPtr model,
-	SolverParameters parameters );
+	DLSSolverParameters parameters );
 ~DLSSolver() = default;
 
 DLSSolver( const DLSSolver& ) = delete;
 DLSSolver& operator = ( const DLSSolver& ) = delete;
 
-void SetParameters( const SolverParameters& parameters ) noexcept {
+void SetParameters( const DLSSolverParameters& parameters ) noexcept {
 	parameters_ = parameters;
 }
 
-[[nodiscard]] const SolverParameters& GetParameters() const noexcept {
+[[nodiscard]] const DLSSolverParameters& GetParameters() const noexcept {
 	return parameters_;
 }
 
@@ -91,9 +54,9 @@ private:
 struct SolverBuffers;
 struct IterationState;
 
-SolverParameters parameters_;
+DLSSolverParameters parameters_;
 
-[[nodiscard]] static SolverType GetSolverType( SolverParameters parameters );
+[[nodiscard]] static SolverType GetSolverType( const DLSSolverParameters& parameters );
 [[nodiscard]] static const MatXd InitializeWeightMatrix(
 	double rotation_weight,
 	double translation_weight );

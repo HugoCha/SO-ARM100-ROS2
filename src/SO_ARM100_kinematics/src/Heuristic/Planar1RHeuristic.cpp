@@ -62,33 +62,37 @@ IKPresolution Planar1RHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	VecXd seed = problem.seed;
-	VecXd planar_solution( 1 );
+	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
 
-	auto T_group_target = ComputeGroupLocalTarget( seed, problem.target );
+	auto T_group_target = ComputeGroupLocalTarget( problem.seed, problem.target );
 	Vec3d p_group_target = Translation( T_group_target );
 	double D  = p_group_target.norm();
 
 	// Unreachable
-	if ( D > L() )
-		return { seed, IKHeuristicState::Fail }
-	;
+	if ( D > 1.01 * L() )
+		return { problem.seed, IKHeuristicState::Fail };
 
 	double value = SignedAngle(
 		reference_direction_,
 		p_group_target,
 		GetJoint()->Axis() );
 
+	Vec1d clamp_value( GetJoint()->GetLimits().Clamp( value ) );
+	presolution.error = ComputeLocalPositionError( p_group_target, problem.seed, clamp_value );
+
 	if ( !GetJoint()->GetLimits().Within( value ) )
 	{
-		planar_solution[0] = GetJoint()->GetLimits().Clamp( value );
-		GetGroup().SetGroupJoints( planar_solution, seed );
-		return { seed, IKHeuristicState::PartialSuccess };
+		presolution.state = ( presolution.error < 10 * problem.tolerance ) ? 
+			IKHeuristicState::PartialSuccess : 
+			IKHeuristicState::Fail;
+	}
+	else
+	{
+		presolution.state = IKHeuristicState::Success;
 	}
 
-	planar_solution[0] = value;
-	GetGroup().SetGroupJoints( planar_solution, seed );
-	return { seed, IKHeuristicState::Success };
+	GetGroup().SetGroupJoints( clamp_value, presolution.joints );
+	return presolution;
 }
 
 // ------------------------------------------------------------

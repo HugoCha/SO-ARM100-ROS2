@@ -7,13 +7,13 @@
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
 #include "Heuristic/PlanarNRHeuristic.hpp"
+#include "Heuristic/PrismaticBaseHeuristic.hpp"
 #include "Heuristic/RevoluteBaseHeuristic.hpp"
 #include "Heuristic/WristHeuristic.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 
-#include <limits>
 #include <memory>
 
 namespace SOArm100::Kinematics::Heuristic
@@ -24,8 +24,9 @@ namespace SOArm100::Kinematics::Heuristic
 TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 	Model::IKModelBase( model ),
 	base_heuristic_( nullptr ),
-	intermediate_heuristic_( nullptr ),
-	wrist_heuristic_( nullptr )
+	planar_heuristic_( nullptr ),
+	wrist_heuristic_( nullptr ),
+	fabrik_heuristic_( nullptr )
 {
 
 	auto topology = model->GetTopology();
@@ -35,6 +36,12 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 		base_heuristic_ = std::make_unique< Heuristic::RevoluteBaseHeuristic >(
 			model,
 			*topology.Get( Model::revolute_base_name ) );
+	}
+	else if ( topology.Get( Model::prismatic_base_name ) )
+	{
+		base_heuristic_ = std::make_unique< Heuristic::PrismaticBaseHeuristic >( 
+			model,
+			*model->GetTopology().Get( Model::prismatic_base_name ) );
 	}
 
 	if ( topology.Get( Model::wrist_name ) )
@@ -46,14 +53,14 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 
 	if ( topology.Get( Model::planarNR_name ) )
 	{
-		intermediate_heuristic_ = std::make_unique< PlanarNRHeuristic >(
+		planar_heuristic_ = std::make_unique< PlanarNRHeuristic >(
 			model,
-			*topology.Get( Model::planarNR_name )
-			);
+			*topology.Get( Model::planarNR_name ) );
 	}
-	else
+	
+	if ( topology.Get( Model::fallback_fabrik ) )
 	{
-		intermediate_heuristic_ = std::make_unique< Solver::FABRIKSolver >( model );
+		fabrik_heuristic_ = std::make_unique< Solver::FABRIKSolver >( model );
 	}
 }
 
@@ -63,8 +70,10 @@ IKPresolution TopologyHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
+	if ( model_->IsUnreachable( problem.target ) )
+		return { problem.seed, IKHeuristicState::Fail };
+
 	auto intermediate_problem = problem;
-	Heuristic::IKPresolution presolution;
 	Heuristic::IKPresolution global_presolution;
 	global_presolution.state = IKHeuristicState::Success;
 
@@ -73,11 +82,12 @@ IKPresolution TopologyHeuristic::Presolve(
 	auto compute_heuristic = [&]( const IIKHeuristic* heuristic ) -> bool
 							 {
 								 auto local_presolution = heuristic->Presolve( intermediate_problem, context );
+								 global_presolution.error += local_presolution.error;
+								 global_presolution.iterations += local_presolution.iterations;
+								 intermediate_problem.seed = local_presolution.joints;
+
 								 if ( local_presolution.PartialOrSuccess() )
 								 {
-									 intermediate_problem.seed = local_presolution.joints;
-									 global_presolution.error += local_presolution.error;
-									 global_presolution.iterations += local_presolution.iterations;
 									 if ( local_presolution.state == IKHeuristicState::PartialSuccess )
 										 global_presolution.state = IKHeuristicState::PartialSuccess;
 									 return true;
@@ -85,35 +95,43 @@ IKPresolution TopologyHeuristic::Presolve(
 								 return false;
 							 };
 
-	if ( topology.Get( Model::revolute_base_name ) &&
-	     !compute_heuristic( base_heuristic_.get() ) )
+	if ( base_heuristic_ && !compute_heuristic( base_heuristic_.get() ) )
 	{
 		return {
 		    intermediate_problem.seed,
 		    IKHeuristicState::Fail,
-		    std::numeric_limits< double >::infinity(),
-		    presolution.iterations };
+		    global_presolution.error,
+		    global_presolution.iterations };
 	}
 
-	if ( !compute_heuristic( intermediate_heuristic_.get() ) )
+	if ( planar_heuristic_ && !compute_heuristic( planar_heuristic_.get() ) )
 	{
 		return {
 		    intermediate_problem.seed,
 		    IKHeuristicState::Fail,
-		    std::numeric_limits< double >::infinity(),
-		    presolution.iterations };
+		    global_presolution.error,
+		    global_presolution.iterations };
 	}
 
-	if ( topology.Get( Model::wrist_name ) &&
-	     !compute_heuristic( wrist_heuristic_.get() ) )
+	if ( fabrik_heuristic_ && !compute_heuristic( fabrik_heuristic_.get() ) )
 	{
 		return {
 		    intermediate_problem.seed,
 		    IKHeuristicState::Fail,
-		    std::numeric_limits< double >::infinity(),
-		    presolution.iterations };
+		    global_presolution.error,
+		    global_presolution.iterations };
 	}
 
+	if ( wrist_heuristic_ && !compute_heuristic( wrist_heuristic_.get() ) )
+	{
+		return {
+		    intermediate_problem.seed,
+		    IKHeuristicState::Fail,
+		    global_presolution.error,
+		    global_presolution.iterations };
+	}
+
+	global_presolution.error = model_->ComputeError( intermediate_problem.seed, problem.target );
 	global_presolution.joints = intermediate_problem.seed;
 	return global_presolution;
 }

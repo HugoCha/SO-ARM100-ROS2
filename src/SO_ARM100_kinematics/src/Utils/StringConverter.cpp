@@ -10,6 +10,8 @@
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Model/Joint/JointType.hpp"
+#include "Model/KinematicModel.hpp"
+#include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "Model/Joint/Limits.hpp"
 #include "Model/Joint/Link.hpp"
 #include "Model/Skeleton/Articulation.hpp"
@@ -19,6 +21,7 @@
 #include "Model/Skeleton/BoneState.hpp"
 #include "Model/Skeleton/Skeleton.hpp"
 #include "Model/Skeleton/SkeletonState.hpp"
+#include "DLS/DLSSolverParameters.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Solver/IKSolverState.hpp"
@@ -111,7 +114,7 @@ std::ostream& operator << ( std::ostream& os, const Joint& obj )
 
 std::ostream& operator << ( std::ostream& os, const JointChain& obj )
 {
-	os << "Joint Chain" << std::endl;
+	os << "Joint Chain:" << std::endl;
 	for ( int i = 0; i < obj.GetJointCount(); i++ )
 	{
 		os << std::to_string( i + 1 ) << ": " << *obj.GetJoints()[i];
@@ -168,6 +171,40 @@ std::ostream& operator << ( std::ostream& os, const JointType& obj )
 
 // ------------------------------------------------------------
 
+std::ostream& operator << ( std::ostream& os, const KinematicModel& obj )
+{
+	os << "Kinematic Model:" << std::endl;
+	os << obj.GetChain() << std::endl;
+	os << "Home" << std::endl << obj.GetHomeConfiguration() << std::endl;
+	os << obj.GetSkeleton() << std::endl;
+	os << obj.GetTopology();
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const KinematicTopology& obj )
+{
+	os << "Kinematic Topologies: ";
+	bool has_topology = false;
+	for ( const std::string& topology : KinematicTopologies )
+	{
+		if ( obj.Get( topology ) )
+		{
+			os << std::endl;
+			os << *obj.Get( topology );
+			has_topology = true;
+		}
+	}
+
+	if ( !has_topology )
+		os << "None";
+
+	return os;
+}
+
+// ------------------------------------------------------------
+
 std::ostream& operator << ( std::ostream& os, const Limits& obj )
 {
 	os << "Limits"
@@ -200,7 +237,7 @@ std::ostream& operator << ( std::ostream& os, const Pose& obj )
 
 std::ostream& operator << ( std::ostream& os, const Skeleton& obj )
 {
-	os << "Skeleton" << std::endl;
+	os << "Skeleton:" << std::endl;
 	for ( int i = 0; i < obj.ArticulationCount(); i++ )
 	{
 		os << std::to_string( i + 1 ) << ": " << *obj.Articulation( i ) << std::endl;
@@ -288,9 +325,9 @@ std::ostream& operator << ( std::ostream& os, const IKSolution& obj )
 
 // ------------------------------------------------------------
 
-std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters& obj )
+std::ostream& operator << ( std::ostream& os, const DLSSolverParameters& obj )
 {
-	os << "Solver Parameters" << std::endl;
+	os << "DLS Solver Parameters" << std::endl;
 	os << "Max iter        = " << obj.max_iterations << std::endl;
 	os << "Max stalle iter = " << obj.max_stalle_iterations << std::endl;
 	os << "Gradient tol    = " << obj.gradient_tolerance << std::endl;

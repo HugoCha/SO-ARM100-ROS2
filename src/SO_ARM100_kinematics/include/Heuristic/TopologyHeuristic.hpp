@@ -18,7 +18,8 @@ virtual IKPresolution Presolve(
 
 private:
 std::unique_ptr< IIKHeuristic > base_heuristic_;
-std::unique_ptr< IIKHeuristic > intermediate_heuristic_;
+std::unique_ptr< IIKHeuristic > planar_heuristic_;
 std::unique_ptr< IIKHeuristic > wrist_heuristic_;
+std::unique_ptr< IIKHeuristic > fabrik_heuristic_;
 };
 }

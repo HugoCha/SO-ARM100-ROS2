@@ -83,8 +83,8 @@ Model::KinematicModelConstPtr GetModel() const {
 private:
 Model::KinematicModelConstPtr model_;
 
-std::unique_ptr< Solver::IIKSolver > getIK_solver_;
-std::unique_ptr< Solver::IIKSolver > searchIK_solver_;
+std::unique_ptr< const Solver::IIKSolver > getIK_solver_;
+std::unique_ptr< const Solver::IIKSolver > searchIK_solver_;
 
 [[nodiscard]] bool InverseKinematic(
 	const Mat4d& target,

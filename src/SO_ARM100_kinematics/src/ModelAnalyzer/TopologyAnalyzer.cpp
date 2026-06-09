@@ -5,6 +5,7 @@
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "ModelAnalyzer/BaseAnalyzer.hpp"
+#include "ModelAnalyzer/FallbackFabrikAnalyzer.hpp"
 #include "ModelAnalyzer/PlanarNRAnalyzer.hpp"
 #include "ModelAnalyzer/WristAnalyzer.hpp"
 #include <optional>
@@ -38,6 +39,8 @@ KinematicTopology TopologyAnalyzer::Analyze( const Model::JointChain& chain, con
 
 	auto base_group = BaseAnalyzer::Analyze( chain, home, planar_group, wrist_group );
 
+	auto fallback_group = FallbackFabrikAnalyzer::Analyze( chain, home, base_group, planar_group, wrist_group );
+
 	if ( base_group )
 		topology.Add( *base_group );
 
@@ -46,6 +49,9 @@ KinematicTopology TopologyAnalyzer::Analyze( const Model::JointChain& chain, con
 
 	if ( planar_group )
 		topology.Add( *planar_group );
+
+	if ( fallback_group )
+		topology.Add( *fallback_group );
 
 	return topology;
 }

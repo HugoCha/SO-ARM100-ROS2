@@ -13,7 +13,7 @@ struct IKPresolution
 	double error;
 	int iterations { 0 };
 
-	bool Sucess() const {
+	bool Success() const {
 		return state == IKHeuristicState::Success;
 	}
 

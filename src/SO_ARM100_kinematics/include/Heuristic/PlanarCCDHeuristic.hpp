@@ -1,15 +1,20 @@
 #pragma once
 
 #include "Global.hpp"
+
 #include "IIKHeuristic.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
-#include "Model/Joint/JointGroup.hpp"
-#include "Model/KinematicModel.hpp"
 
 namespace SOArm100::Kinematics
 {
-namespace Solver { struct SolverHistory; }
-namespace Model  { class JointState; }
+namespace Solver 
+{ 
+struct SolverHistory; 
+}
+namespace Model  
+{ 
+class JointState; 
+}
 
 namespace Heuristic
 {
@@ -54,6 +59,7 @@ std::vector< Model::JointState > InitializeJointStates() const;
 bool IsUnreachable( const Vec3d& p_local_target ) const;
 
 void CCD( const Vec3d& p_local_target, SolverBuffer& buffer ) const;
+
 void UpdateBuffer(
 	const Vec3d& p_local_target,
 	const VecXd& joints,

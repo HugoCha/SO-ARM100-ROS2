@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "Global.hpp"
@@ -54,3 +55,4 @@ void SetSolverParameters( std::shared_ptr< Solver::DLSSolver > solver, const Vec
 Solver::DLSSolver::SolverParameters GetSolverParameters( const VecXd& thetas ) const;
 };
 }
+*/

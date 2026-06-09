@@ -113,7 +113,7 @@ IKSolution PipelineSolver::RunAndScorePipeline(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {
-	auto solution = pipeline.get()->Run( problem, context );
+	auto solution = pipeline.get()->Solve( problem, context );
 
 	if ( solution.state != IKSolverState::NotRun &&
 	     solution.state != IKSolverState::Unreachable )

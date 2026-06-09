@@ -19,8 +19,8 @@ struct SolverParameters
 	double reachability_tol { 1e-4 };  ///< sphere radius mismatch tolerance [m]
 	double singularity_tol { 0.05 };  ///< cos(θ₂) threshold for gimbal lock
 	double limit_penalty { 1e6 };   ///< quadratic penalty weight for limits
+	double fk_error_penalty { 1e3 };
 	double singularity_penalty { 1e4 };  ///< penalty weight for singular configs
-	double error_tol { 1e-4 };
 };
 
 explicit SphericalSolver( const Model::SphericalModel& model, SolverParameters parameters );
@@ -39,18 +39,21 @@ const Model::SphericalModel& GetModel() const {
 
 [[nodiscard]] SphericalSolution SolveFromRotation(
 	const Mat3d& R_target,
-	std::optional< Vec3d > theta_pref = std::nullopt ) const;
+	std::optional< Vec3d > theta_pref = std::nullopt,
+	double tolerance = error_tolerance ) const;
 
 // Returns first found solution
 [[nodiscard]] SphericalSolution SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
-	const Vec3d& p_target ) const;
+	const Vec3d& p_target,
+	double tolerance = error_tolerance ) const;
 
 // Returns optimized solution
 [[nodiscard]] SphericalSolution SolveAndOptimizeFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
-	std::optional< Vec3d > theta_pref = std::nullopt ) const;
+	std::optional< Vec3d > theta_pref = std::nullopt,
+	double tolerance = error_tolerance ) const;
 
 private:
 using CostFn = std::function< SphericalSolutionBranch ( double phi ) >;
@@ -61,8 +64,17 @@ Model::SphericalModel model_;
 double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
 double LimitViolationCost( const Vec3d& angles, double violation_weight ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
-double RotationErrorCost( const Mat3d& R_target, const Vec3d& angles ) const;
-double FKErrorCost( const Vec3d& p_tcp, const Vec3d& p_target, const Vec3d& angles ) const;
+double RotationErrorCost( 
+	const Mat3d& R_target, 
+	const Vec3d& angles,
+	double violation_penalty,
+	double tolerance ) const;
+double FKErrorCost( 
+	const Vec3d& p_tcp, 
+	const Vec3d& p_target, 
+	const Vec3d& angles,
+	double violation_weight, 
+	double tolerance ) const;
 
 SphericalSolutionBranch GridSearch( const CostFn& f ) const;
 SphericalSolutionBranch FirstSolutionSearch( const CostFn& f ) const;

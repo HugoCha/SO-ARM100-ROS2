@@ -1,6 +1,5 @@
 #include "RobotArmKinematicsSolver.hpp"
 
-#include "DLS/DLSSolver.hpp"
 #include "Global.hpp"
 
 #include "Model/Joint/JointChain.hpp"
@@ -17,6 +16,7 @@
 #include "Solver/IKRunContext.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <cassert>
 #include <memory>
@@ -28,6 +28,7 @@
 #include <moveit/robot_model/robot_model.hpp>
 #include <moveit/robot_state/robot_state.hpp>
 #include <rclcpp/logger.hpp>
+#include <string>
 #include <vector>
 
 namespace SOArm100::Kinematics
@@ -124,7 +125,7 @@ bool RobotArmKinematicsSolver::Initialize(
 
 	Model::KinematicTopology topology;
 
-	model_ = std::make_shared< const Model::KinematicModel >(
+	model_ = std::make_shared< Model::KinematicModel >(
 		joint_chain_const,
 		home_configuration,
 		topology,
@@ -132,6 +133,10 @@ bool RobotArmKinematicsSolver::Initialize(
 		std::move( reachable_space ) );
 
 	InitializeSolvers( model_ );
+
+	std::stringstream ss;
+	ss << *model_;
+	RCLCPP_INFO( get_logger(), "Robot initialized\n%s", ss.str().c_str() );
 	return true;
 }
 
@@ -139,14 +144,13 @@ bool RobotArmKinematicsSolver::Initialize(
 
 void RobotArmKinematicsSolver::InitializeSolvers( const Model::KinematicModelConstPtr& model )
 {
-	Solver::DLSSolver::SolverParameters dls_params;
-	getIK_solver_ = std::make_unique< Solver::DLSSolver >( model, dls_params );
+	getIK_solver_ = std::move( Solver::PipelineSolverInitializer::InitializeSinglePipeline( model ) );
 
 	Solver::PipelineSolverParameters pipeline_params;
 	pipeline_params.strategy = Solver::PipelineCompletionStrategy::WaitForAcceptableResult;
 	pipeline_params.min_score_threshold = 0.25;
 
-	searchIK_solver_ = std::move( Solver::PipelineSolverInitializer::Initialize( model, pipeline_params ) );
+	searchIK_solver_ = std::move( Solver::PipelineSolverInitializer::InitializeMultiplePipeline( model, pipeline_params ) );
 }
 
 // ------------------------------------------------------------

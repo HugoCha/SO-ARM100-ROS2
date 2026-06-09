@@ -62,7 +62,7 @@ TEST_F( WristHeuristicTest, SolveRobotWrist )
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
 
-	EXPECT_TRUE( result.Sucess() );
+	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 6, result.joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) )
 	    << "target = " << std::endl << problem.target << std::endl
@@ -100,7 +100,7 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
 
-	EXPECT_TRUE( result.Sucess() );
+	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 1, result.joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) );
 }
@@ -135,7 +135,7 @@ TEST_F( WristHeuristicTest, SolveRevolute1_Unreachable )
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	EXPECT_FALSE( result.Sucess() );
+	EXPECT_FALSE( result.Success() );
 	EXPECT_EQ( 1, result.joints.size() );
 	EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
 }
@@ -176,7 +176,7 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
 
-	EXPECT_TRUE( result.Sucess() );
+	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 2, result.joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) );
 }
@@ -208,7 +208,7 @@ TEST_F( WristHeuristicTest, SolveRevolute3 )
 	Mat4d result_pose;
 	model->ComputeFK( result.joints, result_pose );
 
-	EXPECT_TRUE( result.Sucess() );
+	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 3, result.joints.size() );
 	EXPECT_TRUE( Rotation( problem.target ).isApprox( Rotation( result_pose ), rotation_tolerance ) )
 	    << "target = " << std::endl << problem.target << std::endl

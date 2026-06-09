@@ -8,6 +8,7 @@
 
 namespace SOArm100::Kinematics
 {
+using Vec1d = Eigen::Matrix< double, 1, 1 >;
 using Vec2d = Eigen::Vector2d;
 using Vec3d = Eigen::Vector3d;
 using Vec4d = Eigen::Vector4d;

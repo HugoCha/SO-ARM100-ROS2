@@ -110,7 +110,7 @@ struct DLSSolver::IterationState {
 // ------------------------------------------------------------
 
 DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
-	DLSSolver( model, SolverParameters{} )
+	DLSSolver( model, DefaultDLSSolverParameters() )
 {
 }
 
@@ -118,7 +118,7 @@ DLSSolver::DLSSolver( Model::KinematicModelConstPtr model ) :
 
 DLSSolver::DLSSolver(
 	Model::KinematicModelConstPtr model,
-	SolverParameters parameters ) :
+	DLSSolverParameters parameters ) :
 	Model::IKModelBase( model ),
 	parameters_( parameters )
 {
@@ -207,7 +207,7 @@ IKSolution DLSSolver::Solve(
 
 // ------------------------------------------------------------
 
-SolverType DLSSolver::GetSolverType( SolverParameters parameters )
+SolverType DLSSolver::GetSolverType( const DLSSolverParameters& parameters )
 {
 	if ( parameters.rotation_weight > 0 && parameters.translation_weight == 0 )
 		return SolverType::Orientation;

@@ -39,8 +39,8 @@ Mat4d ComputeWristCenter(
 
 Model::WristTopology GetWristTopology() const;
 
-IKPresolution SolveRevolute1( const VecXd& seed, const Mat3d& R_wrist_target ) const;
-IKPresolution SolveRevolute2( const VecXd& seed, const Mat3d& R_wrist_target ) const;
-IKPresolution SolveRevolute3( const VecXd& seed, const Mat3d& R_wrist_target ) const;
+IKPresolution SolveRevolute1( const Solver::IKProblem& problem, const Mat3d& R_wrist_target ) const;
+IKPresolution SolveRevolute2( const Solver::IKProblem& problem, const Mat3d& R_wrist_target ) const;
+IKPresolution SolveRevolute3( const Solver::IKProblem& problem, const Mat3d& R_wrist_target ) const;
 };
 }

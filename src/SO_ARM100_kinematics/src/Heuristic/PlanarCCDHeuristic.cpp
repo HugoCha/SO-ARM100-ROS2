@@ -12,8 +12,6 @@
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
 
-#include <limits>
-
 namespace SOArm100::Kinematics::Heuristic
 {
 
@@ -45,16 +43,11 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	if ( model_->IsUnreachable( problem.target ) )
-	{
-		return { problem.seed, IKHeuristicState::Fail, std::numeric_limits< double >::infinity(), 0 };
-	}
-
+	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
+	
 	const int n_joints = model_->GetChain()->GetActiveJointCount();
 	if ( problem.seed.size() != n_joints )
-	{
-		return { problem.seed, IKHeuristicState::Fail, std::numeric_limits< double >::infinity(), 0 };
-	}
+		return presolution;
 
 	Mat4d local_target = ComputeGroupLocalTarget( problem.seed, problem.target );
 	Vec3d p_local_target = Translation( local_target );
@@ -66,7 +59,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 
 	if ( IsUnreachable( p_local_target ) )
 	{
-		return { problem.seed, IKHeuristicState::Fail, std::numeric_limits< double >::infinity(), 0 };
+		return presolution;
 	}
 
 	for ( int iter = 0; iter < parameters_.max_iterations; iter++ )
@@ -76,30 +69,29 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 
 		if ( buffer.error < problem.tolerance )
 		{
-			return {
-			    buffer.joints,
-			    IKHeuristicState::Success,
-			    buffer.error,
-			    iter };
+			presolution.joints = buffer.joints;
+			presolution.state = IKHeuristicState::Success;
+			presolution.error = buffer.error;
+			presolution.iterations = iter;
+			return presolution;
 		}
 		if ( history.stalled_error_cnt > parameters_.max_stalled_iterations )
 		{
-			return {
-			    history.best_joints,
-			    history.best_error < problem.tolerance * 10 ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail,
-			    history.best_error,
-			    iter
-			};
+			presolution.joints = history.best_joints;
+			presolution.state = IKHeuristicState::PartialSuccess;
+			presolution.error = history.best_error;
+			presolution.iterations = iter;
+			return presolution;
 		}
 
 		CCD( p_local_target, buffer );
 	}
 
-	return {
-	    history.best_joints,
-	    IKHeuristicState::Fail,
-	    history.best_error,
-	    parameters_.max_iterations };
+	presolution.joints = history.best_joints;
+	presolution.state = IKHeuristicState::PartialSuccess;
+	presolution.error = history.best_error;
+	presolution.iterations = parameters_.max_iterations;
+	return presolution;
 }
 
 // ------------------------------------------------------------
@@ -134,8 +126,8 @@ void PlanarCCDHeuristic::CCD( const Vec3d& p_local_target, SolverBuffer& buffer 
 	{
 		UpdateBuffer( p_local_target, buffer.joints, buffer );
 
-		Vec3d j_to_fk  = buffer.p_local_fk - buffer.planar_states[i].Origin();
-		Vec3d j_to_tgt = p_local_target - buffer.planar_states[i].Origin();
+		Vec3d j_to_fk  =   buffer.p_local_fk - buffer.planar_states[i].Origin();
+		Vec3d j_to_tgt  =  p_local_target - buffer.planar_states[i].Origin();
 
 		double j_to_fk_dist  = j_to_fk.norm();
 		double j_to_tgt_dist = j_to_tgt.norm();

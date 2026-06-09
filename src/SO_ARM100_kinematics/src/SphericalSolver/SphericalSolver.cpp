@@ -24,7 +24,8 @@ SphericalSolver::SphericalSolver( const Model::SphericalModel& model, SolverPara
 
 SphericalSolution SphericalSolver::SolveFromRotation(
 	const Mat3d& R_target,
-	std::optional< Vec3d > theta_pref ) const
+	std::optional< Vec3d > theta_pref,
+	double tolerance ) const
 {
 	SphericalSolution out{};
 
@@ -45,7 +46,7 @@ SphericalSolution SphericalSolver::SolveFromRotation(
 
 		cost += DeviationCost( prefered, angles );
 		cost += LimitViolationCost( angles, 1e6 );
-		cost += RotationErrorCost( R_target, angles );
+		cost += RotationErrorCost( R_target, angles, parameters_.fk_error_penalty, tolerance );
 
 		if ( cost < best_branch.cost )
 		{
@@ -65,7 +66,7 @@ SphericalSolution SphericalSolver::SolveFromRotation(
 	out.cost               = best_branch.cost;
 	out.fk_error           = fk_error;
 	out.singularity_margin = model_.SingularityMargin( R_target );
-	out.reachable          = all_in && fk_error < parameters_.error_tol;
+	out.reachable          = fk_error < tolerance;
 	out.near_singular      = model_.IsSingular( R_target, parameters_.singularity_tol );
 
 	return out;
@@ -75,7 +76,8 @@ SphericalSolution SphericalSolver::SolveFromRotation(
 
 SphericalSolution SphericalSolver::SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
-	const Vec3d& p_target ) const
+	const Vec3d& p_target,
+	double tolerance ) const
 {
 	SphericalSolution out{};
 
@@ -111,7 +113,7 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 				double cost = 0.0;
 
 				cost += LimitViolationCost( angles, limit_violation_penalty );
-				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles ) * fk_error_violation_penalty;
+				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles, fk_error_violation_penalty, tolerance );
 
 				if ( cost < best_local.cost )
 				{
@@ -133,7 +135,7 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 	if ( std::isinf( best_coarse_branch.cost ) )
 	{
 		auto least_violation_penalty_cost = [&]( double phi ){
-												return cost_fn( 1e6, 1.0, phi );
+												return cost_fn( 1e6, parameters_.fk_error_penalty, phi );
 											};
 		best_coarse_branch = GridSearch( least_violation_penalty_cost );
 	}
@@ -151,7 +153,7 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 	out.cost               = best_coarse_branch.cost;
 	out.fk_error           = fk_error;
 	out.singularity_margin = model_.SingularityMargin( R_opt );
-	out.reachable          = all_in && fk_error < parameters_.error_tol;;
+	out.reachable          = all_in && fk_error < tolerance;
 	out.near_singular      = model_.IsSingular( R_opt, parameters_.singularity_tol );
 
 	return out;
@@ -162,7 +164,8 @@ SphericalSolution SphericalSolver::SolveFromTwoVectors(
 SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
-	std::optional< Vec3d > theta_pref ) const
+	std::optional< Vec3d > theta_pref,
+	double tolerance ) const
 {
 	SphericalSolution out{};
 
@@ -207,7 +210,7 @@ SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 				cost += DeviationCost( prefered, angles );
 				cost += LimitViolationCost( angles, parameters_.limit_penalty );
 				cost += SingularityCost( R_canonical );
-				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles );
+				cost += FKErrorCost( p_tcp_local_c, p_target_c, angles, parameters_.fk_error_penalty, tolerance );
 
 				if ( cost < best_local.cost )
 				{
@@ -239,7 +242,7 @@ SphericalSolution SphericalSolver::SolveAndOptimizeFromTwoVectors(
 	out.cost               = best_branch.cost;
 	out.fk_error           = fk_error;
 	out.singularity_margin = model_.SingularityMargin( R_opt );
-	out.reachable          = all_in && fk_error < parameters_.error_tol;;
+	out.reachable          = all_in && fk_error < tolerance;
 	out.near_singular      = model_.IsSingular( R_opt, parameters_.singularity_tol );
 
 	return out;
@@ -290,23 +293,30 @@ double SphericalSolver::SingularityCost( const Mat3d& R_canonical ) const
 
 double SphericalSolver::RotationErrorCost(
 	const Mat3d& R_target,
-	const Vec3d& angles ) const
+	const Vec3d& angles,
+	double violation_penalty,
+	double tolerance ) const
 {
 	Mat3d R_fk = model_.Recompose( angles );
-	return std::abs( RotationError( R_target, R_fk ) );
+	double rot_error = std::abs( RotationError( R_target, R_fk ) );
+	return std::abs( rot_error ) > tolerance ? std::abs( rot_error ) * violation_penalty : std::abs( rot_error );
 }
 
 
 // ------------------------------------------------------------
 
 double SphericalSolver::FKErrorCost(
-	const Vec3d& p_tcp,
-	const Vec3d& p_target,
-	const Vec3d& angles ) const
+	const Vec3d& p_tcp, 
+	const Vec3d& p_target, 
+	const Vec3d& angles,
+	double violation_weight, 
+	double tolerance ) const
 {
 	const Mat3d R_fk      = model_.Recompose( angles );
 	const Vec3d p_fk      = R_fk * p_tcp;
-	return ( p_fk - p_target ).norm();
+	double fk_error = ( p_fk - p_target ).norm();
+
+	return std::abs( fk_error ) > tolerance ? violation_weight * std::abs( fk_error ) : std::abs( fk_error );
 }
 
 // ------------------------------------------------------------

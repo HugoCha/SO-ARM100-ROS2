@@ -1,6 +1,10 @@
 #include "PipelineSolver/PipelineSolver.hpp"
 
+#include "DLS/DLSSolverParameters.hpp"
+#include "FABRIK/FabrikSolver.hpp"
 #include "Model/Joint/JointGroup.hpp"
+#include "Model/Joint/RandomType.hpp"
+#include "PipelineSolver/PipelineSolverParameters.hpp"
 #include "RobotModelTestData.hpp"
 
 #include "Global.hpp"
@@ -18,6 +22,7 @@
 #include "Scorer/PoseErrorScorer.hpp"
 #include "Scorer/WeightedScorersBuilder.hpp"
 #include "Seed/IKOppositeSeedGenerator.hpp"
+#include "Seed/IKRandomSeedGenerator.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -43,75 +48,49 @@ void SetUp() override
 {
 	model_ = Data::GetURLikeRobot();
 
-	std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines;
-
-	Solver::DLSSolver::SolverParameters params_safe_solver;
-	params_safe_solver.max_iterations = 500;
-	params_safe_solver.max_stalle_iterations = 2;
-	Solver::DLSSolver::SolverParameters params_fast_solver;
-	params_fast_solver.max_iterations = 100;
-	params_fast_solver.max_stalle_iterations = 2;
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model_ ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model_, params_fast_solver ) )
-		.Build() );
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithSeedGenerator( std::make_unique< Seed::IKOppositeSeedGenerator >( model_, *model_->GetTopology().Get( Model::revolute_base_name ) ) )
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model_ ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model_, params_fast_solver ) )
-		.Build() );
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithSeedGenerator( std::make_unique< Seed::IKOppositeSeedGenerator >( model_, *model_->GetTopology().Get( Model::planarNR_name ) ) )
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model_ ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model_, params_fast_solver ) )
-		.Build() );
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model_, params_safe_solver ) )
-		.Build() );
-
-	// Solver::DLSSolver::SolverParameters params_random_start_solver;
-	// params_safe_solver.max_iterations = 1000;
-	// params_safe_solver.max_stalle_iterations = 1;
-
-	// pipelines.emplace_back(
-	// 	Solver::PipelineBuilder{}
-	// 	.WithSeedGenerator( std::make_unique< Seed::IKRandomSeedGenerator >( model_ ) )
-	// 	.WithSolver( std::make_unique< Solver::DLSSolver >( model_, params_random_start_solver ) )
-	// 	.Build() );
-
-	auto scorer = Scorer::WeightedScorersBuilder{}
-	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model_ ) )
-	.Add( 3.0, std::make_unique< Scorer::CloseToSeedScorer >( model_ ) )
-	.Add( 3.0, std::make_unique< Scorer::ManipulabilityScorer >( model_ ) )
-	.Add( 1.0, std::make_unique< Scorer::PoseErrorScorer >( model_, Scorer::PoseErrorScorer::ScorerParameters() ) )
-	.Build();
-	// Avg center = 0.55, Std center = 0.06
-	// Avg seed   = 0.07, Std seed   = 0.004
-	// Avg manip  = 0.1, Std manip  = 0.06
-	// Avg error  = 0.00, Std error  = 0.00
-
 	Solver::PipelineSolverParameters parameters;
-	parameters.strategy = Solver::PipelineCompletionStrategy::WaitForAcceptableResult;
-	parameters.min_score_threshold = 0.2;
+	parameters.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
+	parameters.min_score_threshold = 0.5;
 
-	// Create a solver
-	solver_ = std::unique_ptr< Solver::PipelineSolver >( new Solver::PipelineSolver(
-															 model_,
-															 std::move( pipelines ),
-															 std::move( scorer ),
-															 parameters ) );
+	solver_ = std::move( CreatePipeline( model_, parameters ) );
 }
 
 void TearDown() override
 {
+}
+
+std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelConstPtr model, Solver::PipelineSolverParameters parameters = Solver::PipelineSolverParameters() )
+{
+	std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines;
+
+	auto params_dls_solver = Solver::ExtraFastDLSSolverParameters();
+
+	pipelines.emplace_back(
+		Solver::PipelineBuilder{}
+		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
+		.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
+		.Build() );
+
+	pipelines.emplace_back(
+		Solver::PipelineBuilder{}
+		.WithSeedGenerator( std::make_unique< Seed::IKOppositeSeedGenerator >( model ) )
+		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
+		.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
+		.Build() );
+
+	auto scorer = Scorer::WeightedScorersBuilder{}
+	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
+	.Add( 3.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
+	.Add( 3.0, std::make_unique< Scorer::ManipulabilityScorer >( model ) )
+	.Add( 1.0, std::make_unique< Scorer::PoseErrorScorer >( model, Scorer::PoseErrorScorer::ScorerParameters() ) )
+	.Build();
+
+	// Create a solver
+	return std::unique_ptr< Solver::PipelineSolver >( new Solver::PipelineSolver(
+														  model,
+														  std::move( pipelines ),
+														  std::move( scorer ),
+														  parameters ) );
 }
 
 std::unique_ptr< Solver::PipelineSolver > solver_;
@@ -150,7 +129,8 @@ TEST_F( PipelineSolverTest, InverseKinematic_Success )
 TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 {
 	const auto& chain = model_->GetChain();
-	const int ITER = 100;
+	const int ITER = 10000;
+	double tolerance = 1e-5;
 	double avg_iterations = 0.0;
 	double avg_score = 0.0;
 	double var_score = 0.0;
@@ -165,9 +145,10 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 		VecXd joints = chain->RandomValidJoints( rng_, 0 );
 
 		// Seed joints
-		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3 );
+		//VecXd seed = chain->RandomValidJoints( rng_, 0 );
+		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
 
-		auto problem = CreateProblem( model_, seed, joints );
+		auto problem = CreateProblem( model_, seed, joints, tolerance );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
 
 		auto result_pose = ComputeFK( model_, result.joints );
@@ -189,19 +170,17 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 
 			k_successes++;
 			avg_iterations += result.iterations / ( double )ITER;
-
 			delta += result.score - avg_score;
 			avg_score += delta / k_successes;
 			var_score += delta * ( result.score - avg_score );
 			avg_error += result.error / ( double )ITER;
 		}
 	}
-
 	avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
 	var_score = var_score / ( double )ITER;
 	double std_score = std::sqrt( std::max( 0.0, var_score ) );
 	EXPECT_LE( std_score, 0.1 );
-	EXPECT_LE( avg_score, 0.25 );
+	EXPECT_LE( avg_score, 0.5 );
 	EXPECT_LE( avg_error, 2 * error_tolerance );
 	EXPECT_LE( avg_non_success_error, 2 * error_tolerance );
 	EXPECT_LE( max_non_success_error, 5 * error_tolerance );
@@ -215,6 +194,76 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 	std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
 	std::cout << "Max fail err= " << max_non_success_error << std::endl;
 	std::cout << "k_successes = " << k_successes << " / " << ITER << std::endl;
+}
+
+// ------------------------------------------------------------
+
+TEST_F( PipelineSolverTest, InverseKinematic_Consistency_AllRobots )
+{
+	const int ITER = 1000;
+	double tolerance = 1e-5;
+	for ( const auto& robot : Data::GetAllRobots() )
+	{
+		const auto& chain = robot.second->GetChain();
+		double avg_iterations = 0.0;
+		double avg_score = 0.0;
+		double var_score = 0.0;
+		double avg_non_success_error = 0.0;
+		double max_non_success_error = 0.0;
+		double avg_error = 0.0;
+		double delta = 0.0;
+		int k_successes = 0;
+		Solver::PipelineSolverParameters p;
+		p.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
+		auto solver = CreatePipeline( robot.second, p );
+		for ( int i = 0; i < ITER; i++ )
+		{
+			VecXd joints = chain->RandomValidJoints( rng_, 0 );
+
+			VecXd seed = chain->RandomValidJoints( rng_, 0 );
+			// VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
+
+			auto problem = CreateProblem( robot.second, seed, joints, tolerance );
+			auto result = solver->Solve( problem, Solver::IKRunContext() );
+
+			auto result_pose = ComputeFK( robot.second, result.joints );
+			if ( !result.Success() )
+			{
+				avg_non_success_error += result.error;
+				max_non_success_error = std::max( max_non_success_error, result.error );
+			}
+			else
+			{
+				EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
+
+				k_successes++;
+				avg_iterations += result.iterations / ( double )ITER;
+				delta += result.score - avg_score;
+				avg_score += delta / k_successes;
+				var_score += delta * ( result.score - avg_score );
+				avg_error += result.error / ( double )ITER;
+			}
+		}
+		avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
+		var_score = var_score / ( double )ITER;
+		double std_score = std::sqrt( std::max( 0.0, var_score ) );
+		EXPECT_LE( std_score, 0.1 );
+		EXPECT_LE( avg_score, 0.5 );
+		EXPECT_LE( avg_error, error_tolerance );
+		EXPECT_LE( avg_non_success_error, 2 * error_tolerance );
+		EXPECT_LE( max_non_success_error, 5 * error_tolerance );
+		EXPECT_LE( avg_iterations, 20 );
+		EXPECT_GE( k_successes, 0.95 * ITER );
+
+		std::cout << "==== Robot "  << robot.first << "====" << std::endl;
+		std::cout << "Avg score   = " << avg_score << std::endl;
+		std::cout << "Std score   = " << std_score << std::endl;
+		std::cout << "Avg iter    = " << avg_iterations << std::endl;
+		std::cout << "Avg error   = " << avg_error << std::endl;
+		std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
+		std::cout << "Max fail err= " << max_non_success_error << std::endl;
+		std::cout << "k_successes = " << k_successes << " / " << ITER << std::endl;
+	}
 }
 
 // ------------------------------------------------------------

@@ -3,9 +3,9 @@
 #include "DLS/DLSSolver.hpp"
 
 #include "RobotModelTestData.hpp"
-#include "DLSGradientDescent.hpp"
-#include "KinematicTestBase.hpp"
 
+#include "DLS/DLSSolverParameters.hpp"
+#include "KinematicTestBase.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
@@ -49,7 +49,7 @@ void SetUp() override
 	model_ = Data::GetZYZRevoluteRobot();
 
 	// Initialize solver with default parameters
-	Solver::DLSSolver::SolverParameters parameters;
+	Solver::DefaultDLSSolverParameters parameters;
 
 	parameters.rotation_weight        = 1;
 	parameters.translation_weight     = 10;
@@ -75,7 +75,7 @@ void TearDown() override
 
 std::unique_ptr< Solver::DLSSolver > CreateSolver( Model::KinematicModelConstPtr model )
 {
-	Solver::DLSSolver::SolverParameters parameters;
+	Solver::DefaultDLSSolverParameters parameters;
 
 	parameters.rotation_weight        = 1;
 	parameters.translation_weight     = 9;
@@ -106,7 +106,7 @@ static constexpr double DEFAULT_TOLERANCE = error_tolerance;
 
 TEST_F( DLSSolverTest, ConstructorWithValidParameters )
 {
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	params.max_iterations = 200;
 	params.min_damping = 0.001;
 	params.max_damping = 1.0;
@@ -118,7 +118,7 @@ TEST_F( DLSSolverTest, ConstructorWithValidParameters )
 
 TEST_F( DLSSolverTest, ConstructorWithInvalidParameters )
 {
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	params.max_iterations = -1;  // Invalid
 
 	EXPECT_THROW( Solver::DLSSolver solver( model_, params ), std::invalid_argument );
@@ -128,7 +128,7 @@ TEST_F( DLSSolverTest, ConstructorWithInvalidParameters )
 
 TEST_F( DLSSolverTest, ConstructorInvalidDampingRange )
 {
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	params.min_damping = 1.0;
 	params.max_damping = 0.001;  // min > max: invalid
 
@@ -277,7 +277,7 @@ TEST_F( DLSSolverTest, SolveIK_UnreachableTarget )
 TEST_F( DLSSolverTest, SolveIK_MaxIterationsReached )
 {
 	// Use very strict parameters to force max iterations
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	params.max_iterations = 5;  // Very low
 	double error_tolerance = 1e-10;  // Very strict
 
@@ -338,7 +338,7 @@ TEST_F( DLSSolverTest, RandomRestart_RecoverFromBadSeed )
 
 TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 {
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	double error_tolerance = 1e-6;  // Very strict
 	params.max_iterations = 500;
 
@@ -360,7 +360,7 @@ TEST_F( DLSSolverTest, ConvergenceTolerance_Strict )
 
 TEST_F( DLSSolverTest, ConvergenceTolerance_Loose )
 {
-	Solver::DLSSolver::SolverParameters params;
+	Solver::DefaultDLSSolverParameters params;
 	double error_tolerance = 1e-2;  // Loose
 	params.max_iterations = 50;
 
@@ -554,7 +554,7 @@ TEST_F( DLSSolverTest, Robustness_GoodSeed_RepeatedCalls )
 
 TEST_F( DLSSolverTest, Configuration_GetAndSet )
 {
-	Solver::DLSSolver::SolverParameters new_params;
+	Solver::DefaultDLSSolverParameters new_params;
 	new_params.max_iterations = 150;
 
 	solver_->SetParameters( new_params );
@@ -632,7 +632,7 @@ TEST_F( DLSSolverTest, Robustness_DifferentRobot_RepeatedCalls )
 
 // TEST_F( DLSSolverTest, SolverParameters_FindOptimal )
 // {
-// 	auto initial_sp = Solver::DLSSolver::SolverParameters();
+// 	auto initial_sp = Solver::DefaultDLSSolverParameters();
 
 //     initial_sp.max_iterations = 200;
 //     initial_sp.min_step = 0.1;

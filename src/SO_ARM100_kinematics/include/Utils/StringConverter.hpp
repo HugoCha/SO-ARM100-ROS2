@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DLS/DLSSolver.hpp"
 #include <ostream>
 
 namespace SOArm100::Kinematics
@@ -18,6 +17,8 @@ class JointChain;
 struct JointGroup;
 class JointState;
 enum class JointType;
+class KinematicModel;
+class KinematicTopology;
 class Limits;
 class Link;
 struct Pose;
@@ -35,6 +36,8 @@ std::ostream& operator << ( std::ostream& os, const JointChain& obj );
 std::ostream& operator << ( std::ostream& os, const JointGroup& obj );
 std::ostream& operator << ( std::ostream& os, const JointState& obj );
 std::ostream& operator << ( std::ostream& os, const JointType& obj );
+std::ostream& operator << ( std::ostream& os, const KinematicModel& obj );
+std::ostream& operator << ( std::ostream& os, const KinematicTopology& obj );
 std::ostream& operator << ( std::ostream& os, const Limits& obj );
 std::ostream& operator << ( std::ostream& os, const Link& obj );
 std::ostream& operator << ( std::ostream& os, const Pose& obj );
@@ -56,6 +59,7 @@ std::ostream& operator << ( std::ostream& os, const IKHeuristicState& obj );
 // Solver
 namespace Solver
 {
+struct DLSSolverParameters;
 struct IKProblem;
 struct IKSolution;
 enum class IKSolverState;
@@ -63,6 +67,6 @@ enum class IKSolverState;
 std::ostream& operator << ( std::ostream& os, const IKProblem& obj );
 std::ostream& operator << ( std::ostream& os, const IKSolution& obj );
 std::ostream& operator << ( std::ostream& os, const IKSolverState& obj );
-std::ostream& operator << ( std::ostream& os, const DLSSolver::SolverParameters& obj );
+std::ostream& operator << ( std::ostream& os, const DLSSolverParameters& obj );
 }
 }

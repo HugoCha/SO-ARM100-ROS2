@@ -3,6 +3,7 @@
 #include "Global.hpp"
 #include "IKModelBase.hpp"
 #include "Model/Joint/JointGroup.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics::Model
 {
@@ -72,6 +73,11 @@ bool ComputeGroupWorldJointPosesFK( const VecXd& joints, std::vector< Mat4d >& j
 bool ComputeGroupWorldFK( const VecXd& joints, Mat4d& fk ) const {
 	return ComputeGroupFK( joints, Mat4d::Identity(), fk );
 }
+
+double ComputeLocalPositionError( 
+	const Vec3d& p_local_target, 
+	const VecXd& seed, 
+	const VecXd& local_angles ) const;
 
 Mat4d GetAncestorTransform( const VecXd& seed ) const;
 Mat4d GetAncestorInverseTransform( const VecXd& seed ) const;

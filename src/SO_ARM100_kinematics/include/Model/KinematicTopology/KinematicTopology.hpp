@@ -7,6 +7,14 @@
 
 namespace SOArm100::Kinematics::Model
 {
+inline const std::vector< std::string > KinematicTopologies = {
+	revolute_base_name,
+	prismatic_base_name,
+	planarNR_name,
+	wrist_name,
+	fallback_fabrik
+};
+
 class KinematicTopology
 {
 public:

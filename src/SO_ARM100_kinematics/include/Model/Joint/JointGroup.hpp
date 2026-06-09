@@ -11,6 +11,7 @@ constexpr std::string revolute_base_name = "revolute_base";
 constexpr std::string prismatic_base_name = "prismatic_base";
 constexpr std::string planarNR_name = "planar_NR";
 constexpr std::string wrist_name = "wrist";
+constexpr std::string fallback_fabrik = "fallback_fabrik";
 
 class JointChain;
 
@@ -103,6 +104,17 @@ struct WristJointGroup : public JointGroup
 
 private:
 Mat4d wrist_center_;
+};
+
+struct FallbackFabrikJointGroup : public JointGroup
+{
+	FallbackFabrikJointGroup(
+		int start,
+		int count,
+		const Mat4d& home ) :
+		JointGroup( fallback_fabrik, EnumerateIndices( start, count ), home )
+	{
+	}
 };
 
 }

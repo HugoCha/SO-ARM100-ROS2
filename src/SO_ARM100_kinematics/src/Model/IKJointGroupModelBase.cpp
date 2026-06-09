@@ -140,7 +140,6 @@ bool IKJointGroupModelBase::ComputeGroupFK(
 
 	Mat4d T_cumul = initial_transform;
 
-	int state_index = 0;
 	for ( int i = GetGroup().FirstIndex(); i <= GetGroup().LastIndex(); i++ )
 	{
 		const auto& joint = GetActiveJoint( i );
@@ -192,6 +191,30 @@ bool IKJointGroupModelBase::ComputeGroupJointPosesFK(
 
 	fk.noalias() = T_cumul * GetGroup().tip_home;
 	return true;
+}
+
+// ------------------------------------------------------------
+
+double IKJointGroupModelBase::ComputeLocalPositionError( 
+	const Vec3d& p_local_target, 
+	const VecXd& seed, 
+	const VecXd& local_angles ) const
+{
+	const int n_joints = GetChain()->GetActiveJointCount();
+	const int n_group_joints = GetGroup().Size();
+
+	if ( n_joints != seed.size() )
+		throw std::invalid_argument( "Seed size must be equal to chain joint number" );
+
+	if ( n_group_joints != local_angles.size() )
+		throw std::invalid_argument( "Local angles size must be equal to group joint number" );
+
+	Mat4d local_fk;
+	VecXd joints = seed;
+	GetGroup().SetGroupJoints( local_angles, joints );
+	ComputeGroupLocalFK( joints, local_fk );
+	Vec3d p_local_fk = Translation( local_fk );
+	return Utils::Distance( p_local_target, p_local_fk );
 }
 
 // ------------------------------------------------------------

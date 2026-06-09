@@ -2,7 +2,6 @@
 
 #include "Global.hpp"
 
-#include "FABRIK/FabrikAnalyzer.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Model/Skeleton/ArticulationType.hpp"
 #include "Model/Skeleton/BoneState.hpp"

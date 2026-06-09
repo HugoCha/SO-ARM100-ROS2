@@ -23,7 +23,8 @@ UniversalSolver::UniversalSolver( const Model::UniversalModel& model, SolverPara
 
 UniversalSolution UniversalSolver::SolveFromRotation(
 	const Mat3d& R_target,
-	std::optional< Vec2d > theta_pref ) const
+	std::optional< Vec2d > theta_pref,
+	double tolerance ) const
 {
 	auto j0 = model_.GetJoint( 0 );
 	auto j1 = model_.GetJoint( 1 );
@@ -38,10 +39,10 @@ UniversalSolution UniversalSolver::SolveFromRotation(
 	auto cost_fn = [&]( const UniversalSolution& s ) -> double
 				   {
 					   double cost = 0.0;
-					   cost += FKErrorCost( s.fk_error );
+					   cost += FKErrorCost( s.fk_error, parameters_.fk_error_penalty, tolerance );
 					   cost += DeviationCost( pref, s.angles );
 					   cost += LimitCost( s.angles );
-					   cost += RotationErrorCost( R_target, s.angles );
+					   cost += RotationErrorCost( R_target, s.angles, parameters_.fk_error_penalty, tolerance );
 					   return cost;
 				   };
 
@@ -58,7 +59,8 @@ UniversalSolution UniversalSolver::SolveFromRotation(
 UniversalSolution UniversalSolver::SolveFromTwoVectors(
 	const Vec3d& p_tcp_local,
 	const Vec3d& p_target,
-	std::optional< Vec2d > theta_pref ) const
+	std::optional< Vec2d > theta_pref,
+	double tolerance ) const
 {
 	auto j0 = model_.GetJoint( 0 );
 	auto j1 = model_.GetJoint( 1 );
@@ -76,7 +78,7 @@ UniversalSolution UniversalSolver::SolveFromTwoVectors(
 	auto cost_fn = [&]( const UniversalSolution& s ) -> double
 				   {
 					   double cost = 0.0;
-					   cost += FKErrorCost( s.fk_error );
+					   cost += FKErrorCost( s.fk_error, parameters_.fk_error_penalty, tolerance );
 					   cost += DeviationCost( pref, s.angles );
 					   cost += LimitCost( s.angles );
 					   return cost;
@@ -92,9 +94,12 @@ UniversalSolution UniversalSolver::SolveFromTwoVectors(
 
 // ------------------------------------------------------------
 
-double UniversalSolver::FKErrorCost( double fk_error ) const
+double UniversalSolver::FKErrorCost( 
+	double fk_error,	
+	double fk_error_penalty, 
+	double tolerance ) const
 {
-	return std::abs( fk_error ) > parameters_.error_tol ? parameters_.fk_error_penalty * std::abs( fk_error ) :  std::abs( fk_error ) / M_PI;
+	return std::abs( fk_error ) > tolerance ? fk_error_penalty * std::abs( fk_error ) : std::abs( fk_error ) / M_PI;
 }
 
 // ------------------------------------------------------------
@@ -130,13 +135,15 @@ double UniversalSolver::LimitCost( const Vec2d& angles ) const
 
 // ------------------------------------------------------------
 
-double UniversalSolver::RotationErrorCost(  const Mat3d& R_target, const Vec2d& angles ) const
+double UniversalSolver::RotationErrorCost(  
+	const Mat3d& R_target, 
+	const Vec2d& angles,  
+	double fk_error_penalty, 
+	double tolerance ) const
 {
 	Mat3d R = model_.Recompose( angles );
 	double Rerror = RotationError( R_target, R );
-	return std::abs( Rerror ) > parameters_.error_tol ?
-	       parameters_.fk_error_penalty * std::abs( Rerror ) :
-	       std::abs( Rerror );
+	return std::abs( Rerror ) > tolerance ? fk_error_penalty * std::abs( Rerror ) : std::abs( Rerror );
 }
 
 // ------------------------------------------------------------
