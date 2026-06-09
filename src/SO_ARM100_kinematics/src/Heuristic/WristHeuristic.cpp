@@ -51,12 +51,12 @@ WristHeuristic::WristHeuristic(
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 0 ) ),
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 1 ) ),
 			model->GetChain()->GetActiveJoint( wrist_group.Index( 2 ) ) );
-		
+
 		if ( !spherical_model )
 		{
 			throw std::invalid_argument( "Wrist is not Spherical" );
 		}
-			
+
 		Solver::SphericalSolver::SolverParameters params;
 		spherical_solver_ = std::make_unique< Solver::SphericalSolver >(
 			*spherical_model,

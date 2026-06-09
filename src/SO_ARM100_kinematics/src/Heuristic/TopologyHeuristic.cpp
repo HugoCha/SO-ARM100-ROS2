@@ -39,7 +39,7 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 	}
 	else if ( topology.Get( Model::prismatic_base_name ) )
 	{
-		base_heuristic_ = std::make_unique< Heuristic::PrismaticBaseHeuristic >( 
+		base_heuristic_ = std::make_unique< Heuristic::PrismaticBaseHeuristic >(
 			model,
 			*model->GetTopology().Get( Model::prismatic_base_name ) );
 	}
@@ -57,7 +57,7 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 			model,
 			*topology.Get( Model::planarNR_name ) );
 	}
-	
+
 	if ( topology.Get( Model::fallback_fabrik ) )
 	{
 		fabrik_heuristic_ = std::make_unique< Solver::FABRIKSolver >( model );
@@ -71,7 +71,8 @@ IKPresolution TopologyHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	if ( model_->IsUnreachable( problem.target ) )
-		return { problem.seed, IKHeuristicState::Fail };
+		return { problem.seed, IKHeuristicState::Fail }
+	;
 
 	auto intermediate_problem = problem;
 	Heuristic::IKPresolution global_presolution;

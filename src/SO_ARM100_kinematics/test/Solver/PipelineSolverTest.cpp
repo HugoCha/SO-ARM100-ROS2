@@ -145,7 +145,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 		VecXd joints = chain->RandomValidJoints( rng_, 0 );
 
 		// Seed joints
-		//VecXd seed = chain->RandomValidJoints( rng_, 0 );
+		// VecXd seed = chain->RandomValidJoints( rng_, 0 );
 		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
 
 		auto problem = CreateProblem( model_, seed, joints, tolerance );

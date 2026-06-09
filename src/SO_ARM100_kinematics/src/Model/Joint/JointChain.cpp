@@ -291,7 +291,7 @@ bool JointChain::ComputeJointPosesFK(
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
-	
+
 	if ( n_joints != GetActiveJointCount() )
 		return false;
 
@@ -314,7 +314,7 @@ bool JointChain::ComputeJointPosesFK(
 		const auto& twist = joint->GetTwist();
 
 		if ( link_names_set.contains( link.GetName() ) )
-			link_pose_index[ link.GetName() ] = i;
+			link_pose_index[link.GetName()] = i;
 
 		all_poses[i].noalias() = T_cumul * joint->OriginTransform();
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );

@@ -31,17 +31,17 @@ class TopologyHeuristicTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-    // robot_name_ = "ZYZ";
-    // robot_name_ = "RevoluteBase";
-    // robot_name_ = "PrismaticBase";
-    // robot_name_ = "Planar2R"; 
-    // robot_name_ = "Planar3R"; 
-    // robot_name_ = "Wrist1R";
-    // robot_name_ = "Wrist2R";
-    // robot_name_ = "Wrist3R";
-    // robot_name_ = "5-axis arm";
+	// robot_name_ = "ZYZ";
+	// robot_name_ = "RevoluteBase";
+	// robot_name_ = "PrismaticBase";
+	// robot_name_ = "Planar2R";
+	// robot_name_ = "Planar3R";
+	// robot_name_ = "Wrist1R";
+	// robot_name_ = "Wrist2R";
+	// robot_name_ = "Wrist3R";
+	// robot_name_ = "5-axis arm";
 	// robot_name_ = "6-axis arm";
-     robot_name_ = "Universal Robot";
+	robot_name_ = "Universal Robot";
 
 	model_ = Data::GetAllRobots()[robot_name_];
 }
@@ -220,7 +220,7 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency )
 		{
 			avg_non_success_error += result.error;
 			max_non_success_error = std::max( max_non_success_error, result.error );
-            // std::cout << "Joints " << joints.transpose() << std::endl;
+			// std::cout << "Joints " << joints.transpose() << std::endl;
 			// std::cout << "Problem" << std::endl << problem << std::endl
 			// 		  << "Result" << std::endl << result << std::endl;
 		}
@@ -241,10 +241,10 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency )
 
 	avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
 	EXPECT_LE( avg_error, 5 * error_tolerance );
-	EXPECT_LT( max_non_success_error, std::numeric_limits<double>::infinity() );
+	EXPECT_LT( max_non_success_error, std::numeric_limits< double >::infinity() );
 	EXPECT_LE( avg_iterations, 5 );
 
-    std::cout << "=========== Robot " << robot_name_ << " ===========\n";
+	std::cout << "=========== Robot " << robot_name_ << " ===========\n";
 	std::cout << "Avg iter    = " << avg_iterations << std::endl;
 	std::cout << "Avg error   = " << avg_error << std::endl;
 	std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
@@ -256,43 +256,43 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency )
 
 TEST_F( TopologyHeuristicTest, Presolve_Consistency_AllRobots )
 {
-    const int ITER = 100;
-    
-    for ( const auto& robot : ValidRobots() )
+	const int ITER = 100;
+
+	for ( const auto& robot : ValidRobots() )
 	{
-        const auto& chain = robot.second->GetChain();
-        double avg_iterations = 0.0;
-        double avg_non_success_error = 0.0;
-        double max_non_success_error = 0.0;
-        double avg_error = 0.0;
-        int k_successes = 0;
-        for ( int i = 0; i < ITER; i++ )
-        {
-            VecXd joints = chain->RandomValidJoints( rng_, 0 );
-            VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3 );
+		const auto& chain = robot.second->GetChain();
+		double avg_iterations = 0.0;
+		double avg_non_success_error = 0.0;
+		double max_non_success_error = 0.0;
+		double avg_error = 0.0;
+		int k_successes = 0;
+		for ( int i = 0; i < ITER; i++ )
+		{
+			VecXd joints = chain->RandomValidJoints( rng_, 0 );
+			VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3 );
 
-            auto problem = CreateProblem( robot.second, seed, joints );
-            auto result = CheckPresolveNoFailure( robot.second, robot.first, seed, joints );
+			auto problem = CreateProblem( robot.second, seed, joints );
+			auto result = CheckPresolveNoFailure( robot.second, robot.first, seed, joints );
 
-            auto result_pose = ComputeFK( robot.second, result.joints );
-            if ( !result.PartialOrSuccess() || result.error > 15 * problem.tolerance )
-            {
-                avg_non_success_error += result.error;
-                max_non_success_error = std::max( max_non_success_error, result.error );
-            }
-            else
-            {
-                EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
+			auto result_pose = ComputeFK( robot.second, result.joints );
+			if ( !result.PartialOrSuccess() || result.error > 15 * problem.tolerance )
+			{
+				avg_non_success_error += result.error;
+				max_non_success_error = std::max( max_non_success_error, result.error );
+			}
+			else
+			{
+				EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
 
-                avg_iterations += result.iterations / ( double )ITER;
-                avg_error += result.error / ( double )ITER;
-            }
-        }
+				avg_iterations += result.iterations / ( double )ITER;
+				avg_error += result.error / ( double )ITER;
+			}
+		}
 
 		EXPECT_LE( avg_error, 5 * error_tolerance );
-		EXPECT_LT( max_non_success_error, std::numeric_limits<double>::infinity() );
+		EXPECT_LT( max_non_success_error, std::numeric_limits< double >::infinity() );
 		EXPECT_LE( avg_iterations, 5 );
-    }
+	}
 }
 
 // ------------------------------------------------------------

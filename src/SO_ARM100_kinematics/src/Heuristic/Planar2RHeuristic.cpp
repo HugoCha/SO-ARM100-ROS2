@@ -145,7 +145,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 	}
 	else
 	{
-		presolution.state = IKHeuristicState::Success; 
+		presolution.state = IKHeuristicState::Success;
 	}
 
 	presolution.error = fk_error;
@@ -216,11 +216,11 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 
 	if ( !elbow_up_valid && !elbow_down_valid )
 	{
-		VecXd clamp_elbow_up(2), clamp_elbow_down(2);
+		VecXd clamp_elbow_up( 2 ), clamp_elbow_down( 2 );
 
 		clamp_elbow_up[0] = shoulder_limits.Clamp( elbow_up[0] );
 		clamp_elbow_up[1] = elbow_limits.Clamp( elbow_up[1] );
-		
+
 		clamp_elbow_down[0] = shoulder_limits.Clamp( elbow_down[0] );
 		clamp_elbow_down[1] = elbow_limits.Clamp( elbow_down[1] );
 
@@ -249,8 +249,8 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 	else
 	{
 		solution = Utils::Distance( elbow_up, planar_seed ) <
-		Utils::Distance( elbow_down, planar_seed ) ?
-		elbow_up : elbow_down;
+		           Utils::Distance( elbow_down, planar_seed ) ?
+		           elbow_up : elbow_down;
 	}
 
 	fk_error = ComputeLocalPositionError( p_local_target, seed, solution );

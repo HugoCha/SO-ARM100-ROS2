@@ -7,13 +7,13 @@
 
 namespace SOArm100::Kinematics
 {
-namespace Solver 
-{ 
-struct SolverHistory; 
+namespace Solver
+{
+struct SolverHistory;
 }
-namespace Model  
-{ 
-class JointState; 
+namespace Model
+{
+class JointState;
 }
 
 namespace Heuristic

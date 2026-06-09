@@ -23,11 +23,11 @@ KinematicTopology TopologyAnalyzer::Analyze( const Model::JointChain& chain, con
 
 	int planar_analyze_start = 0;
 	int planar_analyze_count = wrist_group ?
-	                           wrist_group->FirstIndex():
+	                           wrist_group->FirstIndex() :
 	                           chain.GetActiveJointCount();
-	Mat4d planar_home = wrist_group ? 
-		wrist_group->GetWristCenter()  :
-		home;
+	Mat4d planar_home = wrist_group ?
+	                    wrist_group->GetWristCenter()  :
+	                    home;
 
 	auto planar_group = PlanarNRAnalyzer::Analyze( chain, planar_home, planar_analyze_start, planar_analyze_count );
 	if ( !planar_group.has_value() )

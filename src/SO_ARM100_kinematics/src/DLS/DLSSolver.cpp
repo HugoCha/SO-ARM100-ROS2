@@ -159,7 +159,8 @@ IKSolution DLSSolver::Solve(
 	if ( !state )
 	{
 		if ( !problem.CanReSeed() )
-			return { IKSolverState::NotRun, {}};
+			return { IKSolverState::NotRun, {}}
+		;
 
 		seed = seed_generator.Generate( problem );
 		state = InitializeState( problem.target, seed, buffers );

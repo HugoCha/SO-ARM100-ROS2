@@ -195,9 +195,9 @@ bool IKJointGroupModelBase::ComputeGroupJointPosesFK(
 
 // ------------------------------------------------------------
 
-double IKJointGroupModelBase::ComputeLocalPositionError( 
-	const Vec3d& p_local_target, 
-	const VecXd& seed, 
+double IKJointGroupModelBase::ComputeLocalPositionError(
+	const Vec3d& p_local_target,
+	const VecXd& seed,
 	const VecXd& local_angles ) const
 {
 	const int n_joints = GetChain()->GetActiveJointCount();

@@ -514,8 +514,8 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 	double avg_iteration = 0.0;
 	double avg_error = 0.0;
 	random_numbers::RandomNumberGenerator rng;
-    double tolerance = 5e-3;
-    VecXd seed = VecXd::Zero( 3 );
+	double tolerance = 5e-3;
+	VecXd seed = VecXd::Zero( 3 );
 	VecXd joints( 3 );
 
 	for ( int i = 0; i < ITER; i++ )
@@ -524,12 +524,12 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 		seed = model->GetChain()->RandomValidJointsNear( rng, joints, 0.3 );
 		// Mat4d target;
 		// target <<
-        // -0.317482 ,        0 , 0.948264 ,-0.273223
-        // ,        0,         1,         0,       0.2
-        // ,-0.948264,         0, -0.317482, -0.655129
-        // ,        0,         0,         0,         1;
+		// -0.317482 ,        0 , 0.948264 ,-0.273223
+		// ,        0,         1,         0,       0.2
+		// ,-0.948264,         0, -0.317482, -0.655129
+		// ,        0,         0,         0,         1;
 
-		//auto problem = CreateProblem( seed, target, tolerance );
+		// auto problem = CreateProblem( seed, target, tolerance );
 		auto problem = CreateProblem( model, seed, joints, tolerance );
 		auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
@@ -593,7 +593,7 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 	joints << M_PI / 2, M_PI / 4, M_PI / 4; // Target quite far from seed zero configuration
 
 	auto problem = CreateProblem( model, seed, joints );
-    problem.tolerance = 1e-6;
+	problem.tolerance = 1e-6;
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Should break loop early and fallback gracefully to partial success

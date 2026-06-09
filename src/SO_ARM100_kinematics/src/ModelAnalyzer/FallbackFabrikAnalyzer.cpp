@@ -23,28 +23,28 @@ std::optional< FallbackFabrikJointGroup > FallbackFabrikAnalyzer::Analyze(
 	if ( joint_chain.Empty() )
 		return std::nullopt;
 
-    const int n_joints = joint_chain.GetActiveJointCount(); 
+	const int n_joints = joint_chain.GetActiveJointCount();
 
-    int base_cnt = base_group ? base_group->Size() : 0;
-    int planar_cnt = planar_group ? planar_group->Size() : 0;
-    int wrist_cnt = wrist_group ? wrist_group->Size() : 0;
+	int base_cnt = base_group ? base_group->Size() : 0;
+	int planar_cnt = planar_group ? planar_group->Size() : 0;
+	int wrist_cnt = wrist_group ? wrist_group->Size() : 0;
 
-    if ( base_cnt + planar_cnt + wrist_cnt == n_joints )
-        return std::nullopt;
+	if ( base_cnt + planar_cnt + wrist_cnt == n_joints )
+		return std::nullopt;
 
-    if ( wrist_group )
-    {
-        return FallbackFabrikJointGroup( 
-            0, 
-            wrist_group->FirstIndex(), 
-            wrist_group->GetWristCenter() );
-    }
+	if ( wrist_group )
+	{
+		return FallbackFabrikJointGroup(
+			0,
+			wrist_group->FirstIndex(),
+			wrist_group->GetWristCenter() );
+	}
 
 	return FallbackFabrikJointGroup(
-        0,
-        n_joints,
-        home
-    );
+		0,
+		n_joints,
+		home
+		);
 }
 
 // ------------------------------------------------------------

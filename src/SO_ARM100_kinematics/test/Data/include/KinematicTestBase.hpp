@@ -37,9 +37,9 @@ Solver::IKProblem CreateProblem(
 	return CreateProblem( seed, fk, tolerance );
 }
 
-Solver::IKProblem CreateProblem( 
-	const VecXd& seed, 
-	Mat4d target, 
+Solver::IKProblem CreateProblem(
+	const VecXd& seed,
+	Mat4d target,
 	double tolerance =  SOArm100::Kinematics::error_tolerance ) const
 {
 	return {

@@ -74,9 +74,9 @@ bool ComputeGroupWorldFK( const VecXd& joints, Mat4d& fk ) const {
 	return ComputeGroupFK( joints, Mat4d::Identity(), fk );
 }
 
-double ComputeLocalPositionError( 
-	const Vec3d& p_local_target, 
-	const VecXd& seed, 
+double ComputeLocalPositionError(
+	const Vec3d& p_local_target,
+	const VecXd& seed,
 	const VecXd& local_angles ) const;
 
 Mat4d GetAncestorTransform( const VecXd& seed ) const;

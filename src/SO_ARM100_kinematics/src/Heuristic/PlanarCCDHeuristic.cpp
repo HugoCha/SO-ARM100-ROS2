@@ -44,7 +44,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
-	
+
 	const int n_joints = model_->GetChain()->GetActiveJointCount();
 	if ( problem.seed.size() != n_joints )
 		return presolution;
@@ -166,7 +166,7 @@ void PlanarCCDHeuristic::UpdateBuffer(
 
 void PlanarCCDHeuristic::UpdateHistory(
 	int iteration,
-    const Solver::IKProblem& problem,
+	const Solver::IKProblem& problem,
 	const SolverBuffer& buffer,
 	Solver::SolverHistory& history ) const
 {

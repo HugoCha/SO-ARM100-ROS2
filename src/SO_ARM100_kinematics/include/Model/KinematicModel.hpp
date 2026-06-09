@@ -31,11 +31,11 @@ KinematicModel(
 	is_empty_ = !chain_ || home_configuration_.isZero();
 }
 
-KinematicModel(const KinematicModel&) = delete;
-KinematicModel& operator=(const KinematicModel&) = delete;
+KinematicModel( const KinematicModel& ) = delete;
+KinematicModel& operator = ( const KinematicModel& ) = delete;
 
-KinematicModel(KinematicModel&&) = default;
-KinematicModel& operator=(KinematicModel&&) = default;
+KinematicModel( KinematicModel&& ) = default;
+KinematicModel& operator = ( KinematicModel&& ) = default;
 
 static KinematicModel Empty(){
 	return KinematicModel( nullptr, Mat4d::Zero(), KinematicTopology(), nullptr, nullptr );
@@ -54,7 +54,7 @@ bool ComputeFK( const VecXd& joints, Mat4d& fk ) const {
 double ComputeError( const VecXd& joints, const Mat4d& target ) const {
 	Mat4d fk;
 	if ( !ComputeFK( joints, fk ) )
-		return std::numeric_limits<double>::infinity();
+		return std::numeric_limits< double >::infinity();
 	Vec6d pose_error;
 	PoseError( target, fk, pose_error );
 	return pose_error.norm();

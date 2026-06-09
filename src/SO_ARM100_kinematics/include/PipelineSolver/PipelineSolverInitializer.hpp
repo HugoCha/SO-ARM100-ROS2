@@ -17,7 +17,7 @@ struct PipelineSolverParameters;
 class PipelineSolverInitializer
 {
 public:
-static std::unique_ptr< const Solver::IKPipeline > InitializeSinglePipeline( 
+static std::unique_ptr< const Solver::IKPipeline > InitializeSinglePipeline(
 	Model::KinematicModelConstPtr model );
 
 static std::unique_ptr< const Solver::PipelineSolver > InitializeMultiplePipeline(

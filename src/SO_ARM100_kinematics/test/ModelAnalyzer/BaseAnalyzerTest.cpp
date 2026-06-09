@@ -184,7 +184,7 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 		1,
 		1,
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ),
-		ToTransformMatrix( Vec3d( 0,0, 1) ) );
+		ToTransformMatrix( Vec3d( 0, 0, 1 ) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
 		joint_chain_y,

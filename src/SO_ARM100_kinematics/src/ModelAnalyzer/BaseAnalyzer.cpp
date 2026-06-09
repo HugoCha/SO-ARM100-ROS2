@@ -22,7 +22,7 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 	if ( !wrist_group ||
 	     joint_chain.GetActiveJointCount() <= 1 )
 		return std::nullopt;
-	
+
 	if ( !planar_group )
 	{
 		if ( wrist_group->FirstIndex() != 1 )
@@ -33,7 +33,7 @@ std::optional< JointGroup > BaseAnalyzer::Analyze(
 		if ( planar_group->FirstIndex() == 0 )
 			return std::nullopt;
 	}
-	
+
 	auto base_joint = joint_chain.GetActiveJoint( 0 );
 	Mat4d tip_home = wrist_group->GetWristCenter();
 

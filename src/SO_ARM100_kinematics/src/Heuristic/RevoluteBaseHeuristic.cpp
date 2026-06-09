@@ -124,17 +124,17 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 
 		double fk_error;
 		Vec1d best_candidate;
-		if ( !ValidateAndSelectCandidate( 
-			p_wrist_center, 
-			problem.seed, 
-			alpha, 
-			beta, 
-			fk_error, 
-			best_candidate ) )
+		if ( !ValidateAndSelectCandidate(
+				 p_wrist_center,
+				 problem.seed,
+				 alpha,
+				 beta,
+				 fk_error,
+				 best_candidate ) )
 		{
-			presolution.state = fk_error < 2 * problem.tolerance ? 
-				IKHeuristicState::PartialSuccess : 
-				IKHeuristicState::Fail;
+			presolution.state = fk_error < 2 * problem.tolerance ?
+			                    IKHeuristicState::PartialSuccess :
+			                    IKHeuristicState::Fail;
 		}
 		else
 		{
@@ -144,7 +144,7 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 		presolution.error = fk_error;
 		GetGroup().SetGroupJoints( best_candidate, presolution.joints );
 	}
-	
+
 	return presolution;
 }
 
@@ -197,7 +197,7 @@ bool RevoluteBaseHeuristic::ValidateAndSelectCandidate(
 		}
 		return false;
 	}
-	
+
 	if ( isvalid1 && !isvalid2 )
 	{
 		best_candidate[0] = candidate1;
@@ -209,8 +209,8 @@ bool RevoluteBaseHeuristic::ValidateAndSelectCandidate(
 	else
 	{
 		best_candidate[0] = std::abs( candidate1 - seed[0] ) < std::abs( candidate2 - seed[0] ) ?
-			   candidate1 :
-			   candidate2;
+		                    candidate1 :
+		                    candidate2;
 	}
 
 	fk_error = 0.0;

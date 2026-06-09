@@ -494,7 +494,7 @@ Model::KinematicTopology createRevoluteBaseTopology( const Mat4d& home )
 	Mat4d wrist_center = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 
 	Model::RevoluteBaseJointGroup base_group( wrist_center );
-	
+
 	Model::PlanarNRJointGroup planar_group( 1, 1, wrist_center );
 
 	Model::WristJointGroup wrist_group(
@@ -620,7 +620,7 @@ Mat4d createPrismaticBaseHome()
 Model::KinematicTopology createPrismaticBaseTopology( const Mat4d& home )
 {
 	Model::KinematicTopology topology;
-	
+
 	Mat4d wrist_center = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
 
 	Model::PrismaticBaseJointGroup base_group( wrist_center );
@@ -1660,7 +1660,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint1",
 		Model::Twist( axis, origin ),
 		Model::Link( "link1", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( - 4 * M_PI / 5, 4 * M_PI / 5 )
+		Model::Limits( -4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	// Planar Joints 3 Y-axis revolute joints
@@ -1681,7 +1681,7 @@ std::unique_ptr< const Model::JointChain > createURLike_6DOFsJointChain()
 		"joint3",
 		Model::Twist( axis, origin ),
 		Model::Link( "link3", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-		Model::Limits( - 4 * M_PI / 5, 4 * M_PI / 5 )
+		Model::Limits( -4 * M_PI / 5, 4 * M_PI / 5 )
 		);
 
 	origin = next_origin;

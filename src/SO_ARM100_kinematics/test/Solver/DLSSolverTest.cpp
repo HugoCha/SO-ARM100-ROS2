@@ -174,14 +174,14 @@ TEST_F( DLSSolverTest, SolveIK_SimpleReachableTarget )
 
 	// Verify solution
 	auto achieved_pose = ComputeFK( model_, result.joints );
-	EXPECT_TRUE( IsApprox( 
-		achieved_pose, 
-		problem.target, 
-		problem.tolerance ) )
+	EXPECT_TRUE( IsApprox(
+					 achieved_pose,
+					 problem.target,
+					 problem.tolerance ) )
 	    << "Target = " << std::endl << problem.target.matrix() << std::endl
 	    << "Result = " << std::endl << achieved_pose.matrix() << std::endl
 	    << "Joints = " << std::endl << result.joints.matrix() << std::endl
-		<< "error = " << PoseError( model_, problem, result ) << " > " << problem.tolerance;
+	    << "error = " << PoseError( model_, problem, result ) << " > " << problem.tolerance;
 	EXPECT_LT( result.iterations, 10 );
 }
 

@@ -27,9 +27,9 @@ std::unique_ptr< const Solver::IKPipeline > PipelineSolverInitializer::Initializ
 	Model::KinematicModelConstPtr model )
 {
 	return Solver::PipelineBuilder{}
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model, RobustDLSSolverParameters() ) )
-		.Build();
+	       .WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
+	       .WithSolver( std::make_unique< Solver::DLSSolver >( model, RobustDLSSolverParameters() ) )
+	       .Build();
 }
 
 // ------------------------------------------------------------
@@ -56,7 +56,7 @@ std::unique_ptr< const Solver::PipelineSolver > PipelineSolverInitializer::Initi
 	auto scorer = Scorer::WeightedScorersBuilder{}
 	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
 	.Add( 3.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
-	.Add( 1.0, std::make_unique< Scorer::SeedConsistencyScorer >( std::numeric_limits<double>::infinity() ) )
+	.Add( 1.0, std::make_unique< Scorer::SeedConsistencyScorer >( std::numeric_limits< double >::infinity() ) )
 	.Add( 3.0, std::make_unique< Scorer::ManipulabilityScorer >( model ) )
 	.Add( 1.0, std::make_unique< Scorer::PoseErrorScorer >( model, Scorer::PoseErrorScorer::ScorerParameters() ) )
 	.Build();

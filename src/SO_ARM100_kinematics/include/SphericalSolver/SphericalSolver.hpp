@@ -64,16 +64,16 @@ Model::SphericalModel model_;
 double DeviationCost( const Vec3d& prefered, const Vec3d& angles ) const;
 double LimitViolationCost( const Vec3d& angles, double violation_weight ) const;
 double SingularityCost( const Mat3d& R_canonical ) const;
-double RotationErrorCost( 
-	const Mat3d& R_target, 
+double RotationErrorCost(
+	const Mat3d& R_target,
 	const Vec3d& angles,
 	double violation_penalty,
 	double tolerance ) const;
-double FKErrorCost( 
-	const Vec3d& p_tcp, 
-	const Vec3d& p_target, 
+double FKErrorCost(
+	const Vec3d& p_tcp,
+	const Vec3d& p_target,
 	const Vec3d& angles,
-	double violation_weight, 
+	double violation_weight,
 	double tolerance ) const;
 
 SphericalSolutionBranch GridSearch( const CostFn& f ) const;

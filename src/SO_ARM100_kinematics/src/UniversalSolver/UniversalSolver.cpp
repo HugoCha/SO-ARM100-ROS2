@@ -94,9 +94,9 @@ UniversalSolution UniversalSolver::SolveFromTwoVectors(
 
 // ------------------------------------------------------------
 
-double UniversalSolver::FKErrorCost( 
-	double fk_error,	
-	double fk_error_penalty, 
+double UniversalSolver::FKErrorCost(
+	double fk_error,
+	double fk_error_penalty,
 	double tolerance ) const
 {
 	return std::abs( fk_error ) > tolerance ? fk_error_penalty * std::abs( fk_error ) : std::abs( fk_error ) / M_PI;
@@ -135,10 +135,10 @@ double UniversalSolver::LimitCost( const Vec2d& angles ) const
 
 // ------------------------------------------------------------
 
-double UniversalSolver::RotationErrorCost(  
-	const Mat3d& R_target, 
-	const Vec2d& angles,  
-	double fk_error_penalty, 
+double UniversalSolver::RotationErrorCost(
+	const Mat3d& R_target,
+	const Vec2d& angles,
+	double fk_error_penalty,
 	double tolerance ) const
 {
 	Mat3d R = model_.Recompose( angles );

@@ -244,10 +244,10 @@ bool RobotArmKinematicsSolver::ForwardKinematic(
 	const auto& chain = model_->GetChain();
 	const auto& home = model_->GetHomeConfiguration();
 
-	return chain->ComputeJointPosesFK( 
-		joints, 
-		home, 
-		poses, 
+	return chain->ComputeJointPosesFK(
+		joints,
+		home,
+		poses,
 		tip_pose );
 }
 
@@ -344,9 +344,9 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	Solver::IKRunContext context;
 	Solver::IKSolution solution;
 
-	solution = ( timeout_ms == 0 ) ? 
-		getIK_solver_->Solve( problem, context ) :
-		searchIK_solver_->Solve( problem, context );
+	solution = ( timeout_ms == 0 ) ?
+	           getIK_solver_->Solve( problem, context ) :
+	           searchIK_solver_->Solve( problem, context );
 
 	joints = solution.joints.data();
 

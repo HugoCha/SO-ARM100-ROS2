@@ -103,7 +103,7 @@ struct WristJointGroup : public JointGroup
 	}
 
 private:
-Mat4d wrist_center_;
+	Mat4d wrist_center_;
 };
 
 struct FallbackFabrikJointGroup : public JointGroup

@@ -306,10 +306,10 @@ double SphericalSolver::RotationErrorCost(
 // ------------------------------------------------------------
 
 double SphericalSolver::FKErrorCost(
-	const Vec3d& p_tcp, 
-	const Vec3d& p_target, 
+	const Vec3d& p_tcp,
+	const Vec3d& p_target,
 	const Vec3d& angles,
-	double violation_weight, 
+	double violation_weight,
 	double tolerance ) const
 {
 	const Mat3d R_fk      = model_.Recompose( angles );

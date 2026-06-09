@@ -70,7 +70,8 @@ IKPresolution Planar1RHeuristic::Presolve(
 
 	// Unreachable
 	if ( D > 1.01 * L() )
-		return { problem.seed, IKHeuristicState::Fail };
+		return { problem.seed, IKHeuristicState::Fail }
+	;
 
 	double value = SignedAngle(
 		reference_direction_,
@@ -82,9 +83,9 @@ IKPresolution Planar1RHeuristic::Presolve(
 
 	if ( !GetJoint()->GetLimits().Within( value ) )
 	{
-		presolution.state = ( presolution.error < 10 * problem.tolerance ) ? 
-			IKHeuristicState::PartialSuccess : 
-			IKHeuristicState::Fail;
+		presolution.state = ( presolution.error < 10 * problem.tolerance ) ?
+		                    IKHeuristicState::PartialSuccess :
+		                    IKHeuristicState::Fail;
 	}
 	else
 	{

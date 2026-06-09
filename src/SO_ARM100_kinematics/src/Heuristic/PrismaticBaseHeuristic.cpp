@@ -33,28 +33,28 @@ IKPresolution PrismaticBaseHeuristic::Presolve(
 
 	auto wrist_center = ComputeGroupLocalTarget( problem.seed, problem.target );
 
-    const Vec3d& origin = base_joint->Origin();
-    const Vec3d& axis   = base_joint->Axis();
+	const Vec3d& origin = base_joint->Origin();
+	const Vec3d& axis   = base_joint->Axis();
 
 	const Vec3d& p_wrist_center = Translation( wrist_center );
 
-    Vec3d wc_proj = ProjectPointOnAxis( p_wrist_center - origin, Vec3d::Zero(), axis );
+	Vec3d wc_proj = ProjectPointOnAxis( p_wrist_center - origin, Vec3d::Zero(), axis );
 
-    double value = wc_proj.norm();
-    Vec1d clamp_value( base_joint->GetLimits().Clamp( value ) );
-    
-    presolution.error = std::abs( clamp_value[0] - value );
-    
-    if ( base_joint->GetLimits().Within( value ) )
-    {
-        presolution.state = IKHeuristicState::Success;
-    }
-    else
-    {
-        presolution.state = ( presolution.error < 2 * problem.tolerance ) ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail;
-    }
+	double value = wc_proj.norm();
+	Vec1d clamp_value( base_joint->GetLimits().Clamp( value ) );
 
-    GetGroup().SetGroupJoints( clamp_value, presolution.joints );
+	presolution.error = std::abs( clamp_value[0] - value );
+
+	if ( base_joint->GetLimits().Within( value ) )
+	{
+		presolution.state = IKHeuristicState::Success;
+	}
+	else
+	{
+		presolution.state = ( presolution.error < 2 * problem.tolerance ) ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail;
+	}
+
+	GetGroup().SetGroupJoints( clamp_value, presolution.joints );
 	return presolution;
 }
 
