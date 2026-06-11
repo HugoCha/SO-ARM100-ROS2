@@ -12,8 +12,8 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-Vec3d GetJointAxis( JointChain chain, int index );
-Mat4d GetJointOriginTransform( JointChain chain, int index );
+Vec3d GetJointAxis( const JointChain& chain, int index );
+Mat4d GetJointOriginTransform( const JointChain& chain, int index );
 
 // ------------------------------------------------------------
 
@@ -77,7 +77,7 @@ bool PlanarNRAnalyzer::CheckConsistency(
 
 // ------------------------------------------------------------
 
-Vec3d GetJointAxis( JointChain chain, int index )
+Vec3d GetJointAxis( const JointChain& chain, int index )
 {
 	auto joint = chain.GetActiveJoint( index );
 	if ( !joint )
@@ -87,7 +87,7 @@ Vec3d GetJointAxis( JointChain chain, int index )
 
 // ------------------------------------------------------------
 
-Mat4d GetJointOriginTransform( JointChain chain, int index )
+Mat4d GetJointOriginTransform( const JointChain& chain, int index )
 {
 	return chain.GetActiveJoint( index )->OriginTransform();
 }

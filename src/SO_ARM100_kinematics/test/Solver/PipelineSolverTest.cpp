@@ -1,9 +1,7 @@
 #include "PipelineSolver/PipelineSolver.hpp"
 
 #include "DLS/DLSSolverParameters.hpp"
-#include "FABRIK/FabrikSolver.hpp"
 #include "Model/Joint/JointGroup.hpp"
-#include "Model/Joint/RandomType.hpp"
 #include "PipelineSolver/PipelineSolverParameters.hpp"
 #include "RobotModelTestData.hpp"
 
@@ -20,9 +18,9 @@
 #include "Scorer/IKSolutionScorer.hpp"
 #include "Scorer/ManipulabilityScorer.hpp"
 #include "Scorer/PoseErrorScorer.hpp"
+#include "Scorer/SeedConsistencyScorer.hpp"
 #include "Scorer/WeightedScorersBuilder.hpp"
 #include "Seed/IKOppositeSeedGenerator.hpp"
-#include "Seed/IKRandomSeedGenerator.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -46,7 +44,7 @@ class PipelineSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	model_ = Data::GetURLikeRobot();
+	model_ = Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
 
 	Solver::PipelineSolverParameters parameters;
 	parameters.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
@@ -63,7 +61,7 @@ std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelC
 {
 	std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines;
 
-	auto params_dls_solver = Solver::ExtraFastDLSSolverParameters();
+	auto params_dls_solver = Solver::FastDLSSolverParameters();
 
 	pipelines.emplace_back(
 		Solver::PipelineBuilder{}
@@ -83,6 +81,7 @@ std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelC
 	.Add( 3.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
 	.Add( 3.0, std::make_unique< Scorer::ManipulabilityScorer >( model ) )
 	.Add( 1.0, std::make_unique< Scorer::PoseErrorScorer >( model, Scorer::PoseErrorScorer::ScorerParameters() ) )
+	.Add( 1.0, std::make_unique< Scorer::SeedConsistencyScorer >( 1e3 ) )
 	.Build();
 
 	// Create a solver
@@ -145,8 +144,8 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 		VecXd joints = chain->RandomValidJoints( rng_, 0 );
 
 		// Seed joints
-		// VecXd seed = chain->RandomValidJoints( rng_, 0 );
-		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
+		VecXd seed = chain->RandomValidJoints( rng_, 0 );
+		//VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
 
 		auto problem = CreateProblem( model_, seed, joints, tolerance );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );
@@ -169,12 +168,13 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 			// 	<< "Result joints= " << result.joints.transpose() << std::endl;
 
 			k_successes++;
-			avg_iterations += result.iterations / ( double )ITER;
-			delta += result.score - avg_score;
-			avg_score += delta / k_successes;
-			var_score += delta * ( result.score - avg_score );
-			avg_error += result.error / ( double )ITER;
 		}
+
+		avg_iterations += result.iterations / ( double )ITER;
+		delta += result.score - avg_score;
+		avg_score += delta / k_successes;
+		var_score += delta * ( result.score - avg_score );
+		avg_error += result.error / ( double )ITER;
 	}
 	avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
 	var_score = var_score / ( double )ITER;
@@ -255,7 +255,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency_AllRobots )
 		EXPECT_LE( avg_iterations, 20 );
 		EXPECT_GE( k_successes, 0.95 * ITER );
 
-		std::cout << "==== Robot "  << robot.first << "====" << std::endl;
+		std::cout << "==== Robot "  << robot.first << " ====" << std::endl;
 		std::cout << "Avg score   = " << avg_score << std::endl;
 		std::cout << "Std score   = " << std_score << std::endl;
 		std::cout << "Avg iter    = " << avg_iterations << std::endl;
@@ -276,8 +276,8 @@ TEST_F( PipelineSolverTest, InverseKinematic_Unreachable )
 	target_pose.block< 3, 1 >( 0, 3 ) = Vec3d( 100.0, 0.0, 0.0 );  // Very far away
 
 	// Seed joints
-	VecXd seed( 5 );
-	seed << 0, 0, 0, 0, 0;
+	const int n_joints = model_->GetChain()->GetActiveJointCount();
+	VecXd seed = VecXd::Zero( n_joints );
 
 	auto problem = CreateProblem( seed, target_pose );
 	auto result = solver_->Solve( problem, Solver::IKRunContext() );

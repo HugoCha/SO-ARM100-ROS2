@@ -2,10 +2,12 @@
 
 #include "Global.hpp"
 #include "Joint.hpp"
+#include "Model/Joint/Link.hpp"
 #include "Utils/Converter.hpp"
 
 #include <cstddef>
 #include <memory>
+#include <moveit/robot_model/joint_model.hpp>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -18,14 +20,22 @@ struct Pose;
 class JointChain
 {
 public:
-JointChain( int n );
-JointChain( const JointChain& chain ) :
-	joints_( chain.joints_ ),
-	active_joints_( chain.active_joints_ ),
-	active_joint_centers_( chain.active_joint_centers_ )
-{
-}
+// JointChain( const JointChain& chain ) :
+// 	joints_( chain.joints_ ),
+// 	links_( chain.links_ ),
+// 	active_joints_( chain.active_joints_ ),
+// 	active_joint_centers_( chain.active_joint_centers_ ),
+// 	parent_link_joint_map_( chain.parent_link_joint_map_ ),
+// 	child_link_joint_map_( chain.child_link_joint_map_ ),
+// 	joint_map_( chain.joint_map_ ),
+// 	link_map_( chain.link_map_ ),
+// 	link_names_( chain.link_names_ ),
+// 	joint_names_( chain.joint_names_ )
+// {
+// }
 
+JointChain( const JointChain& ) = delete;
+JointChain& operator=( const JointChain& ) = delete;
 JointChain( JointChain&& ) = default;
 JointChain& operator = ( JointChain&& ) = default;
 
@@ -33,22 +43,20 @@ JointChain& operator = ( JointChain&& ) = default;
 	return joints_;
 }
 
+[[nodiscard]] std::span< LinkConstPtr const > GetLinks() const {
+	return links_;
+}
+
 [[nodiscard]] std::span< JointConstPtr const > GetActiveJoints() const {
 	return active_joints_;
 }
 
 [[nodiscard]] std::vector< std::string > GetJointNames() const {
-	std::vector< std::string > joint_names( GetJointCount() );
-	for ( int i = 0; i < GetJointCount(); i++ )
-		joint_names[i] = joints_[i]->GetName();
-	return joint_names;
+	return joint_names_;
 }
 
 [[nodiscard]] std::vector< std::string > GetLinkNames() const {
-	std::vector< std::string > link_names( GetJointCount() );
-	for ( int i = 0; i < GetJointCount(); i++ )
-		link_names[i] = joints_[i]->GetLink().GetName();
-	return link_names;
+	return link_names_;
 }
 
 JointConstPtr GetActiveJoint( int i ) const {
@@ -69,10 +77,16 @@ const Limits& GetActiveJointLimits( int i ) const {
 	return active_joints_[i]->GetLimits();
 }
 
-const Link& GetActiveJointLink( int i ) const {
-	if ( i < 0 || i >= active_joints_.size() )
-		throw std::out_of_range( "Invalid active joint index" );
-	return active_joints_[i]->GetLink();
+const Link* GetJointParentLink( int i ) const {
+	if ( i < 0 || i >= joints_.size() )
+		throw std::out_of_range( "Invalid joint index" );
+	return joints_[i]->GetParentLink();
+}
+
+const Link* const GetJointChildLink( int i ) const {
+	if ( i < 0 || i >= joints_.size() )
+		throw std::out_of_range( "Invalid joint index" );
+	return joints_[i]->GetChildLink();
 }
 
 int GetJointIndex( const Joint* joint ) const;
@@ -109,13 +123,6 @@ const Joint* GetPreviousJoint( const Joint* joint ) const;
 	return active_joints_.size();
 }
 
-void Add( const std::string& joint_name,
-          const Twist& twist,
-          const Link& link,
-          const Limits& limits ){
-	Add( std::make_shared< const Joint >( joint_name, twist, link, limits ) );
-}
-
 bool ComputeFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
@@ -146,42 +153,42 @@ bool ComputeJointStatesFK(
 	return ComputeJointStatesFK( thetas.data(), thetas.size(), home_configuration, joint_states, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeLinkPosesFK(
 	const std::span< const double >& thetas,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, joints_fk, fk );
+	return ComputeLinkPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, links_fk, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeLinkPosesFK(
 	const VecXd& thetas,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, joints_fk, fk );
+	return ComputeLinkPosesFK( thetas.data(), thetas.size(), GetLinkNames(), home_configuration, links_fk, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeLinkPosesFK(
 	const std::span< const double >& thetas,
 	const std::span< const std::string > link_names,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, joints_fk, fk );
+	return ComputeLinkPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, links_fk, fk );
 }
 
-bool ComputeJointPosesFK(
+bool ComputeLinkPosesFK(
 	const VecXd& thetas,
 	const std::span< const std::string > link_names,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const
 {
-	return ComputeJointPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, joints_fk, fk );
+	return ComputeLinkPosesFK( thetas.data(), thetas.size(), link_names, home_configuration, links_fk, fk );
 }
 
 [[nodiscard]] VecXd RandomValidJoints(
@@ -211,10 +218,19 @@ bool ComputeJointPosesFK(
 
 private:
 std::vector< JointConstPtr > joints_;
+std::vector< LinkConstPtr > links_;
 std::vector< JointConstPtr > active_joints_;
+
+std::unordered_map< LinkConstPtr, JointConstPtr > parent_link_joint_map_;
+std::unordered_map< LinkConstPtr, JointConstPtr > child_link_joint_map_;
+std::unordered_map< std::string, JointConstPtr > joint_map_;
+std::unordered_map< std::string, LinkConstPtr > link_map_;
+std::vector< std::string > link_names_;
+std::vector< std::string > joint_names_;
+
 std::vector< double > active_joint_centers_;
 
-JointChain( const std::span< JointConstPtr const >& joints );
+JointChain( const std::vector< JointConstPtr >& joints, const std::vector< LinkConstPtr >& links );
 
 bool ComputeFK(
 	const double* thetas,
@@ -229,18 +245,18 @@ bool ComputeJointStatesFK(
 	std::vector< JointState >& joint_states,
 	Mat4d& fk ) const;
 
-bool ComputeJointPosesFK(
+bool ComputeLinkPosesFK(
 	const double* thetas,
 	int n_joints,
 	const std::span< const std::string >& link_names,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joints_fk,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const noexcept;
 
 bool WithinLimits( const double* joints, int n_joints ) const;
 VecXd ClampLimits( const double* joints, int n_joints ) const;
 
-void Add( JointConstPtr joint );
+friend class JointChainBuilder;
 };
 
 using JointChainConstPtr = std::shared_ptr< const JointChain >;

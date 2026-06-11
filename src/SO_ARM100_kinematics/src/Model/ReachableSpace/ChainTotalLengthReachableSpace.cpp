@@ -38,12 +38,12 @@ double ChainTotalLengthReachableSpace::ComputeTotalLength(
 	if ( chain.Empty() )
 		return 0.0;
 
-	double total_length = 0.0;
+	double total_length = chain.GetJointParentLink( 0 )->Length();
 	const auto& joints = chain.GetJoints();
-
+	
 	for ( const auto& joint : joints )
 	{
-		total_length += joint->GetLink().GetLength();
+		total_length += joint->GetChildLink()->Length();
 	}
 
 	Vec3d p_last_joint = joints.back()->Origin();

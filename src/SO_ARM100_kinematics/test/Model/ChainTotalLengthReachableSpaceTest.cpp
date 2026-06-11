@@ -3,8 +3,6 @@
 #include "Global.hpp"
 #include "RobotModelTestData.hpp"
 
-#include "Model/Joint/JointChain.hpp"
-
 #include <gtest/gtest.h>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
@@ -29,9 +27,9 @@ void SetUp() override
 	}
 
 	// Create a robot model for testing
-	Model::JointChain joint_chain = Data::GetZYZRevoluteRobotJointChain();
+	auto joint_chain = Data::GetZYZRevoluteRobotJointChain();
 	Mat4d home = Data::GetZYZRevoluteRobotHome();
-	reachable_space_.reset( new Model::ChainTotalLengthReachableSpace( joint_chain, home ) );
+	reachable_space_.reset( new Model::ChainTotalLengthReachableSpace( *joint_chain, home ) );
 }
 
 void TearDown() override

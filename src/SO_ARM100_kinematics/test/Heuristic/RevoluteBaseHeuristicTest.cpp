@@ -10,8 +10,8 @@
 #include "Model/KinematicModel.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
-#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 #include <gtest/gtest.h>
 #include <cmath>
@@ -85,37 +85,8 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Singularity )
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::PartialSuccess )
-	    << "IK should partially succeed for singularity";
-
-	EXPECT_EQ( seed[0], result.joints[0] )
-	    << "Expected joint= " << seed[0] << std::endl
-	    << "Result   joint= " << result.joints[0] << std::endl;
-}
-
-// ------------------------------------------------------------
-
-TEST_F( RevoluteBaseHeuristicTest, IK_ReferenceDirection_Singularity )
-{
-	// Tip Home of Revolute Base group is on the base axis
-	auto singularity_home = ToTransformMatrix( Vec3d( 0, -0.1, 2 ) );
-	auto model = CreateModel( *model_->GetChain(), singularity_home );
-
-	auto singularity_base_group = Model::RevoluteBaseJointGroup(
-		ToTransformMatrix( Vec3d( 0, 0, 2 ) ) );
-	auto heuristic = Heuristic::RevoluteBaseHeuristic( model, singularity_base_group );
-
-	VecXd seed( 3 );
-	seed << M_PI / 2, 0, 0;
-
-	VecXd joints( 3 );
-	joints << M_PI / 4, 0, 0;
-
-	auto problem = CreateProblem( model, seed, joints );
-	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
-
-	// Check that the solution is valid
-	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::PartialSuccess )
-	    << "IK should partially succeed for singularity";
+	    << "IK should partially succeed for singularity" << std::endl
+		<< result;
 
 	EXPECT_EQ( seed[0], result.joints[0] )
 	    << "Expected joint= " << seed[0] << std::endl

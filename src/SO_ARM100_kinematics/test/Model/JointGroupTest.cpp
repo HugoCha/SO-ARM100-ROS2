@@ -48,11 +48,11 @@ TEST_F( JointGroupTest, IsConsistent )
 
 	// Valid group
 	Model::JointGroup valid_group = Model::JointGroup::CreateFromRange( "valid_group", 1, 2, Mat4d::Identity() );
-	ASSERT_TRUE( Model::JointGroup::IsConsistent( chain, valid_group ) );
+	ASSERT_TRUE( Model::JointGroup::IsConsistent( *chain, valid_group ) );
 
 	// Invalid group (out of bounds)
 	Model::JointGroup invalid_group = Model::JointGroup::CreateFromRange( "invalid_group", 8, 3, Mat4d::Identity() );
-	ASSERT_FALSE( Model::JointGroup::IsConsistent( chain, invalid_group ) );
+	ASSERT_FALSE( Model::JointGroup::IsConsistent( *chain, invalid_group ) );
 }
 
 // ------------------------------------------------------------

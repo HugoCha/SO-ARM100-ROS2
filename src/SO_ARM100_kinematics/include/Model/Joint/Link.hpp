@@ -4,31 +4,39 @@
 
 #include "Utils/KinematicsUtils.hpp"
 
+#include <memory>
+
 namespace SOArm100::Kinematics::Model
 {
 class Link
 {
 public:
-Link( const std::string& name, const Mat4d& origin, double length ) :
+Link( const std::string& name, 
+	  const Mat4d& home_tf, 
+	  const Mat4d& local_tf, 
+	  double length ) :
 	name_( name ),
-	joint_origin_transform_( origin ),
-	joint_origin_position_( Translation( origin ) ),
+	home_tf_( home_tf ),
+	local_tf_( local_tf ),
 	length_( length )
 {
 }
 
-Link() :
-	Link( "", Mat4d::Identity(), 0 )
+Link( const std::string& name, 
+	  const Mat4d& home_tf, 
+	  const Mat4d& local_tf,
+	  const Mat4d& child_tf ) :
+	Link( name, home_tf, local_tf, ( Translation( child_tf ) - Translation( home_tf ) ).norm() )
 {
 }
 
-Link( const std::string& name, const Mat4d& origin, const Mat4d& child_origin ) :
-	Link( name, origin, ( Translation( child_origin ) - Translation( origin ) ).norm() )
+Link() :
+	Link( "", Mat4d::Identity(), Mat4d::Identity(), 0 )
 {
 }
 
 Link( const Link& link ) :
-	Link( link.GetName(), link.GetJointOriginTransform(), link.GetLength() )
+	Link( link.GetName(), link.HomeTransform(), link.ParentJointTransform(), link.Length() )
 {
 }
 
@@ -36,22 +44,25 @@ const std::string& GetName() const {
 	return name_;
 }
 
-[[nodiscard]] const Vec3d& GetJointOrigin() const {
-	return joint_origin_position_;
+[[nodiscard]] const Mat4d& HomeTransform() const {
+	return home_tf_;
 }
 
-[[nodiscard]] const Mat4d& GetJointOriginTransform() const {
-	return joint_origin_transform_;
+[[nodiscard]] const Mat4d& ParentJointTransform() const {
+	return local_tf_;
 }
 
-[[nodiscard]] const double GetLength() const {
+[[nodiscard]] const double& Length() const {
 	return length_;
 }
 
 private:
-std::string name_;
-const Mat4d joint_origin_transform_;
-const Vec3d joint_origin_position_;
+const std::string name_;
+const Mat4d home_tf_;
+const Mat4d local_tf_;
 const double length_;
 };
+
+using LinkConstPtr = std::shared_ptr< const Link >;
+using LinkPtr = std::shared_ptr< Link >;
 }

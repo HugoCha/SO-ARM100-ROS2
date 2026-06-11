@@ -1,9 +1,9 @@
 #include "Model/Joint/JointChain.hpp"
 
 #include "Global.hpp"
+#include "KinematicTestBase.hpp"
 #include "Model/Joint/Joint.hpp"
 #include "RobotModelTestData.hpp"
-#include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <Eigen/src/Geometry/AngleAxis.h>
@@ -13,34 +13,12 @@
 namespace SOArm100::Kinematics::Test
 {
 
-class JointChainTest : public ::testing::Test
+class JointChainTest : public KinematicTestBase
 {
 protected:
 void SetUp() override {
 	// Create a joint chain with 3 joints
-	joint_chain_ = std::make_shared< Model::JointChain >( 3 );
-
-	// Create joints
-	joint_chain_->Add(
-		"joint1",
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( "link1", Mat4d::Identity(), 0.5 ),
-		Model::Limits( -M_PI, M_PI )
-		);
-
-	joint_chain_->Add(
-		"joint2",
-		Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-		Model::Link( "link2", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
-		Model::Limits( -M_PI / 2, M_PI / 2 )
-		);
-
-	joint_chain_->Add(
-		"joint3",
-		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 1.0 ) ),
-		Model::Link( "link3", ToTransformMatrix( Vec3d( 0, 0, 1.0 ) ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	joint_chain_ = Data::GetZYZRevoluteRobot()->GetChain();
 	joint1_ = joint_chain_->GetJoints()[0];
 	joint2_ = joint_chain_->GetJoints()[1];
 	joint3_ = joint_chain_->GetJoints()[2];
@@ -48,7 +26,7 @@ void SetUp() override {
 void TearDown() override {
 }
 
-std::shared_ptr< Model::JointChain > joint_chain_;
+const Model::JointChain* joint_chain_;
 std::shared_ptr< const Model::Joint > joint1_;
 std::shared_ptr< const Model::Joint > joint2_;
 std::shared_ptr< const Model::Joint > joint3_;
@@ -56,47 +34,36 @@ std::shared_ptr< const Model::Joint > joint3_;
 
 // ------------------------------------------------------------
 
-TEST_F( JointChainTest, ConstructorWithCapacity )
-{
-	int n = 10;
-	Model::JointChain chain( n );
-	ASSERT_EQ( chain.GetJointCount(), 0 );
-	ASSERT_EQ( chain.GetActiveJointCount(), 0 );
-	ASSERT_TRUE( chain.Empty() );
-}
-
-// ------------------------------------------------------------
-
 TEST_F( JointChainTest, GetZYZRevoluteRobotJointChain )
 {
-	Model::JointChain chain = Data::GetZYZRevoluteRobotJointChain();
+	auto chain = Data::GetZYZRevoluteRobotJointChain();
 
-	ASSERT_EQ( chain.GetJointCount(), 3 );
-	ASSERT_EQ( chain.GetActiveJointCount(), 3 );
+	ASSERT_EQ( chain->GetJointCount(), 3 );
+	ASSERT_EQ( chain->GetActiveJointCount(), 3 );
 
 	// Check each joint's properties
-	Model::Limits limits = chain.GetActiveJointLimits( 0 );
+	Model::Limits limits = chain->GetActiveJointLimits( 0 );
 	ASSERT_EQ( limits.Min(), -M_PI );
 	ASSERT_EQ( limits.Max(), M_PI );
 
-	limits = chain.GetActiveJointLimits( 1 );
-	ASSERT_EQ( limits.Min(), -M_PI  / 2 );
+	limits = chain->GetActiveJointLimits( 1 );
+	ASSERT_EQ( limits.Min(), -M_PI / 2 );
 	ASSERT_EQ( limits.Max(), M_PI  / 2 );
 
-	limits = chain.GetActiveJointLimits( 2 );
+	limits = chain->GetActiveJointLimits( 2 );
 	ASSERT_EQ( limits.Min(), -M_PI  / 2 );
 	ASSERT_EQ( limits.Max(), M_PI / 2 );
 
 	// Check specific joint properties
-	const Model::Twist& twist1 = chain.GetActiveJointTwist( 0 );
+	const Model::Twist& twist1 = chain->GetActiveJointTwist( 0 );
 	ASSERT_TRUE( twist1.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
 	ASSERT_TRUE( twist1.V().isApprox( Vec3d( 0, 0, 0 ) ) );
 
-	const Model::Twist& twist2 = chain.GetActiveJointTwist( 1 );
+	const Model::Twist& twist2 = chain->GetActiveJointTwist( 1 );
 	ASSERT_TRUE( twist2.Omega().isApprox( Vec3d( 0, 1, 0 ) ) );
 	ASSERT_TRUE( twist2.V().isApprox( Vec3d( 0, 0, 0.5 ) ) );
 
-	const Model::Twist& twist3 = chain.GetActiveJointTwist( 2 );
+	const Model::Twist& twist3 = chain->GetActiveJointTwist( 2 );
 	ASSERT_TRUE( twist3.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
 	ASSERT_TRUE( twist3.V().isApprox( Vec3d( 0, -1, 0 ) ) ) << twist3.V();
 }
@@ -105,14 +72,14 @@ TEST_F( JointChainTest, GetZYZRevoluteRobotJointChain )
 
 TEST_F( JointChainTest, SubChain )
 {
-	Model::JointChain chain = Data::GetZYZRevoluteRobotJointChain();
+	auto chain = Data::GetZYZRevoluteRobotJointChain();
 
 	// Get the first and last joints
-	Model::JointConstPtr start = chain.GetActiveJoint( 0 );
-	Model::JointConstPtr end = chain.GetActiveJoint( 2 );
+	Model::JointConstPtr start = chain->GetActiveJoint( 0 );
+	Model::JointConstPtr end = chain->GetActiveJoint( 2 );
 
 	// Create a subchain from the first to the last joint
-	Model::JointChain subchain = chain.SubChain( start, end );
+	auto subchain = chain->SubChain( start, end );
 
 	ASSERT_EQ( subchain.GetJointCount(), 3 );
 	ASSERT_EQ( subchain.GetActiveJointCount(), 3 );
@@ -120,7 +87,7 @@ TEST_F( JointChainTest, SubChain )
 	// Check that the subchain has the same joints as the original chain
 	for ( int i = 0; i < 3; ++i )
 	{
-		const Model::Twist& original_twist = chain.GetActiveJointTwist( i );
+		const Model::Twist& original_twist = chain->GetActiveJointTwist( i );
 		const Model::Twist& subchain_twist = subchain.GetActiveJointTwist( i );
 		ASSERT_TRUE( original_twist.Omega().isApprox( subchain_twist.Omega() ) );
 		ASSERT_TRUE( original_twist.V().isApprox( subchain_twist.V() ) );
@@ -131,61 +98,31 @@ TEST_F( JointChainTest, SubChain )
 
 TEST_F( JointChainTest, SubChainInvalidInputs )
 {
-	Model::JointChain chain = Data::GetZYZRevoluteRobotJointChain();
+	auto chain = Data::GetZYZRevoluteRobotJointChain();
 
 	// Test with null pointers
-	ASSERT_THROW( auto sub_chain = chain.SubChain( nullptr, chain.GetActiveJoint( 0 ) ), std::out_of_range );
-	ASSERT_THROW( auto sub_chain = chain.SubChain( chain.GetActiveJoint( 0 ), nullptr ), std::out_of_range );
+	ASSERT_THROW( auto sub_chain = chain->SubChain( nullptr, chain->GetActiveJoint( 0 ) ), std::out_of_range );
+	ASSERT_THROW( auto sub_chain = chain->SubChain( chain->GetActiveJoint( 0 ), nullptr ), std::out_of_range );
 
 	// Test with invalid indices (joints not in the chain)
-	Model::JointConstPtr joint_not_in_chain = std::make_shared< const Model::Joint >(
-		"",
-		Model::Twist( Vec3d( 1, 0, 0 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link(),
-		Model::Limits( -M_PI, M_PI )
-		);
-	ASSERT_THROW( auto sub_chain = chain.SubChain( joint_not_in_chain, chain.GetActiveJoint( 0 ) ), std::out_of_range );
-	ASSERT_THROW( auto sub_chain = chain.SubChain( chain.GetActiveJoint( 0 ), joint_not_in_chain ), std::out_of_range );
+	Model::JointConstPtr joint_not_in_chain = MakeRevoluteJoint( Vec3d::UnitX(), Vec3d::Zero() );
+	ASSERT_THROW( auto sub_chain = chain->SubChain( joint_not_in_chain, chain->GetActiveJoint( 0 ) ), std::out_of_range );
+	ASSERT_THROW( auto sub_chain = chain->SubChain( chain->GetActiveJoint( 0 ), joint_not_in_chain ), std::out_of_range );
 
 	// Test with start index > end index
-	ASSERT_THROW( auto sub_chain = chain.SubChain( chain.GetActiveJoint( 2 ), chain.GetActiveJoint( 0 ) ), std::out_of_range );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( JointChainTest, AddFunction )
-{
-	Model::JointChain chain( 1 );
-
-	// Add a joint
-	Model::Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
-	Model::Link link;
-	Model::Limits limits( -M_PI, M_PI );
-
-	chain.Add( "", twist, link, limits );
-
-	ASSERT_EQ( chain.GetJointCount(), 1 );
-	ASSERT_EQ( chain.GetActiveJointCount(), 1 );
-
-	// Check the added joint's properties
-	const Model::Twist& added_twist = chain.GetActiveJointTwist( 0 );
-	ASSERT_TRUE( added_twist.Omega().isApprox( Vec3d( 0, 0, 1 ) ) );
-	ASSERT_TRUE( added_twist.V().isApprox( Vec3d( 0, 0, 0 ) ) );
-
-	const Model::Limits& added_limits = chain.GetActiveJointLimits( 0 );
-	ASSERT_EQ( added_limits.Min(), -M_PI );
-	ASSERT_EQ( added_limits.Max(), M_PI );
+	ASSERT_THROW( auto sub_chain = chain->SubChain( chain->GetActiveJoint( 2 ), chain->GetActiveJoint( 0 ) ), std::out_of_range );
 }
 
 // ------------------------------------------------------------
 
 TEST_F( JointChainTest, GetActiveJointInvalidIndex )
 {
-	Model::JointChain chain = Data::GetZYZRevoluteRobotJointChain();
-	ASSERT_THROW( chain.GetActiveJoint( 3 ), std::out_of_range );
-	ASSERT_THROW( chain.GetActiveJointTwist( 3 ), std::out_of_range );
-	ASSERT_THROW( chain.GetActiveJointLimits( 3 ), std::out_of_range );
-	ASSERT_THROW( chain.GetActiveJointLink( 3 ), std::out_of_range );
+	auto chain = Data::GetZYZRevoluteRobotJointChain();
+	ASSERT_THROW( chain->GetActiveJoint( 3 ), std::out_of_range );
+	ASSERT_THROW( chain->GetActiveJointTwist( 3 ), std::out_of_range );
+	ASSERT_THROW( chain->GetActiveJointLimits( 3 ), std::out_of_range );
+	ASSERT_THROW( chain->GetJointParentLink( 3 ), std::out_of_range );
+	ASSERT_THROW( chain->GetJointChildLink( 3 ), std::out_of_range );
 }
 
 // ------------------------------------------------------------
@@ -208,26 +145,10 @@ TEST_F( JointChainTest, GetJointIndex_NullJoint )
 
 // ------------------------------------------------------------
 
-TEST_F( JointChainTest, GetJointIndex_EmptyChain )
-{
-	// Create an empty joint chain
-	Model::JointChain empty_chain( 0 );
-
-	// Test with empty chain
-	EXPECT_EQ( empty_chain.GetJointIndex( joint1_.get() ), -1 ) << "Should return -1 for empty chain";
-}
-
-// ------------------------------------------------------------
-
 TEST_F( JointChainTest, GetJointIndex_NonExistentJoint )
 {
 	// Create a joint not in the chain
-	auto other_joint = std::make_shared< Model::Joint >(
-		"",
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( "", Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	auto other_joint = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero() );
 
 	// Test with non-existent joint
 	EXPECT_EQ( joint_chain_->GetJointIndex( other_joint.get() ), -1 ) << "Should return -1 for non-existent joint";
@@ -256,26 +177,10 @@ TEST_F( JointChainTest, GetNextJoint_NullJoint )
 TEST_F( JointChainTest, GetNextJoint_NonExistentJoint )
 {
 	// Create a joint not in the chain
-	auto other_joint = std::make_shared< Model::Joint >(
-		"",
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( "", Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	auto other_joint = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero() );
 
 	// Test with non-existent joint
 	EXPECT_EQ( joint_chain_->GetNextJoint( other_joint.get() ), nullptr ) << "Should return nullptr for non-existent joint";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( JointChainTest, GetNextJoint_EmptyChain )
-{
-	// Create an empty joint chain
-	Model::JointChain empty_chain( 0 );
-
-	// Test with empty chain
-	EXPECT_EQ( empty_chain.GetNextJoint( joint1_.get() ), nullptr ) << "Should return nullptr for empty chain";
 }
 
 // ------------------------------------------------------------
@@ -301,26 +206,10 @@ TEST_F( JointChainTest, GetPreviousJoint_NullJoint )
 TEST_F( JointChainTest, GetPreviousJoint_NonExistentJoint )
 {
 	// Create a joint not in the chain
-	auto other_joint = std::make_shared< Model::Joint >(
-		"",
-		Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-		Model::Link( "", Mat4d::Identity(), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
+	auto other_joint = MakeRevoluteJoint( Vec3d::UnitZ(), Vec3d::Zero() );
 
 	// Test with non-existent joint
 	EXPECT_EQ( joint_chain_->GetPreviousJoint( other_joint.get() ), nullptr ) << "Should return nullptr for non-existent joint";
-}
-
-// ------------------------------------------------------------
-
-TEST_F( JointChainTest, GetPreviousJoint_EmptyChain )
-{
-	// Create an empty joint chain
-	Model::JointChain empty_chain( 0 );
-
-	// Test with empty chain
-	EXPECT_EQ( empty_chain.GetPreviousJoint( joint1_.get() ), nullptr ) << "Should return nullptr for empty chain";
 }
 
 // ------------------------------------------------------------
@@ -377,7 +266,7 @@ TEST_F( JointChainTest, RobotRevoluteOnly_ComputeFK )
 	Mat4d expected = Data::GetZYZRevoluteRobotTransform( joints[0], joints[1], joints[2] );
 
 	Mat4d result;
-	joint_chain.ComputeFK( joints, home, result );
+	joint_chain->ComputeFK( joints, home, result );
 
 	EXPECT_TRUE( IsApprox( expected, result, 1e-9 ) );
 }

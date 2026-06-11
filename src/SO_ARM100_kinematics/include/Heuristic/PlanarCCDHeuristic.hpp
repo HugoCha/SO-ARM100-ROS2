@@ -30,7 +30,7 @@ struct SolverParameters
 
 	SolverParameters(
 		int max_iterations = 50,
-		int max_stalled_iterations = 5 ) :
+		int max_stalled_iterations = 2 ) :
 		max_iterations( max_iterations ),
 		max_stalled_iterations( max_stalled_iterations )
 	{

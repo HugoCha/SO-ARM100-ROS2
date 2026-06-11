@@ -4,6 +4,7 @@
 
 #include "Global.hpp"
 #include "Heuristic/IKHeuristicState.hpp"
+#include "Model/Joint/JointChainBuilder.hpp"
 #include "RobotModelTestData.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "KinematicTestBase.hpp"
@@ -44,12 +45,9 @@ void TearDown() override
 
 TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 {
-	// Create a joint chain with a single active revolute joint along the Z axis
-	auto single_joint_chain = Model::JointChain( 1 );
-	single_joint_chain.Add( "",
-	                        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                        Model::Link( "", Mat4d::Identity(), 1.0 ), // Link length = 1.0
-	                        Model::Limits( -M_PI, M_PI ) );
+	auto single_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 1;
@@ -79,11 +77,9 @@ TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 
 TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 {
-	auto single_joint_chain = Model::JointChain( 1 );
-	single_joint_chain.Add( "",
-	                        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                        Model::Link( "", Mat4d::Identity(), 1.0 ), // Link length = 1.0
-	                        Model::Limits( -M_PI, M_PI ) );
+	auto single_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 1;
@@ -110,11 +106,9 @@ TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 
 TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccessOrFail )
 {
-	auto single_joint_chain = Model::JointChain( 1 );
-	single_joint_chain.Add( "",
-	                        Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                        Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                        Model::Limits( -M_PI / 4, M_PI / 4 ) ); // Restricted limits (-45 to 45 deg)
+	auto single_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 4, M_PI / 4 ) }, 
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 1;
@@ -157,16 +151,10 @@ void TearDown() override
 
 TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 {
-	// Create a 2R chain in the XY plane (rotation about Z)
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                     Model::Link( "", Mat4d::Identity(), 0.1 ), // L1 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0.1, 0, 0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 0.1, 0, 0 ) ), 0.2 ), // L2 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
+				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -188,6 +176,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 	EXPECT_EQ( 2, result.joints.size() );
+	EXPECT_LE( result.error, problem.tolerance );
 	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
@@ -198,16 +187,10 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
 TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 {
-	// Create a 2R chain in the XY plane (rotation about Z)
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0.5 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ), // L1 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 1, 0 ), Vec3d( 0., 0., 1.0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 0., 0., 1.0 ) ), 0.6 ), // L2 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d( 0, 0, 0.5  ), Vec3d::UnitY() ), 
+		 		RevoluteJointInfo( Vec3d( 0., 0., 1.0 ), Vec3d::UnitY() ) }, 
+				ToTransformMatrix( Vec3d( 0.6, 0, 1.0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -230,6 +213,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 	model->ComputeFK( result1.joints, result_pose );
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result1.state );
 	EXPECT_EQ( 2, result1.joints.size() );
+	EXPECT_LE( result1.error, problem.tolerance );
 	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance  )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
@@ -242,6 +226,7 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 	result_pose = ComputeFK( model, result2.joints );
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result2.state );
 	EXPECT_EQ( 2, result2.joints.size() );
+	EXPECT_LE( result2.error, problem.tolerance );
 	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
 	    << problem << std::endl
 	    << "Target = \n" << Translation( problem.target ) << std::endl
@@ -254,15 +239,10 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 
 TEST_F( Planar2RHeuristicTest, ChooseClosestElbowConfiguration )
 {
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                     Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                     Model::Limits( -M_PI, M_PI ) );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ), // L2 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
+				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -274,7 +254,7 @@ TEST_F( Planar2RHeuristicTest, ChooseClosestElbowConfiguration )
 
 	// Seed biased heavily toward an elbow-down configuration (negative elbow angle)
 	VecXd seed( 2 );
-	seed << 0.5, -0.5;
+	seed << 0.5, -M_PI;
 
 	VecXd joints( 2 );
 	joints << M_PI / 6, M_PI / 3; // Forward kinematics target (has two solutions)
@@ -297,15 +277,10 @@ TEST_F( Planar2RHeuristicTest, ChooseClosestElbowConfiguration )
 
 TEST_F( Planar2RHeuristicTest, SolveUnreachableDistance )
 {
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                     Model::Link( "", Mat4d::Identity(), 1.0 ), // L1 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ), // L2 = 1.0
-	                     Model::Limits( -M_PI, M_PI ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
+				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -332,15 +307,10 @@ TEST_F( Planar2RHeuristicTest, SolveUnreachableDistance )
 
 TEST_F( Planar2RHeuristicTest, JointLimitsForceSingleValidConfiguration )
 {
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                     Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                     Model::Limits( -M_PI, M_PI ) );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ), // L2 = 1.0
-	                     Model::Limits( 0.0, M_PI ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), 0, M_PI ) }, 
+				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 	int start = 0;
 	int count = 2;
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 2, 0, 0 ) );
@@ -367,31 +337,32 @@ TEST_F( Planar2RHeuristicTest, JointLimitsForceSingleValidConfiguration )
 
 TEST_F( Planar2RHeuristicTest, BothConfigurationsInvalid_PartialSuccess )
 {
-	auto two_joint_chain = Model::JointChain( 2 );
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                     Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                     Model::Limits( -M_PI / 12, M_PI / 12 ) ); // Highly restricted shoulder limits
-	two_joint_chain.Add( "",
-	                     Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                     Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ), // L2 = 1.0
-	                     Model::Limits( -M_PI / 12, M_PI / 12 ) );
+	// Create Problem
+	VecXd seed( 2 );
+	seed << 0.01, 0.01;
+	VecXd joints( 2 );
+	joints << M_PI / 3, M_PI / 3; // Target requires a solution far outside allowed boundaries
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
+	auto two_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
+				tip_home );
+	Mat4d target;
+	two_joint_chain->ComputeFK( joints, tip_home, target );
+	auto problem = CreateProblem( seed, target );
+
+	auto two_joint_chain_tight = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ), 
+		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) }, 
+				tip_home );
 
 	int start = 0;
 	int count = 2;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 2, 0, 0 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
-	auto model = CreateModel( two_joint_chain, planar_group );
+	auto model = CreateModel( two_joint_chain_tight, planar_group );
 	auto heuristic = Heuristic::Planar2RHeuristic( model, planar_group );
 
-	VecXd seed( 2 );
-	seed << 0.01, 0.01;
-
-	VecXd joints( 2 );
-	joints << M_PI / 3, M_PI / 3; // Target requires a solution far outside allowed boundaries
-
-	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
 	// Expecting code fallback pathway where both configurations fail validation checks
@@ -419,24 +390,16 @@ void TearDown() override
 
 TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 {
-	// Create a 3R planar joint chain (3 degrees of freedom)
-	auto three_joint_chain = Model::JointChain( 3 );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                       Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 2, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 2, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
+
+	auto three_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
+		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
+				tip_home );
 
 	int start = 0;
 	int count = 3;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
 	auto model = CreateModel( three_joint_chain, planar_group );
@@ -471,33 +434,16 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 
 TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 {
-	// Create a 3R planar joint chain (3 degrees of freedom)
-	auto three_joint_chain = Model::JointChain( 3 );
-	Vec3d origin = Vec3d( 0, 0.2, 0.2 );;
-	Vec3d next_origin = Vec3d( 0, 0.2, 0.6 );
-	Vec3d axis = Vec3d::UnitY();
-	three_joint_chain.Add( "",
-	                       Model::Twist( axis, origin ),
-	                       Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	origin = next_origin;
-	next_origin = Vec3d( 0.4, 0, 0.6 );
-	axis = Vec3d::UnitY();
-	three_joint_chain.Add( "",
-	                       Model::Twist( axis, origin ),
-	                       Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	origin = next_origin;
-	next_origin = Vec3d( 0.4, 0.2, 0.6 );
-	axis = Vec3d::UnitY();
-	three_joint_chain.Add( "",
-	                       Model::Twist( axis, origin ),
-	                       Model::Link( "", ToTransformMatrix( origin ), ToTransformMatrix( next_origin ) ),
-	                       Model::Limits( -M_PI, M_PI ) );
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
+
+	auto three_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
+		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
+				tip_home );
 
 	int start = 0;
 	int count = 3;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.5, 0.2, 0.6 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
 	auto model = CreateModel( three_joint_chain, planar_group );
@@ -561,23 +507,16 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 
 TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 {
-	auto three_joint_chain = Model::JointChain( 3 );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                       Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 2, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 2, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI, M_PI ) );
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
+
+	auto three_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
+		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
+		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
+				tip_home );
 
 	int start = 0;
 	int count = 3;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
 	auto model = CreateModel( three_joint_chain, planar_group );
@@ -606,23 +545,16 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 
 TEST_F( PlanarCCDHeuristicTest, JointLimitsClampingEnforced )
 {
-	auto three_joint_chain = Model::JointChain( 3 );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) ),
-	                       Model::Link( "", Mat4d::Identity(), 1.0 ),
-	                       Model::Limits( -M_PI / 12, M_PI / 12 ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 1, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 1, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI / 12, M_PI / 12 ) );
-	three_joint_chain.Add( "",
-	                       Model::Twist( Vec3d( 0, 0, 1 ), Vec3d( 2, 0, 0 ) ),
-	                       Model::Link( "", ToTransformMatrix( Vec3d( 2, 0, 0 ) ), 1.0 ),
-	                       Model::Limits( -M_PI / 12, M_PI / 12 ) );
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
+
+	auto three_joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ), 
+		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) , 
+		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) }, 
+				tip_home );
 
 	int start = 0;
 	int count = 3;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
 	auto model = CreateModel( three_joint_chain, planar_group );

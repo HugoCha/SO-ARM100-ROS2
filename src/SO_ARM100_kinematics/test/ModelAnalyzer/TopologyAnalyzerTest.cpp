@@ -1,5 +1,6 @@
 #include "ModelAnalyzer/TopologyAnalyzer.hpp"
 
+#include "Global.hpp"
 #include "RobotModelTestData.hpp"
 
 #include "KinematicTestBase.hpp"
@@ -22,7 +23,7 @@ class TopologyAnalyzerTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	model_name_ = "Universal Robot";
+	model_name_ = Data::GetPrismaticBaseRobotName();
 	model_ = Data::GetAllRobots()[model_name_];
 }
 
@@ -61,7 +62,7 @@ bool CheckEquality( const Model::KinematicTopology& expected, const Model::Kinem
 
 			if ( !( expected_group.Size() == result_group.Size() &&
 			        expected_group.indices == result_group.indices &&
-			        expected_group.tip_home.isApprox( result_group.tip_home ) &&
+			        expected_group.tip_home.isApprox( result_group.tip_home, epsilon ) &&
 			        expected_group.name == result_group.name ) )
 			{
 

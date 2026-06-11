@@ -21,6 +21,10 @@ bool RobotArmKinematicsPlugin::initialize(
 {
 	storeValues( robot_model, group_name, base_frame, tip_frames, search_discretization );
 	initialized_ = solver_.Initialize( robot_model_, group_name, base_frame, tip_frames, search_discretization );
+	const auto& chain = solver_.GetModel()->GetChain();
+	link_names_ = chain->GetLinkNames();
+	joint_names_ = chain->GetJointNames();
+	
 	return initialized_;
 }
 

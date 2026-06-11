@@ -5,31 +5,65 @@
 #include "Model/Joint/Joint.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Model/Joint/Limits.hpp"
+#include "Model/Joint/Link.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <vector>
 
 namespace SOArm100::Kinematics::Model
 {
 
 // ------------------------------------------------------------
 
-JointChain::JointChain( int n )
+JointChain::JointChain( const std::vector< JointConstPtr >& joints, 
+						const std::vector< LinkConstPtr >& links )
 {
-	joints_.reserve( n );
-	active_joints_.reserve( n );
-}
+	if ( links.size() != joints.size() + 1 )
+		throw std::invalid_argument( "Link must have size joints size + 1" );
 
-// ------------------------------------------------------------
+	joints_.resize( joints.size() );
+	links_.resize( links.size() );
+	joint_names_.resize( joints.size() );
+	link_names_.resize( links.size() );
 
-JointChain::JointChain( const std::span< JointConstPtr const >& joints )
-{
-	joints_.reserve( joints.size() );
-	active_joints_.reserve( joints.size() );
-	for ( const auto& joint : joints )
+	for ( int i = 0; i < joints.size(); i++ )
 	{
-		Add( joint );
+		joints_[i] = joints[i];
+		links_[i]  = links[i];
+
+		const auto& joint = joints_[i];
+		const auto& parent_link = links_[i];
+		const auto& child_link = links[i+1];
+		
+		if ( joint->GetParentLink() != parent_link.get() || joint->GetChildLink() != child_link.get() )
+			throw std::invalid_argument( "Joint/Link mismatch" );
+	
+		link_names_[i] = parent_link->GetName();
+		link_map_.emplace( std::make_pair( parent_link->GetName(), parent_link ) );
+		parent_link_joint_map_.emplace( std::make_pair( parent_link, joint ) );
+		child_link_joint_map_.emplace( std::make_pair( child_link, joint ) );
+
+		if ( !joint->IsFixed() ) 
+		{
+			active_joints_.emplace_back( joint );
+			active_joint_centers_.emplace_back( joint->GetLimits().Center() );
+		}
+
+		joint_names_[i] = joint->GetName();
+		joint_map_.emplace( std::make_pair( joint->GetName(), joint ) );
+	}
+
+	if ( !joints.empty() )
+	{
+		int tip_link_index = joints.size();
+
+		auto tip_link = links[tip_link_index];
+
+		link_names_[tip_link_index] = tip_link->GetName();
+		link_map_.emplace( std::make_pair( tip_link->GetName(), tip_link ) );
+		links_[tip_link_index] = tip_link;
 	}
 }
 
@@ -224,7 +258,8 @@ bool JointChain::ComputeFK(
 	Mat4d& fk ) const noexcept
 {
 	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
-
+	fk.setIdentity();
+	
 	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
@@ -282,12 +317,12 @@ bool JointChain::ComputeJointStatesFK(
 
 // ------------------------------------------------------------
 
-bool JointChain::ComputeJointPosesFK(
+bool JointChain::ComputeLinkPosesFK(
 	const double* thetas,
 	int n_joints,
 	const std::span< const std::string >& link_names,
 	const Mat4d& home_configuration,
-	std::vector< Mat4d >& joint_poses,
+	std::vector< Mat4d >& links_fk,
 	Mat4d& fk ) const noexcept
 {
 	fk.setIdentity();
@@ -298,30 +333,40 @@ bool JointChain::ComputeJointPosesFK(
 	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
-	if ( joint_poses.size() != link_names.size() )
-		joint_poses.resize( link_names.size() );
+	if ( links_fk.size() != link_names.size() )
+		links_fk.resize( link_names.size() );
 
+	std::map< std::string, Mat4d > joint_poses;
 	Mat4d T_cumul = Mat4d::Identity();
-
-	std::vector< Mat4d > all_poses( n_joints );
-	std::map< std::string, int > link_pose_index;
-	std::set< std::string > link_names_set( link_names.begin(), link_names.end() );
 
 	for ( size_t i = 0; i < n_joints; i++ )
 	{
 		const auto& joint = GetActiveJoint( i );
-		const auto& link = joint->GetLink();
 		const auto& twist = joint->GetTwist();
 
-		if ( link_names_set.contains( link.GetName() ) )
-			link_pose_index[link.GetName()] = i;
-
-		all_poses[i].noalias() = T_cumul * joint->OriginTransform();
+		auto joint_pose = T_cumul * joint->OriginTransform();
 		T_cumul *= twist.ExponentialMatrix( thetas[i] );
+		joint_poses.emplace( std::make_pair( joint->GetName(), joint_pose ) );
 	}
 
 	for ( int i = 0; i < link_names.size(); i++ )
-		joint_poses[i] = all_poses[link_pose_index[link_names[i]]];
+	{
+		if ( link_map_.contains( link_names[i] ) )
+		{
+			auto link = link_map_.at( link_names[i] );
+			if ( child_link_joint_map_.contains( link ) )
+			{
+				auto parent_joint = child_link_joint_map_.at( link );
+				auto parent_joint_name = parent_joint->GetName();
+				links_fk[i] = joint_poses.at( parent_joint_name ) * link->ParentJointTransform();
+			}
+			else 
+			{
+				// Root Link
+				links_fk[i] = link->HomeTransform();
+			}
+		}
+	}
 
 	fk.noalias() = T_cumul * home_configuration;
 	return true;
@@ -329,24 +374,10 @@ bool JointChain::ComputeJointPosesFK(
 
 // ------------------------------------------------------------
 
-void JointChain::Add( JointConstPtr joint )
-{
-	if ( !joint )
-		throw std::invalid_argument( "Joint pointer cannot be null" );
-
-	joints_.emplace_back( joint );
-	if ( !joint->IsFixed() )
-	{
-		active_joints_.emplace_back( joint );
-		active_joint_centers_.emplace_back( joint->GetLimits().Center() );
-	}
-}
-
-// ------------------------------------------------------------
-
 JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
 {
 	const auto& joints = GetJoints();
+	const auto& links = GetLinks();
 
 	auto start_it = std::find( joints.begin(), joints.end(), start );
 	auto end_it = std::find( joints.begin(), joints.end(), end );
@@ -366,7 +397,11 @@ JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
 
 	size_t count = end_index - start_index + 1;
 
-	return JointChain( joints.subspan( start_index, count ) );
+	auto sub_joints = joints.subspan( start_index, count );
+	auto sub_links = links.subspan( start_index, count + 1 );
+	return JointChain( 
+		std::vector< JointConstPtr >( sub_joints.begin(), sub_joints.end() ), 
+		std::vector< LinkConstPtr >( sub_links.begin(), sub_links.end() ) );
 }
 
 // ------------------------------------------------------------

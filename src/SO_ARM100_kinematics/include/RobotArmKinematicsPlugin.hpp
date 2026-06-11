@@ -61,8 +61,13 @@ bool searchPositionIK(
 	const kinematics::KinematicsQueryOptions& options = kinematics::KinematicsQueryOptions() ) const
 override;
 
-virtual const std::vector< std::string >& getJointNames() const override;
-virtual const std::vector< std::string >& getLinkNames() const override;
+virtual const std::vector< std::string >& getJointNames() const override {
+	return joint_names_;
+}
+
+virtual const std::vector< std::string >& getLinkNames() const override {
+	return link_names_;
+}
 
 // initialize
 bool initialize(

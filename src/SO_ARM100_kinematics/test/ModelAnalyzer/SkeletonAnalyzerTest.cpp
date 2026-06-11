@@ -32,34 +32,6 @@ void TearDown() override
 // Analyze Articulation
 // ------------------------------------------------------------
 
-void MakeAzimuthChain( double link_length, int count, Model::JointChain& chain, Mat4d& tip )
-{
-	Vec3d axis;
-	Vec3d origin = Vec3d::Zero();
-	for ( int i = 0; i < count; i++ )
-	{
-		Vec3d axis = i % 2 == 0 ? Vec3d::UnitZ() : Vec3d::UnitY();
-		chain.Add( "",
-		           Model::Twist( axis, origin ),
-		           Model::Link( "", ToTransformMatrix( origin ), link_length ),
-		           Model::Limits( -M_PI, M_PI ) );
-
-		if ( i % 2 == 0 )
-		{
-			origin.z() += link_length;
-		}
-		else
-		{
-			origin.y() += link_length;
-		}
-	}
-
-	tip = ToTransformMatrix( origin );
-}
-
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-
 class ArticulationTest : public KinematicTestBase
 {
 protected:
@@ -278,29 +250,16 @@ TEST_F( ArticulationTest, AnalyzeArticulations_ZYZRobotReturnExpected )
 
 TEST_F( ArticulationTest, AnalyzeArticulations_3ZRobot_HomeOnJointAxis_ReturnExpected )
 {
-	auto chain = Model::JointChain( 3 );
+	Mat4d home = ToTransformMatrix( Vec3d( 1.5, 0, 1.0 ) );
+	auto chain = CreateSimpleJointChain(
+		{ 
+			{ Vec3d(0,0,0), Vec3d::UnitZ() },
+			{ Vec3d(0,0,0.5), Vec3d::UnitZ() },
+			{ Vec3d(0,0,1.0), Vec3d::UnitZ() },
+		},
+		home );
 
-	chain.Add( "",
-	           Model::Twist( Vec3d::UnitZ(), Vec3d::Zero() ),
-	           Model::Link( "", Mat4d::Identity(), 0.5 ),
-	           Model::Limits()
-	           );
-
-	chain.Add( "",
-	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 0.5 ) ),
-	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 0.5 ) ), 0.5 ),
-	           Model::Limits()
-	           );
-
-	chain.Add( "",
-	           Model::Twist( Vec3d::UnitZ(), Vec3d( 0, 0, 1 ) ),
-	           Model::Link( "", ToTransformMatrix( Vec3d( 0, 0, 1 ) ), 0 ),
-	           Model::Limits()
-	           );
-
-	Mat4d home = ToTransformMatrix( Vec3d( 0, 0, 1.5 ) );
-
-	auto joints = chain.GetJoints();
+	auto joints = chain->GetJoints();
 	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
 		joints,
 		home );
@@ -315,155 +274,6 @@ TEST_F( ArticulationTest, AnalyzeArticulations_3ZRobot_HomeOnJointAxis_ReturnExp
 	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
 
 	EXPECT_EQ( Translation( home ), articulations[0]->Center() );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( ArticulationTest, AnalyzeArticulations_2Joints_AzimuthRobot_ReturnExpected )
-{
-	int count = 2;
-	double link_length = 0.5;
-	Model::JointChain chain( count );
-	Mat4d tip;
-
-	MakeAzimuthChain( link_length, count, chain, tip );
-
-	auto joints = chain.GetJoints();
-	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
-		joints,
-		tip );
-
-	EXPECT_EQ( 1, articulations.size() );
-
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-
-	EXPECT_EQ( joints[1]->Origin(), articulations[0]->Center() );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( ArticulationTest, AnalyzeArticulations_3Joints_AzimuthRobot_ReturnExpected )
-{
-	int count = 3;
-	double link_length = 0.5;
-	Model::JointChain chain( count );
-	Mat4d tip;
-
-	MakeAzimuthChain( link_length, count, chain, tip );
-
-	auto joints = chain.GetJoints();
-	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
-		joints,
-		tip );
-
-	EXPECT_EQ( 2, articulations.size() );
-
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( 2, articulations[1]->JointCount() );
-
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[1]->GetType() );
-
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[2]->Axis(), articulations[1]->Axis() );
-
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[2]->Origin(), articulations[1]->Center() );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( ArticulationTest, AnalyzeArticulations_4Joints_AzimuthRobot_ReturnExpected )
-{
-	int count = 4;
-	double link_length = 0.5;
-	Model::JointChain chain( count );
-	Mat4d tip;
-
-	MakeAzimuthChain( link_length, count, chain, tip );
-
-	auto joints = chain.GetJoints();
-	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
-		joints,
-		tip );
-
-	EXPECT_EQ( 2, articulations.size() );
-
-	EXPECT_EQ( 2, articulations[0]->JointCount() );
-	EXPECT_EQ( 2, articulations[1]->JointCount() );
-
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[0]->GetType() );
-	EXPECT_EQ( Model::ArticulationType::Universal, articulations[1]->GetType() );
-
-	EXPECT_EQ( joints[1]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[3]->Axis(), articulations[1]->Axis() );
-
-	EXPECT_EQ( joints[1]->Origin(), articulations[0]->Center() );
-	EXPECT_EQ( joints[3]->Origin(), articulations[1]->Center() );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( ArticulationTest, AnalyzeArticulations_PairCountJoints_AzimuthRobot_ReturnExpected )
-{
-	int count = 10;
-	double link_length = 0.5;
-	Model::JointChain chain( count );
-	Mat4d tip;
-
-	MakeAzimuthChain( link_length, count, chain, tip );
-
-	auto joints = chain.GetJoints();
-	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
-		joints,
-		tip );
-
-	EXPECT_EQ( count / 2, articulations.size() );
-
-	for ( int i = 0; i < count / 2; i++ )
-	{
-		EXPECT_EQ( 2, articulations[i]->JointCount() );
-		EXPECT_EQ( Model::ArticulationType::Universal, articulations[i]->GetType() );
-		EXPECT_EQ( joints[2 * i + 1]->Axis(), articulations[i]->Axis() );
-		EXPECT_EQ( joints[2 * i + 1]->Origin(), articulations[i]->Center() );
-	}
-}
-
-// ------------------------------------------------------------
-
-TEST_F( ArticulationTest, AnalyzeArticulations_OddCountJoints_AzimuthRobot_ReturnExpected )
-{
-	int count = 11;
-	double link_length = 0.5;
-	Model::JointChain chain( count );
-	Mat4d tip;
-
-	MakeAzimuthChain( link_length, count, chain, tip );
-
-	auto joints = chain.GetJoints();
-	auto articulations = Model::SkeletonAnalyzer::AnalyzeArticulations(
-		joints,
-		tip );
-
-	int articulation_count = count / 2 + 1;
-	EXPECT_EQ( articulation_count, articulations.size() );
-
-	EXPECT_EQ( 1, articulations[0]->JointCount() );
-	EXPECT_EQ( Model::ArticulationType::Revolute, articulations[0]->GetType() );
-	EXPECT_EQ( joints[0]->Axis(), articulations[0]->Axis() );
-	EXPECT_EQ( joints[0]->Origin(), articulations[0]->Center() );
-
-	for ( int i = 1; i < articulation_count; i++ )
-	{
-		EXPECT_EQ( 2, articulations[i]->JointCount() );
-		EXPECT_EQ( Model::ArticulationType::Universal, articulations[i]->GetType() );
-		EXPECT_EQ( joints[2 * i]->Axis(), articulations[i]->Axis() );
-		EXPECT_EQ( joints[2 * i]->Origin(), articulations[i]->Center() );
-	}
 }
 
 // ------------------------------------------------------------

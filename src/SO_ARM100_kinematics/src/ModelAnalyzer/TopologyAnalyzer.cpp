@@ -8,6 +8,7 @@
 #include "ModelAnalyzer/FallbackFabrikAnalyzer.hpp"
 #include "ModelAnalyzer/PlanarNRAnalyzer.hpp"
 #include "ModelAnalyzer/WristAnalyzer.hpp"
+
 #include <optional>
 
 namespace SOArm100::Kinematics::Model

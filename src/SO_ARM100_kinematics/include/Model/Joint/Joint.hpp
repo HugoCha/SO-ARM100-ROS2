@@ -4,11 +4,11 @@
 
 #include "JointType.hpp"
 #include "Limits.hpp"
-#include "Link.hpp"
 #include "Model/Geometry/Pose.hpp"
+#include "Model/Joint/Link.hpp"
 #include "Twist.hpp"
+#include "Utils/KinematicsUtils.hpp"
 
-#include <limits>
 #include <memory>
 
 namespace SOArm100::Kinematics::Model
@@ -19,37 +19,35 @@ public:
 Joint( const Joint& joint ) :
 	Joint(
 		joint.GetName(),
+		joint.OriginTransform(),
 		Twist( joint.GetTwist() ),
-		Link( joint.GetLink() ),
-		Limits( joint.GetLimits() ) )
+		Limits( joint.GetLimits() ),
+		joint.parent_link_,
+		joint.child_link_ )
 {
 }
 
 Joint( const std::string& name,
-       const Twist& twist,
-       const Link& link,
-       const Limits& limits ) :
+	   const Mat4d& joint_home_tf,
+	   const Twist& twist,
+	   const Limits& limits,
+	   LinkConstPtr parent_link,
+	   LinkConstPtr child_link ) :
 	name_( name ),
+	home_global_tf_( joint_home_tf ),
+	home_global_pos_( Translation( joint_home_tf ) ),
 	twist_( std::make_unique< const Twist >( twist ) ),
-	link_( std::make_unique< const Link >( link ) ),
 	limits_( std::make_unique< const Limits >( limits ) ),
-	type_( GetJointType( twist ) )
-{
-}
-
-Joint( const std::string& name, const Link& link ) :
-	Joint(
-		name,
-		Twist( Vec3d::Zero(), Vec3d::Zero() ),
-		link,
-		Limits( -std::numeric_limits< double >::infinity(), std::numeric_limits< double >::infinity() ) )
+	type_( GetJointType( twist ) ),
+	parent_link_( parent_link ),
+	child_link_( child_link )
 {
 }
 
 Joint( Joint&& ) = default;
 Joint& operator = ( Joint&& ) = default;
 
-JointType GetType() const {
+const JointType& GetType() const {
 	return type_;
 }
 
@@ -57,12 +55,20 @@ const std::string& GetName() const {
 	return name_;
 }
 
-const Twist& GetTwist() const {
-	return *twist_;
+const Link* const GetParentLink() const {
+	return parent_link_.get();
 }
 
-const Link& GetLink() const {
-	return *link_;
+const Link* const GetChildLink() const {
+	return child_link_.get();
+}
+
+void SetChildLink( LinkConstPtr child_link ) {
+	child_link_ = child_link;
+}
+
+const Twist& GetTwist() const {
+	return *twist_;
 }
 
 const Limits& GetLimits() const {
@@ -70,11 +76,11 @@ const Limits& GetLimits() const {
 }
 
 const Mat4d& OriginTransform() const {
-	return link_->GetJointOriginTransform();
+	return home_global_tf_;
 }
 
 const Vec3d& Origin() const {
-	return link_->GetJointOrigin();
+	return home_global_pos_;
 }
 
 const Vec3d& Axis() const {
@@ -107,10 +113,14 @@ bool IsFixed() const {
 private:
 std::string name_;
 JointType type_;
+Vec3d home_global_pos_;
+Mat4d home_global_tf_;
 
-std::unique_ptr< const Twist > twist_;
-std::unique_ptr< const Link > link_;
-std::unique_ptr< const Limits > limits_;
+LinkConstPtr parent_link_;
+LinkConstPtr child_link_;
+
+TwistConstPtr twist_;
+LimitsConstPtr limits_;
 
 inline static JointType GetJointType( const Twist& twist ){
 	if ( twist.IsPrismatic() )
@@ -122,5 +132,6 @@ inline static JointType GetJointType( const Twist& twist ){
 };
 
 using JointConstPtr = std::shared_ptr< const Joint >;
+using JointPtr = std::shared_ptr< Joint >;
 
 }

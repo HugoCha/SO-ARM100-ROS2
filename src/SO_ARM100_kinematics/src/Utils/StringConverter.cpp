@@ -102,10 +102,10 @@ std::ostream& operator << ( std::ostream& os, const BoneState& obj )
 
 std::ostream& operator << ( std::ostream& os, const Joint& obj )
 {
-	os << "Joint "
-	   << obj.GetType()
+	os << "Joint"
+	   << " " << obj.GetName()
+	   << " " << obj.GetType()
 	   << " " << obj.GetTwist()
-	   << " " << obj.GetLink()
 	   << " " << obj.GetLimits();
 	return os;
 }
@@ -174,9 +174,9 @@ std::ostream& operator << ( std::ostream& os, const JointType& obj )
 std::ostream& operator << ( std::ostream& os, const KinematicModel& obj )
 {
 	os << "Kinematic Model:" << std::endl;
-	os << obj.GetChain() << std::endl;
+	os << *obj.GetChain() << std::endl;
 	os << "Home" << std::endl << obj.GetHomeConfiguration() << std::endl;
-	os << obj.GetSkeleton() << std::endl;
+	os << *obj.GetSkeleton() << std::endl;
 	os << obj.GetTopology();
 	return os;
 }
@@ -217,9 +217,10 @@ std::ostream& operator << ( std::ostream& os, const Limits& obj )
 
 std::ostream& operator << ( std::ostream& os, const Link& obj )
 {
-	os << "Link"
-	   << " Origin: " << obj.GetJointOrigin().transpose()
-	   << " Length: " << obj.GetLength();
+	os << "Link " << obj.GetName()
+	   << " Global tf: \n" << obj.HomeTransform()
+	   << " Joint tf:  \n" << obj.ParentJointTransform()
+	   << " Length:    " << obj.Length();
 	return os;
 }
 

@@ -3,11 +3,13 @@
 #include "Global.hpp"
 
 #include "Model/Joint/JointChain.hpp"
+#include "Model/Joint/JointChainBuilder.hpp"
 #include "Model/Joint/Twist.hpp"
 #include "Model/KinematicModel.hpp"
 #include "Model/KinematicTopology/KinematicTopology.hpp"
 #include "Model/ReachableSpace/SkeletonTotalLengthReachableSpace.hpp"
 #include "ModelAnalyzer/SkeletonAnalyzer.hpp"
+#include "ModelAnalyzer/TopologyAnalyzer.hpp"
 #include "PipelineSolver/PipelineSolver.hpp"
 #include "PipelineSolver/PipelineSolverInitializer.hpp"
 #include "PipelineSolver/PipelineSolverParameters.hpp"
@@ -67,69 +69,76 @@ bool RobotArmKinematicsSolver::Initialize(
 
 	moveit::core::RobotState state( robot_model );
 	state.setToDefaultValues();
+	state.update();
 
 	const auto* joint_model_group = robot_model->getJointModelGroup( group_name );
-	const auto& link_models = joint_model_group->getLinkModels();
 	const int n_joints = joint_model_group->getJointModels().size();
 
-	auto joint_chain = std::make_shared< Model::JointChain >( n_joints );
+	Mat4d home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
+	auto joint_chain_builder = Model::JointChainBuilder();
 
-	for ( const auto* link_model : link_models )
+	for ( const auto* joint_model : joint_model_group->getJointModels() )
 	{
-		const auto* parent_joint = link_model->getParentJointModel();
-		const auto& child_joints = link_model->getChildJointModels();
+		const auto* parent_link = joint_model->getParentLinkModel();
+		const auto* child_link = joint_model->getChildLinkModel();
 
-		const Iso3d& joint_transform = state.getGlobalLinkTransform( link_model );
-		Iso3d child_transform = joint_transform;
-		if ( !child_joints.empty() )
-		{
-			child_transform = state.getGlobalLinkTransform( child_joints[0]->getChildLinkModel() );
-		}
-		Model::Link link( link_model->getName(), joint_transform.matrix(), child_transform.matrix() );
+		auto parent_link_global_tf = state.getGlobalLinkTransform(parent_link);
+		auto child_link_global_tf = state.getGlobalLinkTransform( child_link );
+		auto joint_local_tf = state.getJointTransform( joint_model );
+		auto joint_global_tf = parent_link_global_tf * joint_local_tf;
 
-		Model::Limits limits;
-		const auto& bounds = parent_joint->getVariableBounds();
+		Model::Limits joint_limits;
+		const auto& bounds = joint_model->getVariableBounds();
 		if ( !bounds.empty() )
 		{
 			const auto& lim = bounds[0];
-			limits = Model::Limits( lim.min_position_, lim.max_position_ );
+			joint_limits = Model::Limits( lim.min_position_, lim.max_position_ );
 		}
 
-		Model::Twist twist;
-		if ( parent_joint->getType() == moveit::core::JointModel::REVOLUTE )
+		Model::Twist joint_twist;
+		if ( joint_model->getType() == moveit::core::JointModel::REVOLUTE )
 		{
 			const auto* revolute_joint_model =
-				static_cast< const moveit::core::RevoluteJointModel* >( parent_joint );
+				static_cast< const moveit::core::RevoluteJointModel* >( joint_model );
 
-			const Vec3d axis_world = joint_transform.rotation() * revolute_joint_model->getAxis();
-			const Vec3d point_on_axis_world = joint_transform.translation();
+			const Vec3d axis_world = joint_global_tf.rotation() * revolute_joint_model->getAxis();
+			const Vec3d point_on_axis_world = joint_global_tf.translation();
 
-			twist = Model::Twist( axis_world, point_on_axis_world );
+			joint_twist = Model::Twist( axis_world, point_on_axis_world );
 		}
-		else if ( parent_joint->getType() == moveit::core::JointModel::PRISMATIC )
+		else if ( joint_model->getType() == moveit::core::JointModel::PRISMATIC )
 		{
 			const auto* prismatic_joint_model =
-				static_cast< const moveit::core::PrismaticJointModel* >( parent_joint );
+				static_cast< const moveit::core::PrismaticJointModel* >( joint_model );
 
-			twist = Model::Twist( prismatic_joint_model->getAxis() );
+			const Vec3d axis_world = joint_global_tf.rotation() * prismatic_joint_model->getAxis();
+			joint_twist = Model::Twist( axis_world );
+		}
+		else if ( joint_model->getType() == moveit::core::JointModel::FIXED )
+		{
+			joint_twist = Model::Twist();
+			joint_limits = Model::Limits();
 		}
 
-		joint_chain->Add( parent_joint->getName(), twist, link, limits );
+		joint_chain_builder.AddParentLink( parent_link->getName(), parent_link_global_tf.matrix() );
+		joint_chain_builder.AddJoint( joint_model->getName(), joint_global_tf.matrix(), joint_twist, joint_limits );
+		if ( child_link )
+		{
+			joint_chain_builder.AddChildLink( child_link->getName(), child_link_global_tf.matrix(), child_link->getJointOriginTransform().matrix() );
+		}
 	}
-
-	auto joint_chain_const = std::make_shared< const Model::JointChain >( *joint_chain );
-	const Mat4d& home_configuration = state.getGlobalLinkTransform( tip_frames[0] ).matrix();
+	
+	auto joint_chain = joint_chain_builder.Build();
 	auto skeleton = Model::SkeletonAnalyzer::Analyze( joint_chain->GetJoints(), home_configuration );
-	std::unique_ptr< const Model::ReachableSpace > reachable_space =
+	Model::KinematicTopology topology = Model::TopologyAnalyzer::Analyze( *joint_chain, home_configuration );
+	auto reachable_space =
 		std::make_unique< const Model::SkeletonTotalLengthReachableSpace >( *skeleton );
 
-	Model::KinematicTopology topology;
-
 	model_ = std::make_shared< Model::KinematicModel >(
-		joint_chain_const,
+		std::move( joint_chain ),
 		home_configuration,
 		topology,
-		skeleton,
+		std::move( skeleton ),
 		std::move( reachable_space ) );
 
 	InitializeSolvers( model_ );
@@ -244,7 +253,7 @@ bool RobotArmKinematicsSolver::ForwardKinematic(
 	const auto& chain = model_->GetChain();
 	const auto& home = model_->GetHomeConfiguration();
 
-	return chain->ComputeJointPosesFK(
+	return chain->ComputeLinkPosesFK(
 		joints,
 		home,
 		poses,

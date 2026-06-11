@@ -44,13 +44,6 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 			*model->GetTopology().Get( Model::prismatic_base_name ) );
 	}
 
-	if ( topology.Get( Model::wrist_name ) )
-	{
-		wrist_heuristic_ = std::make_unique< Heuristic::WristHeuristic >(
-			model,
-			*topology.Get( Model::wrist_name ) );
-	}
-
 	if ( topology.Get( Model::planarNR_name ) )
 	{
 		planar_heuristic_ = std::make_unique< PlanarNRHeuristic >(
@@ -62,6 +55,14 @@ TopologyHeuristic::TopologyHeuristic( Model::KinematicModelConstPtr model ) :
 	{
 		fabrik_heuristic_ = std::make_unique< Solver::FABRIKSolver >( model );
 	}
+
+	if ( topology.Get( Model::wrist_name ) )
+	{
+		wrist_heuristic_ = std::make_unique< Heuristic::WristHeuristic >(
+			model,
+			*topology.Get( Model::wrist_name ) );
+	}
+
 }
 
 // ------------------------------------------------------------
@@ -71,8 +72,11 @@ IKPresolution TopologyHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	if ( model_->IsUnreachable( problem.target ) )
-		return { problem.seed, IKHeuristicState::Fail }
-	;
+		return { problem.seed, IKHeuristicState::Fail };
+
+	double problem_error = model_->ComputeError( problem.seed, problem.target );
+	if ( problem_error < problem.tolerance )
+		return { problem.seed, IKHeuristicState::Success, problem_error, 0 };
 
 	auto intermediate_problem = problem;
 	Heuristic::IKPresolution global_presolution;
@@ -132,8 +136,11 @@ IKPresolution TopologyHeuristic::Presolve(
 		    global_presolution.iterations };
 	}
 
-	global_presolution.error = model_->ComputeError( intermediate_problem.seed, problem.target );
+	double heuristic_error = model_->ComputeError( intermediate_problem.seed, problem.target );
+
+	global_presolution.error = heuristic_error;
 	global_presolution.joints = intermediate_problem.seed;
+
 	return global_presolution;
 }
 

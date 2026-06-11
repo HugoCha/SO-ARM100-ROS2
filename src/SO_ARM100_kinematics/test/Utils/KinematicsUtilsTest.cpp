@@ -1,8 +1,6 @@
 #include "Global.hpp"
 
-#include "Model/Joint/JointChain.hpp"
-#include "Model/Joint/Limits.hpp"
-#include "Model/Joint/Twist.hpp"
+#include "KinematicTestBase.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -16,7 +14,8 @@ namespace SOArm100::Kinematics::Test
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class KinematicsUtilsTest : public ::testing::Test {
+class KinematicsUtilsTest : public KinematicTestBase
+{
 protected:
 void SetUp() override
 {
@@ -96,17 +95,15 @@ TEST_F( KinematicsUtilsTest, AdjointNonIdentityTransform )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
-	Model::JointChain joint_chain( 1 );
-	Model::Twist twist( Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) );
-	Model::Link link( "", Mat4d::Identity(), 0 );
-	Model::Limits limits( -M_PI, M_PI );
-	joint_chain.Add( "",  twist, link, limits ); // Pure rotation around z-axis
+	auto joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	VecXd joint_angles( 1 );
 	joint_angles << 0.0;
 
 	MatXd jacobian( 6, 1 );
-	SpaceJacobian( joint_chain, joint_angles, jacobian );
+	SpaceJacobian( *joint_chain, joint_angles, jacobian );
 
 	// Expected Jacobian for a single twist (pure rotation around z-axis)
 	Vec6d expected_jacobian;
@@ -118,23 +115,16 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 
 TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
-	Model::JointChain joint_chain( 2 );
-
-	joint_chain.Add( "",
-	                 { Vec3d( 0, 0, 1 ), Vec3d( 0, 0, 0 ) },
-	                 {},
-	                 { -M_PI, M_PI } );
-
-	joint_chain.Add( "",
-	                 { Vec3d( 0, 1, 0 ), Vec3d( 0, 0, 0 ) },
-	                 {},
-	                 { -M_PI, M_PI } );
+	auto joint_chain = CreateSimpleJointChain(
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+				RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitY() ) }, 
+		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	VecXd joint_angles( 2 );
 	joint_angles << 0.0, 0.0;
 
 	MatXd jacobian( 6, 2 );
-	SpaceJacobian( joint_chain, joint_angles, jacobian );
+	SpaceJacobian( *joint_chain, joint_angles, jacobian );
 
 	// Expected Jacobian for two twists (pure rotations around z and y axes)
 	Vec6d expected_jacobian_col1, expected_jacobian_col2;
@@ -165,7 +155,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianZYZRevoluteRobotTwist )
 	MatXd expected_space_jacobian = adjoint_T0e * geom_jacobian;
 
 	MatXd space_jacobian( 6, 3 );
-	SpaceJacobian( joint_chain, joint_angles, space_jacobian );
+	SpaceJacobian( *joint_chain, joint_angles, space_jacobian );
 
 	EXPECT_TRUE( expected_space_jacobian.isApprox( space_jacobian ) )
 	    << "Expected = \n" << expected_space_jacobian << std::endl
@@ -223,7 +213,7 @@ TEST_F( KinematicsUtilsTest, PoseErrorIdentityPose )
 	Mat4d current = Mat4d::Identity();
 	Vec6d pose_error;
 
-	PoseError( target, current, pose_error );
+	SOArm100::Kinematics::PoseError( target, current, pose_error );
 
 	// Pose error should be zero for identical poses
 	Vec6d expected_error = Vec6d::Zero();
@@ -240,7 +230,7 @@ TEST_F( KinematicsUtilsTest, PoseErrorNonIdentityPose )
 	Mat4d current = Mat4d::Identity();
 	Vec6d pose_error;
 
-	PoseError( target, current, pose_error );
+	SOArm100::Kinematics::PoseError( target, current, pose_error );
 
 	// Expected pose error: translation error in x, zero rotation error
 	Vec6d expected_error;
@@ -259,7 +249,7 @@ TEST_F( KinematicsUtilsTest, POEWithSpan )
 	std::span< const double > thetas_span( thetas );
 	auto transform  = Data::GetZYZRevoluteRobotTransform( thetas[0], thetas[1], thetas[2] );
 	Mat4d poe;
-	POE( joint_chain, M, thetas_span, poe );
+	POE( *joint_chain, M, thetas_span, poe );
 
 	EXPECT_TRUE( poe.isApprox( transform ) ) <<
 	    "POE=\n" << poe <<
@@ -277,26 +267,12 @@ TEST_F( KinematicsUtilsTest, POEWithVecXd )
 	thetas << 1.5708, 0.7854, 0.3927;
 	auto transform  = Data::GetZYZRevoluteRobotTransform( thetas[0], thetas[1], thetas[2] );
 	Mat4d poe;
-	POE( joint_chain, M, thetas, poe );
+	POE( *joint_chain, M, thetas, poe );
 
 	EXPECT_TRUE( poe.isApprox( transform ) );
 }
 
 // ------------------------------------------------------------
-
-// Build a revolute joint whose axis passes through `point_on_axis` with direction `axis`.
-// Twist(axis, point_on_axis) internally computes linear = -(axis_normalized × point_on_axis).
-static Model::JointConstPtr MakeRevoluteJoint(
-	const Vec3d& axis,
-	const Vec3d& point_on_axis = Vec3d::Zero() )
-{
-	return std::make_shared< const Model::Joint >(
-		"",
-		Model::Twist( axis, point_on_axis ),
-		Model::Link( "", ToTransformMatrix( point_on_axis ), 0 ),
-		Model::Limits( -M_PI, M_PI )
-		);
-}
 
 static std::span< const Model::JointConstPtr > ToSpan(
 	const std::vector< Model::JointConstPtr >& v )
@@ -308,7 +284,7 @@ static std::span< const Model::JointConstPtr > ToSpan(
 // ComputeIntersection
 // ============================================================
 
-class ComputeIntersectionTest : public ::testing::Test {};
+class ComputeIntersectionTest : public KinematicTestBase {};
 
 // ------------------------------------------------------------
 // Concurrent axes — unique intersection exists
@@ -530,7 +506,7 @@ TEST_F( ComputeIntersectionTest, ThreeConcurrentAxes_TwoParallel_ReturnsNullopt 
 // AxesIndependent
 // ============================================================
 
-class AxesIndependentTest : public ::testing::Test {};
+class AxesIndependentTest : public KinematicTestBase {};
 
 // ------------------------------------------------------------
 // Single joint
@@ -539,7 +515,7 @@ class AxesIndependentTest : public ::testing::Test {};
 TEST_F( AxesIndependentTest, SingleJoint_NonZeroAxis_ReturnsTrue )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero() ),
 	};
 	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -548,12 +524,7 @@ TEST_F( AxesIndependentTest, SingleJoint_ZeroAxis_ReturnsFalse )
 {
 	// A zero-length axis: use the prismatic Twist constructor (linear only)
 	// and build a joint manually so the axis stays zero.
-	auto joint = std::make_shared< const Model::Joint >(
-		"",
-		Model::Twist( Vec3d::Zero() ),   // prismatic with zero linear → axis = (0,0,0)
-		Model::Link(),
-		Model::Limits( -M_PI, M_PI )
-		);
+	auto joint = MakePrismaticJoint( Vec3d::UnitZ(), Vec3d::Zero() );
 
 	std::vector< Model::JointConstPtr > joints{ joint };
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
@@ -566,8 +537,8 @@ TEST_F( AxesIndependentTest, SingleJoint_ZeroAxis_ReturnsFalse )
 TEST_F( AxesIndependentTest, TwoJoints_OrthogonalAxes_ReturnsTrue )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero()  ),
 	};
 	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -575,8 +546,8 @@ TEST_F( AxesIndependentTest, TwoJoints_OrthogonalAxes_ReturnsTrue )
 TEST_F( AxesIndependentTest, TwoJoints_ParallelAxes_ReturnsFalse )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -585,8 +556,8 @@ TEST_F( AxesIndependentTest, TwoJoints_AntiParallelAxes_ReturnsFalse )
 {
 	// w2 = -w1 → cross product is zero
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0,  1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, -1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0,  1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, -1 ), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -595,8 +566,8 @@ TEST_F( AxesIndependentTest, TwoJoints_ScaledParallelAxes_ReturnsFalse )
 {
 	// Twist normalises the axis, so (0,0,2) and (0,0,1) are the same direction
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 2 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 2 ), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -605,8 +576,8 @@ TEST_F( AxesIndependentTest, TwoJoints_NonOrthogonalButIndependent_ReturnsTrue )
 {
 	// (1,0,0) and (1,1,0) — not orthogonal, but cross product is non-zero
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ), Vec3d::Zero()  ),
 	};
 	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -618,9 +589,9 @@ TEST_F( AxesIndependentTest, TwoJoints_NonOrthogonalButIndependent_ReturnsTrue )
 TEST_F( AxesIndependentTest, ThreeJoints_OrthogonalAxes_ReturnsTrue )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
 	};
 	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -629,9 +600,9 @@ TEST_F( AxesIndependentTest, ThreeJoints_ThirdAxisInSpanOfFirstTwo_ReturnsFalse 
 {
 	// w3 = w1 + w2 → determinant is zero
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized(), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -639,9 +610,9 @@ TEST_F( AxesIndependentTest, ThreeJoints_ThirdAxisInSpanOfFirstTwo_ReturnsFalse 
 TEST_F( AxesIndependentTest, ThreeJoints_AllParallel_ReturnsFalse )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -650,9 +621,9 @@ TEST_F( AxesIndependentTest, ThreeJoints_TwoParallelOneIndependent_ReturnsFalse 
 {
 	// Two parallel Z axes → determinant is zero regardless of the third
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -660,9 +631,9 @@ TEST_F( AxesIndependentTest, ThreeJoints_TwoParallelOneIndependent_ReturnsFalse 
 TEST_F( AxesIndependentTest, ThreeJoints_NonOrthogonalButFullRank_ReturnsTrue )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 1 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized(), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 1 ).normalized(), Vec3d::Zero()  ),
 	};
 	EXPECT_TRUE( AxesIndependent( ToSpan( joints ) ) );
 }
@@ -675,10 +646,10 @@ TEST_F( AxesIndependentTest, FourJoints_OrthogonalAxes_ReturnsFalse )
 {
 	// AxesIndependent hard-returns false for k > 3
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized(), Vec3d::Zero()  ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) )
 	    << "More than 3 joints should always return false";
@@ -687,11 +658,11 @@ TEST_F( AxesIndependentTest, FourJoints_OrthogonalAxes_ReturnsFalse )
 TEST_F( AxesIndependentTest, FiveJoints_ReturnsFalse )
 {
 	std::vector< Model::JointConstPtr > joints{
-		MakeRevoluteJoint( Vec3d( 1, 0, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 0 ) ),
-		MakeRevoluteJoint( Vec3d( 0, 0, 1 ) ),
-		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized() ),
-		MakeRevoluteJoint( Vec3d( 0, 1, 1 ).normalized() ),
+		MakeRevoluteJoint( Vec3d( 1, 0, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 0 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 0, 0, 1 ), Vec3d::Zero()  ),
+		MakeRevoluteJoint( Vec3d( 1, 1, 0 ).normalized(), Vec3d::Zero() ),
+		MakeRevoluteJoint( Vec3d( 0, 1, 1 ).normalized(), Vec3d::Zero() ),
 	};
 	EXPECT_FALSE( AxesIndependent( ToSpan( joints ) ) );
 }

@@ -148,6 +148,12 @@ IKPresolution Planar2RHeuristic::Presolve(
 		presolution.state = IKHeuristicState::Success;
 	}
 
+	
+	if ( fk_error > problem.tolerance )
+	{
+		std::cout << "Planar Fails";
+	}
+
 	presolution.error = fk_error;
 	GetGroup().SetGroupJoints( planar_solution, presolution.joints );
 	return presolution;
@@ -254,6 +260,7 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 	}
 
 	fk_error = ComputeLocalPositionError( p_local_target, seed, solution );
+
 	return true;
 }
 

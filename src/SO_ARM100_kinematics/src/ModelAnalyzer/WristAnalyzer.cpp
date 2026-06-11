@@ -30,6 +30,9 @@ std::optional< WristJointGroup > WristAnalyzer::Analyze(
 	const auto& active_joints = chain.GetActiveJoints();
 	for ( int k = 1; k <= 3 && k <= active_joints.size(); ++k )
 	{
+		if ( !active_joints[active_joints.size() - k]->IsRevolute() )
+			break;
+
 		auto maybe_center = ComputeIntersection( active_joints.last( k ) );
 		if ( !maybe_center )
 			break;

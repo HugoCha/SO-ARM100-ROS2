@@ -31,8 +31,6 @@ RevoluteBaseHeuristic::RevoluteBaseHeuristic(
 		return;
 	}
 
-	const auto& base_link = base_joint->GetLink();
-
 	Vec3d omega_b = base_joint->Axis();
 	Vec3d omega_s = shoulder_joint->Axis();
 	Vec3d O_b = base_joint->Origin();
@@ -112,38 +110,42 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Vec3d& r_proj = ComputeDirection( wrist_center );
 	double R = r_proj.norm();
 
-	if ( R > epsilon )
+	// Singularity
+	if ( R < epsilon )
 	{
-		if ( R + epsilon < std::abs( shoulder_offset_ ) )
-			return presolution;
-
-		const Vec3d& omega_b = base_joint->Axis();
-
-		double alpha = ComputeAlpha( omega_b, reference_direction_, r_proj );
-		double beta = ComputeBeta( shoulder_offset_, r_proj );
-
-		double fk_error;
-		Vec1d best_candidate;
-		if ( !ValidateAndSelectCandidate(
-				 p_wrist_center,
-				 problem.seed,
-				 alpha,
-				 beta,
-				 fk_error,
-				 best_candidate ) )
-		{
-			presolution.state = fk_error < 2 * problem.tolerance ?
-			                    IKHeuristicState::PartialSuccess :
-			                    IKHeuristicState::Fail;
-		}
-		else
-		{
-			presolution.state = IKHeuristicState::Success;
-		}
-
-		presolution.error = fk_error;
-		GetGroup().SetGroupJoints( best_candidate, presolution.joints );
+		presolution.state = IKHeuristicState::PartialSuccess;
+		return presolution;
 	}
+
+	if ( R + epsilon < std::abs( shoulder_offset_ ) )
+		return presolution;
+
+	const Vec3d& omega_b = base_joint->Axis();
+
+	double alpha = ComputeAlpha( omega_b, reference_direction_, r_proj );
+	double beta = ComputeBeta( shoulder_offset_, r_proj );
+
+	double fk_error;
+	Vec1d best_candidate;
+	if ( !ValidateAndSelectCandidate(
+				p_wrist_center,
+				problem.seed,
+				alpha,
+				beta,
+				fk_error,
+				best_candidate ) )
+	{
+		presolution.state = fk_error < 2 * problem.tolerance ?
+							IKHeuristicState::PartialSuccess :
+							IKHeuristicState::Fail;
+	}
+	else
+	{
+		presolution.state = IKHeuristicState::Success;
+	}
+
+	presolution.error = fk_error;
+	GetGroup().SetGroupJoints( best_candidate, presolution.joints );
 
 	return presolution;
 }

@@ -52,8 +52,7 @@ Model::JointConstPtr Planar1RHeuristic::GetJoint() const
 
 double Planar1RHeuristic::L() const
 {
-	const auto& link = GetJoint()->GetLink();
-	return link.GetLength();
+	return GetJoint()->GetChildLink()->Length();
 }
 
 // ------------------------------------------------------------

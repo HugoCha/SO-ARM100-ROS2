@@ -149,7 +149,7 @@ std::vector< std::shared_ptr< const Articulation >> SkeletonAnalyzer::AnalyzeArt
 	int index = n_joints_without_last - 1;
 	while ( index >= 0 )
 	{
-		if ( index >= 2 && joints[index - 2]->GetLink().GetLength() > 0 )
+		if ( index >= 2 && joints[index - 2]->GetChildLink()->Length() > 0 )
 		{
 			if ( auto articulation = ExtractArticulationFromJoints(
 					 joints[index],
@@ -161,7 +161,7 @@ std::vector< std::shared_ptr< const Articulation >> SkeletonAnalyzer::AnalyzeArt
 				continue;
 			}
 		}
-		if ( index >= 1 && joints[index - 1]->GetLink().GetLength() > 0  )
+		if ( index >= 1 && joints[index - 1]->GetChildLink()->Length() > 0  )
 		{
 			if ( auto articulation = ExtractArticulationFromJoints(
 					 joints[index],
@@ -202,6 +202,9 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 	auto can_filter_joint =
 		[]( JointConstPtr joint1, JointConstPtr joint2 ) -> bool
 		{
+			if ( joint1->GetType() != joint2->GetType() )
+				return false;
+			
 			if ( !joint1->Axis().isApprox( joint2->Axis() ) )
 				return false;
 

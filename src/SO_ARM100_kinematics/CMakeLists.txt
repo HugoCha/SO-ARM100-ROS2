@@ -28,7 +28,7 @@ endif()
 # Add all source files from src folder
 file(GLOB_RECURSE SOURCE_FILES src/*.cpp)
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -115,11 +115,15 @@ ament_target_dependencies(${PROJECT_NAME}
                           rclcpp
                           Eigen3)
 
-pluginlib_export_plugin_description_file( kinematics_base so_arm100_kinematics_plugin.xml )
+pluginlib_export_plugin_description_file( moveit_core so_arm100_kinematics_plugin.xml )
 
-ament_export_libraries(so_arm100_kinematics_plugin)
+ament_export_libraries(${PROJECT_NAME})
 
-install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION share/${PROJECT_NAME}/lib)
-
+# install(TARGETS ${PROJECT_NAME}
+#         LIBRARY DESTINATION share/${PROJECT_NAME}/lib)
+install(
+  TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin )
 ament_package()

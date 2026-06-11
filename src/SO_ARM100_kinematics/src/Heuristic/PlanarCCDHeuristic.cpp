@@ -11,6 +11,7 @@
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
+#include "Utils/StringConverter.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
@@ -73,6 +74,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 			presolution.state = IKHeuristicState::Success;
 			presolution.error = buffer.error;
 			presolution.iterations = iter;
+
 			return presolution;
 		}
 		if ( history.stalled_error_cnt > parameters_.max_stalled_iterations )
@@ -81,6 +83,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 			presolution.state = IKHeuristicState::PartialSuccess;
 			presolution.error = history.best_error;
 			presolution.iterations = iter;
+
 			return presolution;
 		}
 
@@ -170,8 +173,8 @@ void PlanarCCDHeuristic::UpdateHistory(
 	const SolverBuffer& buffer,
 	Solver::SolverHistory& history ) const
 {
-	const int stalled_tolerance = problem.tolerance / 2.0;
-	if ( buffer.error - history.last_non_stalled_error < stalled_tolerance )
+	const double stalled_tolerance = problem.tolerance / 2.0;
+	if ( history.last_non_stalled_error - buffer.error < stalled_tolerance )
 	{
 		history.stalled_error_cnt++;
 	}

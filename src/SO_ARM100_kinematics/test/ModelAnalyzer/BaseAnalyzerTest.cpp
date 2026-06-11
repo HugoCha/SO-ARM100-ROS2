@@ -1,11 +1,10 @@
+#include "KinematicTestBase.hpp"
 #include "Model/KinematicModel.hpp"
 #include "ModelAnalyzer/BaseAnalyzer.hpp"
 
 #include "Global.hpp"
 
-#include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointGroup.hpp"
-#include "Model/Joint/Twist.hpp"
 #include "RobotModelTestData.hpp"
 #include "Utils/Converter.hpp"
 
@@ -18,7 +17,7 @@ namespace SOArm100::Kinematics::Test
 // ------------------------------------------------------------
 // ------------------------------------------------------------
 
-class BaseAnalyzerTest : public ::testing::Test
+class BaseAnalyzerTest : public KinematicTestBase
 {
 protected:
 void SetUp() override
@@ -163,22 +162,11 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentWristPositions )
 TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 {
 	// Create a joint chain with a different base joint axis
-	Model::JointChain joint_chain_y( 2 );
-	Vec3d origin = Vec3d::Zero();
-	Vec3d axis = Vec3d::UnitY(); // Rotation around Y-axis
-	Model::Twist twist_y( axis, origin );
-	Model::Link link_y( "", Mat4d::Identity(), 1 );
-	Model::Limits limits_y( -M_PI, M_PI );
-	joint_chain_y.Add( "", twist_y, link_y, limits_y );
-
-	origin = Vec3d::UnitZ();
-	axis = Vec3d::UnitZ(); // Rotation around Z-axis
-	Model::Twist twist_z( axis, origin );
-	Model::Link link_z( "", ToTransformMatrix( origin ), 1 );
-	Model::Limits limits_z( -M_PI, M_PI );
-	joint_chain_y.Add( "", twist_z, link_z, limits_z );
-
 	Mat4d home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
+	auto joint_chain_y = CreateSimpleJointChain(
+		{RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitY() ), 
+		  		RevoluteJointInfo( Vec3d( 0, 0, 1 ), Vec3d::UnitZ() ) }, 
+		  		home );
 
 	Model::WristJointGroup wrist(
 		1,
@@ -187,7 +175,7 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 		ToTransformMatrix( Vec3d( 0, 0, 1 ) ) );
 
 	auto base_group = Model::BaseAnalyzer::Analyze(
-		joint_chain_y,
+		*joint_chain_y,
 		home,
 		std::nullopt,
 		wrist );

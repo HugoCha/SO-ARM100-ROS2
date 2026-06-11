@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <limits>
+#include <memory>
 #include <random_numbers/random_numbers.h>
 
 namespace SOArm100::Kinematics::Model
@@ -129,4 +130,6 @@ private:
 double min_;
 double max_;
 };
+
+using LimitsConstPtr = std::shared_ptr< const Limits >;
 }
