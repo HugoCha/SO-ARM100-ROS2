@@ -55,18 +55,28 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Success )
 	auto problem = CreateProblem( model_, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	Mat4d result_pose = ComputeFK( model_, result.joints );
+	EXPECT_GE( result.branches.size(), 1 );
 
-	// Check that the solution is valid
-	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Success ) << "IK should succeed for reachable position";
-	EXPECT_FALSE( std::isnan( result.joints[0] ) ) << "Solution should not be NaN";
-	EXPECT_LE( TranslationError( result_pose, problem.target ), epsilon )
-	    << "target= " << std::endl << problem.target << std::endl
-	    << "result= " << std::endl << result_pose << std::endl;
+	bool hasOriginalJoints = false;
+	for ( const auto& b : result.branches )
+	{
+		Mat4d result_pose = ComputeFK( model_, b.joints );
 
-	EXPECT_NEAR( M_PI / 4, result.joints[0], 1e-6 )
-	    << "Expected joint= " << M_PI / 4 << std::endl
-	    << "Result   joint= " << result.joints[0] << std::endl;
+		// Check that the solution is valid
+		EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Success ) << "IK should succeed for reachable position";
+		EXPECT_FALSE( std::isnan( b.joints[0] ) ) << "Solution should not be NaN";
+		
+		if ( std::abs( b.joints[0] - M_PI / 4 ) < 1e-6 )
+		{
+			EXPECT_LE( TranslationError( result_pose, problem.target ), epsilon )
+				<< "target= " << std::endl << problem.target << std::endl
+				<< "result= " << std::endl << result_pose << std::endl;
+			hasOriginalJoints = true;
+		}
+	}
+
+	EXPECT_TRUE( hasOriginalJoints )
+		<< "Heuristic did not found original joint";
 }
 
 // ------------------------------------------------------------
@@ -88,9 +98,14 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Singularity )
 	    << "IK should partially succeed for singularity" << std::endl
 		<< result;
 
-	EXPECT_EQ( seed[0], result.joints[0] )
-	    << "Expected joint= " << seed[0] << std::endl
-	    << "Result   joint= " << result.joints[0] << std::endl;
+	EXPECT_GE( 1, result.branches.size() );
+
+	for ( const auto& b : result.branches )
+	{
+		EXPECT_EQ( seed[0], b.joints[0] )
+			<< "Expected joint= " << seed[0] << std::endl
+			<< "Result   joint= " << b.joints[0] << std::endl;
+	}
 }
 
 // ------------------------------------------------------------

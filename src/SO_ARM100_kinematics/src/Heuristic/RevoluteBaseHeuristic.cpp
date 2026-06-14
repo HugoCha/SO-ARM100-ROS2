@@ -98,7 +98,7 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution{ problem.seed, IKHeuristicState::Fail };
+	IKPresolution presolution{ {{problem.seed}}, IKHeuristicState::Fail };
 	if ( reference_direction_.norm() < epsilon )
 		return presolution;
 
@@ -126,39 +126,34 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	double beta = ComputeBeta( shoulder_offset_, r_proj );
 
 	double fk_error;
-	Vec1d best_candidate;
-	if ( !ValidateAndSelectCandidate(
-				p_wrist_center,
-				problem.seed,
+	std::vector< Vec1d > valid_candidates;
+	if ( !ValidateAndSelectCandidates(
 				alpha,
 				beta,
-				fk_error,
-				best_candidate ) )
+				valid_candidates ) )
 	{
-		presolution.state = fk_error < 2 * problem.tolerance ?
-							IKHeuristicState::PartialSuccess :
-							IKHeuristicState::Fail;
+		presolution.branches = {};
+		presolution.state = IKHeuristicState::Fail;
+		return presolution;
 	}
-	else
+	
+	presolution.state = IKHeuristicState::Success;
+	for ( const auto& valid_solution : valid_candidates )
 	{
-		presolution.state = IKHeuristicState::Success;
+		IKPresolutionBranch branch = {problem.seed};
+		GetGroup().SetGroupJoints( valid_solution, branch.joints );
+		presolution.branches.emplace_back( branch );
 	}
-
-	presolution.error = fk_error;
-	GetGroup().SetGroupJoints( best_candidate, presolution.joints );
 
 	return presolution;
 }
 
 // ------------------------------------------------------------
 
-bool RevoluteBaseHeuristic::ValidateAndSelectCandidate(
-	const Vec3d& p_target,
-	const VecXd& seed,
+bool RevoluteBaseHeuristic::ValidateAndSelectCandidates(
 	double alpha,
 	double beta,
-	double& fk_error,
-	Vec1d& best_candidate ) const
+	std::vector< Vec1d >& valid_candidates ) const
 {
 	const auto* base_joint = GetBaseJoint();
 	const auto& limits = base_joint->GetLimits();
@@ -181,41 +176,18 @@ bool RevoluteBaseHeuristic::ValidateAndSelectCandidate(
 
 	if ( !isvalid1 && !isvalid2 )
 	{
-		double clamp_candidate1 = limits.Clamp( candidate1 );
-		double clamp_candidate2 = limits.Clamp( candidate2 );
-
-		double fk_error1 = std::abs( clamp_candidate1 - candidate1 );
-		double fk_error2 = std::abs( clamp_candidate2 - candidate2 );
-
-		if ( fk_error < fk_error2 )
-		{
-			best_candidate[0] = candidate1;
-			fk_error = fk_error1;
-		}
-		else
-		{
-			best_candidate[0] = candidate2;
-			fk_error = fk_error2;
-		}
 		return false;
 	}
 
-	if ( isvalid1 && !isvalid2 )
+	if ( isvalid1 )
 	{
-		best_candidate[0] = candidate1;
+		valid_candidates.emplace_back( Vec1d( candidate1 ) );
 	}
-	else if ( !isvalid1 && isvalid2 )
+	if ( isvalid2 )
 	{
-		best_candidate[0] = candidate2;
-	}
-	else
-	{
-		best_candidate[0] = std::abs( candidate1 - seed[0] ) < std::abs( candidate2 - seed[0] ) ?
-		                    candidate1 :
-		                    candidate2;
+		valid_candidates.emplace_back( Vec1d( candidate2 ) );
 	}
 
-	fk_error = 0.0;
 	return true;
 }
 

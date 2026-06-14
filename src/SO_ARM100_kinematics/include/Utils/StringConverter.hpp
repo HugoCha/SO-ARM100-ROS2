@@ -51,8 +51,10 @@ namespace Heuristic
 {
 enum class IKHeuristicState;
 struct IKPresolution;
+struct IKPresolutionBranch;
 
 std::ostream& operator << ( std::ostream& os, const IKPresolution& obj );
+std::ostream& operator << ( std::ostream& os, const IKPresolutionBranch& obj );
 std::ostream& operator << ( std::ostream& os, const IKHeuristicState& obj );
 }
 

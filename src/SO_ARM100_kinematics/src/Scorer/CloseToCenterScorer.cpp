@@ -1,7 +1,6 @@
 #include "Scorer/CloseToCenterScorer.hpp"
 
 #include "Scorer/IKSolutionScorer.hpp"
-#include "Solver/IKSolution.hpp"
 #include "Utils/Distance.hpp"
 #include <Eigen/src/Core/util/ForwardDeclarations.h>
 
@@ -38,11 +37,12 @@ double CloseToCenterScorer::ComputeMaxDistance( Model::KinematicModelConstPtr mo
 
 double CloseToCenterScorer::Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const
+	const VecXd& solution,
+	double error ) const
 {
 	return Utils::Distance(
 		model_->GetChain()->ActiveJointCenters(),
-		solution.joints ) / max_distance_;
+		solution ) / max_distance_;
 }
 
 // ------------------------------------------------------------

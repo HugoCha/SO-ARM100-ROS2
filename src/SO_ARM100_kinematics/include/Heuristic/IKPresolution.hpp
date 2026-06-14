@@ -1,17 +1,14 @@
 #pragma once
 
-#include "Global.hpp"
-
+#include "Heuristic/IKPresolutionBranch.hpp"
 #include "IKHeuristicState.hpp"
 
 namespace SOArm100::Kinematics::Heuristic
 {
 struct IKPresolution
 {
-	VecXd joints;
+	std::vector< IKPresolutionBranch > branches;
 	IKHeuristicState state;
-	double error;
-	int iterations { 0 };
 
 	bool Success() const {
 		return state == IKHeuristicState::Success;

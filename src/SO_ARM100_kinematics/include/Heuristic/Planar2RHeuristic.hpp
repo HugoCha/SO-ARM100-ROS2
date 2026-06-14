@@ -7,6 +7,7 @@
 
 namespace SOArm100::Kinematics::Heuristic
 {
+struct IKPresolutionBranch;
 class Planar2RHeuristic : public Model::IKJointGroupModelBase, public IIKHeuristic
 {
 public:
@@ -44,13 +45,9 @@ VecXd ComputeElbowUpSolution( double x, double y, double L1, double L2 ) const;
 VecXd ComputeElbowDownSolution( double x, double y, double L1, double L2 ) const;
 
 bool ValidateAndSelectElbowConfiguration(
-	const Vec3d& p_local_target,
-	const VecXd& seed,
-	const VecXd& planar_seed,
 	const VecXd& elbow_up,
 	const VecXd& elbow_down,
-	double& fk_error,
-	VecXd& solution ) const;
+	std::vector< VecXd >& branches ) const;
 
 double ComputeFKError( const Vec3d& p_target, const VecXd& seed, const VecXd& planar_angles ) const;
 };

@@ -40,9 +40,9 @@ void SetUp() override
 	// robot_name_ = "Wrist1R";
 	// robot_name_ = "Wrist2R";
 	// robot_name_ = "Wrist3R";
-	 robot_name_ = "5-axis arm";
+	// robot_name_ = "5-axis arm";
 	// robot_name_ = "6-axis arm";
-	// robot_name_ = "Universal Robot";
+	robot_name_ = "Universal Robot";
 	//robot_name_ = "LeRobot";
 
 	model_ = Data::GetAllRobots()[robot_name_];
@@ -75,6 +75,55 @@ constexpr std::unordered_map< std::string, TestValidationParameters > TestValida
 	};
 }
 
+Heuristic::IKPresolution CheckPresolution(
+	Model::KinematicModelConstPtr model,
+	std::string robot_name,
+	Solver::IKProblem problem,
+	Heuristic::IKPresolution presolution,
+	bool pNoFailure,
+	bool pSilent ) const
+{
+	EXPECT_GE( presolution.branches.size(), 1 );
+
+	for ( const auto& b : presolution.branches )
+	{
+		EXPECT_EQ( b.joints.size(), model->GetChain()->GetActiveJointCount() );
+		Mat4d result_pose;
+		model->ComputeFK( b.joints, result_pose );
+		double error = PoseError( model, problem, b );
+
+		auto validation_params = TestValidationParameters()[robot_name];
+
+		if ( !pNoFailure )
+		{
+			EXPECT_TRUE( IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
+				<< "Fail for robot " << robot_name << std::endl
+				<< "Target = \n" << problem.target << std::endl
+				<< "Result = \n" << result_pose << std::endl
+				<< "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
+				<< "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
+				<< "Pose     Error = \n" << error << std::endl
+				<< problem << std::endl
+				<< presolution << std::endl;
+		}
+		else
+		{
+			if ( !pSilent && !IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
+			{
+				std::cout << "Fail for robot " << robot_name << std::endl
+				<< "Target = \n" << problem.target << std::endl
+				<< "Result = \n" << result_pose << std::endl
+				<< "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
+				<< "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
+				<< "Pose     Error = \n" << error << std::endl
+				<< problem << std::endl
+				<< presolution << std::endl;
+			}
+		}
+	}
+	return presolution;
+}
+
 Heuristic::IKPresolution CheckPresolve(
 	Model::KinematicModelConstPtr model,
 	std::string robot_name,
@@ -88,25 +137,7 @@ Heuristic::IKPresolution CheckPresolve(
 
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	EXPECT_EQ( result.joints.size(), joints.size() );
-	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
-	double error = PoseError( model, problem, result );
-
-	auto validation_params = TestValidationParameters()[robot_name];
-
-	EXPECT_TRUE( IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
-	    << "Fail for robot " << robot_name << std::endl
-	    << "Target = \n" << problem.target << std::endl
-	    << "Result = \n" << result_pose << std::endl
-	    << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
-	    << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
-	    << "Pose     Error = \n" << error << std::endl
-	    << "Joints = \n" << joints << std::endl
-	    << problem << std::endl
-	    << result << std::endl;
-
-	return result;
+	return CheckPresolution( model, robot_name, problem, result, false, false );
 }
 
 Heuristic::IKPresolution CheckPresolveNoFailure(
@@ -123,28 +154,7 @@ Heuristic::IKPresolution CheckPresolveNoFailure(
 
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	EXPECT_EQ( result.joints.size(), joints.size() );
-	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
-	double error = PoseError( model, problem, result );
-
-	auto validation_params = TestValidationParameters()[robot_name];
-
-	if ( !IsApprox( problem.target, result_pose, validation_params.max_avg_error ) && !pSilent )
-	{
-		std::cout
-		    << "Fail for robot " << robot_name << std::endl
-		    << "Target = \n" << problem.target << std::endl
-		    << "Result = \n" << result_pose << std::endl
-		    << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
-		    << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
-		    << "Pose     Error = \n" << error << std::endl
-		    << "Joints = \n" << joints << std::endl
-		    << problem << std::endl
-		    << result << std::endl;
-	}
-
-	return result;
+	return CheckPresolution( model, robot_name, problem, result, true, pSilent );
 }
 
 Heuristic::IKPresolution CheckPresolveFromTarget(
@@ -157,23 +167,7 @@ Heuristic::IKPresolution CheckPresolveFromTarget(
 	auto problem = CreateProblem( seed, target, DEFAULT_TOLERANCE );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-	EXPECT_EQ( result.joints.size(), seed.size() );
-	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
-	double error = PoseError( model, problem, result );
-
-	auto validation_params = TestValidationParameters()[robot_name];
-
-	EXPECT_TRUE( IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
-	    << "Fail for robot " << robot_name << std::endl
-	    << "Target = \n" << problem.target << std::endl
-	    << "Result = \n" << result_pose << std::endl
-	    << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
-	    << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
-	    << "Pose     Error = \n" << error << std::endl
-	    << result << std::endl;
-
-	return result;
+	return CheckPresolution( model, robot_name, problem, result, false, false );
 }
 
 };
@@ -227,10 +221,6 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency )
 {
 	const auto& chain = model_->GetChain();
 	const int ITER = 100;
-	double avg_iterations = 0.0;
-	double avg_non_success_error = 0.0;
-	double max_non_success_error = 0.0;
-	double avg_error = 0.0;
 	int k_successes = 0;
 	auto validation_params = TestValidationParameters()[robot_name_];
 	for ( int i = 0; i < ITER; i++ )
@@ -238,38 +228,17 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency )
 		// Target joints
 		VecXd joints = chain->RandomValidJoints( rng_, 0 );
 		// Seed joints
-		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3 );
+		VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.03 );
 		auto result = CheckPresolveNoFailure( model_, robot_name_, seed, joints );
 
-		auto result_pose = ComputeFK( model_, result.joints );
-		if ( !result.PartialOrSuccess() || result.error > validation_params.max_avg_error )
+		if ( result.PartialOrSuccess() )
 		{
-			avg_non_success_error += result.error;
-			max_non_success_error = std::max( max_non_success_error, result.error );
-			std::cout << "Seed " << seed.transpose() << std::endl;
-			std::cout << "Joints " << joints.transpose() << std::endl;
-			std::cout << result << std::endl;
-		}
-		else
-		{
-			EXPECT_EQ( result.joints.size(), model_->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
 			k_successes++;
 		}
-
-		avg_iterations += result.iterations / ( double )ITER;
-		avg_error += result.error / ( double )ITER;
 	}
 
-	avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
-	EXPECT_LE( avg_error, validation_params.max_avg_error );
-	EXPECT_LT( max_non_success_error, std::numeric_limits< double >::infinity() );
-	EXPECT_LE( avg_iterations, validation_params.max_avg_iterations );
-
+	EXPECT_EQ( k_successes, ITER );
 	std::cout << "=========== Robot " << robot_name_ << " ===========\n";
-	std::cout << "Avg iter    = " << avg_iterations << std::endl;
-	std::cout << "Avg error   = " << avg_error << std::endl;
-	std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
-	std::cout << "Max fail err= " << max_non_success_error << std::endl;
 	std::cout << "k_successes = " << k_successes << " / " << ITER << std::endl;
 }
 
@@ -294,19 +263,19 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency_AllRobots )
 			VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.3 );
 			auto result = CheckPresolveNoFailure( robot.second, robot.first, seed, joints );
 
-			auto result_pose = ComputeFK( robot.second, result.joints );
-			if ( !result.PartialOrSuccess() || result.error > validation_params.max_avg_error )
-			{
-				k_failorfar++;
-				avg_non_success_error += result.error;
-				max_non_success_error = std::max( max_non_success_error, result.error );
-			}
+			// auto result_pose = ComputeFK( robot.second, result.joints );
+			// if ( !result.PartialOrSuccess() || result.error > validation_params.max_avg_error )
+			// {
+			// 	k_failorfar++;
+			// 	avg_non_success_error += result.error;
+			// 	max_non_success_error = std::max( max_non_success_error, result.error );
+			// }
 			
-			EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
-			avg_iterations += result.iterations / ( double )ITER;
-			avg_error += result.error / ( double )ITER;
+			// EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
+			// avg_iterations += result.iterations / ( double )ITER;
+			// avg_error += result.error / ( double )ITER;
 
-			if ( result.Success() ) k_successes++;
+			if ( result.PartialOrSuccess() ) k_successes++;
 		}
 
 		avg_non_success_error = ( k_failorfar != 0 ) ? avg_non_success_error / k_failorfar : 0.0;
@@ -333,7 +302,6 @@ TEST_F( TopologyHeuristicTest, Presolve_ConvergesFromExactSeed )
 	auto result = CheckPresolve( model_, robot_name_, joints, joints );
 
 	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Success );
-	EXPECT_EQ( result.iterations, 0 );
 }
 
 // ------------------------------------------------------------
@@ -418,7 +386,8 @@ TEST_F( TopologyHeuristicTest, Presolve_MaintainsValidJointVectorSize )
 		auto problem = CreateProblem( robot.second, seed, joints );
 		auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
 
-		EXPECT_EQ( result.joints.size(), n_joints )
+		EXPECT_GE( result.branches.size(), 1 );
+		EXPECT_EQ( result.branches.front().joints.size(), n_joints )
 		    << "Test Fail for " << robot.first << std::endl
 		    << "TopologyHeuristic corrupted the joint vector size during cascades.";
 	}

@@ -3,7 +3,6 @@
 #include "Global.hpp"
 
 #include "Solver/IKProblem.hpp"
-#include "Solver/IKSolution.hpp"
 #include "Utils/KinematicsUtils.hpp"
 
 namespace SOArm100::Kinematics::Scorer
@@ -21,9 +20,10 @@ ManipulabilityScorer::ManipulabilityScorer(  Model::KinematicModelConstPtr model
 
 double ManipulabilityScorer::Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const
+	const VecXd& solution,
+	double error ) const
 {
-	double manip = ComputeManipulability( model_, solution.joints );
+	double manip = ComputeManipulability( model_, solution );
 
 	return std::clamp( 1 - ( manip ) / ( max_manip_ ), 0.0, 1.0 );
 }

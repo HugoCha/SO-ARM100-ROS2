@@ -38,12 +38,9 @@ static double ComputeBeta(
 	double shoulder_offset,
 	const Vec3d& r_proj );
 
-bool ValidateAndSelectCandidate(
-	const Vec3d& p_target,
-	const VecXd& seed,
+bool ValidateAndSelectCandidates(
 	double alpha,
 	double beta,
-	double& fk_error,
-	Vec1d& best_candidate ) const;
+	std::vector< Vec1d >& valid_candidates ) const;
 };
 }

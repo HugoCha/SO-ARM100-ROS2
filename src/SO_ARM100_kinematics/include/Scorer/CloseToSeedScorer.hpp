@@ -12,7 +12,8 @@ CloseToSeedScorer( Model::KinematicModelConstPtr model );
 
 virtual double Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const override;
+	const VecXd& solution,
+	double error ) const override;
 
 private:
 Model::KinematicModelConstPtr model_;

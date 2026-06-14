@@ -1,7 +1,6 @@
 #include "Scorer/PoseErrorScorer.hpp"
 
 #include "Model/KinematicModel.hpp"
-#include "Solver/IKSolution.hpp"
 #include "Solver/IKProblem.hpp"
 
 namespace SOArm100::Kinematics::Scorer
@@ -21,10 +20,11 @@ PoseErrorScorer::PoseErrorScorer(
 
 double PoseErrorScorer::Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const
+	const VecXd& solution,
+	double error ) const
 {
-	return solution.error > parameters_.error_tolerance ?
-	       parameters_.violation_penalty * solution.error : 0.0;
+	return error > parameters_.error_tolerance ?
+	       parameters_.violation_penalty * error : 0.0;
 }
 
 // ------------------------------------------------------------

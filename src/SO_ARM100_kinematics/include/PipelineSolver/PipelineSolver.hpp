@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Heuristic/IKPresolution.hpp"
 #include "IKPipeline.hpp"
 #include "Model/IKModelBase.hpp"
 #include "PipelineSolverParameters.hpp"
@@ -21,7 +22,7 @@ class PipelineSolver : public Model::IKModelBase, public IKSolverBase
 public:
 PipelineSolver(
 	Model::KinematicModelConstPtr model,
-	std::vector< std::unique_ptr< const Solver::IKPipeline >>&& pipelines,
+	std::unique_ptr< const Solver::IKPipeline >&& pipeline,
 	std::unique_ptr< Scorer::IKSolutionScorer >&& scorer,
 	const PipelineSolverParameters& parameters );
 
@@ -46,17 +47,19 @@ struct SynchronizationParameters
 	bool early_result = false;
 };
 
-std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines_;
+std::unique_ptr< const Solver::IKPipeline > pipeline_;
 std::unique_ptr< Scorer::IKSolutionScorer > scorer_;
 PipelineSolverParameters parameters_;
 
 std::vector< std::thread > StartPipelines(
 	auto worker,
+	SynchronizationParameters& sync_params,
+	const Heuristic::IKPresolution& presolution,
 	const IKProblem& problem,
 	const IKRunContext& context ) const;
 
-IKSolution RunAndScorePipeline(
-	const std::unique_ptr< const Solver::IKPipeline >& pipeline,
+IKSolution RunAndScoreBranch(
+	const Heuristic::IKPresolutionBranch& branch,
 	const IKProblem& problem,
 	const IKRunContext& context ) const;
 
@@ -64,6 +67,7 @@ bool CanStopPipelines( const IKSolution& solution ) const;
 
 void WaitPipelines(
 	std::vector< std::thread >& pipeline_threads,
+	const Heuristic::IKPresolution& presolution,
 	const IKProblem& problem,
 	const IKRunContext& context,
 	SynchronizationParameters& sync_params ) const;

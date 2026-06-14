@@ -7,6 +7,7 @@
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/Joint/JointState.hpp"
 #include "Solver/IKProblem.hpp"
+#include "Solver/IKRunContext.hpp"
 #include "Solver/SolverHistory.hpp"
 #include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
@@ -44,7 +45,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
+	IKPresolution presolution = { { { problem.seed } }, IKHeuristicState::Fail };
 
 	const int n_joints = model_->GetChain()->GetActiveJointCount();
 	if ( problem.seed.size() != n_joints )
@@ -68,21 +69,24 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 		UpdateBuffer( p_local_target, buffer.joints, buffer );
 		UpdateHistory( iter, problem, buffer, history );
 
+		if ( context.StopRequested() )
+		{
+			presolution.branches = { { history.best_joints } };
+			presolution.state = IKHeuristicState::Fail;
+
+			return presolution;
+		}
 		if ( buffer.error < problem.tolerance )
 		{
-			presolution.joints = buffer.joints;
+			presolution.branches = { { buffer.joints } };
 			presolution.state = IKHeuristicState::Success;
-			presolution.error = buffer.error;
-			presolution.iterations = iter;
 
 			return presolution;
 		}
 		if ( history.stalled_error_cnt > parameters_.max_stalled_iterations )
 		{
-			presolution.joints = history.best_joints;
+			presolution.branches = { { history.best_joints } };
 			presolution.state = IKHeuristicState::PartialSuccess;
-			presolution.error = history.best_error;
-			presolution.iterations = iter;
 
 			return presolution;
 		}
@@ -90,10 +94,8 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 		CCD( p_local_target, buffer );
 	}
 
-	presolution.joints = history.best_joints;
+	presolution.branches = { { history.best_joints } };
 	presolution.state = IKHeuristicState::PartialSuccess;
-	presolution.error = history.best_error;
-	presolution.iterations = parameters_.max_iterations;
 	return presolution;
 }
 

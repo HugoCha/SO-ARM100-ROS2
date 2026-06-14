@@ -3,7 +3,6 @@
 #include "Global.hpp"
 #include "Scorer/IKSolutionScorer.hpp"
 #include "Solver/IKProblem.hpp"
-#include "Solver/IKSolution.hpp"
 #include "Utils/Distance.hpp"
 
 namespace SOArm100::Kinematics::Scorer
@@ -39,11 +38,12 @@ double CloseToSeedScorer::ComputeMaxDistance( Model::KinematicModelConstPtr mode
 
 double CloseToSeedScorer::Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const
+	const VecXd& solution,
+	double error ) const
 {
 	return Utils::Distance(
 		problem.seed,
-		solution.joints ) / max_distance_;
+		solution ) / max_distance_;
 }
 
 // ------------------------------------------------------------

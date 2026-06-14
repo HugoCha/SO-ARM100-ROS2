@@ -27,7 +27,7 @@ IKPresolution PrismaticBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution{ problem.seed, IKHeuristicState::Fail };
+	IKPresolution presolution{ {{problem.seed}}, IKHeuristicState::Fail };
 
 	auto base_joint = GetBaseJoint();
 
@@ -40,21 +40,12 @@ IKPresolution PrismaticBaseHeuristic::Presolve(
 
 	Vec3d wc_proj = ProjectPointOnAxis( p_wrist_center - origin, Vec3d::Zero(), axis );
 
-	double value = wc_proj.norm();
-	Vec1d clamp_value( base_joint->GetLimits().Clamp( value ) );
+	VecXd presolution_joints = problem.seed;
+	Vec1d value( wc_proj.norm() );
 
-	presolution.error = std::abs( clamp_value[0] - value );
-
-	if ( base_joint->GetLimits().Within( value ) )
-	{
-		presolution.state = IKHeuristicState::Success;
-	}
-	else
-	{
-		presolution.state = ( presolution.error < 2 * problem.tolerance ) ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail;
-	}
-
-	GetGroup().SetGroupJoints( clamp_value, presolution.joints );
+	presolution.state = base_joint->GetLimits().Within( value[0] ) ? IKHeuristicState::Success : IKHeuristicState::Fail;
+	GetGroup().SetGroupJoints( value, presolution_joints );
+	presolution.branches = { {presolution_joints} };
 	return presolution;
 }
 

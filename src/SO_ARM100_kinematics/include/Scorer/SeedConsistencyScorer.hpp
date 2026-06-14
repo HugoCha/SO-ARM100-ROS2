@@ -11,7 +11,8 @@ SeedConsistencyScorer( double consistency_penalty );
 
 virtual double Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const override;
+	const VecXd& solution,
+	double error ) const override;
 
 private:
 double consistency_penalty_;

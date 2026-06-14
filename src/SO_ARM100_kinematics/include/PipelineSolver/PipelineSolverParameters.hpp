@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 namespace SOArm100::Kinematics::Solver
 {
 enum class PipelineCompletionStrategy
@@ -13,5 +15,6 @@ struct PipelineSolverParameters
 {
 	PipelineCompletionStrategy strategy { PipelineCompletionStrategy::ReturnFirstSuccess };
 	double min_score_threshold { 0.25 };
+	uint max_parallel_thread { std::min( std::thread::hardware_concurrency() / 2, 2u ) };
 };
 }

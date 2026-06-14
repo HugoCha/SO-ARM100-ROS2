@@ -88,7 +88,7 @@ struct ExtraFastDLSSolverParameters : DLSSolverParameters
 struct FastDLSSolverParameters : DLSSolverParameters
 {
 	FastDLSSolverParameters() :
-		DLSSolverParameters( 150, 1, 1e-7, 1e-3, 0.5, 1.0, 0.5, 1e-3, 0.1, 1.2, 9.0, 1.0 )
+		DLSSolverParameters( 100, 1, 1e-7, 1e-3, 0.5, 1.0, 0.5, 1e-4, 0.1, 1.2, 9.0, 1.0 )
 	{
 	}
 };

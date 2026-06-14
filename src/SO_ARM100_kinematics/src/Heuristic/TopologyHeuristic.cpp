@@ -6,6 +6,7 @@
 #include "Heuristic/IIKHeuristic.hpp"
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
+#include "Heuristic/IKPresolutionBranch.hpp"
 #include "Heuristic/PlanarNRHeuristic.hpp"
 #include "Heuristic/PrismaticBaseHeuristic.hpp"
 #include "Heuristic/RevoluteBaseHeuristic.hpp"
@@ -72,76 +73,66 @@ IKPresolution TopologyHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	if ( model_->IsUnreachable( problem.target ) )
-		return { problem.seed, IKHeuristicState::Fail };
+		return { {}, IKHeuristicState::Fail };
 
 	double problem_error = model_->ComputeError( problem.seed, problem.target );
 	if ( problem_error < problem.tolerance )
-		return { problem.seed, IKHeuristicState::Success, problem_error, 0 };
-
-	auto intermediate_problem = problem;
-	Heuristic::IKPresolution global_presolution;
-	global_presolution.state = IKHeuristicState::Success;
+		return { {{problem.seed,problem_error,0}}, IKHeuristicState::Success };
 
 	auto topology = model_->GetTopology();
 
-	auto compute_heuristic = [&]( const IIKHeuristic* heuristic ) -> bool
+	auto expand_heuristic = [&]( const IIKHeuristic* heuristic, 
+										   const IKPresolution& previous_presolution,
+										   IKPresolution& next_presolution ) -> bool
 							 {
-								 auto local_presolution = heuristic->Presolve( intermediate_problem, context );
-								 global_presolution.error += local_presolution.error;
-								 global_presolution.iterations += local_presolution.iterations;
-								 intermediate_problem.seed = local_presolution.joints;
+								next_presolution.branches.clear();
 
-								 if ( local_presolution.PartialOrSuccess() )
-								 {
-									 if ( local_presolution.state == IKHeuristicState::PartialSuccess )
-										 global_presolution.state = IKHeuristicState::PartialSuccess;
-									 return true;
-								 }
-								 return false;
+								for ( const auto& branch : previous_presolution.branches )
+								{
+									auto branch_problem = problem;
+									branch_problem.seed = branch.joints;
+									auto branch_presolution = heuristic->Presolve( branch_problem, context );
+									if ( branch_presolution.PartialOrSuccess() )
+									{
+										next_presolution.branches.insert( 
+											next_presolution.branches.end(),
+											branch_presolution.branches.begin(), 
+											branch_presolution.branches.end() );
+									}
+								}
+
+								return !next_presolution.branches.empty();
 							 };
 
-	if ( base_heuristic_ && !compute_heuristic( base_heuristic_.get() ) )
+	auto previous_presolution = IKPresolution { {{problem.seed} } };
+	auto next_presolution = previous_presolution;
+	if ( base_heuristic_ && !expand_heuristic( base_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return {
-		    intermediate_problem.seed,
-		    IKHeuristicState::Fail,
-		    global_presolution.error,
-		    global_presolution.iterations };
+		return { {}, IKHeuristicState::Fail };
 	}
 
-	if ( planar_heuristic_ && !compute_heuristic( planar_heuristic_.get() ) )
+	previous_presolution = next_presolution;
+	if ( planar_heuristic_ && !expand_heuristic( planar_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return {
-		    intermediate_problem.seed,
-		    IKHeuristicState::Fail,
-		    global_presolution.error,
-		    global_presolution.iterations };
+		return { {}, IKHeuristicState::Fail };
 	}
 
-	if ( fabrik_heuristic_ && !compute_heuristic( fabrik_heuristic_.get() ) )
+	previous_presolution = next_presolution;
+	if ( fabrik_heuristic_ && !expand_heuristic( fabrik_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return {
-		    intermediate_problem.seed,
-		    IKHeuristicState::Fail,
-		    global_presolution.error,
-		    global_presolution.iterations };
+		return { {}, IKHeuristicState::Fail };
 	}
 
-	if ( wrist_heuristic_ && !compute_heuristic( wrist_heuristic_.get() ) )
+	previous_presolution = next_presolution;
+	if ( wrist_heuristic_ && !expand_heuristic( wrist_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return {
-		    intermediate_problem.seed,
-		    IKHeuristicState::Fail,
-		    global_presolution.error,
-		    global_presolution.iterations };
+		return { {}, IKHeuristicState::Fail };
 	}
 
-	double heuristic_error = model_->ComputeError( intermediate_problem.seed, problem.target );
+	for ( auto& branch : next_presolution.branches )
+		branch.error = model_->ComputeError( branch.joints, problem.target );
 
-	global_presolution.error = heuristic_error;
-	global_presolution.joints = intermediate_problem.seed;
-
-	return global_presolution;
+	return next_presolution;
 }
 
 // ------------------------------------------------------------

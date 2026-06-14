@@ -1,10 +1,13 @@
 #include "PipelineSolver/IKPipeline.hpp"
 
 #include "Global.hpp"
+#include "Heuristic/IKHeuristicState.hpp"
+#include "Heuristic/IKPresolution.hpp"
 #include "Seed/IIKSeedGenerator.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
+#include "Solver/IKSolverState.hpp"
 #include "Utils/StringConverter.hpp"
 
 #include <memory>
@@ -26,34 +29,34 @@ IKPipeline::IKPipeline(
 
 // ------------------------------------------------------------
 
+Heuristic::IKPresolution IKPipeline::Presolve(
+    const IKProblem& problem,
+	const IKRunContext& context ) const
+{
+	auto heuristic_problem = problem;
+	auto presolution = Heuristic::IKPresolution{{{problem.seed}}, Heuristic::IKHeuristicState::PartialSuccess };
+
+	if ( seed_generator_ )
+		heuristic_problem.seed = seed_generator_->Generate( problem );
+
+	if ( heuristic_ )
+		presolution = heuristic_->Presolve( heuristic_problem, context );
+
+	return presolution;
+}
+
+// ------------------------------------------------------------
+
 IKSolution IKPipeline::Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {
-	auto pipeline_problem = problem;
-	auto pipeline_solution = IKSolution{};
-	int heuristic_iterations = 0;
-
-	if ( seed_generator_ )
-		pipeline_problem.seed = seed_generator_->Generate( problem );
-
-	if ( heuristic_ )
-	{
-		auto presolution = heuristic_->Presolve( pipeline_problem, context );
-		heuristic_iterations = presolution.iterations;
-		if ( presolution.PartialOrSuccess() )
-			pipeline_problem.seed = presolution.joints;
-	}
-
-	pipeline_solution.joints = pipeline_problem.seed;
+	IKSolution solution = { IKSolverState::NotRun, {} };
 
 	if ( solver_ )
-	{
-		pipeline_solution = solver_->Solve( pipeline_problem, context );
-		pipeline_solution.iterations += heuristic_iterations;
-	}
+		solution = solver_->Solve( problem, context );
 
-	return pipeline_solution;
+	return solution;
 }
 
 // ------------------------------------------------------------

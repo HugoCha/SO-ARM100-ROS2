@@ -4,11 +4,11 @@
 
 #include "Heuristic/IKHeuristicState.hpp"
 #include "Heuristic/IKPresolution.hpp"
+#include "Heuristic/IKPresolutionBranch.hpp"
 #include "Model/IKJointGroupModelBase.hpp"
 #include "Model/Joint/JointGroup.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
-#include "Utils/Distance.hpp"
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/MathUtils.hpp"
 
@@ -105,7 +105,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution = { problem.seed, IKHeuristicState::Fail };
+	IKPresolution presolution = { {}, IKHeuristicState::Fail };
 
 	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 	auto T_group_target = ComputeGroupLocalTarget( problem.seed, problem.target );
@@ -128,34 +128,20 @@ IKPresolution Planar2RHeuristic::Presolve(
 
 	VecXd elbow_up_solution = ComputeElbowUpSolution( x_local, y_local, L1, L2 );
 	VecXd elbow_down_solution = ComputeElbowDownSolution( x_local, y_local, L1, L2 );
-
-	double fk_error;
-	VecXd planar_seed = GetGroup().GetGroupJoints( problem.seed );
-	VecXd planar_solution( 2 );
-	if ( !ValidateAndSelectElbowConfiguration(
-			 p_group_target,
-			 problem.seed,
-			 planar_seed,
-			 elbow_up_solution,
-			 elbow_down_solution,
-			 fk_error,
-			 planar_solution ) )
+	std::vector< VecXd > valid_solutions;
+	if ( !ValidateAndSelectElbowConfiguration( elbow_up_solution, elbow_down_solution, valid_solutions ) )
 	{
-		presolution.state = fk_error < 10 * problem.tolerance ? IKHeuristicState::PartialSuccess : IKHeuristicState::Fail;
-	}
-	else
-	{
-		presolution.state = IKHeuristicState::Success;
+		return presolution;
 	}
 
+	for ( const auto& valid_solution : valid_solutions )
+	{
+		IKPresolutionBranch branch = {problem.seed};
+		GetGroup().SetGroupJoints( valid_solution, branch.joints );
+		presolution.branches.emplace_back( branch );
+	}
 	
-	if ( fk_error > problem.tolerance )
-	{
-		std::cout << "Planar Fails";
-	}
-
-	presolution.error = fk_error;
-	GetGroup().SetGroupJoints( planar_solution, presolution.joints );
+	presolution.state = IKHeuristicState::Success;
 	return presolution;
 }
 
@@ -202,13 +188,9 @@ VecXd Planar2RHeuristic::ComputeElbowDownSolution( double x, double y, double L1
 // ------------------------------------------------------------
 
 bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
-	const Vec3d& p_local_target,
-	const VecXd& seed,
-	const VecXd& planar_seed,
 	const VecXd& elbow_up,
 	const VecXd& elbow_down,
-	double& fk_error,
-	VecXd& solution ) const
+	std::vector< VecXd >& branches ) const
 {
 	const auto& shoulder_limits =
 		GetChain()->GetActiveJointLimits( GetGroup().FirstIndex() );
@@ -222,44 +204,18 @@ bool Planar2RHeuristic::ValidateAndSelectElbowConfiguration(
 
 	if ( !elbow_up_valid && !elbow_down_valid )
 	{
-		VecXd clamp_elbow_up( 2 ), clamp_elbow_down( 2 );
-
-		clamp_elbow_up[0] = shoulder_limits.Clamp( elbow_up[0] );
-		clamp_elbow_up[1] = elbow_limits.Clamp( elbow_up[1] );
-
-		clamp_elbow_down[0] = shoulder_limits.Clamp( elbow_down[0] );
-		clamp_elbow_down[1] = elbow_limits.Clamp( elbow_down[1] );
-
-		double clamp_elbow_up_error = ComputeLocalPositionError( p_local_target, seed, clamp_elbow_up );
-		double clamp_elbow_down_error = ComputeLocalPositionError( p_local_target, seed, clamp_elbow_down );
-		if ( clamp_elbow_up_error < clamp_elbow_down_error )
-		{
-			solution = clamp_elbow_up;
-			fk_error = clamp_elbow_up_error;
-		}
-		else
-		{
-			solution = clamp_elbow_down;
-			fk_error = clamp_elbow_down_error;
-		}
+		branches = {};
 		return false;
 	}
-	else if ( !elbow_up_valid )
-	{
-		solution = elbow_down;
-	}
-	else if ( !elbow_down_valid )
-	{
-		solution = elbow_up;
-	}
-	else
-	{
-		solution = Utils::Distance( elbow_up, planar_seed ) <
-		           Utils::Distance( elbow_down, planar_seed ) ?
-		           elbow_up : elbow_down;
-	}
 
-	fk_error = ComputeLocalPositionError( p_local_target, seed, solution );
+	if ( elbow_up_valid )
+	{
+		branches.emplace_back( elbow_up );
+	}
+	if ( elbow_down_valid )
+	{
+		branches.emplace_back( elbow_down );
+	}
 
 	return true;
 }

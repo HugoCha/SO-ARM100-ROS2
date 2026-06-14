@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Global.hpp"
+#include "Solver/IKSolution.hpp"
+
 namespace SOArm100::Kinematics
 {
 namespace Solver
 {
 struct IKProblem;
-struct IKSolution;
 }
 namespace Scorer
 {
@@ -16,7 +18,14 @@ virtual ~IKSolutionScorer() = default;
 
 virtual double Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const = 0;
+	const VecXd& solution,
+	double error ) const = 0;
+
+double Score(
+	const Solver::IKProblem& problem,
+	const Solver::IKSolution& solution ) const {
+	return Score( problem, solution.joints, solution.error );
+}
 };
 }
 }

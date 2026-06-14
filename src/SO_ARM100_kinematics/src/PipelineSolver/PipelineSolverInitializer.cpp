@@ -14,7 +14,6 @@
 #include "Scorer/PoseErrorScorer.hpp"
 #include "Scorer/SeedConsistencyScorer.hpp"
 #include "Scorer/WeightedScorersBuilder.hpp"
-#include "Seed/IKOppositeSeedGenerator.hpp"
 
 #include <limits>
 
@@ -38,20 +37,11 @@ std::unique_ptr< const Solver::PipelineSolver > PipelineSolverInitializer::Initi
 	Model::KinematicModelConstPtr model,
 	const PipelineSolverParameters& parameters )
 {
-	std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines;
-
-	pipelines.emplace_back(
+	auto pipeline =
 		Solver::PipelineBuilder{}
 		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
 		.WithSolver( std::make_unique< Solver::DLSSolver >( model, DefaultDLSSolverParameters() ) )
-		.Build() );
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithSeedGenerator( std::make_unique< Seed::IKOppositeSeedGenerator >( model ) )
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model, FastDLSSolverParameters() ) )
-		.Build() );
+		.Build();
 
 	auto scorer = Scorer::WeightedScorersBuilder{}
 	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
@@ -63,7 +53,7 @@ std::unique_ptr< const Solver::PipelineSolver > PipelineSolverInitializer::Initi
 
 	return std::unique_ptr< Solver::PipelineSolver >( new Solver::PipelineSolver(
 														  model,
-														  std::move( pipelines ),
+														  std::move( pipeline ),
 														  std::move( scorer ),
 														  parameters ) );
 }

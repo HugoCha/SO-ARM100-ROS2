@@ -361,9 +361,18 @@ std::ostream& operator << ( std::ostream& os, const IKPresolution& obj )
 {
 	os << "IKPresolution" << std::endl;
 	os << "State: " << obj.state << std::endl;
-	os << "Error: " << obj.error << std::endl;
-	os << "Iter : " << obj.iterations << std::endl;
-	os << "Joint: " << obj.joints.transpose() << std::endl;
+	for ( const auto& branch : obj.branches )
+		os << branch << std::endl;
+	return os;
+}
+
+// ------------------------------------------------------------
+
+std::ostream& operator << ( std::ostream& os, const IKPresolutionBranch& obj )
+{
+	os << "Joints: " << obj.joints.transpose() 
+	   << " Error: " << obj.error 
+	   << " Cost: " << obj.cost;
 	return os;
 }
 

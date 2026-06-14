@@ -2,6 +2,7 @@
 
 #include "Global.hpp"
 
+#include "Heuristic/IKPresolutionBranch.hpp"
 #include "Model/Joint/JointChain.hpp"
 #include "Model/Joint/JointChainBuilder.hpp"
 #include "Model/Joint/JointType.hpp"
@@ -71,12 +72,12 @@ double PoseError(
 double PoseError(
 	Model::KinematicModelConstPtr model,
 	const Solver::IKProblem& problem,
-	const Heuristic::IKPresolution& presolution ) const
+	const Heuristic::IKPresolutionBranch& presolution_branch ) const
 {
 	Vec6d pose_error;
 	SOArm100::Kinematics::PoseError(
 		problem.target,
-		ComputeFK( model, presolution.joints ),
+		ComputeFK( model, presolution_branch.joints ),
 		pose_error );
 	return pose_error.norm();
 };

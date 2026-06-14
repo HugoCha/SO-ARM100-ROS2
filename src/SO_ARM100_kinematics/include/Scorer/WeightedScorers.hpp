@@ -16,7 +16,8 @@ WeightedScorers( std::vector< WeightScorerPair >&& scorers );
 
 virtual double Score(
 	const Solver::IKProblem& problem,
-	const Solver::IKSolution& solution ) const override;
+	const VecXd& solution,
+	double error ) const override;
 
 private:
 std::vector< WeightScorerPair > scorers_;

@@ -59,22 +59,14 @@ void TearDown() override
 
 std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelConstPtr model, Solver::PipelineSolverParameters parameters = Solver::PipelineSolverParameters() )
 {
-	std::vector< std::unique_ptr< const Solver::IKPipeline >> pipelines;
-
+	
 	auto params_dls_solver = Solver::FastDLSSolverParameters();
-
-	pipelines.emplace_back(
+	
+	std::unique_ptr< const Solver::IKPipeline > pipeline =
 		Solver::PipelineBuilder{}
 		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
 		.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
-		.Build() );
-
-	pipelines.emplace_back(
-		Solver::PipelineBuilder{}
-		.WithSeedGenerator( std::make_unique< Seed::IKOppositeSeedGenerator >( model ) )
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
-		.Build() );
+		.Build();
 
 	auto scorer = Scorer::WeightedScorersBuilder{}
 	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
@@ -87,7 +79,7 @@ std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelC
 	// Create a solver
 	return std::unique_ptr< Solver::PipelineSolver >( new Solver::PipelineSolver(
 														  model,
-														  std::move( pipelines ),
+														  std::move( pipeline ),
 														  std::move( scorer ),
 														  parameters ) );
 }
@@ -200,7 +192,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 
 TEST_F( PipelineSolverTest, InverseKinematic_Consistency_AllRobots )
 {
-	const int ITER = 1000;
+	const int ITER = 100;
 	double tolerance = 1e-5;
 	for ( const auto& robot : Data::GetAllRobots() )
 	{

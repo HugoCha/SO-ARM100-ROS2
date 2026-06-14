@@ -63,13 +63,15 @@ TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
+	model->ComputeFK( result_joints, result_pose );
 
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_EQ( 1, result.joints.size() );
-	EXPECT_NEAR( M_PI / 4, result.joints[0], 1e-6 );
+	EXPECT_EQ( 1, result_joints.size() );
+	EXPECT_NEAR( M_PI / 4, result_joints[0], 1e-6 );
 	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance );
 }
 
@@ -96,10 +98,12 @@ TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
-	EXPECT_EQ( 1, result.joints.size() );
-	EXPECT_EQ( seed, result.joints );
+	EXPECT_EQ( 1, result_joints.size() );
+	EXPECT_EQ( seed, result_joints );
 }
 
 // ------------------------------------------------------------
@@ -123,11 +127,13 @@ TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccessOrFail )
 
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	EXPECT_NE( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_EQ( 1, result.joints.size() );
+	EXPECT_EQ( 1, result_joints.size() );
 	// Value must be clamped explicitly to the upper limit (45 deg)
-	EXPECT_NEAR( M_PI / 4, result.joints[0], 1e-6 );
+	EXPECT_NEAR( M_PI / 4, result_joints[0], 1e-6 );
 }
 
 // ------------------------------------------------------------
@@ -151,14 +157,14 @@ void TearDown() override
 
 TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 {
+	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
 	auto two_joint_chain = CreateSimpleJointChain(
 		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
 		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
-				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
+				 tip_home );
 
 	int start = 0;
 	int count = 2;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
 	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
 
 	auto model = CreateModel( two_joint_chain, planar_group );
@@ -166,21 +172,26 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 
 	VecXd seed = VecXd::Zero( 2 );
 	VecXd joints( 2 );
-	joints << M_PI / 6, -M_PI / 3; // Target pose configurations
+	joints << M_PI / 3, -M_PI / 3; // Target pose configurations
 
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
-	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
-
-	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_EQ( 2, result.joints.size() );
-	EXPECT_LE( result.error, problem.tolerance );
-	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
-	    << problem << std::endl
-	    << "Target = \n" << Translation( problem.target ) << std::endl
-	    << "Result = \n" << Translation( result_pose ) << std::endl;
+	for ( const auto& b : result.branches )
+	{
+		auto result_joints = b.joints;
+		Mat4d result_pose;
+		model->ComputeFK( result_joints, result_pose );
+	
+		EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
+		EXPECT_EQ( 2, result_joints.size() );
+		EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
+			<< problem << std::endl
+			<< result << std::endl
+			<< "Target = \n" << Translation( problem.target ) << std::endl
+			<< "Result = \n" << Translation( result_pose ) << std::endl;
+	}
 }
 
 // ------------------------------------------------------------
@@ -207,70 +218,21 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 	joints << -M_PI / 2, 0; // Target pose configurations
 
 	auto problem = CreateProblem( model, seed, joints );
-	auto result1 = heuristic.Presolve( problem, Solver::IKRunContext() );
-
-	Mat4d result_pose;
-	model->ComputeFK( result1.joints, result_pose );
-	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result1.state );
-	EXPECT_EQ( 2, result1.joints.size() );
-	EXPECT_LE( result1.error, problem.tolerance );
-	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance  )
-	    << problem << std::endl
-	    << "Target = \n" << Translation( problem.target ) << std::endl
-	    << "Result = \n" << Translation( result_pose ) << std::endl;
-
-	seed[0] = M_PI;
-	seed[1] = -M_PI;
-	problem = CreateProblem( model, seed, joints );
-	auto result2 = heuristic.Presolve( problem, Solver::IKRunContext() );
-	result_pose = ComputeFK( model, result2.joints );
-	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result2.state );
-	EXPECT_EQ( 2, result2.joints.size() );
-	EXPECT_LE( result2.error, problem.tolerance );
-	EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
-	    << problem << std::endl
-	    << "Target = \n" << Translation( problem.target ) << std::endl
-	    << "Result = \n" << Translation( result_pose ) << std::endl;
-
-	EXPECT_NE( result1.joints, result2.joints );
-}
-
-// ------------------------------------------------------------
-
-TEST_F( Planar2RHeuristicTest, ChooseClosestElbowConfiguration )
-{
-	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
-				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
-
-	int start = 0;
-	int count = 2;
-	Mat4d tip_home = ToTransformMatrix( Vec3d( 2, 0, 0 ) );
-	Model::PlanarNRJointGroup planar_group( start, count, tip_home );
-
-	auto model = CreateModel( two_joint_chain, planar_group );
-	auto heuristic = Heuristic::Planar2RHeuristic( model, planar_group );
-
-	// Seed biased heavily toward an elbow-down configuration (negative elbow angle)
-	VecXd seed( 2 );
-	seed << 0.5, -M_PI;
-
-	VecXd joints( 2 );
-	joints << M_PI / 6, M_PI / 3; // Forward kinematics target (has two solutions)
-
-	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
-
-	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
-
-	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_TRUE( Translation( problem.target ).isApprox( Translation( result_pose ) ) )
-	    << "Target = \n" << Translation( problem.target ) << std::endl
-	    << "Result = \n" << Translation( result_pose ) << std::endl;
-	// Ensure the solver picked the elbow-down configuration because of the seed bias
-	EXPECT_LT( result.joints[1], 0.0 );
+	EXPECT_EQ( result.branches.size(), 2 );
+	EXPECT_NE( result.branches[0].joints, result.branches[1].joints );
+	for ( const auto& b : result.branches )
+	{
+		auto result1_joints = b.joints;
+		Mat4d result_pose;
+		model->ComputeFK( result1_joints, result_pose );
+		EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
+		EXPECT_EQ( 2, result1_joints.size() );
+		EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance  )
+			<< problem << std::endl
+			<< "Target = \n" << Translation( problem.target ) << std::endl
+			<< "Result = \n" << Translation( result_pose ) << std::endl;
+	}
 }
 
 // ------------------------------------------------------------
@@ -297,10 +259,8 @@ TEST_F( Planar2RHeuristicTest, SolveUnreachableDistance )
 
 	auto problem = CreateProblem( seed, target );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
-
+	EXPECT_EQ( result.branches.size(), 0 );
 	EXPECT_EQ( Heuristic::IKHeuristicState::Fail, result.state );
-	EXPECT_EQ( 2, result.joints.size() );
-	EXPECT_EQ( seed, result.joints );
 }
 
 // ------------------------------------------------------------
@@ -328,9 +288,11 @@ TEST_F( Planar2RHeuristicTest, JointLimitsForceSingleValidConfiguration )
 
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_GE( result.joints[1], 0.0 ); // Must select elbow-up variant due to limits
+	EXPECT_GE( result_joints[1], 0.0 ); // Must select elbow-up variant due to limits
 }
 
 // ------------------------------------------------------------
@@ -417,14 +379,14 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 
 	auto problem = CreateProblem( model, seed, joints );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	Mat4d result_pose;
-	model->ComputeFK( result.joints, result_pose );
+	model->ComputeFK( result_joints, result_pose );
 
 	EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
-	EXPECT_EQ( 3, result.joints.size() );
-	EXPECT_LT( result.error, problem.tolerance );
-	EXPECT_LE( result.iterations, params.max_iterations );
+	EXPECT_EQ( 3, result_joints.size() );
 	EXPECT_TRUE( Translation( problem.target ).isApprox( Translation( result_pose ), problem.tolerance ) )
 	    << "Target = \n" << Translation( problem.target ) << std::endl
 	    << "Result = \n" << Translation( result_pose ) << std::endl;
@@ -478,11 +440,13 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 		// auto problem = CreateProblem( seed, target, tolerance );
 		auto problem = CreateProblem( model, seed, joints, tolerance );
 		auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+		EXPECT_GE( result.branches.size(), 1 );
 
+		auto result_joints = result.branches.front().joints;
 		if ( !result.Success() )
 		{
 			Mat4d result_pose;
-			model->ComputeFK( result.joints, result_pose );
+			model->ComputeFK( result_joints, result_pose );
 
 			std::cout << "Initial joints = " << joints.transpose() << std::endl;
 			std::cout << problem << std::endl;
@@ -493,9 +457,6 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 		{
 			k_successes++;
 		}
-
-		avg_iteration += result.iterations / ( double )ITER;
-		avg_error += result.error / ( double )ITER;
 	}
 
 	EXPECT_GE( k_successes, 0.99 * ITER );
@@ -537,8 +498,6 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 
 	// Should break loop early and fallback gracefully to partial success
 	EXPECT_EQ( Heuristic::IKHeuristicState::PartialSuccess, result.state );
-	EXPECT_EQ( params.max_iterations, result.iterations );
-	EXPECT_GE( result.error, problem.tolerance );
 }
 
 // ------------------------------------------------------------
@@ -571,12 +530,14 @@ TEST_F( PlanarCCDHeuristicTest, JointLimitsClampingEnforced )
 
 	auto problem = CreateProblem( seed, target, 1e-4 );
 	auto result = heuristic.Presolve( problem, Solver::IKRunContext() );
+	EXPECT_GE( result.branches.size(), 1 );
 
+	auto result_joints = result.branches.front().joints;
 	// Due to system constraints, joints must remain clamped inside strict bounds
-	for ( int i = 0; i < result.joints.size(); ++i )
+	for ( int i = 0; i < result_joints.size(); ++i )
 	{
-		EXPECT_GE( result.joints[i], -M_PI / 12 - 1e-6 );
-		EXPECT_LE( result.joints[i],  M_PI / 12 + 1e-6 );
+		EXPECT_GE( result_joints[i], -M_PI / 12 - 1e-6 );
+		EXPECT_LE( result_joints[i],  M_PI / 12 + 1e-6 );
 	}
 }
 
