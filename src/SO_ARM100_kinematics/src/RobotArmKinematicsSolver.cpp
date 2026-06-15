@@ -20,6 +20,7 @@
 #include "Utils/KinematicsUtils.hpp"
 #include "Utils/StringConverter.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <memory>
 #include <moveit/robot_model/fixed_joint_model.hpp>
@@ -84,8 +85,8 @@ bool RobotArmKinematicsSolver::Initialize(
 
 		auto parent_link_global_tf = state.getGlobalLinkTransform( parent_link );
 		auto child_link_global_tf = state.getGlobalLinkTransform( child_link );
-		auto joint_local_tf = state.getJointTransform( joint_model );
-		auto joint_global_tf = parent_link_global_tf * joint_local_tf;
+		auto parent_to_child_tf = child_link->getJointOriginTransform();
+		auto joint_global_tf = parent_link_global_tf * parent_to_child_tf;
 
 		Model::Limits joint_limits;
 		const auto& bounds = joint_model->getVariableBounds();
@@ -124,7 +125,7 @@ bool RobotArmKinematicsSolver::Initialize(
 		joint_chain_builder.AddJoint( joint_model->getName(), joint_global_tf.matrix(), joint_twist, joint_limits );
 		if ( child_link )
 		{
-			joint_chain_builder.AddChildLink( child_link->getName(), child_link_global_tf.matrix(), child_link->getJointOriginTransform().matrix() );
+			joint_chain_builder.AddChildLink( child_link->getName(), child_link_global_tf.matrix(), parent_to_child_tf.matrix() );
 		}
 	}
 
@@ -221,6 +222,8 @@ bool RobotArmKinematicsSolver::ForwardKinematic(
 		return false;
 	}
 
+	RCLCPP_INFO( get_logger(), "FK called" );
+
 	std::vector< Mat4d > poses_mat( link_names.size() );
 	Mat4d tip_pose_mat;
 	bool success = ForwardKinematic( link_names, ToVecXd( joints ), poses_mat, tip_pose_mat );
@@ -268,6 +271,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	const std::span< const double >& consistency_limits,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	std::vector< double >& joints ) const
 {
 	if ( !model_ )
@@ -286,6 +290,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		ToVecXd( consistency_limits ),
 		timeout_ms,
 		tolerance,
+		approx,
 		joints.data(),
 		n_joints );
 }
@@ -298,6 +303,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	const VecXd& consistency,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	VecXd& joints ) const
 {
 	if ( !model_ )
@@ -316,6 +322,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		consistency,
 		timeout_ms,
 		tolerance,
+		approx,
 		joints.data(),
 		n_joints );
 }
@@ -328,6 +335,7 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	const VecXd& consistency,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	double* joints,
 	int n_joints ) const
 {
@@ -348,7 +356,8 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 		seed,
 		consistency,
 		tolerance,
-		timeout_ms };
+		timeout_ms,
+		approx };
 
 	Solver::IKRunContext context;
 	Solver::IKSolution solution;
@@ -356,8 +365,11 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	solution = ( timeout_ms == 0 ) ?
 	           getIK_solver_->Solve( problem, context ) :
 	           searchIK_solver_->Solve( problem, context );
-
-	joints = solution.joints.data();
+	
+	if ( solution.joints.size() == n_joints )
+	{
+		std::copy(solution.joints.data(), solution.joints.data() + n_joints, joints);
+	}
 
 	return solution.Success();
 }

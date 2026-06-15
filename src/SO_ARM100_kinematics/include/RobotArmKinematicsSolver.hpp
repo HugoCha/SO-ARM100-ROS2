@@ -70,6 +70,7 @@ Model::KinematicModelConstPtr GetModel() const {
 	const std::span< const double >& consistency_limits,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	std::vector< double >& joints ) const;
 
 [[nodiscard]] bool InverseKinematic(
@@ -78,6 +79,7 @@ Model::KinematicModelConstPtr GetModel() const {
 	const VecXd& consistency,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	VecXd& joints ) const;
 
 private:
@@ -92,6 +94,7 @@ std::unique_ptr< const Solver::IIKSolver > searchIK_solver_;
 	const VecXd& consistency,
 	long timeout_ms,
 	double tolerance,
+	bool approx,
 	double* joints,
 	int n_joints ) const;
 

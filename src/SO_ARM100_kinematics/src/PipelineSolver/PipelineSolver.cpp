@@ -1,6 +1,7 @@
 #include "PipelineSolver/PipelineSolver.hpp"
 
 #include "PipelineSolver/IKPipeline.hpp"
+#include "PipelineSolver/PipelineSolverParameters.hpp"
 #include "Solver/IKProblem.hpp"
 #include "Solver/IKRunContext.hpp"
 #include "Solver/IKSolution.hpp"
@@ -33,10 +34,8 @@ IKSolution PipelineSolver::Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {
-	IKSolution result = {};
-
-	SynchronizationParameters sync_params;
-
+	IKSolution best_solution { IKSolverState::NotRun, problem.seed };
+	double best_score = std::numeric_limits<double>::infinity();
 	auto presolution = pipeline_->Presolve( problem, context );
 
 	for ( auto& branch : presolution.branches )
@@ -47,21 +46,29 @@ IKSolution PipelineSolver::Solve(
 			return b1.cost < b2.cost;
 		} );
 
-	// IKSolution best_solution {};
-	// for ( const auto& branch : presolution.branches )
-	// {
-	// 	auto branch_solution = RunAndScoreBranch( branch, problem, context );
-	// 	if ( branch_solution.score < best_solution.score )
-	// 	{
-	// 		best_solution = branch_solution;
-	// 	}
-	// 	if ( branch_solution.Success() )
-	// 	{
-	// 		return branch_solution;
-	// 	}
-	// }
-	if ( presolution.branches.size() > 1 )
+	if ( parameters_.strategy == PipelineCompletionStrategy::ReturnFirstSuccess ||
+		 parameters_.strategy == PipelineCompletionStrategy::WaitForAcceptableResult ||
+		 parameters_.max_parallel_thread <= 1 ||
+		 presolution.branches.size() <= 2 )
 	{
+		for ( const auto& branch : presolution.branches )
+		{
+			auto branch_solution = RunAndScoreBranch( branch, problem, context );
+			if ( branch_solution.score < best_score )
+			{
+				best_solution = branch_solution;
+				best_score = branch_solution.score;
+			}
+			if ( CanStopPipelines( branch_solution ) )
+			{
+				return best_solution;
+			}
+		}
+	}
+	else
+	{
+		SynchronizationParameters sync_params;
+
 		auto worker =
 			[&]( const IKProblem& problem,
 			     const IKRunContext& context,
@@ -72,32 +79,30 @@ IKSolution PipelineSolver::Solve(
 					branch,
 					problem,
 					context );
+				
+				bool can_stop_pipeline = CanStopPipelines( solution );
+				if ( can_stop_pipeline )
+				{
+					StopPipelines( context );
+					sync_parameters.early_result = true;
+				}
 
+				if ( solution.score < best_score )
 				{
 					std::lock_guard< std::mutex > lock( sync_parameters.mtx );
-					if ( solution.score < result.score )
-						result = solution;
-
-					if ( CanStopPipelines( solution ) )
-					{
-						StopPipelines( context );
-						sync_parameters.early_result = true;
-					}
-
-					sync_parameters.completed_count++;
+					best_solution = solution;
+					best_score = solution.score;
 				}
+
+				sync_parameters.completed_count++;
 				sync_parameters.cv.notify_all();
 			};
 
 		auto pipeline_threads = StartPipelines( worker, sync_params, presolution, problem, context );
 		WaitPipelines( pipeline_threads, presolution, problem, context, sync_params );
 	}
-	else if ( presolution.branches.size() == 1 )
-	{
-		result = RunAndScoreBranch( presolution.branches[0], problem, context );
-	}
 
-	return result;
+	return best_solution;
 }
 
 // ------------------------------------------------------------
@@ -166,8 +171,7 @@ IKSolution PipelineSolver::RunAndScoreBranch(
 	const IKRunContext& context ) const
 {
 	if ( std::isinf( branch.cost ) )
-		return { IKSolverState::NotRun, {}}
-	;
+		return { IKSolverState::NotRun, { problem.seed }};
 
 	auto branch_problem = problem;
 	branch_problem.seed = branch.joints;

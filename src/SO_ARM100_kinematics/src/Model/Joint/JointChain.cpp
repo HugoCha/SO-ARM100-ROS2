@@ -358,7 +358,7 @@ bool JointChain::ComputeLinkPosesFK(
 			{
 				auto parent_joint = child_link_joint_map_.at( link );
 				auto parent_joint_name = parent_joint->GetName();
-				links_fk[i] = joint_poses.at( parent_joint_name ) * link->ParentJointTransform();
+				links_fk[i] = joint_poses.at( parent_joint_name );
 			}
 			else
 			{

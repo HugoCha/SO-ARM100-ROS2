@@ -1734,6 +1734,41 @@ Model::JointChainConstPtr createLeRobot_JointChain( const Mat4d& home )
 {
 	auto builder = Model::JointChainBuilder();
 
+	Mat4d joint_origin1;
+	joint_origin1 << 
+	        1,           0,           0,           0,
+	        0, 6.32679e-06,          -1,     -0.0452,
+	        0,           1, 6.32679e-06,      0.0165,
+	        0,           0,           0,           1;
+
+	Mat4d joint_origin2;
+	joint_origin2 <<
+	        1,         -0,          0,          0,
+	        0,   0.973846,   0.227208, -0.0757994,
+	        0,  -0.227208,   0.973846,      0.119,
+	        0,          0,          0,          1;
+
+	Mat4d joint_origin3;
+	joint_origin3 <<
+	        1,         0,         0,         0,
+	        0,  0.227214, -0.973845, 0.0401883,
+	        0,  0.973845,  0.227214,  0.120691,
+	        0,         0,         0,         1;
+
+	Mat4d joint_origin4;
+	joint_origin4 <<
+	        1,          0,          0,          0,
+	        0,   0.942227,  -0.334976, -0.0900018,
+	        0,   0.334976,   0.942227,   0.156406,
+	        0,          0,          0,          1;
+
+	Mat4d joint_origin5;
+	joint_origin5 <<
+	  		6.32679e-06,            0,            1,            0,
+	  		   0.334976,     0.942227, -2.11933e-06,     -0.14663,
+	  		  -0.942227,     0.334976,  5.96127e-06,     0.136274,
+	  		          0,            0,            0,            1;
+
 	Mat4d link_origin1 = ToTransformMatrix( Vec3d( 0, 0, 0 ) );
 	Mat4d link_origin2 = ToTransformMatrix( Vec3d( -9.07886e-05, 0.0590972, 0.031089 ) );
 	Mat4d link_origin3 = ToTransformMatrix( Vec3d( -1.72052e-05, 0.0701802, 0.00310545 ) );
@@ -1741,34 +1776,34 @@ Model::JointChainConstPtr createLeRobot_JointChain( const Mat4d& home )
 	Mat4d link_origin5 = ToTransformMatrix( Vec3d( -0.00852653, -0.0352279, -2.34622e-05 ) );
 
 	Vec2d limits1( -2.0, 2.0 );
-	Vec3d joint_axis1 = Vec3d::UnitY();
-	Iso3d joint_origin1 = Iso3d::Identity();
-	joint_origin1.translate( Vec3d( 0, -0.0452, 0.0165 ) );
-	joint_origin1.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
+	Vec3d joint_axis1 = Vec3d( 0, 6.32679e-06, 1 );
+	// Iso3d joint_origin1 = Iso3d::Identity();
+	// joint_origin1.translate( Vec3d( 0, -0.0452, 0.0165 ) );
+	// joint_origin1.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
 
 	Vec2d limits2( 0, 3.5 );
 	Vec3d joint_axis2 = Vec3d::UnitX();
-	Iso3d joint_origin2 = Iso3d::Identity();
-	joint_origin2.translate( Vec3d( 0, 0.1025, 0.0306 ) );
-	joint_origin2.rotate( AngleAxis( -1.8, Vec3d::UnitX() ) );
+	// Iso3d joint_origin2 = Iso3d::Identity();
+	// joint_origin2.translate( Vec3d( 0, 0.1025, 0.0306 ) );
+	// joint_origin2.rotate( AngleAxis( -1.8, Vec3d::UnitX() ) );
 
 	Vec2d limits3( -3.14158, 0 );
 	Vec3d joint_axis3 = Vec3d::UnitX();
-	Iso3d joint_origin3 = Iso3d::Identity();
-	joint_origin3.translate( Vec3d( 0, 0.11257, 0.028 ) );
-	joint_origin3.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
+	// Iso3d joint_origin3 = Iso3d::Identity();
+	// joint_origin3.translate( Vec3d( 0, 0.11257, 0.028 ) );
+	// joint_origin3.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
 
 	Vec2d limits4( -2.5, 1.2 );
 	Vec3d joint_axis4 = Vec3d::UnitX();
-	Iso3d joint_origin4 = Iso3d::Identity();
-	joint_origin4.translate( Vec3d( 0, 0.0052, 0.1349 ) );
-	joint_origin4.rotate( AngleAxis( -1, Vec3d::UnitX() ) );
+	// Iso3d joint_origin4 = Iso3d::Identity();
+	// joint_origin4.translate( Vec3d( 0, 0.0052, 0.1349 ) );
+	// joint_origin4.rotate( AngleAxis( -1, Vec3d::UnitX() ) );
 
 	Vec2d limits5( -3.14158, 3.14158 );
 	Vec3d joint_axis5 = Vec3d::UnitY();
-	Iso3d joint_origin5 = Iso3d::Identity();
-	joint_origin5.translate( Vec3d( 0, -0.0601, 0 ) );
-	joint_origin5.rotate( AngleAxis( M_PI / 2, Vec3d::UnitY() ) );
+	// Iso3d joint_origin5 = Iso3d::Identity();
+	// joint_origin5.translate( Vec3d( 0, -0.0601, 0 ) );
+	// joint_origin5.rotate( AngleAxis( M_PI / 2, Vec3d::UnitY() ) );
 
 	AddBaseLink( builder );
 	AddRevoluteJointLink( builder, 1, joint_origin1.matrix(), joint_axis1, link_origin2.matrix(), limits1[0], limits1[1] );

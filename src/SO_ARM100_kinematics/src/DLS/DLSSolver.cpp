@@ -95,6 +95,8 @@ struct DLSSolver::SolverBuffers {
 
 struct DLSSolver::IterationState {
 	VecXd joints;
+	double translation_error;
+	double rotation_error;
 	double error;
 	double error_reachable;
 	double error_unreachable;
@@ -136,7 +138,7 @@ IKSolution DLSSolver::Solve(
 {
 	if ( model_->IsUnreachable( problem.target ) )
 	{
-		return { IKSolverState::Unreachable, {}};
+		return { IKSolverState::Unreachable, { problem.seed }};
 	}
 
 	const int n_joints = GetChain()->GetActiveJointCount();
@@ -159,7 +161,7 @@ IKSolution DLSSolver::Solve(
 	if ( !state )
 	{
 		if ( !problem.CanReSeed() )
-			return { IKSolverState::NotRun, {}}
+			return { IKSolverState::NotRun, { problem.seed }}
 		;
 
 		seed = seed_generator.Generate( problem );
@@ -260,6 +262,8 @@ std::optional< DLSSolver::IterationState > DLSSolver::InitializeState(
 		return std::nullopt;
 	}
 
+	state.rotation_error = parameters_.rotation_weight > 0.0 ? buffers.weighted_error.head( 3 ).norm() : 0.0;
+	state.translation_error = parameters_.translation_weight > 0.0 ? buffers.weighted_error.tail( 3 ).norm() : 0.0;
 	state.error = buffers.weighted_error.norm();
 	state.error_reachable = buffers.weighted_error_reachable.norm();
 	state.error_unreachable = UnreachableError( state.error, state.error_reachable );
@@ -663,6 +667,12 @@ DLSSolverState DLSSolver::EvaluateConvergence(
 	int iteration ) const noexcept
 {
 	if ( state.error <= problem.tolerance )
+	{
+		return DLSSolverState::Converged;
+	}
+
+	if ( problem.approx && 
+		( state.translation_error <= problem.tolerance && state.rotation_error <= 10 * problem.tolerance ) )
 	{
 		return DLSSolverState::Converged;
 	}

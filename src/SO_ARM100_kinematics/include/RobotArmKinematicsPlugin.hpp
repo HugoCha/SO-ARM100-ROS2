@@ -85,7 +85,7 @@ std::vector< std::string > link_names_;
 bool initialized_;
 RobotArmKinematicsSolver solver_;
 
-static bool TimedOut( std::chrono::time_point< std::chrono::steady_clock > start_time, long timeout_ms );
+static bool TimedOut( std::chrono::time_point< std::chrono::steady_clock > start_time, double timeout );
 };
 
 }

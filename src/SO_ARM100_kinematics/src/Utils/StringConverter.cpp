@@ -106,7 +106,8 @@ std::ostream& operator << ( std::ostream& os, const Joint& obj )
 	   << " " << obj.GetName()
 	   << " " << obj.GetType()
 	   << " " << obj.GetTwist()
-	   << " " << obj.GetLimits();
+	   << " " << obj.GetLimits()
+	   << "\n o: \n" << obj.OriginTransform();
 	return os;
 }
 
@@ -117,6 +118,7 @@ std::ostream& operator << ( std::ostream& os, const JointChain& obj )
 	os << "Joint Chain:" << std::endl;
 	for ( int i = 0; i < obj.GetJointCount(); i++ )
 	{
+		os << std::to_string( i + 1 ) << ": " << *obj.GetLinks()[i] << std::endl;
 		os << std::to_string( i + 1 ) << ": " << *obj.GetJoints()[i];
 		if ( i < obj.GetJointCount() - 1 )
 			os << std::endl;
@@ -218,9 +220,9 @@ std::ostream& operator << ( std::ostream& os, const Limits& obj )
 std::ostream& operator << ( std::ostream& os, const Link& obj )
 {
 	os << "Link " << obj.GetName()
-	   << " Global tf: \n" << obj.HomeTransform()
-	   << " Joint tf:  \n" << obj.ParentJointTransform()
-	   << " Length:    " << obj.Length();
+	   << " Length:    " << obj.Length()
+	   << "\n Global tf: \n" << obj.HomeTransform()
+	   << "\n Joint tf:  \n" << obj.ParentJointTransform();
 	return os;
 }
 

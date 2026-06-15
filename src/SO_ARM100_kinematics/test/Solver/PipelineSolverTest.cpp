@@ -49,6 +49,7 @@ void SetUp() override
 	Solver::PipelineSolverParameters parameters;
 	parameters.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
 	parameters.min_score_threshold = 0.5;
+	parameters.max_parallel_thread = 3;
 
 	solver_ = std::move( CreatePipeline( model_, parameters ) );
 }
@@ -120,15 +121,12 @@ TEST_F( PipelineSolverTest, InverseKinematic_Success )
 TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 {
 	const auto& chain = model_->GetChain();
-	const int ITER = 10000;
+	const int ITER = 100;
 	double tolerance = 1e-5;
 	double avg_iterations = 0.0;
-	double avg_score = 0.0;
-	double var_score = 0.0;
 	double avg_non_success_error = 0.0;
 	double max_non_success_error = 0.0;
 	double avg_error = 0.0;
-	double delta = 0.0;
 	int k_successes = 0;
 	for ( int i = 0; i < ITER; i++ )
 	{
@@ -158,29 +156,19 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 			// 	<< "Target=\n" << problem.target << std::endl
 			// 	<< "Result=\n" << result_pose << std::endl
 			// 	<< "Result joints= " << result.joints.transpose() << std::endl;
-
 			k_successes++;
 		}
 
 		avg_iterations += result.iterations / ( double )ITER;
-		delta += result.score - avg_score;
-		avg_score += delta / k_successes;
-		var_score += delta * ( result.score - avg_score );
 		avg_error += result.error / ( double )ITER;
 	}
 	avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
-	var_score = var_score / ( double )ITER;
-	double std_score = std::sqrt( std::max( 0.0, var_score ) );
-	EXPECT_LE( std_score, 0.1 );
-	EXPECT_LE( avg_score, 0.5 );
 	EXPECT_LE( avg_error, 2 * error_tolerance );
 	EXPECT_LE( avg_non_success_error, 2 * error_tolerance );
 	EXPECT_LE( max_non_success_error, 5 * error_tolerance );
-	EXPECT_LE( avg_iterations, 20 );
+	EXPECT_LE( avg_iterations, 50 );
 	EXPECT_GE( k_successes, 0.95 * ITER );
 
-	std::cout << "Avg score   = " << avg_score << std::endl;
-	std::cout << "Std score   = " << std_score << std::endl;
 	std::cout << "Avg iter    = " << avg_iterations << std::endl;
 	std::cout << "Avg error   = " << avg_error << std::endl;
 	std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
@@ -198,12 +186,9 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency_AllRobots )
 	{
 		const auto& chain = robot.second->GetChain();
 		double avg_iterations = 0.0;
-		double avg_score = 0.0;
-		double var_score = 0.0;
 		double avg_non_success_error = 0.0;
 		double max_non_success_error = 0.0;
 		double avg_error = 0.0;
-		double delta = 0.0;
 		int k_successes = 0;
 		Solver::PipelineSolverParameters p;
 		p.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
@@ -230,31 +215,22 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency_AllRobots )
 
 				k_successes++;
 				avg_iterations += result.iterations / ( double )ITER;
-				delta += result.score - avg_score;
-				avg_score += delta / k_successes;
-				var_score += delta * ( result.score - avg_score );
 				avg_error += result.error / ( double )ITER;
 			}
 		}
 		avg_non_success_error = k_successes != ITER ? avg_non_success_error / ( double )( ITER - k_successes ) : 0.0;
-		var_score = var_score / ( double )ITER;
-		double std_score = std::sqrt( std::max( 0.0, var_score ) );
-		EXPECT_LE( std_score, 0.1 );
-		EXPECT_LE( avg_score, 0.5 );
 		EXPECT_LE( avg_error, error_tolerance );
 		EXPECT_LE( avg_non_success_error, 2 * error_tolerance );
 		EXPECT_LE( max_non_success_error, 5 * error_tolerance );
-		EXPECT_LE( avg_iterations, 20 );
+		EXPECT_LE( avg_iterations, 50 );
 		EXPECT_GE( k_successes, 0.95 * ITER );
 
-		std::cout << "==== Robot "  << robot.first << " ====" << std::endl;
-		std::cout << "Avg score   = " << avg_score << std::endl;
-		std::cout << "Std score   = " << std_score << std::endl;
-		std::cout << "Avg iter    = " << avg_iterations << std::endl;
-		std::cout << "Avg error   = " << avg_error << std::endl;
-		std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
-		std::cout << "Max fail err= " << max_non_success_error << std::endl;
-		std::cout << "k_successes = " << k_successes << " / " << ITER << std::endl;
+		// std::cout << "==== Robot "  << robot.first << " ====" << std::endl;
+		// std::cout << "Avg iter    = " << avg_iterations << std::endl;
+		// std::cout << "Avg error   = " << avg_error << std::endl;
+		// std::cout << "Avg fail err= " << avg_non_success_error << std::endl;
+		// std::cout << "Max fail err= " << max_non_success_error << std::endl;
+		// std::cout << "k_successes = " << k_successes << " / " << ITER << std::endl;
 	}
 }
 

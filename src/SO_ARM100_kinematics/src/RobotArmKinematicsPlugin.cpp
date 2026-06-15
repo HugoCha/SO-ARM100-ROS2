@@ -1,10 +1,12 @@
 #include "RobotArmKinematicsPlugin.hpp"
 #include "Global.hpp"
+#include "Logger.hpp"
 
 #include <chrono>
 #include <Eigen/Dense>
 #include <moveit/robot_model/robot_model.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <string>
 
 namespace SOArm100::Kinematics
 {
@@ -36,7 +38,16 @@ bool RobotArmKinematicsPlugin::getPositionFK(
 	std::vector< geometry_msgs::msg::Pose >& poses ) const
 {
 	geometry_msgs::msg::Pose tip_pose;
-	return solver_.ForwardKinematic( link_names, joint_angles, poses, tip_pose );
+	bool success = solver_.ForwardKinematic( link_names, joint_angles, poses, tip_pose );
+
+	std::stringstream log_ss;
+	log_ss << "Joints " << ToVecXd( joint_angles ).transpose() << std::endl;
+	RCLCPP_DEBUG( Logger::get(), "getPositionFK: Joints %s Tip Position is ( x:%f y:%f z:%f ) Orientation is ( x:%f y:%f z:%f w:%f )"
+	              , log_ss.str().c_str()
+	              , tip_pose.position.x, tip_pose.position.y, tip_pose.position.z
+	              , tip_pose.orientation.x, tip_pose.orientation.y, tip_pose.orientation.z, tip_pose.orientation.w );
+
+	return success;
 }
 
 // ------------------------------------------------------------
@@ -85,9 +96,29 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 		}
 	}
 
-	RCLCPP_DEBUG( Logger::get(), "searchPositionIK: Position request is ( x:%f y:%f z:%f ) Orientation is ( x:%f y:%f z:%f w:%f )"
-	              , ik_pose.position.x, ik_pose.position.y, ik_pose.position.z
-	              , ik_pose.orientation.x, ik_pose.orientation.y, ik_pose.orientation.z, ik_pose.orientation.w );
+	Eigen::Quaterniond q(
+		ik_pose.orientation.w,
+		ik_pose.orientation.x,
+		ik_pose.orientation.y,
+		ik_pose.orientation.z );
+
+	Eigen::AngleAxisd aa( q );
+
+	RCLCPP_INFO(
+		Logger::get(),
+		"IK request:"
+		" position = [%f %f %f]"
+		" orientation axis=[%f %f %f] angle=%f"
+		" timeout=%f(s) approximate=%d",
+		ik_pose.position.x,
+		ik_pose.position.y,
+		ik_pose.position.z,
+		aa.axis().x(),
+		aa.axis().y(),
+		aa.axis().z(),
+		aa.angle(),
+		timeout,
+		options.return_approximate_solution );
 
 	do
 	{
@@ -97,9 +128,10 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 			consistency_limits,
 			timeout_ms,
 			error_tolerance,
+			options.return_approximate_solution,
 			solution );
 
-		if ( result )
+		if ( result || options.return_approximate_solution )
 		{
 			if ( solution_callback )
 			{
@@ -108,16 +140,23 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 					continue;
 			}
 
-			RCLCPP_DEBUG( Logger::get(), "Solved after %f < %f",
+			std::stringstream solution_ss;
+			solution_ss << "Joints";
+			for ( const auto& joint : solution )
+				solution_ss << " " << joint;
+			RCLCPP_DEBUG( Logger::get(), "Solved after %f < %f Error code: %d %s",
 			              std::chrono::duration_cast< std::chrono::duration< double >>( std::chrono::steady_clock::now() - start_time ).count(),
-			              timeout );
+			              timeout,
+			              error_code.val,
+			              solution_ss.str().c_str() );
 
+			error_code.val = error_code.SUCCESS;
 			return true;
 		}
-
 	}
-	while ( !TimedOut( start_time, timeout_ms ) );
+	while ( !TimedOut( start_time, timeout ) );
 
+	error_code.val = error_code.TIMED_OUT;
 	return false;
 }
 
@@ -196,9 +235,9 @@ bool RobotArmKinematicsPlugin::searchPositionIK( const geometry_msgs::msg::Pose&
 
 // ------------------------------------------------------------
 
-bool RobotArmKinematicsPlugin::TimedOut( std::chrono::time_point< std::chrono::steady_clock > start_time, long timeout_ms )
+bool RobotArmKinematicsPlugin::TimedOut( std::chrono::time_point< std::chrono::steady_clock > start_time, double timeout )
 {
-	return std::chrono::duration_cast< std::chrono::duration< double >>( std::chrono::steady_clock::now() - start_time ).count() > timeout_ms;
+	return std::chrono::duration_cast< std::chrono::duration< double >>( std::chrono::steady_clock::now() - start_time ).count() > timeout;
 }
 
 // ------------------------------------------------------------

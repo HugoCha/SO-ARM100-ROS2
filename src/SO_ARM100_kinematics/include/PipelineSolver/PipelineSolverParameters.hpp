@@ -15,6 +15,6 @@ struct PipelineSolverParameters
 {
 	PipelineCompletionStrategy strategy { PipelineCompletionStrategy::ReturnFirstSuccess };
 	double min_score_threshold { 0.25 };
-	uint max_parallel_thread { std::min( std::thread::hardware_concurrency() / 2, 2u ) };
+	uint max_parallel_thread { std::min( std::thread::hardware_concurrency() / 2, 3u ) };
 };
 }
