@@ -63,11 +63,11 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 		return false;
 	}
 
-	if ( ik_seed_state.size() != solver_.GetModel()->GetChain()->GetJointCount() )
+	if ( ik_seed_state.size() != solver_.GetModel()->GetChain()->GetActiveJointCount() )
 	{
 		RCLCPP_ERROR( Logger::get(),
 		              "Seed state must have size  %zu, instead of size  %zu",
-		              solver_.GetModel()->GetChain()->GetJointCount(),
+		              solver_.GetModel()->GetChain()->GetActiveJointCount(),
 		              ik_seed_state.size() );
 		error_code.val = error_code.NO_IK_SOLUTION;
 		return false;
@@ -75,11 +75,11 @@ bool RobotArmKinematicsPlugin::searchPositionIK(
 
 	if ( !consistency_limits.empty() )
 	{
-		if ( consistency_limits.size() != solver_.GetModel()->GetChain()->GetJointCount() )
+		if ( consistency_limits.size() != solver_.GetModel()->GetChain()->GetActiveJointCount() )
 		{
 			RCLCPP_ERROR( Logger::get(),
 			              "Consistency limits must be empty or have size %zu  instead of size %zu",
-			              solver_.GetModel()->GetChain()->GetJointCount(),
+			              solver_.GetModel()->GetChain()->GetActiveJointCount(),
 			              consistency_limits.size() );
 
 			error_code.val = error_code.NO_IK_SOLUTION;
