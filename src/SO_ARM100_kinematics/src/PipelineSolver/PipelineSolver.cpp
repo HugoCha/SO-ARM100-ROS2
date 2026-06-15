@@ -35,7 +35,7 @@ IKSolution PipelineSolver::Solve(
 	const IKRunContext& context ) const
 {
 	IKSolution best_solution { IKSolverState::NotRun, problem.seed };
-	double best_score = std::numeric_limits<double>::infinity();
+	double best_score = std::numeric_limits< double >::infinity();
 	auto presolution = pipeline_->Presolve( problem, context );
 
 	for ( auto& branch : presolution.branches )
@@ -47,9 +47,9 @@ IKSolution PipelineSolver::Solve(
 		} );
 
 	if ( parameters_.strategy == PipelineCompletionStrategy::ReturnFirstSuccess ||
-		 parameters_.strategy == PipelineCompletionStrategy::WaitForAcceptableResult ||
-		 parameters_.max_parallel_thread <= 1 ||
-		 presolution.branches.size() <= 2 )
+	     parameters_.strategy == PipelineCompletionStrategy::WaitForAcceptableResult ||
+	     parameters_.max_parallel_thread <= 1 ||
+	     presolution.branches.size() <= 2 )
 	{
 		for ( const auto& branch : presolution.branches )
 		{
@@ -79,7 +79,7 @@ IKSolution PipelineSolver::Solve(
 					branch,
 					problem,
 					context );
-				
+
 				bool can_stop_pipeline = CanStopPipelines( solution );
 				if ( can_stop_pipeline )
 				{
@@ -171,7 +171,8 @@ IKSolution PipelineSolver::RunAndScoreBranch(
 	const IKRunContext& context ) const
 {
 	if ( std::isinf( branch.cost ) )
-		return { IKSolverState::NotRun, { problem.seed }};
+		return { IKSolverState::NotRun, { problem.seed }}
+	;
 
 	auto branch_problem = problem;
 	branch_problem.seed = branch.joints;

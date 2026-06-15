@@ -13,7 +13,6 @@ public:
 static void init( const rclcpp::Logger& logger )
 {
 	logger_ = std::make_unique< rclcpp::Logger >( logger );
-	logger_->set_level( rclcpp::Logger::Level::Debug );
 }
 
 static rclcpp::Logger& get()

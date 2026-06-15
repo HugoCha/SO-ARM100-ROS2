@@ -671,8 +671,8 @@ DLSSolverState DLSSolver::EvaluateConvergence(
 		return DLSSolverState::Converged;
 	}
 
-	if ( problem.approx && 
-		( state.translation_error <= problem.tolerance && state.rotation_error <= 10 * problem.tolerance ) )
+	if ( problem.approx &&
+	     ( state.translation_error <= problem.tolerance && state.rotation_error <= 10 * problem.tolerance ) )
 	{
 		return DLSSolverState::Converged;
 	}

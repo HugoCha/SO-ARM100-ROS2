@@ -31,6 +31,7 @@
 #include <moveit/robot_model/robot_model.hpp>
 #include <moveit/robot_state/robot_state.hpp>
 #include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
 
@@ -146,7 +147,7 @@ bool RobotArmKinematicsSolver::Initialize(
 
 	std::stringstream ss;
 	ss << *model_;
-	RCLCPP_INFO( get_logger(), "Robot initialized\n%s", ss.str().c_str() );
+	RCLCPP_DEBUG( get_logger(), "Robot initialized\n%s", ss.str().c_str() );
 	return true;
 }
 
@@ -221,8 +222,6 @@ bool RobotArmKinematicsSolver::ForwardKinematic(
 		RCLCPP_ERROR( get_logger(), "Joint model not initialized." );
 		return false;
 	}
-
-	RCLCPP_INFO( get_logger(), "FK called" );
 
 	std::vector< Mat4d > poses_mat( link_names.size() );
 	Mat4d tip_pose_mat;
@@ -365,10 +364,10 @@ bool RobotArmKinematicsSolver::InverseKinematic(
 	solution = ( timeout_ms == 0 ) ?
 	           getIK_solver_->Solve( problem, context ) :
 	           searchIK_solver_->Solve( problem, context );
-	
+
 	if ( solution.joints.size() == n_joints )
 	{
-		std::copy(solution.joints.data(), solution.joints.data() + n_joints, joints);
+		std::copy( solution.joints.data(), solution.joints.data() + n_joints, joints );
 	}
 
 	return solution.Success();
