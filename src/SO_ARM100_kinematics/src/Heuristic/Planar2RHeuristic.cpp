@@ -105,7 +105,7 @@ IKPresolution Planar2RHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution = { {}, IKHeuristicState::Fail };
+	IKPresolution presolution = {{}, IKHeuristicState::Fail };
 
 	auto shoulder_joint = GetChain()->GetActiveJoint( GetGroup().FirstIndex() );
 	auto T_group_target = ComputeGroupLocalTarget( problem.seed, problem.target );
@@ -136,11 +136,11 @@ IKPresolution Planar2RHeuristic::Presolve(
 
 	for ( const auto& valid_solution : valid_solutions )
 	{
-		IKPresolutionBranch branch = {problem.seed};
+		IKPresolutionBranch branch = { problem.seed };
 		GetGroup().SetGroupJoints( valid_solution, branch.joints );
 		presolution.branches.emplace_back( branch );
 	}
-	
+
 	presolution.state = IKHeuristicState::Success;
 	return presolution;
 }

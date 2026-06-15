@@ -35,7 +35,7 @@ public:
 // }
 
 JointChain( const JointChain& ) = delete;
-JointChain& operator=( const JointChain& ) = delete;
+JointChain& operator = ( const JointChain& ) = delete;
 JointChain( JointChain&& ) = default;
 JointChain& operator = ( JointChain&& ) = default;
 

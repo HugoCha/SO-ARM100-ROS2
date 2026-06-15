@@ -27,7 +27,7 @@ IKPresolution PrismaticBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution{ {{problem.seed}}, IKHeuristicState::Fail };
+	IKPresolution presolution{{{ problem.seed }}, IKHeuristicState::Fail };
 
 	auto base_joint = GetBaseJoint();
 
@@ -45,7 +45,7 @@ IKPresolution PrismaticBaseHeuristic::Presolve(
 
 	presolution.state = base_joint->GetLimits().Within( value[0] ) ? IKHeuristicState::Success : IKHeuristicState::Fail;
 	GetGroup().SetGroupJoints( value, presolution_joints );
-	presolution.branches = { {presolution_joints} };
+	presolution.branches = {{ presolution_joints }};
 	return presolution;
 }
 

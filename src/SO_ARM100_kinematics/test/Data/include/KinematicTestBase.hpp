@@ -51,7 +51,7 @@ Solver::IKProblem CreateProblem(
 	return {
 	    target,
 	    seed,
-	    VecXd::Zero( seed.size() ),
+		{},
 	    tolerance,
 	    100 };
 }
@@ -164,55 +164,55 @@ Model::JointChainBuilder& AddBaseLink( Model::JointChainBuilder& builder )
 }
 
 Model::JointChainBuilder& AddRevoluteJointLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& link_home,
-	double min = -M_PI, 
+	double min = -M_PI,
 	double max = M_PI )
 {
-	builder.AddJoint( "r_joint" + std::to_string( index ), 
-					  joint_home, 
-					  { joint_axis, Translation( joint_home ) }, 
-					  { min, max } );
+	builder.AddJoint( "r_joint" + std::to_string( index ),
+	                  joint_home,
+	                  { joint_axis, Translation( joint_home ) },
+	                  { min, max } );
 
-	builder.AddChildLink( "link" + std::to_string( index ), 
-						  link_home, 
-						  link_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link" + std::to_string( index ),
+	                      link_home,
+	                      link_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
 Model::JointChainBuilder& AddPrismaticJointLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& link_home,
-	double min = 0, 
+	double min = 0,
 	double max = 1 )
 {
-	builder.AddJoint( "p_joint" + std::to_string( index ), 
-					  joint_home, 
-					  { joint_axis }, 
-					  { min, max } );
+	builder.AddJoint( "p_joint" + std::to_string( index ),
+	                  joint_home,
+	                  { joint_axis },
+	                  { min, max } );
 
-	builder.AddChildLink( "link" + std::to_string( index ), 
-						  link_home, 
-						  link_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link" + std::to_string( index ),
+	                      link_home,
+	                      link_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
 Model::JointChainBuilder& AddJointTipLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Model::JointType type,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& tip_home,
-	double min = -M_PI, 
+	double min = -M_PI,
 	double max = M_PI )
 {
 	Model::Twist t;
@@ -225,19 +225,19 @@ Model::JointChainBuilder& AddJointTipLink(
 
 	Model::Limits l = type == Model::JointType::FIXED ? Model::Limits{} : Model::Limits{ min, max };
 
-	builder.AddJoint( "joint" + std::to_string( index ), 
-					  joint_home, 
-					  t, 
-					  l );
+	builder.AddJoint( "joint" + std::to_string( index ),
+	                  joint_home,
+	                  t,
+	                  l );
 
-	builder.AddChildLink( "link_tip", 
-						  tip_home, 
-						  tip_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link_tip",
+	                      tip_home,
+	                      tip_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
-struct JointInfo 
+struct JointInfo
 {
 	Vec3d origin;
 	Vec3d axis;
@@ -250,19 +250,22 @@ struct RevoluteJointInfo : JointInfo
 {
 	RevoluteJointInfo( Vec3d origin, Vec3d axis, double min = -M_PI, double max = M_PI ) :
 		JointInfo( origin, axis, Model::JointType::REVOLUTE, min, max )
-	{}
+	{
+	}
 };
 
 struct PrismaticJointInfo : JointInfo
 {
 	PrismaticJointInfo( Vec3d origin, Vec3d axis, double min = 0, double max = 1 ) :
 		JointInfo( origin, axis, Model::JointType::PRISMATIC, min, max )
-	{}
+	{
+	}
 };
 
 Model::JointChainConstPtr CreateSimpleJointChain( const std::vector< JointInfo > infos, const Mat4d& tip_home )
 {
-	if ( infos.empty() ) return nullptr;
+	if ( infos.empty() )
+		return nullptr;
 
 	auto builder = Model::JointChainBuilder();
 
@@ -271,12 +274,12 @@ Model::JointChainConstPtr CreateSimpleJointChain( const std::vector< JointInfo >
 	for ( int i = 0; i < infos.size() - 1; i++ )
 	{
 		if ( infos[i].type == Model::JointType::REVOLUTE )
-			AddRevoluteJointLink( builder, i, ToTransformMatrix( infos[i].origin ), infos[i].axis, ToTransformMatrix( infos[i+1].origin ), infos[i].min, infos[i].max );
+			AddRevoluteJointLink( builder, i, ToTransformMatrix( infos[i].origin ), infos[i].axis, ToTransformMatrix( infos[i + 1].origin ), infos[i].min, infos[i].max );
 		else if ( infos[i].type == Model::JointType::PRISMATIC )
-			AddRevoluteJointLink( builder, i, ToTransformMatrix( infos[i].origin ), infos[i].axis, ToTransformMatrix( infos[i+1].origin ), infos[i].min, infos[i].max );
+			AddRevoluteJointLink( builder, i, ToTransformMatrix( infos[i].origin ), infos[i].axis, ToTransformMatrix( infos[i + 1].origin ), infos[i].min, infos[i].max );
 	}
 
-	AddJointTipLink( builder, infos.size(), infos[infos.size()-1].type, ToTransformMatrix( infos[infos.size()-1].origin ), infos[infos.size()-1].axis, tip_home, infos[infos.size()-1].min, infos[infos.size()-1].max );
+	AddJointTipLink( builder, infos.size(), infos[infos.size() - 1].type, ToTransformMatrix( infos[infos.size() - 1].origin ), infos[infos.size() - 1].axis, tip_home, infos[infos.size() - 1].min, infos[infos.size() - 1].max );
 
 	return builder.Build();
 }

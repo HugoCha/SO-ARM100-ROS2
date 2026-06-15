@@ -24,7 +24,7 @@ bool RobotArmKinematicsPlugin::initialize(
 	const auto& chain = solver_.GetModel()->GetChain();
 	link_names_ = chain->GetLinkNames();
 	joint_names_ = chain->GetJointNames();
-	
+
 	return initialized_;
 }
 

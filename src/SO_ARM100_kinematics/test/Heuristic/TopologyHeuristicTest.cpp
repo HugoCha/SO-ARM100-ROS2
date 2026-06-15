@@ -43,7 +43,7 @@ void SetUp() override
 	// robot_name_ = "5-axis arm";
 	// robot_name_ = "6-axis arm";
 	robot_name_ = "Universal Robot";
-	//robot_name_ = "LeRobot";
+	// robot_name_ = "LeRobot";
 
 	model_ = Data::GetAllRobots()[robot_name_];
 }
@@ -54,24 +54,24 @@ random_numbers::RandomNumberGenerator rng_;
 
 struct TestValidationParameters
 {
-double max_avg_iterations;
-double max_avg_error;
+	double max_avg_iterations;
+	double max_avg_error;
 };
 
 constexpr std::unordered_map< std::string, TestValidationParameters > TestValidationParameters() const
 {
 	return {
-		{ Data::GetZYZRevoluteRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetRevoluteBaseRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetPrismaticBaseRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetPlanar2RRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetPlanar3RRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetWrist1RRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetWrist2RRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetSphericalWristRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobotName(), { 1, DEFAULT_TOLERANCE } },
-		{ Data::GetURLikeRobotName(), { 25, 1e-2 } },
+		{ Data::GetZYZRevoluteRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetRevoluteBaseRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetPrismaticBaseRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetPlanar2RRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetPlanar3RRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetWrist1RRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetWrist2RRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetSphericalWristRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetRevolute_Planar2R_SphericalWrist_6DOFsRobotName(), { 1, DEFAULT_TOLERANCE }},
+		{ Data::GetURLikeRobotName(), { 25, 1e-2 }},
 	};
 }
 
@@ -97,27 +97,27 @@ Heuristic::IKPresolution CheckPresolution(
 		if ( !pNoFailure )
 		{
 			EXPECT_TRUE( IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
-				<< "Fail for robot " << robot_name << std::endl
-				<< "Target = \n" << problem.target << std::endl
-				<< "Result = \n" << result_pose << std::endl
-				<< "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
-				<< "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
-				<< "Pose     Error = \n" << error << std::endl
-				<< problem << std::endl
-				<< presolution << std::endl;
+			    << "Fail for robot " << robot_name << std::endl
+			    << "Target = \n" << problem.target << std::endl
+			    << "Result = \n" << result_pose << std::endl
+			    << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
+			    << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
+			    << "Pose     Error = \n" << error << std::endl
+			    << problem << std::endl
+			    << presolution << std::endl;
 		}
 		else
 		{
 			if ( !pSilent && !IsApprox( problem.target, result_pose, validation_params.max_avg_error ) )
 			{
 				std::cout << "Fail for robot " << robot_name << std::endl
-				<< "Target = \n" << problem.target << std::endl
-				<< "Result = \n" << result_pose << std::endl
-				<< "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
-				<< "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
-				<< "Pose     Error = \n" << error << std::endl
-				<< problem << std::endl
-				<< presolution << std::endl;
+				          << "Target = \n" << problem.target << std::endl
+				          << "Result = \n" << result_pose << std::endl
+				          << "Position Error = \n" << TranslationError( problem.target, result_pose ) << std::endl
+				          << "Rotation Error = \n" << RotationError( problem.target, result_pose ) << std::endl
+				          << "Pose     Error = \n" << error << std::endl
+				          << problem << std::endl
+				          << presolution << std::endl;
 			}
 		}
 	}
@@ -182,7 +182,7 @@ TEST_F( TopologyHeuristicTest, Presolve_Converges_FromJoints )
 
 	VecXd joints = model_->GetChain()->RandomValidJoints( rng_, 0.05 );
 	VecXd seed = model_->GetChain()->RandomValidJointsNear( rng_, joints, 0.3, 0.05 );
-	// VecXd joints = VecXd::Zero( n_joints ); 
+	// VecXd joints = VecXd::Zero( n_joints );
 	// VecXd seed = VecXd::Ones( n_joints ) * M_PI;
 	// joints << -0.186106,   2.58615, -0.557316,   1.37537,  0.354778, -0.786451;
 
@@ -270,12 +270,13 @@ TEST_F( TopologyHeuristicTest, Presolve_Consistency_AllRobots )
 			// 	avg_non_success_error += result.error;
 			// 	max_non_success_error = std::max( max_non_success_error, result.error );
 			// }
-			
+
 			// EXPECT_EQ( result.joints.size(), robot.second->GetChain()->GetActiveJointCount() ) << "Result should contain values for all joints";
 			// avg_iterations += result.iterations / ( double )ITER;
 			// avg_error += result.error / ( double )ITER;
 
-			if ( result.PartialOrSuccess() ) k_successes++;
+			if ( result.PartialOrSuccess() )
+				k_successes++;
 		}
 
 		avg_non_success_error = ( k_failorfar != 0 ) ? avg_non_success_error / k_failorfar : 0.0;

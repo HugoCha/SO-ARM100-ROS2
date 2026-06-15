@@ -3,5 +3,5 @@
 #include "RobotArmKinematicsPlugin.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-    SOArm100::Kinematics::RobotArmKinematicsPlugin,
-    kinematics::KinematicsBase)
+	SOArm100::Kinematics::RobotArmKinematicsPlugin,
+	kinematics::KinematicsBase )

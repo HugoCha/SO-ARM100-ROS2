@@ -30,11 +30,11 @@ IKPipeline::IKPipeline(
 // ------------------------------------------------------------
 
 Heuristic::IKPresolution IKPipeline::Presolve(
-    const IKProblem& problem,
+	const IKProblem& problem,
 	const IKRunContext& context ) const
 {
 	auto heuristic_problem = problem;
-	auto presolution = Heuristic::IKPresolution{{{problem.seed}}, Heuristic::IKHeuristicState::PartialSuccess };
+	auto presolution = Heuristic::IKPresolution{{{ problem.seed }}, Heuristic::IKHeuristicState::PartialSuccess };
 
 	if ( seed_generator_ )
 		heuristic_problem.seed = seed_generator_->Generate( problem );
@@ -51,7 +51,7 @@ IKSolution IKPipeline::Solve(
 	const IKProblem& problem,
 	const IKRunContext& context ) const
 {
-	IKSolution solution = { IKSolverState::NotRun, {} };
+	IKSolution solution = { IKSolverState::NotRun, {}};
 
 	if ( solver_ )
 		solution = solver_->Solve( problem, context );

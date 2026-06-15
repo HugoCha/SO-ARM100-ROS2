@@ -65,18 +65,18 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Success )
 		// Check that the solution is valid
 		EXPECT_EQ( result.state, Heuristic::IKHeuristicState::Success ) << "IK should succeed for reachable position";
 		EXPECT_FALSE( std::isnan( b.joints[0] ) ) << "Solution should not be NaN";
-		
+
 		if ( std::abs( b.joints[0] - M_PI / 4 ) < 1e-6 )
 		{
 			EXPECT_LE( TranslationError( result_pose, problem.target ), epsilon )
-				<< "target= " << std::endl << problem.target << std::endl
-				<< "result= " << std::endl << result_pose << std::endl;
+			    << "target= " << std::endl << problem.target << std::endl
+			    << "result= " << std::endl << result_pose << std::endl;
 			hasOriginalJoints = true;
 		}
 	}
 
 	EXPECT_TRUE( hasOriginalJoints )
-		<< "Heuristic did not found original joint";
+	    << "Heuristic did not found original joint";
 }
 
 // ------------------------------------------------------------
@@ -96,15 +96,15 @@ TEST_F( RevoluteBaseHeuristicTest, IK_Singularity )
 
 	EXPECT_EQ( result.state, Heuristic::IKHeuristicState::PartialSuccess )
 	    << "IK should partially succeed for singularity" << std::endl
-		<< result;
+	    << result;
 
 	EXPECT_GE( 1, result.branches.size() );
 
 	for ( const auto& b : result.branches )
 	{
 		EXPECT_EQ( seed[0], b.joints[0] )
-			<< "Expected joint= " << seed[0] << std::endl
-			<< "Result   joint= " << b.joints[0] << std::endl;
+		    << "Expected joint= " << seed[0] << std::endl
+		    << "Result   joint= " << b.joints[0] << std::endl;
 	}
 }
 

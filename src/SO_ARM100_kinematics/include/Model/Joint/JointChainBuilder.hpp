@@ -13,20 +13,20 @@ class JointChain;
 class JointChainBuilder
 {
 public:
-JointChainBuilder& AddParentLink( 
-    const std::string& name, 
-    const Mat4d& home_tf );
+JointChainBuilder& AddParentLink(
+	const std::string& name,
+	const Mat4d& home_tf );
 
-JointChainBuilder& AddJoint( 
-    const std::string& name,
-    const Mat4d& joint_global_tf,
-    const Twist& twist,
-    const Limits& limits );
+JointChainBuilder& AddJoint(
+	const std::string& name,
+	const Mat4d& joint_global_tf,
+	const Twist& twist,
+	const Limits& limits );
 
-JointChainBuilder& AddChildLink( 
-    const std::string& name, 
-    const Mat4d& home_transform,
-    const Mat4d& parent_joint_transform );
+JointChainBuilder& AddChildLink(
+	const std::string& name,
+	const Mat4d& home_transform,
+	const Mat4d& parent_joint_transform );
 
 std::shared_ptr< const JointChain > Build();
 

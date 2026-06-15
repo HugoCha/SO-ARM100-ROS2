@@ -96,7 +96,7 @@ TEST_F( KinematicsUtilsTest, AdjointNonIdentityTransform )
 TEST_F( KinematicsUtilsTest, SpaceJacobianSingleTwist )
 {
 	auto joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) },
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	VecXd joint_angles( 1 );
@@ -117,7 +117,7 @@ TEST_F( KinematicsUtilsTest, SpaceJacobianMultipleTwists )
 {
 	auto joint_chain = CreateSimpleJointChain(
 		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
-				RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitY() ) }, 
+		  RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitY() ) },
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	VecXd joint_angles( 2 );

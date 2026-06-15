@@ -17,8 +17,8 @@ namespace SOArm100::Kinematics::Model
 
 // ------------------------------------------------------------
 
-JointChain::JointChain( const std::vector< JointConstPtr >& joints, 
-						const std::vector< LinkConstPtr >& links )
+JointChain::JointChain( const std::vector< JointConstPtr >& joints,
+                        const std::vector< LinkConstPtr >& links )
 {
 	if ( links.size() != joints.size() + 1 )
 		throw std::invalid_argument( "Link must have size joints size + 1" );
@@ -35,17 +35,17 @@ JointChain::JointChain( const std::vector< JointConstPtr >& joints,
 
 		const auto& joint = joints_[i];
 		const auto& parent_link = links_[i];
-		const auto& child_link = links[i+1];
-		
+		const auto& child_link = links[i + 1];
+
 		if ( joint->GetParentLink() != parent_link.get() || joint->GetChildLink() != child_link.get() )
 			throw std::invalid_argument( "Joint/Link mismatch" );
-	
+
 		link_names_[i] = parent_link->GetName();
 		link_map_.emplace( std::make_pair( parent_link->GetName(), parent_link ) );
 		parent_link_joint_map_.emplace( std::make_pair( parent_link, joint ) );
 		child_link_joint_map_.emplace( std::make_pair( child_link, joint ) );
 
-		if ( !joint->IsFixed() ) 
+		if ( !joint->IsFixed() )
 		{
 			active_joints_.emplace_back( joint );
 			active_joint_centers_.emplace_back( joint->GetLimits().Center() );
@@ -259,7 +259,7 @@ bool JointChain::ComputeFK(
 {
 	n_joints = std::min( n_joints, ( int )GetActiveJointCount() );
 	fk.setIdentity();
-	
+
 	if ( !WithinLimits( thetas, n_joints ) )
 		return false;
 
@@ -360,7 +360,7 @@ bool JointChain::ComputeLinkPosesFK(
 				auto parent_joint_name = parent_joint->GetName();
 				links_fk[i] = joint_poses.at( parent_joint_name ) * link->ParentJointTransform();
 			}
-			else 
+			else
 			{
 				// Root Link
 				links_fk[i] = link->HomeTransform();
@@ -399,8 +399,8 @@ JointChain JointChain::SubChain( JointConstPtr start, JointConstPtr end ) const
 
 	auto sub_joints = joints.subspan( start_index, count );
 	auto sub_links = links.subspan( start_index, count + 1 );
-	return JointChain( 
-		std::vector< JointConstPtr >( sub_joints.begin(), sub_joints.end() ), 
+	return JointChain(
+		std::vector< JointConstPtr >( sub_joints.begin(), sub_joints.end() ),
 		std::vector< LinkConstPtr >( sub_links.begin(), sub_links.end() ) );
 }
 

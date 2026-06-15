@@ -8,6 +8,7 @@
 #include "Utils/StringConverter.hpp"
 
 #include <condition_variable>
+#include <limits>
 
 namespace SOArm100::Kinematics::Solver
 {
@@ -41,40 +42,53 @@ IKSolution PipelineSolver::Solve(
 	for ( auto& branch : presolution.branches )
 		branch.cost = scorer_->Score( problem, branch.joints, branch.error );
 
-	std::sort( presolution.branches.begin(), presolution.branches.end(), 
-			[]( const Heuristic::IKPresolutionBranch& b1, const Heuristic::IKPresolutionBranch& b2 ){
-				return b1.cost < b2.cost;
-			} );
-	
+	std::sort( presolution.branches.begin(), presolution.branches.end(),
+	           []( const Heuristic::IKPresolutionBranch& b1, const Heuristic::IKPresolutionBranch& b2 ){
+			return b1.cost < b2.cost;
+		} );
+
+	// IKSolution best_solution {};
+	// for ( const auto& branch : presolution.branches )
+	// {
+	// 	auto branch_solution = RunAndScoreBranch( branch, problem, context );
+	// 	if ( branch_solution.score < best_solution.score )
+	// 	{
+	// 		best_solution = branch_solution;
+	// 	}
+	// 	if ( branch_solution.Success() )
+	// 	{
+	// 		return branch_solution;
+	// 	}
+	// }
 	if ( presolution.branches.size() > 1 )
 	{
 		auto worker =
 			[&]( const IKProblem& problem,
-				 const IKRunContext& context,
-				 const Heuristic::IKPresolutionBranch& branch, 
-				 SynchronizationParameters& sync_parameters )
+			     const IKRunContext& context,
+			     const Heuristic::IKPresolutionBranch& branch,
+			     SynchronizationParameters& sync_parameters )
 			{
 				auto solution = RunAndScoreBranch(
 					branch,
 					problem,
 					context );
-	
+
 				{
 					std::lock_guard< std::mutex > lock( sync_parameters.mtx );
 					if ( solution.score < result.score )
 						result = solution;
-	
+
 					if ( CanStopPipelines( solution ) )
 					{
 						StopPipelines( context );
 						sync_parameters.early_result = true;
 					}
-	
+
 					sync_parameters.completed_count++;
 				}
 				sync_parameters.cv.notify_all();
 			};
-	
+
 		auto pipeline_threads = StartPipelines( worker, sync_params, presolution, problem, context );
 		WaitPipelines( pipeline_threads, presolution, problem, context, sync_params );
 	}
@@ -98,25 +112,25 @@ std::vector< std::thread > PipelineSolver::StartPipelines(
 	std::vector< std::thread > threads;
 	uint max_parallel_threads = std::max( 1u, parameters_.max_parallel_thread );
 	max_parallel_threads = std::min( ( uint )presolution.branches.size(), max_parallel_threads );
-	std::atomic<size_t> next_branch{0};
+	std::atomic< size_t > next_branch{ 0 };
 
-	for ( auto w = 0; w < max_parallel_threads; ++w)
+	for ( auto w = 0; w < max_parallel_threads; ++w )
 	{
-		threads.emplace_back([&]
-		{
-			while (true)
+		threads.emplace_back( [&]
 			{
-				if (context.StopRequested())
-					return;
-				
-				size_t idx = next_branch.fetch_add(1);
-				
-				if (idx >= presolution.branches.size())
-					return;
-			
-				worker( problem, context, presolution.branches[idx], sync_params);
-			}
-		});
+				while ( true )
+				{
+					if ( context.StopRequested() )
+						return;
+
+					size_t idx = next_branch.fetch_add( 1 );
+
+					if ( idx >= presolution.branches.size() )
+						return;
+
+					worker( problem, context, presolution.branches[idx], sync_params );
+				}
+			} );
 	}
 	return threads;
 }
@@ -152,7 +166,8 @@ IKSolution PipelineSolver::RunAndScoreBranch(
 	const IKRunContext& context ) const
 {
 	if ( std::isinf( branch.cost ) )
-		return { IKSolverState::NotRun, {} };
+		return { IKSolverState::NotRun, {}}
+	;
 
 	auto branch_problem = problem;
 	branch_problem.seed = branch.joints;

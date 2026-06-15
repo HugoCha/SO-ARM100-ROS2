@@ -45,7 +45,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution = { { { problem.seed } }, IKHeuristicState::Fail };
+	IKPresolution presolution = {{{ problem.seed }}, IKHeuristicState::Fail };
 
 	const int n_joints = model_->GetChain()->GetActiveJointCount();
 	if ( problem.seed.size() != n_joints )
@@ -71,21 +71,21 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 
 		if ( context.StopRequested() )
 		{
-			presolution.branches = { { history.best_joints } };
+			presolution.branches = {{ history.best_joints }};
 			presolution.state = IKHeuristicState::Fail;
 
 			return presolution;
 		}
 		if ( buffer.error < problem.tolerance )
 		{
-			presolution.branches = { { buffer.joints } };
+			presolution.branches = {{ buffer.joints }};
 			presolution.state = IKHeuristicState::Success;
 
 			return presolution;
 		}
 		if ( history.stalled_error_cnt > parameters_.max_stalled_iterations )
 		{
-			presolution.branches = { { history.best_joints } };
+			presolution.branches = {{ history.best_joints }};
 			presolution.state = IKHeuristicState::PartialSuccess;
 
 			return presolution;
@@ -94,7 +94,7 @@ IKPresolution PlanarCCDHeuristic::Presolve(
 		CCD( p_local_target, buffer );
 	}
 
-	presolution.branches = { { history.best_joints } };
+	presolution.branches = {{ history.best_joints }};
 	presolution.state = IKHeuristicState::PartialSuccess;
 	return presolution;
 }

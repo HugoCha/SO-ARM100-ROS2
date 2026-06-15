@@ -82,7 +82,7 @@ bool RobotArmKinematicsSolver::Initialize(
 		const auto* parent_link = joint_model->getParentLinkModel();
 		const auto* child_link = joint_model->getChildLinkModel();
 
-		auto parent_link_global_tf = state.getGlobalLinkTransform(parent_link);
+		auto parent_link_global_tf = state.getGlobalLinkTransform( parent_link );
 		auto child_link_global_tf = state.getGlobalLinkTransform( child_link );
 		auto joint_local_tf = state.getJointTransform( joint_model );
 		auto joint_global_tf = parent_link_global_tf * joint_local_tf;
@@ -127,7 +127,7 @@ bool RobotArmKinematicsSolver::Initialize(
 			joint_chain_builder.AddChildLink( child_link->getName(), child_link_global_tf.matrix(), child_link->getJointOriginTransform().matrix() );
 		}
 	}
-	
+
 	auto joint_chain = joint_chain_builder.Build();
 	auto skeleton = Model::SkeletonAnalyzer::Analyze( joint_chain->GetJoints(), home_configuration );
 	Model::KinematicTopology topology = Model::TopologyAnalyzer::Analyze( *joint_chain, home_configuration );

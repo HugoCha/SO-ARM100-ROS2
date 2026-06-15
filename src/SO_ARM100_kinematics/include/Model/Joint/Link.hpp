@@ -11,10 +11,10 @@ namespace SOArm100::Kinematics::Model
 class Link
 {
 public:
-Link( const std::string& name, 
-	  const Mat4d& home_tf, 
-	  const Mat4d& local_tf, 
-	  double length ) :
+Link( const std::string& name,
+      const Mat4d& home_tf,
+      const Mat4d& local_tf,
+      double length ) :
 	name_( name ),
 	home_tf_( home_tf ),
 	local_tf_( local_tf ),
@@ -22,10 +22,10 @@ Link( const std::string& name,
 {
 }
 
-Link( const std::string& name, 
-	  const Mat4d& home_tf, 
-	  const Mat4d& local_tf,
-	  const Mat4d& child_tf ) :
+Link( const std::string& name,
+      const Mat4d& home_tf,
+      const Mat4d& local_tf,
+      const Mat4d& child_tf ) :
 	Link( name, home_tf, local_tf, ( Translation( child_tf ) - Translation( home_tf ) ).norm() )
 {
 }

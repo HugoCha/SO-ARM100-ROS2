@@ -98,8 +98,8 @@ TEST_F( WristHeuristicTest, SolveRevolute1 )
 	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 1, result_joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) )
-		<< "Expected \n" << problem.target << std::endl
-		<< "Result \n" << result_pose;
+	    << "Expected \n" << problem.target << std::endl
+	    << "Result \n" << result_pose;
 }
 
 // ------------------------------------------------------------
@@ -154,8 +154,8 @@ TEST_F( WristHeuristicTest, SolveRevolute2 )
 	EXPECT_TRUE( result.Success() );
 	EXPECT_EQ( 2, result_joints.size() );
 	EXPECT_TRUE( IsApprox( problem.target, result_pose ) )
-		<< "Expected \n" << problem.target << std::endl
-		<< "Result \n" << result_pose;
+	    << "Expected \n" << problem.target << std::endl
+	    << "Result \n" << result_pose;
 }
 
 // ------------------------------------------------------------

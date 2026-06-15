@@ -362,7 +362,7 @@ TEST_F( DLSSolverTest, EdgeCase_JointLimits )
 	// Target requiring joints at limits
 	const auto& chain = model_->GetChain();
 	const int n_joints = chain->GetActiveJointCount();
-	
+
 	VecXd at_limit_joints = VecXd::Ones( n_joints ) * M_PI;
 	at_limit_joints = chain->ClampLimits( at_limit_joints );
 	at_limit_joints *= 0.9;

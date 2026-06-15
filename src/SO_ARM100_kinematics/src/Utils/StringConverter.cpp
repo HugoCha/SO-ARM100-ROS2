@@ -370,8 +370,8 @@ std::ostream& operator << ( std::ostream& os, const IKPresolution& obj )
 
 std::ostream& operator << ( std::ostream& os, const IKPresolutionBranch& obj )
 {
-	os << "Joints: " << obj.joints.transpose() 
-	   << " Error: " << obj.error 
+	os << "Joints: " << obj.joints.transpose()
+	   << " Error: " << obj.error
 	   << " Cost: " << obj.cost;
 	return os;
 }

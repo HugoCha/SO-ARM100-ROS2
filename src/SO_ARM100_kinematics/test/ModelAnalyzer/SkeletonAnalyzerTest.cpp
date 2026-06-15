@@ -252,10 +252,10 @@ TEST_F( ArticulationTest, AnalyzeArticulations_3ZRobot_HomeOnJointAxis_ReturnExp
 {
 	Mat4d home = ToTransformMatrix( Vec3d( 1.5, 0, 1.0 ) );
 	auto chain = CreateSimpleJointChain(
-		{ 
-			{ Vec3d(0,0,0), Vec3d::UnitZ() },
-			{ Vec3d(0,0,0.5), Vec3d::UnitZ() },
-			{ Vec3d(0,0,1.0), Vec3d::UnitZ() },
+		{
+			{ Vec3d( 0, 0, 0 ), Vec3d::UnitZ() },
+			{ Vec3d( 0, 0, 0.5 ), Vec3d::UnitZ() },
+			{ Vec3d( 0, 0, 1.0 ), Vec3d::UnitZ() },
 		},
 		home );
 

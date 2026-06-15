@@ -40,7 +40,7 @@ double ChainTotalLengthReachableSpace::ComputeTotalLength(
 
 	double total_length = chain.GetJointParentLink( 0 )->Length();
 	const auto& joints = chain.GetJoints();
-	
+
 	for ( const auto& joint : joints )
 	{
 		total_length += joint->GetChildLink()->Length();

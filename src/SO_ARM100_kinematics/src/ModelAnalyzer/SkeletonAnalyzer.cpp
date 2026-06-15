@@ -204,7 +204,7 @@ std::vector< JointConstPtr > SkeletonAnalyzer::FilterJoints( const std::span< co
 		{
 			if ( joint1->GetType() != joint2->GetType() )
 				return false;
-			
+
 			if ( !joint1->Axis().isApprox( joint2->Axis() ) )
 				return false;
 

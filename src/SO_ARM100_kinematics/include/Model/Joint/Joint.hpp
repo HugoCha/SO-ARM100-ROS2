@@ -28,11 +28,11 @@ Joint( const Joint& joint ) :
 }
 
 Joint( const std::string& name,
-	   const Mat4d& joint_home_tf,
-	   const Twist& twist,
-	   const Limits& limits,
-	   LinkConstPtr parent_link,
-	   LinkConstPtr child_link ) :
+       const Mat4d& joint_home_tf,
+       const Twist& twist,
+       const Limits& limits,
+       LinkConstPtr parent_link,
+       LinkConstPtr child_link ) :
 	name_( name ),
 	home_global_tf_( joint_home_tf ),
 	home_global_pos_( Translation( joint_home_tf ) ),
@@ -63,7 +63,7 @@ const Link* const GetChildLink() const {
 	return child_link_.get();
 }
 
-void SetChildLink( LinkConstPtr child_link ) {
+void SetChildLink( LinkConstPtr child_link ){
 	child_link_ = child_link;
 }
 

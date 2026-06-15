@@ -321,7 +321,7 @@ Seed::IKRandomSeedGenerator DLSSolver::InitializeSeedGenerator(
 	Seed::IKRandomSeedGenerator::RandomParameters random_parameters;
 	auto random_type = Model::RandomType::Near;
 
-	random_parameters.margin_percent = 0.1;
+	random_parameters.margin_percent = 0.01;
 	if ( !state )
 	{
 		random_parameters.distance = 0.1;

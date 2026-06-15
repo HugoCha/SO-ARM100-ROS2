@@ -98,7 +98,7 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	const Solver::IKProblem& problem,
 	const Solver::IKRunContext& context ) const
 {
-	IKPresolution presolution{ {{problem.seed}}, IKHeuristicState::Fail };
+	IKPresolution presolution{{{ problem.seed }}, IKHeuristicState::Fail };
 	if ( reference_direction_.norm() < epsilon )
 		return presolution;
 
@@ -128,19 +128,19 @@ IKPresolution RevoluteBaseHeuristic::Presolve(
 	double fk_error;
 	std::vector< Vec1d > valid_candidates;
 	if ( !ValidateAndSelectCandidates(
-				alpha,
-				beta,
-				valid_candidates ) )
+			 alpha,
+			 beta,
+			 valid_candidates ) )
 	{
 		presolution.branches = {};
 		presolution.state = IKHeuristicState::Fail;
 		return presolution;
 	}
-	
+
 	presolution.state = IKHeuristicState::Success;
 	for ( const auto& valid_solution : valid_candidates )
 	{
-		IKPresolutionBranch branch = {problem.seed};
+		IKPresolutionBranch branch = { problem.seed };
 		GetGroup().SetGroupJoints( valid_solution, branch.joints );
 		presolution.branches.emplace_back( branch );
 	}

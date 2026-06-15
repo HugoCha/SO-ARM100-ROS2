@@ -77,55 +77,55 @@ Model::JointChainBuilder& AddBaseLink( Model::JointChainBuilder& builder )
 }
 
 Model::JointChainBuilder& AddRevoluteJointLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& link_home,
-	double min = -M_PI, 
+	double min = -M_PI,
 	double max = M_PI )
 {
-	builder.AddJoint( "r_joint" + std::to_string( index ), 
-					  joint_home, 
-					  { joint_axis, Translation( joint_home ) }, 
-					  { min, max } );
+	builder.AddJoint( "r_joint" + std::to_string( index ),
+	                  joint_home,
+	                  { joint_axis, Translation( joint_home ) },
+	                  { min, max } );
 
-	builder.AddChildLink( "link" + std::to_string( index ), 
-						  link_home, 
-						  link_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link" + std::to_string( index ),
+	                      link_home,
+	                      link_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
 Model::JointChainBuilder& AddPrismaticJointLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& link_home,
-	double min = 0, 
+	double min = 0,
 	double max = 1 )
 {
-	builder.AddJoint( "p_joint" + std::to_string( index ), 
-					  joint_home, 
-					  { joint_axis }, 
-					  { min, max } );
+	builder.AddJoint( "p_joint" + std::to_string( index ),
+	                  joint_home,
+	                  { joint_axis },
+	                  { min, max } );
 
-	builder.AddChildLink( "link" + std::to_string( index ), 
-						  link_home, 
-						  link_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link" + std::to_string( index ),
+	                      link_home,
+	                      link_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
 Model::JointChainBuilder& AddJointTipLink(
-	Model::JointChainBuilder& builder, 
+	Model::JointChainBuilder& builder,
 	int index,
 	const Model::JointType type,
 	const Mat4d& joint_home,
 	const Vec3d& joint_axis,
 	const Mat4d& tip_home,
-	double min = -M_PI, 
+	double min = -M_PI,
 	double max = M_PI )
 {
 	Model::Twist t;
@@ -141,26 +141,26 @@ Model::JointChainBuilder& AddJointTipLink(
 	std::string name;
 	switch ( type )
 	{
-		case Model::JointType::FIXED:
-			name = "f_joint" + std::to_string( index );
-			break;
-		case Model::JointType::REVOLUTE:
-			name = "r_joint" + std::to_string( index );
-			break;
-		case Model::JointType::PRISMATIC:
-			name = "p_joint" + std::to_string( index );
-			break;
+	case Model::JointType::FIXED:
+		name = "f_joint" + std::to_string( index );
+		break;
+	case Model::JointType::REVOLUTE:
+		name = "r_joint" + std::to_string( index );
+		break;
+	case Model::JointType::PRISMATIC:
+		name = "p_joint" + std::to_string( index );
+		break;
 	}
 
-	builder.AddJoint( name, 
-					  joint_home, 
-					  t, 
-					  l );
+	builder.AddJoint( name,
+	                  joint_home,
+	                  t,
+	                  l );
 
-	builder.AddChildLink( "link_tip", 
-						  tip_home, 
-						  tip_home * Inverse( joint_home ) );
-	
+	builder.AddChildLink( "link_tip",
+	                      tip_home,
+	                      tip_home * Inverse( joint_home ) );
+
 	return builder;
 }
 
@@ -341,17 +341,17 @@ Mat4d Data::GetZYZRevoluteRobotTransform( double theta1, double theta2, double t
 Model::JointChainConstPtr createZYZRevoluteRobotJointChain( const Mat4d& home )
 {
 	auto builder = Model::JointChainBuilder();
-	
+
 	Mat4d origin1 = ToTransformMatrix( Vec3d( 0, 0, 0 ) );
 	Mat4d origin2 = ToTransformMatrix( Vec3d( 0.5, 0, 0 ) );
 	Mat4d origin3 = ToTransformMatrix( Vec3d( 1.0, 0, 0 ) );
-	
+
 	AddBaseLink( builder );
-	
+
 	AddRevoluteJointLink( builder, 1, origin1, Vec3d::UnitZ(), origin2 );
 	AddRevoluteJointLink( builder, 2, origin2, Vec3d::UnitY(), origin3, -M_PI / 2, M_PI / 2 );
-	AddJointTipLink( builder, 3, Model::JointType::REVOLUTE, origin3, 
-					 Vec3d::UnitZ(), home, -M_PI / 2, M_PI / 2 );
+	AddJointTipLink( builder, 3, Model::JointType::REVOLUTE, origin3,
+	                 Vec3d::UnitZ(), home, -M_PI / 2, M_PI / 2 );
 
 	return builder.Build();
 }
@@ -532,9 +532,9 @@ Model::JointChainConstPtr createRevoluteBaseJointChain( const Mat4d& home )
 {
 	auto builder = Model::JointChainBuilder();
 
-	Mat4d origin1 = ToTransformMatrix( Vec3d( 0, 0 , 0 ) );
-	Mat4d origin2 = ToTransformMatrix( Vec3d( 0, 0 , 1 ) );
-	Mat4d origin3 = ToTransformMatrix( Vec3d( 1, 0 , 1 ) );
+	Mat4d origin1 = ToTransformMatrix( Vec3d( 0, 0, 0 ) );
+	Mat4d origin2 = ToTransformMatrix( Vec3d( 0, 0, 1 ) );
+	Mat4d origin3 = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 
 	AddBaseLink( builder );
 	AddRevoluteJointLink( builder, 1, origin1, Vec3d::UnitZ(), origin2 );
@@ -774,8 +774,8 @@ Model::JointChainConstPtr createPlanar2RJointChain( const Mat4d& home )
 {
 	auto builder = Model::JointChainBuilder();
 
-	Mat4d origin1 = ToTransformMatrix( Vec3d(0, 0, 0));
-	Mat4d origin2 = ToTransformMatrix( Vec3d(0, 0, 0.5 ));
+	Mat4d origin1 = ToTransformMatrix( Vec3d( 0, 0, 0 ) );
+	Mat4d origin2 = ToTransformMatrix( Vec3d( 0, 0, 0.5 ) );
 
 	AddBaseLink( builder );
 	AddRevoluteJointLink( builder, 1, origin1, Vec3d::UnitX(), origin2, -M_PI / 2, M_PI / 2 );
@@ -1745,25 +1745,25 @@ Model::JointChainConstPtr createLeRobot_JointChain( const Mat4d& home )
 	Iso3d joint_origin1 = Iso3d::Identity();
 	joint_origin1.translate( Vec3d( 0, -0.0452, 0.0165 ) );
 	joint_origin1.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
-	
+
 	Vec2d limits2( 0, 3.5 );
 	Vec3d joint_axis2 = Vec3d::UnitX();
 	Iso3d joint_origin2 = Iso3d::Identity();
 	joint_origin2.translate( Vec3d( 0, 0.1025, 0.0306 ) );
 	joint_origin2.rotate( AngleAxis( -1.8, Vec3d::UnitX() ) );
-	
+
 	Vec2d limits3( -3.14158, 0 );
 	Vec3d joint_axis3 = Vec3d::UnitX();
 	Iso3d joint_origin3 = Iso3d::Identity();
 	joint_origin3.translate( Vec3d( 0, 0.11257, 0.028 ) );
 	joint_origin3.rotate( AngleAxis( M_PI / 2, Vec3d::UnitX() ) );
-	
+
 	Vec2d limits4( -2.5, 1.2 );
 	Vec3d joint_axis4 = Vec3d::UnitX();
 	Iso3d joint_origin4 = Iso3d::Identity();
 	joint_origin4.translate( Vec3d( 0, 0.0052, 0.1349 ) );
 	joint_origin4.rotate( AngleAxis( -1, Vec3d::UnitX() ) );
-	
+
 	Vec2d limits5( -3.14158, 3.14158 );
 	Vec3d joint_axis5 = Vec3d::UnitY();
 	Iso3d joint_origin5 = Iso3d::Identity();
@@ -1785,11 +1785,11 @@ Model::JointChainConstPtr createLeRobot_JointChain( const Mat4d& home )
 Mat4d createLeRobot_Home()
 {
 	Mat4d home;
-	home << 
-	6.32679e-06,          0,            1,            0,
-	 0.334976,     0.942227, -2.11933e-06,     -0.14663,
-	-0.942227,     0.334976,  5.96127e-06,     0.136274,
-	        0,            0,            0,            1;
+	home <<
+	    6.32679e-06,          0,            1,            0,
+	    0.334976,     0.942227, -2.11933e-06,     -0.14663,
+	    -0.942227,     0.334976,  5.96127e-06,     0.136274,
+	    0,            0,            0,            1;
 	return home;
 }
 
@@ -1932,11 +1932,11 @@ Model::JointChainConstPtr createLeRobotWithGripper_JointChain( const Mat4d& home
 Mat4d createLeRobotWithGripper_Home()
 {
 	Mat4d home;
-	home << 
-	6.32679e-06,            0,            1,            0,
-	   0.334976,     0.942227, -2.11933e-06,    -0.240852,
-	  -0.942227,     0.334976,  5.96127e-06,     0.102777,
-	          0,            0,            0,            1;
+	home <<
+	    6.32679e-06,            0,            1,            0,
+	    0.334976,     0.942227, -2.11933e-06,    -0.240852,
+	    -0.942227,     0.334976,  5.96127e-06,     0.102777,
+	    0,            0,            0,            1;
 	return home;
 }
 
@@ -2082,8 +2082,8 @@ std::map< std::string, Model::KinematicModelConstPtr > Data::GetAllRobots()
 			{ "5-axis arm", GetRevolute_Planar2R_Wrist2R_5DOFsRobot() },
 			{ "6-axis arm", GetRevolute_Planar2R_SphericalWrist_6DOFsRobot() },
 			{ "Universal Robot", GetURLikeRobot() },
-			//{ "LeRobot", GetLeRobot() },
-			//{ "LeRobotWithGripper", GetLeRobotWithGripper() },
+	        // { "LeRobot", GetLeRobot() },
+	        // { "LeRobotWithGripper", GetLeRobotWithGripper() },
 		};
 }
 

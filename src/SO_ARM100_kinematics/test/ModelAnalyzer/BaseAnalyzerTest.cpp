@@ -164,9 +164,9 @@ TEST_F( BaseAnalyzerTest, AnalyzeRevoluteBase_WithDifferentBaseJointAxis )
 	// Create a joint chain with a different base joint axis
 	Mat4d home = ToTransformMatrix( Vec3d( 1, 0, 1 ) );
 	auto joint_chain_y = CreateSimpleJointChain(
-		{RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitY() ), 
-		  		RevoluteJointInfo( Vec3d( 0, 0, 1 ), Vec3d::UnitZ() ) }, 
-		  		home );
+		{ RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitY() ),
+		  RevoluteJointInfo( Vec3d( 0, 0, 1 ), Vec3d::UnitZ() ) },
+		home );
 
 	Model::WristJointGroup wrist(
 		1,

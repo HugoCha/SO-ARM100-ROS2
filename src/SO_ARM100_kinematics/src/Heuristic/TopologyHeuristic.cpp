@@ -73,18 +73,20 @@ IKPresolution TopologyHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	if ( model_->IsUnreachable( problem.target ) )
-		return { {}, IKHeuristicState::Fail };
+		return {{}, IKHeuristicState::Fail }
+	;
 
 	double problem_error = model_->ComputeError( problem.seed, problem.target );
 	if ( problem_error < problem.tolerance )
-		return { {{problem.seed,problem_error,0}}, IKHeuristicState::Success };
+		return {{{ problem.seed, problem_error, 0 }}, IKHeuristicState::Success }
+	;
 
 	auto topology = model_->GetTopology();
 
-	auto expand_heuristic = [&]( const IIKHeuristic* heuristic, 
-										   const IKPresolution& previous_presolution,
-										   IKPresolution& next_presolution ) -> bool
-							 {
+	auto expand_heuristic = [&]( const IIKHeuristic* heuristic,
+	                             const IKPresolution& previous_presolution,
+	                             IKPresolution& next_presolution ) -> bool
+							{
 								next_presolution.branches.clear();
 
 								for ( const auto& branch : previous_presolution.branches )
@@ -94,39 +96,39 @@ IKPresolution TopologyHeuristic::Presolve(
 									auto branch_presolution = heuristic->Presolve( branch_problem, context );
 									if ( branch_presolution.PartialOrSuccess() )
 									{
-										next_presolution.branches.insert( 
+										next_presolution.branches.insert(
 											next_presolution.branches.end(),
-											branch_presolution.branches.begin(), 
+											branch_presolution.branches.begin(),
 											branch_presolution.branches.end() );
 									}
 								}
 
 								return !next_presolution.branches.empty();
-							 };
+							};
 
-	auto previous_presolution = IKPresolution { {{problem.seed} } };
+	auto previous_presolution = IKPresolution {{{ problem.seed }}};
 	auto next_presolution = previous_presolution;
 	if ( base_heuristic_ && !expand_heuristic( base_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return { {}, IKHeuristicState::Fail };
+		return {{}, IKHeuristicState::Fail };
 	}
 
 	previous_presolution = next_presolution;
 	if ( planar_heuristic_ && !expand_heuristic( planar_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return { {}, IKHeuristicState::Fail };
+		return {{}, IKHeuristicState::Fail };
 	}
 
 	previous_presolution = next_presolution;
 	if ( fabrik_heuristic_ && !expand_heuristic( fabrik_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return { {}, IKHeuristicState::Fail };
+		return {{}, IKHeuristicState::Fail };
 	}
 
 	previous_presolution = next_presolution;
 	if ( wrist_heuristic_ && !expand_heuristic( wrist_heuristic_.get(), previous_presolution, next_presolution ) )
 	{
-		return { {}, IKHeuristicState::Fail };
+		return {{}, IKHeuristicState::Fail };
 	}
 
 	for ( auto& branch : next_presolution.branches )

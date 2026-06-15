@@ -62,7 +62,7 @@ IKPresolution Planar1RHeuristic::Presolve(
 	const Solver::IKRunContext& context ) const
 {
 	IKPresolution presolution;
-	presolution.branches = { {problem.seed} };
+	presolution.branches = {{ problem.seed }};
 	presolution.state = IKHeuristicState::Fail;
 
 	VecXd presolution_joints = problem.seed;
@@ -94,7 +94,7 @@ IKPresolution Planar1RHeuristic::Presolve(
 	}
 
 	GetGroup().SetGroupJoints( clamp_value, presolution_joints );
-	presolution.branches = { { presolution_joints, error } };
+	presolution.branches = {{ presolution_joints, error }};
 	return presolution;
 }
 

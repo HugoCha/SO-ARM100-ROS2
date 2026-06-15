@@ -17,7 +17,7 @@ IKPipeline( std::unique_ptr< const Seed::IIKSeedGenerator > seed_generator,
             std::unique_ptr< const IIKSolver > solver );
 
 virtual Heuristic::IKPresolution Presolve(
-    const IKProblem& problem,
+	const IKProblem& problem,
 	const IKRunContext& context ) const override;
 
 virtual IKSolution Solve(

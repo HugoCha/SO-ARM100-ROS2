@@ -21,7 +21,7 @@ struct IKSolution
 
 	operator Heuristic::IKPresolution() const
 	{
-		return { {{joints, error}}, ToIKHeuristicState( state ) };
+		return {{{ joints, error }}, ToIKHeuristicState( state ) };
 	}
 };
 }

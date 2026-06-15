@@ -44,7 +44,7 @@ class PipelineSolverTest : public KinematicTestBase
 protected:
 void SetUp() override
 {
-	model_ = Data::GetRevolute_Planar2R_Wrist2R_5DOFsRobot();
+	model_ = Data::GetURLikeRobot();
 
 	Solver::PipelineSolverParameters parameters;
 	parameters.strategy = Solver::PipelineCompletionStrategy::ReturnFirstSuccess;
@@ -59,19 +59,19 @@ void TearDown() override
 
 std::unique_ptr< Solver::PipelineSolver > CreatePipeline( Model::KinematicModelConstPtr model, Solver::PipelineSolverParameters parameters = Solver::PipelineSolverParameters() )
 {
-	
-	auto params_dls_solver = Solver::FastDLSSolverParameters();
-	
+
+	auto params_dls_solver = Solver::DefaultDLSSolverParameters();
+
 	std::unique_ptr< const Solver::IKPipeline > pipeline =
 		Solver::PipelineBuilder{}
-		.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
-		.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
-		.Build();
+	.WithHeuristic( std::make_unique< Heuristic::TopologyHeuristic >( model ) )
+	.WithSolver( std::make_unique< Solver::DLSSolver >( model, params_dls_solver ) )
+	.Build();
 
 	auto scorer = Scorer::WeightedScorersBuilder{}
 	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
-	.Add( 3.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
-	.Add( 3.0, std::make_unique< Scorer::ManipulabilityScorer >( model ) )
+	.Add( 1.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
+	.Add( 1.0, std::make_unique< Scorer::ManipulabilityScorer >( model ) )
 	.Add( 1.0, std::make_unique< Scorer::PoseErrorScorer >( model, Scorer::PoseErrorScorer::ScorerParameters() ) )
 	.Add( 1.0, std::make_unique< Scorer::SeedConsistencyScorer >( 1e3 ) )
 	.Build();
@@ -137,7 +137,7 @@ TEST_F( PipelineSolverTest, InverseKinematic_Consistency )
 
 		// Seed joints
 		VecXd seed = chain->RandomValidJoints( rng_, 0 );
-		//VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
+		// VecXd seed = chain->RandomValidJointsNear( rng_, joints, 0.5 );
 
 		auto problem = CreateProblem( model_, seed, joints, tolerance );
 		auto result = solver_->Solve( problem, Solver::IKRunContext() );

@@ -72,7 +72,7 @@ struct DLSSolverParameters
 struct DefaultDLSSolverParameters : DLSSolverParameters
 {
 	DefaultDLSSolverParameters() :
-		DLSSolverParameters( 300, 2, 1e-8, 1e-4, 0.25, 1.0, 0.5, 5e-4, 0.1, 0.8, 9.0, 1.0 )
+		DLSSolverParameters( 300, 1, 1e-8, 1e-4, 0.25, 1.0, 0.5, 5e-5, 0.1, 0.8, 9.0, 1.0 )
 	{
 	}
 };
@@ -80,7 +80,7 @@ struct DefaultDLSSolverParameters : DLSSolverParameters
 struct ExtraFastDLSSolverParameters : DLSSolverParameters
 {
 	ExtraFastDLSSolverParameters() :
-		DLSSolverParameters( 50, 1, 1e-7, 1e-3, 1.0, 1.0, 0.5, 1e-4, 0.05, 1.5, 9.0, 1.0 )
+		DLSSolverParameters( 75, 1, 1e-7, 1e-3, 1.0, 1.0, 0.5, 5e-6, 5e-3, 1.5, 9.0, 1.0 )
 	{
 	}
 };
@@ -88,7 +88,7 @@ struct ExtraFastDLSSolverParameters : DLSSolverParameters
 struct FastDLSSolverParameters : DLSSolverParameters
 {
 	FastDLSSolverParameters() :
-		DLSSolverParameters( 100, 1, 1e-7, 1e-3, 0.5, 1.0, 0.5, 1e-4, 0.1, 1.2, 9.0, 1.0 )
+		DLSSolverParameters( 150, 1, 1e-7, 1e-3, 0.5, 1.0, 0.5, 1e-5, 5e-2, 1.6, 9.0, 1.0 )
 	{
 	}
 };
@@ -96,7 +96,7 @@ struct FastDLSSolverParameters : DLSSolverParameters
 struct RobustDLSSolverParameters : DLSSolverParameters
 {
 	RobustDLSSolverParameters() :
-		DLSSolverParameters( 800, 3, 1e-8, 1e-3, 0.1, 1.0, 0.5, 1e-4, 0.15, 0.8, 9.0, 1.0 )
+		DLSSolverParameters( 600, 2, 1e-8, 1e-3, 0.1, 1.0, 0.5, 5e-5, 0.1, 0.8, 9.0, 1.0 )
 	{
 	}
 };

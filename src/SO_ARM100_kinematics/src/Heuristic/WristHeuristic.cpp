@@ -95,7 +95,7 @@ IKPresolution WristHeuristic::Presolve(
 		break;
 	}
 
-	return { {{problem.seed}}, IKHeuristicState::PartialSuccess };
+	return {{{ problem.seed }}, IKHeuristicState::PartialSuccess };
 }
 
 // ------------------------------------------------------------
@@ -152,7 +152,7 @@ IKPresolution WristHeuristic::SolveRevolute1( const Solver::IKProblem& problem, 
 
 	VecXd presolution_joints = problem.seed;
 	GetGroup().SetGroupJoints( wrist_solution, presolution_joints );
-	presolution.branches = {{presolution_joints}};
+	presolution.branches = {{ presolution_joints }};
 	return presolution;
 }
 
@@ -169,7 +169,7 @@ IKPresolution WristHeuristic::SolveRevolute2( const Solver::IKProblem& problem, 
 	presolution.state = universal_solution.reachable ? IKHeuristicState::Success : IKHeuristicState::PartialSuccess;
 	VecXd presolution_joints = problem.seed;
 	GetGroup().SetGroupJoints( universal_solution.angles, presolution_joints );
-	presolution.branches = {{presolution_joints}};
+	presolution.branches = {{ presolution_joints }};
 	return presolution;
 }
 
@@ -179,15 +179,15 @@ IKPresolution WristHeuristic::SolveRevolute3( const Solver::IKProblem& problem, 
 {
 	assert( spherical_solver_ );
 	IKPresolution presolution;
-	
+
 	auto wrist_seed = GetGroup().GetGroupJoints( problem.seed );
 	auto spherical_solution = spherical_solver_->SolveFromRotation( R_target, wrist_seed, problem.tolerance );
-	
+
 	presolution.state = spherical_solution.reachable ? IKHeuristicState::Success : IKHeuristicState::PartialSuccess;
 	VecXd presolution_joints = problem.seed;
 	GetGroup().SetGroupJoints( spherical_solution.angles, presolution_joints );
-	presolution.branches = {{presolution_joints}};
-	
+	presolution.branches = {{ presolution_joints }};
+
 	return presolution;
 }
 

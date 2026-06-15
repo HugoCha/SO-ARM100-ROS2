@@ -46,7 +46,7 @@ void TearDown() override
 TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 {
 	auto single_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) },
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
@@ -80,7 +80,7 @@ TEST_F( Planar1RHeuristicTest, SolveSuccessWithinLimits )
 TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 {
 	auto single_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) }, 
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ) },
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
@@ -111,7 +111,7 @@ TEST_F( Planar1RHeuristicTest, SolveUnreachableDistance )
 TEST_F( Planar1RHeuristicTest, SolveExceedsJointLimits_PartialSuccessOrFail )
 {
 	auto single_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 4, M_PI / 4 ) }, 
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 4, M_PI / 4 ) },
 		ToTransformMatrix( Vec3d( 1, 0, 0 ) ) );
 
 	int start = 0;
@@ -159,9 +159,9 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 {
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
 	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
-				 tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) },
+		tip_home );
 
 	int start = 0;
 	int count = 2;
@@ -183,14 +183,14 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 		auto result_joints = b.joints;
 		Mat4d result_pose;
 		model->ComputeFK( result_joints, result_pose );
-	
+
 		EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 		EXPECT_EQ( 2, result_joints.size() );
 		EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance )
-			<< problem << std::endl
-			<< result << std::endl
-			<< "Target = \n" << Translation( problem.target ) << std::endl
-			<< "Result = \n" << Translation( result_pose ) << std::endl;
+		    << problem << std::endl
+		    << result << std::endl
+		    << "Target = \n" << Translation( problem.target ) << std::endl
+		    << "Result = \n" << Translation( result_pose ) << std::endl;
 	}
 }
 
@@ -199,9 +199,9 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessWithinLimits )
 TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 {
 	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d( 0, 0, 0.5  ), Vec3d::UnitY() ), 
-		 		RevoluteJointInfo( Vec3d( 0., 0., 1.0 ), Vec3d::UnitY() ) }, 
-				ToTransformMatrix( Vec3d( 0.6, 0, 1.0 ) ) );
+		{ RevoluteJointInfo( Vec3d( 0, 0, 0.5  ), Vec3d::UnitY() ),
+		  RevoluteJointInfo( Vec3d( 0., 0., 1.0 ), Vec3d::UnitY() ) },
+		ToTransformMatrix( Vec3d( 0.6, 0, 1.0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -229,9 +229,9 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 		EXPECT_EQ( Heuristic::IKHeuristicState::Success, result.state );
 		EXPECT_EQ( 2, result1_joints.size() );
 		EXPECT_LE( TranslationError( problem.target, result_pose ), problem.tolerance  )
-			<< problem << std::endl
-			<< "Target = \n" << Translation( problem.target ) << std::endl
-			<< "Result = \n" << Translation( result_pose ) << std::endl;
+		    << problem << std::endl
+		    << "Target = \n" << Translation( problem.target ) << std::endl
+		    << "Result = \n" << Translation( result_pose ) << std::endl;
 	}
 }
 
@@ -240,9 +240,9 @@ TEST_F( Planar2RHeuristicTest, SolveSuccessBothSolutionWithinLimits )
 TEST_F( Planar2RHeuristicTest, SolveUnreachableDistance )
 {
 	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
-				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) },
+		ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 
 	int start = 0;
 	int count = 2;
@@ -268,9 +268,9 @@ TEST_F( Planar2RHeuristicTest, SolveUnreachableDistance )
 TEST_F( Planar2RHeuristicTest, JointLimitsForceSingleValidConfiguration )
 {
 	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), 0, M_PI ) }, 
-				ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), 0, M_PI ) },
+		ToTransformMatrix( Vec3d( 0.3, 0, 0 ) ) );
 	int start = 0;
 	int count = 2;
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 2, 0, 0 ) );
@@ -306,17 +306,17 @@ TEST_F( Planar2RHeuristicTest, BothConfigurationsInvalid_PartialSuccess )
 	joints << M_PI / 3, M_PI / 3; // Target requires a solution far outside allowed boundaries
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 0.3, 0, 0 ) );
 	auto two_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ() ) },
+		tip_home );
 	Mat4d target;
 	two_joint_chain->ComputeFK( joints, tip_home, target );
 	auto problem = CreateProblem( seed, target );
 
 	auto two_joint_chain_tight = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ), 
-		 		RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ),
+		  RevoluteJointInfo( Vec3d( 0.1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) },
+		tip_home );
 
 	int start = 0;
 	int count = 2;
@@ -355,10 +355,10 @@ TEST_F( PlanarCCDHeuristicTest, SolveSuccessWithinTolerance )
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 
 	auto three_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
-		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d( 0, 0, 0 ), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) },
+		tip_home );
 
 	int start = 0;
 	int count = 3;
@@ -399,10 +399,10 @@ TEST_F( PlanarCCDHeuristicTest, CheckConsistency_ValidConfiguration )
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 
 	auto three_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
-		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) },
+		tip_home );
 
 	int start = 0;
 	int count = 3;
@@ -471,10 +471,10 @@ TEST_F( PlanarCCDHeuristicTest, ExceedsIterations_ReturnsPartialSuccess )
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 
 	auto three_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ), 
-		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ) , 
-		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ() ),
+		  RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ() ) },
+		tip_home );
 
 	int start = 0;
 	int count = 3;
@@ -507,10 +507,10 @@ TEST_F( PlanarCCDHeuristicTest, JointLimitsClampingEnforced )
 	Mat4d tip_home = ToTransformMatrix( Vec3d( 3, 0, 0 ) );
 
 	auto three_joint_chain = CreateSimpleJointChain(
-		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ), 
-		 		RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) , 
-		 		RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) }, 
-				tip_home );
+		{ RevoluteJointInfo( Vec3d::Zero(), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ),
+		  RevoluteJointInfo( Vec3d( 1, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ),
+		  RevoluteJointInfo( Vec3d( 2, 0, 0 ), Vec3d::UnitZ(), -M_PI / 12, M_PI / 12 ) },
+		tip_home );
 
 	int start = 0;
 	int count = 3;
