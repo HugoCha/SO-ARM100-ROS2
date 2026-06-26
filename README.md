@@ -111,7 +111,7 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 
 For questions or collaboration, reach out to:
 
-- **Hugo Charrier** – [hugo.charrier@example.com](mailto:hugo.charrier@example.com) | [LinkedIn](https://www.linkedin.com/in/your-profile/)
+- **Hugo Charrier** – [hugo.charrier2009@gmail.com](mailto:hugo.charrier2009@gmail.com) | [LinkedIn](https://www.linkedin.com/in/hugo-charrier-82008b1a8)
 - **LeRobot Community** – [Discord](https://discord.gg/lerobot) | [Forum](https://forum.lerobot.org/)
 
 ---
