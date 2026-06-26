@@ -108,7 +108,7 @@ Contains **STL files** for each physical component of the robot:
 
 1. Build the package:
   ```bash
-   colcon build --packages-select SO_ARM100_description
+   colcon build --packages-select so_arm100_description
    source install/setup.bash
   ```
 2. Launch the RViz display:
