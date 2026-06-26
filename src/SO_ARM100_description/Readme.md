@@ -113,7 +113,7 @@ Contains **STL files** for each physical component of the robot:
   ```
 2. Launch the RViz display:
   ```bash
-   ros2 launch SO_ARM100_description display.launch.py
+   ros2 launch so_arm100_description display.launch.py
   ```
 
 ### Load the URDF in Your Own Node
@@ -126,7 +126,7 @@ import os
 
 # Load the URDF from the Xacro file
 urdf_path = os.path.join(
-    get_package_share_directory('SO_ARM100_description'),
+    get_package_share_directory('so_arm100_description'),
     'urdf',
     'so_arm100.urdf.xacro'
 )
