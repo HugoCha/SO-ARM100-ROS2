@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(so_arm100_kinematics)
+project(so_arm100_planners)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 23)
@@ -17,8 +17,10 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(moveit_core REQUIRED)
+find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(ompl REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 if(NOT DEFINED CMAKE_EXPORT_COMPILE_COMMANDS)
@@ -52,7 +54,6 @@ if(BUILD_TESTING)
 
   add_library(${PROJECT_NAME}_test_utils STATIC
     test/Data/src/RobotModelTestData.cpp
-    test/Data/src/DLSGradientDescent.cpp
   )
 
   target_include_directories(${PROJECT_NAME}_test_utils PUBLIC
@@ -99,7 +100,7 @@ if(BUILD_TESTING)
 
   # Add an ament_uncrustify test explicitly
   ament_uncrustify(
-    TARGET so_arm100_kinematics_uncrustify
+    TARGET so_arm100_planners_uncrustify
     CONFIG_FILE "${UNCRUSTIFY_CONFIG_FILE}"
     FILES ${ALL_LINT_FILES}
   )
@@ -112,10 +113,12 @@ ament_export_include_directories(include)
 ament_target_dependencies(${PROJECT_NAME}
                           pluginlib
                           moveit_core
+                          moveit_ros_planning_interface
                           rclcpp
+                          ompl
                           Eigen3)
 
-pluginlib_export_plugin_description_file( moveit_core so_arm100_kinematics_plugin.xml )
+pluginlib_export_plugin_description_file( moveit_core so_arm100_planners_plugin.xml )
 
 ament_export_libraries(${PROJECT_NAME})
 
@@ -124,4 +127,5 @@ install(
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin )
+
 ament_package()

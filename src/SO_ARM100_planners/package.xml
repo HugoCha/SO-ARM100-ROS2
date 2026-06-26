@@ -1,23 +1,21 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>so_arm100_kinematics</name>
+  <name>so_arm100_planners</name>
   <version>0.0.0</version>
-  <description>Robot arm kinematics plugin</description>
+  <description>Robot arm motion planning plugin</description>
   <maintainer email="hugo.charrier2009@gmail.com">hugo</maintainer>
   <license>MIT</license>
 
+  <!-- C++ dependencies -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>eigen3_cmake_module</build_depend>
-  <build_depend>Eigen3</build_depend>
-
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>ompl</depend>
   <depend>moveit_core</depend>
   <depend>rclcpp</depend>
+  <depend>eigen</depend>
 
-  <exec_depend>eigen3_cmake_module</exec_depend>
-  <exec_depend>Eigen3</exec_depend>
-  
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_uncrustify</test_depend>
   <test_depend>ament_cmake_cppcheck</test_depend>

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>SO_ARM100_planners_prototype</name>
+  <version>0.0.0</version>
+  <description>A robot arm planner prototype</description>
+  <maintainer email="hugo.charrier2009@gmail.com">hugo</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>numpy</depend>
+  <depend>matplotlib</depend>
+  <depend>scipy</depend>  # For Python prototyping (e.g., splines)
+
+  <!-- Build/Export Dependencies -->
+  <build_depend>ament_python</build_depend>
+
+  <exec_depend>python3</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

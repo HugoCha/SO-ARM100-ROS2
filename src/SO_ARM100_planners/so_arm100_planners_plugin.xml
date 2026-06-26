@@ -1,0 +1,7 @@
+<library path="so_arm100_planners">
+  <class name="SOArm100/Planners/RobotArmPlannersPlugin"
+         type="SOArm100::Planners::RobotArmPlannersPlugin"
+         base_class_type="planning_interface::PlannerManager">
+    <description>Robot arm planners plugin</description>
+  </class>
+</library>
