@@ -160,8 +160,8 @@ Edit the `[materials.xacro](urdf/materials.xacro)` file to change colors or text
 ## 📜 **Dependencies**
 
 - **ROS 2** (Humble, Iron, or Rolling)
-- `**urdf**` package
-- `**xacro**` package
+- **urdf** package
+- **xacro** package
 - **RViz2** (for visualization)
 
 ---
