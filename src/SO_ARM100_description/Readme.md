@@ -62,10 +62,10 @@ SO_ARM100_description/
 
 | File                                                | Description                                                                                                          |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `[materials.xacro](urdf/materials.xacro)`           | Defines **materials** (colors, textures) for rendering the robot in RViz/Gazebo.                                     |
-| `[so_arm100.urdf.xacro](urdf/so_arm100.urdf.xacro)` | **Main Xacro file** for the SO-ARM100 robot model. Describes the robot structure **without a tool** (e.g., gripper). |
-| `[transmissions.xacro](urdf/transmissions.xacro)`   | Defines **motor transmissions** (e.g., joint-to-motor mappings).                                                     |
-| `[utils.xacro](urdf/utils.xacro)`                   | **Utility macros** to simplify the definition of joints, links, and inertia properties.                              |
+| [materials.xacro](urdf/materials.xacro)           | Defines **materials** (colors, textures) for rendering the robot in RViz/Gazebo.                                     |
+| [so_arm100.urdf.xacro](urdf/so_arm100.urdf.xacro) | **Main Xacro file** for the SO-ARM100 robot model. Describes the robot structure **without a tool** (e.g., gripper). |
+| [transmissions.xacro](urdf/transmissions.xacro)   | Defines **motor transmissions** (e.g., joint-to-motor mappings).                                                     |
+| [utils.xacro](urdf/utils.xacro)                   | **Utility macros** to simplify the definition of joints, links, and inertia properties.                              |
 
 
 ### **grippers/ Directory**
@@ -73,8 +73,8 @@ SO_ARM100_description/
 
 | File                                                     | Description                                                    |
 | -------------------------------------------------------- | -------------------------------------------------------------- |
-| `[gripper_jaw.xacro](urdf/grippers/gripper_jaw.xacro)`   | Xacro file for the **gripper jaw** (if a gripper is attached). |
-| `[gripper_none.xacro](urdf/grippers/gripper_none.xacro)` | Xacro file for **no gripper** (placeholder for end-effector).  |
+| [gripper_jaw.xacro](urdf/grippers/gripper_jaw.xacro)   | Xacro file for the **gripper jaw** (if a gripper is attached). |
+| [gripper_none.xacro](urdf/grippers/gripper_none.xacro) | Xacro file for **no gripper** (placeholder for end-effector).  |
 
 
 ### **meshes/ Directory**
@@ -89,7 +89,7 @@ Contains **STL files** for each physical component of the robot:
 
 | File                                            | Description                                                                    |
 | ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| `[display.launch.py](launch/display.launch.py)` | Launch file to **visualize the robot in RViz** with the default configuration. |
+| [display.launch.py](launch/display.launch.py) | Launch file to **visualize the robot in RViz** with the default configuration. |
 
 
 ### **rviz/ Directory**
@@ -97,7 +97,7 @@ Contains **STL files** for each physical component of the robot:
 
 | File                                              | Description                                                  |
 | ------------------------------------------------- | ------------------------------------------------------------ |
-| `[display_config.rviz](rviz/display_config.rviz)` | RViz configuration file for **visualizing the robot model**. |
+| [display_config.rviz](rviz/display_config.rviz) | RViz configuration file for **visualizing the robot model**. |
 
 
 ---
