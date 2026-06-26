@@ -16,6 +16,10 @@ This package provides the **URDF (Unified Robot Description Format)** and **Xacr
 - **Transmission definitions** for motor control.
 - **RViz configurations** for visualization.
 
+ <p align="center">
+  <img src="/img/SO-ARM100-description.png" alt="SO-ARM100" style="width: 60%;"/>
+</p>
+
 ---
 
 ## 🗂️ **File Structure**
