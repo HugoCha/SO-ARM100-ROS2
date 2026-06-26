@@ -145,7 +145,7 @@ urdf_path = os.path.join(
 1. Create a new Xacro file in the `grippers/` directory (e.g., `my_gripper.xacro`).
 2. Include it in your main URDF/Xacro file:
   ```xml
-   <xacro:include filename="$(find SO_ARM100_description)/urdf/grippers/my_gripper.xacro" />
+   <xacro:include filename="$(find so_arm100_description)/urdf/grippers/my_gripper.xacro" />
   ```
 3. Update the `so_arm100.urdf.xacro` to use your new gripper.
 
