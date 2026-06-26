@@ -31,11 +31,11 @@ The project is designed to be **extensible**, **research-friendly**, and **indus
 
 | Package                                                         | Description                                                     | Status                |
 | --------------------------------------------------------------- | --------------------------------------------------------------- | --------------------- |
-| `[SO_ARM100_description](SO_ARM100_description/)`               | URDF/Xacro description of the SO-ARM100 robotic arm.            | ✅ **Developed**       |
-| `[SO_ARM100_moveit](SO_ARM100_moveit/)`                         | MoveIt planning scene configuration for RViz.                   | ✅ **Developed**       |
-| `[SO_ARM100_kinematics](SO_ARM100_kinematics/)`                 | MoveIt plugin for fast kinematic solving.                       | ✅ **Developed**       |
-| `[SO_ARM100_planners](SO_ARM100_planners/)`                     | C++/Python MoveIt plugins for custom RRT-based motion planners. | 🚧 **In Development** |
-| `[SO_ARM100_planners_prototype](SO_ARM100_planners_prototype/)` | Experimental prototypes for hybrid motion planners.             | 🚧 **In Development** |
+| `[SO_ARM100_description](src/SO_ARM100_description/)`               | URDF/Xacro description of the SO-ARM100 robotic arm.            | ✅ **Developed**       |
+| `[SO_ARM100_moveit](src/SO_ARM100_moveit/)`                         | MoveIt planning scene configuration for RViz.                   | ✅ **Developed**       |
+| `[SO_ARM100_kinematics](src/SO_ARM100_kinematics/)`                 | MoveIt plugin for fast kinematic solving.                       | ✅ **Developed**       |
+| `[SO_ARM100_planners](src/SO_ARM100_planners/)`                     | C++/Python MoveIt plugins for custom RRT-based motion planners. | 🚧 **In Development** |
+| `[SO_ARM100_planners_prototype](src/SO_ARM100_planners_prototype/)` | Experimental prototypes for hybrid motion planners.             | 🚧 **In Development** |
 | `SO_ARM100_control`                                             | ROS 2 package for motor control and hardware interfacing.       | 📅 **Planned**        |
 | `SO_ARM100_gazebo`                                              | Gazebo simulation environment for pick-and-place tasks.         | 📅 **Planned**        |
 
