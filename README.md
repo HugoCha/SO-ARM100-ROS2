@@ -12,8 +12,6 @@
 
 **SO-ARM100-ROS2** is a **ROS 2** project dedicated to the **LeRobot SO-ARM100**, an open-source robotic arm. This repository provides a **modular, production-ready ecosystem** for simulating, planning, and controlling the SO-ARM100 in ROS 2, with a focus on **motion planning, kinematics, and real-world deployment**.
 
-The project is designed to be **extensible**, **research-friendly**, and **industry-compatible**, making it ideal for both academic and professional robotics applications.
-
 ---
 
 ## 🎯 **Goals**
