@@ -52,7 +52,7 @@ The project is designed to be **extensible**, **research-friendly**, and **indus
 
 ### 🚧 **In Development**
 
-- **Custom Motion Planners**: Implementation of **RRT**, **RRT-Connect**, and hybrid planners (combining sampling-based methods with heuristics) for efficient path planning.
+- **Custom Motion Planners**: Implementation of **RRT**, and **RRT variants** for efficient path planning.
 - **MoveIt Plugins**: PlannerManager and PlanningContext plugins to extend MoveIt’s default capabilities.
 
 ### 📅 **Future Work**
