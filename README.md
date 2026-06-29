@@ -93,7 +93,7 @@
 
 Contributions are welcome! Feel free to:
 
-- Report bugs or suggest features via [GitHub Issues](https://github.com/your-username/SO-ARM100-ROS2/issues).
+- Report bugs or suggest features via [GitHub Issues](https://github.com/HugoCha/SO-ARM100-ROS2/issues).
 - Submit pull requests for new planners, improvements, or documentation.
 - Share your own SO-ARM100 applications or extensions.
 
