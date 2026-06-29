@@ -151,7 +151,7 @@ urdf_path = os.path.join(
 
 ### Modifying Materials
 
-Edit the `[materials.xacro](urdf/materials.xacro)` file to change colors or textures:
+Edit the [materials.xacro](urdf/materials.xacro) file to change colors or textures:
 
 ```xml
 <material name="red_plastic">
