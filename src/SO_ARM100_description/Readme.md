@@ -187,5 +187,4 @@ For questions, reach out to:
 
 ## 📜 **License**
 
-This package is licensed under the **MIT License** – see the [LICENSE](../../LI  kinematics_solver: SOArm100/Kinematics/RobotArmKinematicsPlugin
-  # kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPluginCENSE) file for details.
+This package is licensed under the **MIT License** – see the [LICENSE](../../LICENSE)
