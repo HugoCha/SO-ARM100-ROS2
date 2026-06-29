@@ -181,7 +181,7 @@ Edit the [materials.xacro](urdf/materials.xacro) file to change colors or textur
 
 For questions, reach out to:
 
-- **Hugo Charrier** – [hugo.charrier@example.com](mailto:hugo.charrier2009@gmail.com)
+- **Hugo Charrier** – [hugo.charrier2009@gmail.com](mailto:hugo.charrier2009@gmail.com)
 
 ---
 
