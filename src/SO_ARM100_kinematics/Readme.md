@@ -133,7 +133,7 @@ Edit the `PipelineSolver` to change the order or priority of solvers:
 
 ```cpp
 // Example: Add a custom solver to the pipeline
-	auto pipeline = Solver::PipelineBuilder{}
+auto pipeline = Solver::PipelineBuilder{}
   	.WithHeuristic( std::make_unique< Heuristic::MyCustomHeuristic >( model ) ) // model : Model::KinematicModelConstPtr
   	.WithSolver( std::make_unique< Solver::MyCustomSolver >( model ) ) // model : Model::KinematicModelConstPtr
   	.Build();
@@ -145,7 +145,7 @@ Customize the `Scorer` classes to prioritize different metrics (e.g., manipulabi
 
 ```cpp
 // Example: Create a weighted scorer
-	auto scorer = Scorer::WeightedScorersBuilder{}
+auto scorer = Scorer::WeightedScorersBuilder{}
   	.Add( 1.0, std::make_unique< Scorer::CloseToCenterScorer >( model ) )
   	.Add( 1.0, std::make_unique< Scorer::CloseToSeedScorer >( model ) )
   	.Add( 1.0, std::make_unique< Scorer::SeedConsistencyScorer >( std::numeric_limits< double >::infinity() ) )
