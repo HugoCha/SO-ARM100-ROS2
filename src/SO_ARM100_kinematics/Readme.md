@@ -161,7 +161,7 @@ auto scorer = Scorer::WeightedScorersBuilder{}
 The package includes a **comprehensive test suite** in the `test/` directory. To run the tests:
 
 ```bash
-colcon test --packages-select SO_ARM100_kinematics
+colcon test --packages-select so_arm100_kinematics
 ```
 
 Tests cover:
@@ -178,7 +178,6 @@ Tests cover:
 - **ROS 2** (Humble, Iron, or Rolling)
 - **MoveIt 2**
 - **Eigen3** (for linear algebra)
-- **Boost** (for utilities)
 
 ---
 
