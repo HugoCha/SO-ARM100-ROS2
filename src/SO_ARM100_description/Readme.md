@@ -172,7 +172,7 @@ Edit the [materials.xacro](urdf/materials.xacro) file to change colors or textur
 
 ## 🤝 **Contributing**
 
-- Report issues or suggest improvements via [GitHub Issues](https://github.com/your-username/SO-ARM100-ROS2/issues).
+- Report issues or suggest improvements via [GitHub Issues](https://github.com/HugoCha/SO-ARM100-ROS2/issues).
 - Submit pull requests for new features or bug fixes.
 
 ---
@@ -187,4 +187,5 @@ For questions, reach out to:
 
 ## 📜 **License**
 
-This package is licensed under the **MIT License** – see the [LICENSE](../../LICENSE) file for details.
+This package is licensed under the **MIT License** – see the [LICENSE](../../LI  kinematics_solver: SOArm100/Kinematics/RobotArmKinematicsPlugin
+  # kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPluginCENSE) file for details.
