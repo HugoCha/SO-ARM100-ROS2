@@ -54,7 +54,7 @@ SO_ARM100_moveit/
 
 ## 📝 **File Descriptions**
 
-### `**config/` Directory**
+### **config/ Directory**
 
 
 | File                                                                  | Description                                                                                           |
@@ -72,7 +72,7 @@ SO_ARM100_moveit/
 | [so_arm100.urdf.xacro](config/so_arm100.urdf.xacro)                 | URDF/Xacro file for the robot, used by MoveIt.                                                        |
 
 
-### `**launch/` Directory**
+### **launch/ Directory**
 
 
 | File                                                                              | Description                                                                         |
