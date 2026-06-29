@@ -90,14 +90,25 @@ You can also use the solver directly in your C++ code:
 #include <RobotArmKinematicsSolver.hpp>
 
 // Create a solver instance
-auto solver = std::make_shared<so_arm100_kinematics::RobotArmKinematicsSolver>();
+auto solver = std::make_shared<SOArm100::Kinematics::RobotArmKinematicsSolver>();
 
 // Set the robot model (e.g., from URDF)
-solver->setRobotModel(robot_model);
+solver->Initialize(
+	model, // Robot model
+	getIK_solver, // Solver when timeout = 0
+	searchIK_solver, // Solver to find best solution when timeout > 0
+	search_discretization )
 
 // Solve IK for a target pose
-std::vector<double> joint_values;
-bool success = solver->solveIK(target_pose, joint_values);
+VecXd joint_values;
+bool success = solver->InverseKinematic(
+	target,
+	seed,
+	consistency,
+	timeout_ms,
+	tolerance,
+	approx,
+	joint_values )
 ```
 
 ---
